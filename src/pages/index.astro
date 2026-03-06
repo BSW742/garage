@@ -56,6 +56,60 @@
         font-size: 14px;
         z-index: 100;
       }
+      #fps-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #ff0000, #ff6600);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 100;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 15px rgba(255,0,0,0.4);
+        transition: all 0.2s;
+      }
+      #fps-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(255,0,0,0.6);
+      }
+      #fps-btn.active {
+        background: linear-gradient(135deg, #00ff00, #00aa00);
+        box-shadow: 0 4px 15px rgba(0,255,0,0.4);
+      }
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 30px;
+        pointer-events: none;
+        z-index: 100;
+        display: none;
+      }
+      #crosshair::before, #crosshair::after {
+        content: '';
+        position: absolute;
+        background: rgba(255,255,0,0.8);
+      }
+      #crosshair::before {
+        width: 2px;
+        height: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      #crosshair::after {
+        height: 2px;
+        width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+      }
     </style>
   </head>
   <body>
@@ -63,6 +117,8 @@
       <div id="score">SCORE: 0</div>
       <div id="lives">LIVES: ❤️❤️❤️</div>
     </div>
+    <button id="fps-btn">🎮 FPS MODE</button>
+    <div id="crosshair"></div>
     <div id="message"></div>
     <div id="instructions">WASD or Arrow Keys to move | Eat all pellets to win!</div>
     <div id="game-container"></div>
@@ -92,6 +148,8 @@
       let nextDirection = new THREE.Vector3(0, 0, 0);
       let isPoweredUp = false;
       let powerUpTimer = 0;
+      let isFPSMode = false;
+      let pacmanLight; // Flashlight for FPS mode
 
       // Maze layout (1 = wall, 0 = path, 2 = pellet, 3 = power pellet, 4 = ghost spawn)
       const maze = [
@@ -162,8 +220,9 @@
       floor.receiveShadow = true;
       scene.add(floor);
 
-      // Create maze walls
-      const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, 2, CELL_SIZE);
+      // Create maze walls (tall enough for FPS mode)
+      const WALL_HEIGHT = 3;
+      const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
       const wallMaterial = new THREE.MeshStandardMaterial({
         color: 0x0000aa,
         roughness: 0.3,
@@ -175,13 +234,25 @@
         for (let x = 0; x < MAZE_WIDTH; x++) {
           if (maze[y][x] === 1) {
             const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-            wall.position.set(x * CELL_SIZE + CELL_SIZE/2, 0.5, y * CELL_SIZE + CELL_SIZE/2);
+            wall.position.set(x * CELL_SIZE + CELL_SIZE/2, WALL_HEIGHT/2 - 0.5, y * CELL_SIZE + CELL_SIZE/2);
             wall.castShadow = true;
             wall.receiveShadow = true;
             scene.add(wall);
           }
         }
       }
+
+      // Add ceiling for FPS mode atmosphere
+      const ceilingGeometry = new THREE.PlaneGeometry(MAZE_WIDTH * CELL_SIZE + 4, MAZE_HEIGHT * CELL_SIZE + 4);
+      const ceilingMaterial = new THREE.MeshStandardMaterial({
+        color: 0x000011,
+        roughness: 1,
+        side: THREE.DoubleSide
+      });
+      const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+      ceiling.rotation.x = Math.PI / 2;
+      ceiling.position.set(MAZE_WIDTH * CELL_SIZE / 2, WALL_HEIGHT, MAZE_HEIGHT * CELL_SIZE / 2);
+      scene.add(ceiling);
 
       // Create pellets
       const pelletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
@@ -235,6 +306,14 @@
       const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
       rightEye.position.set(0.25, 0.3, -0.55);
       pacman.add(rightEye);
+
+      // Pac-Man flashlight for FPS mode
+      pacmanLight = new THREE.SpotLight(0xffff00, 2, 15, Math.PI / 4, 0.3);
+      pacmanLight.position.set(0, 0.5, 0);
+      pacmanLight.castShadow = true;
+      pacmanLight.visible = false;
+      scene.add(pacmanLight);
+      scene.add(pacmanLight.target);
 
       // Create Ghosts
       const ghostColors = [0xff0000, 0x00ffff, 0xff69b4, 0xffa500]; // Red, Cyan, Pink, Orange
@@ -546,6 +625,33 @@
         // Animate pacman
         pacman.position.y = 0.7 + Math.sin(time * 8) * 0.05;
 
+        // FPS Camera Update
+        if (isFPSMode) {
+          // Position camera at pacman's location
+          camera.position.set(pacman.position.x, 1.2, pacman.position.z);
+
+          // Calculate look direction based on pacman direction
+          let lookX = pacman.position.x;
+          let lookZ = pacman.position.z;
+
+          if (pacmanDirection.length() > 0) {
+            lookX += pacmanDirection.x * 5;
+            lookZ += pacmanDirection.z * 5;
+          } else {
+            // Default look direction (forward in Z)
+            lookZ -= 5;
+          }
+
+          camera.lookAt(lookX, 1.2, lookZ);
+
+          // Update flashlight position and direction
+          pacmanLight.position.copy(camera.position);
+          pacmanLight.target.position.set(lookX, 0.5, lookZ);
+
+          // Add head bob effect
+          camera.position.y += Math.sin(time * 12) * 0.05;
+        }
+
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
       }
@@ -555,7 +661,41 @@
         if (e.key.toLowerCase() === 'r' && (gameOver || gameWon)) {
           location.reload();
         }
+        // Toggle FPS mode with F key
+        if (e.key.toLowerCase() === 'f') {
+          toggleFPSMode();
+        }
       });
+
+      // FPS Mode Toggle
+      function toggleFPSMode() {
+        isFPSMode = !isFPSMode;
+        const btn = document.getElementById('fps-btn');
+        const crosshair = document.getElementById('crosshair');
+
+        if (isFPSMode) {
+          btn.textContent = '🔙 TOP VIEW';
+          btn.classList.add('active');
+          crosshair.style.display = 'block';
+          pacman.visible = false;
+          pacmanLight.visible = true;
+          camera.fov = 90; // Wider FOV for FPS
+          camera.updateProjectionMatrix();
+        } else {
+          btn.textContent = '🎮 FPS MODE';
+          btn.classList.remove('active');
+          crosshair.style.display = 'none';
+          pacman.visible = true;
+          pacmanLight.visible = false;
+          camera.fov = 60;
+          camera.updateProjectionMatrix();
+          // Reset to top-down view
+          camera.position.set(MAZE_WIDTH * CELL_SIZE / 2, 35, MAZE_HEIGHT * CELL_SIZE + 10);
+          camera.lookAt(MAZE_WIDTH * CELL_SIZE / 2, 0, MAZE_HEIGHT * CELL_SIZE / 2);
+        }
+      }
+
+      document.getElementById('fps-btn').addEventListener('click', toggleFPSMode);
 
       // Handle resize
       window.addEventListener('resize', () => {
