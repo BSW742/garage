@@ -1,0 +1,44 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content="Find garage sales near you in New Zealand" />
+    <title>Garage.co.nz - Find Local Garage Sales</title>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Garage.co.nz</h1>
+      </header>
+
+      <main>
+        <div class="map-placeholder" id="map"></div>
+
+        <div class="coming-soon">
+          <h2>Coming Soon</h2>
+          <p>Find and list garage sales across New Zealand.</p>
+        </div>
+      </main>
+
+      <footer>
+        <p>Made for the NZ garage sale community</p>
+      </footer>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script>
+      import('https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js').then((L) => {
+        const map = L.map('map').setView([-41.0, 174.0], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+      });
+    </script>
+  </body>
+</html>
