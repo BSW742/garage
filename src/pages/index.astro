@@ -110,6 +110,19 @@
         top: 50%;
         transform: translateY(-50%);
       }
+      #minimap {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 180px;
+        height: 180px;
+        background: rgba(0, 0, 20, 0.85);
+        border: 2px solid #0066ff;
+        border-radius: 8px;
+        z-index: 100;
+        display: none;
+        box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
+      }
     </style>
   </head>
   <body>
@@ -118,6 +131,7 @@
       <div id="lives">LIVES: ❤️❤️❤️</div>
     </div>
     <button id="fps-btn">🎮 FPS MODE</button>
+    <canvas id="minimap" width="180" height="180"></canvas>
     <div id="crosshair"></div>
     <div id="message"></div>
     <div id="instructions">WASD or Arrow Keys to move | Eat all pellets to win!</div>
@@ -670,6 +684,9 @@
 
           // Add head bob effect
           camera.position.y += Math.sin(time * 12) * 0.05;
+
+          // Render minimap
+          renderMinimap();
         }
 
         renderer.render(scene, camera);
@@ -687,16 +704,95 @@
         }
       });
 
+      // Minimap setup
+      const minimapCanvas = document.getElementById('minimap');
+      const minimapCtx = minimapCanvas.getContext('2d');
+      const MINIMAP_SCALE = minimapCanvas.width / (MAZE_WIDTH * CELL_SIZE);
+
+      function renderMinimap() {
+        const ctx = minimapCtx;
+        const scale = MINIMAP_SCALE;
+
+        // Clear
+        ctx.fillStyle = 'rgba(0, 0, 30, 0.9)';
+        ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        // Draw walls
+        ctx.fillStyle = '#0044aa';
+        for (let y = 0; y < MAZE_HEIGHT; y++) {
+          for (let x = 0; x < MAZE_WIDTH; x++) {
+            if (maze[y][x] === 1) {
+              ctx.fillRect(
+                x * CELL_SIZE * scale,
+                y * CELL_SIZE * scale,
+                CELL_SIZE * scale,
+                CELL_SIZE * scale
+              );
+            }
+          }
+        }
+
+        // Draw pellets (tiny dots)
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+        pellets.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.position.x * scale, p.position.z * scale, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw power pellets
+        ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
+        powerPellets.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.position.x * scale, p.position.z * scale, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw ghosts
+        ghosts.forEach(ghost => {
+          ctx.fillStyle = isPoweredUp ? '#0000ff' : '#' + ghost.userData.originalColor.toString(16).padStart(6, '0');
+          ctx.beginPath();
+          ctx.arc(ghost.position.x * scale, ghost.position.z * scale, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw Pac-Man (yellow with direction indicator)
+        const px = pacman.position.x * scale;
+        const pz = pacman.position.z * scale;
+
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(px, pz, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Direction indicator
+        if (pacmanDirection.length() > 0) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px, pz);
+          ctx.lineTo(px + pacmanDirection.x * 8, pz + pacmanDirection.z * 8);
+          ctx.stroke();
+        }
+
+        // Border glow effect
+        ctx.strokeStyle = '#0066ff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(1, 1, minimapCanvas.width - 2, minimapCanvas.height - 2);
+      }
+
       // FPS Mode Toggle
       function toggleFPSMode() {
         isFPSMode = !isFPSMode;
         const btn = document.getElementById('fps-btn');
         const crosshair = document.getElementById('crosshair');
+        const minimap = document.getElementById('minimap');
 
         if (isFPSMode) {
           btn.textContent = '🔙 TOP VIEW';
           btn.classList.add('active');
           crosshair.style.display = 'block';
+          minimap.style.display = 'block';
           pacman.visible = false;
           pacmanLight.visible = true;
           ceiling.visible = true; // Show ceiling in FPS
@@ -706,6 +802,7 @@
           btn.textContent = '🎮 FPS MODE';
           btn.classList.remove('active');
           crosshair.style.display = 'none';
+          minimap.style.display = 'none';
           pacman.visible = true;
           pacmanLight.visible = false;
           ceiling.visible = false; // Hide ceiling for top-down
