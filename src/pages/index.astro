@@ -242,7 +242,7 @@
         }
       }
 
-      // Add ceiling for FPS mode atmosphere
+      // Add ceiling for FPS mode atmosphere (hidden by default)
       const ceilingGeometry = new THREE.PlaneGeometry(MAZE_WIDTH * CELL_SIZE + 4, MAZE_HEIGHT * CELL_SIZE + 4);
       const ceilingMaterial = new THREE.MeshStandardMaterial({
         color: 0x000011,
@@ -252,6 +252,7 @@
       const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
       ceiling.rotation.x = Math.PI / 2;
       ceiling.position.set(MAZE_WIDTH * CELL_SIZE / 2, WALL_HEIGHT, MAZE_HEIGHT * CELL_SIZE / 2);
+      ceiling.visible = false; // Hidden until FPS mode
       scene.add(ceiling);
 
       // Create pellets
@@ -415,19 +416,38 @@
         keys[e.code] = false;
       });
 
-      // Collision detection
-      function canMove(x, z, direction) {
-        const nextX = x + direction.x * CELL_SIZE * 0.6;
-        const nextZ = z + direction.z * CELL_SIZE * 0.6;
-
-        const cellX = Math.floor(nextX / CELL_SIZE);
-        const cellY = Math.floor(nextZ / CELL_SIZE);
-
+      // Collision detection - check if position is valid
+      function isWall(cellX, cellY) {
         if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
-          return true; // Allow wrapping
+          return false; // Allow wrapping at edges
+        }
+        return maze[cellY][cellX] === 1;
+      }
+
+      function canMove(x, z, direction) {
+        const radius = 0.6; // Pac-Man's collision radius
+        const step = 0.15; // How far ahead to check
+
+        // Check the point ahead in the direction of movement
+        const nextX = x + direction.x * step;
+        const nextZ = z + direction.z * step;
+
+        // Check multiple points around pacman's edge in the direction of movement
+        const checkPoints = [
+          { x: nextX + direction.x * radius, z: nextZ + direction.z * radius }, // Front center
+          { x: nextX + direction.x * radius + direction.z * radius * 0.5, z: nextZ + direction.z * radius - direction.x * radius * 0.5 }, // Front right
+          { x: nextX + direction.x * radius - direction.z * radius * 0.5, z: nextZ + direction.z * radius + direction.x * radius * 0.5 }, // Front left
+        ];
+
+        for (const point of checkPoints) {
+          const cellX = Math.floor(point.x / CELL_SIZE);
+          const cellY = Math.floor(point.z / CELL_SIZE);
+          if (isWall(cellX, cellY)) {
+            return false;
+          }
         }
 
-        return maze[cellY][cellX] !== 1;
+        return true;
       }
 
       function getMazeCell(x, z) {
@@ -679,6 +699,7 @@
           crosshair.style.display = 'block';
           pacman.visible = false;
           pacmanLight.visible = true;
+          ceiling.visible = true; // Show ceiling in FPS
           camera.fov = 90; // Wider FOV for FPS
           camera.updateProjectionMatrix();
         } else {
@@ -687,6 +708,7 @@
           crosshair.style.display = 'none';
           pacman.visible = true;
           pacmanLight.visible = false;
+          ceiling.visible = false; // Hide ceiling for top-down
           camera.fov = 60;
           camera.updateProjectionMatrix();
           // Reset to top-down view
