@@ -1,0 +1,817 @@
+---
+// RAMADAN - The Fasting Challenge
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>RAMADAN - The Fasting Challenge</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        background: linear-gradient(180deg, #87CEEB 0%, #f6d365 50%, #e6b980 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow: hidden;
+      }
+
+      #game-container {
+        position: relative;
+      }
+
+      canvas {
+        border: 3px solid #c9a227;
+        border-radius: 8px;
+        box-shadow: 0 0 40px rgba(201, 162, 39, 0.3);
+      }
+
+      #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        justify-content: space-between;
+        color: #fff;
+        font-size: 18px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        pointer-events: none;
+      }
+
+      #title-screen, #death-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        color: white;
+        text-align: center;
+        z-index: 100;
+      }
+
+      #title-screen h1 {
+        font-size: 64px;
+        color: #c9a227;
+        text-shadow: 0 0 20px rgba(201, 162, 39, 0.5);
+        margin-bottom: 10px;
+      }
+
+      #title-screen .subtitle {
+        font-size: 24px;
+        color: #8bc34a;
+        margin-bottom: 40px;
+      }
+
+      #title-screen .crescent {
+        font-size: 80px;
+        margin-bottom: 30px;
+      }
+
+      #title-screen .instructions {
+        font-size: 16px;
+        color: #aaa;
+        margin-bottom: 30px;
+        line-height: 1.8;
+      }
+
+      .start-btn {
+        background: linear-gradient(180deg, #c9a227 0%, #a08020 100%);
+        border: none;
+        color: #1a0a2e;
+        font-size: 24px;
+        font-weight: bold;
+        padding: 15px 50px;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .start-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(201, 162, 39, 0.6);
+      }
+
+      #death-screen {
+        display: none;
+      }
+
+      #death-screen h2 {
+        font-size: 48px;
+        color: #ef4444;
+        margin-bottom: 20px;
+      }
+
+      #death-screen .score-display {
+        font-size: 24px;
+        color: #c9a227;
+        margin-bottom: 30px;
+      }
+
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <canvas id="game" width="600" height="700"></canvas>
+
+      <div id="ui">
+        <div id="level">Level: 1</div>
+        <div id="score">Score: 0</div>
+        <div id="time">Time Fasting: 0:00</div>
+      </div>
+
+      <div id="title-screen">
+        <div class="crescent">&#9774;</div>
+        <h1>RAMADAN</h1>
+        <div class="subtitle">The Fasting Challenge</div>
+        <div class="instructions">
+          Avoid the falling food in the scorching desert!<br>
+          Use <strong>LEFT</strong> and <strong>RIGHT</strong> arrow keys to move<br><br>
+          <span style="color: #00bfff;">COLLECT WATER to stay hydrated and earn points!</span><br>
+          The longer you survive, the higher your score!
+        </div>
+        <button class="start-btn" onclick="startGame()">Begin Fast</button>
+      </div>
+
+      <div id="death-screen">
+        <h2>YOU BROKE YOUR FAST!</h2>
+        <div class="score-display">
+          <div id="final-score">Score: 0</div>
+          <div id="final-level">Reached Level: 1</div>
+        </div>
+        <button class="start-btn" onclick="startGame()">Try Again?</button>
+      </div>
+    </div>
+
+    <script is:inline>
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+
+      // Game state
+      let gameRunning = false;
+      let score = 0;
+      let level = 1;
+      let startTime = 0;
+      let foods = [];
+      let deathSequence = false;
+      let giantFood = null;
+      let bloodSplatters = [];
+      let playerFlashing = false;
+      let flashCount = 0;
+
+      // Player
+      const player = {
+        x: 300,
+        y: 620,
+        width: 60,
+        height: 90,
+        speed: 8,
+        movingLeft: false,
+        movingRight: false
+      };
+
+      // Food types with emojis and colors
+      const foodTypes = [
+        { emoji: '🍔', name: 'burger' },
+        { emoji: '🍕', name: 'pizza' },
+        { emoji: '🍟', name: 'fries' },
+        { emoji: '🌮', name: 'taco' },
+        { emoji: '🍩', name: 'donut' },
+        { emoji: '🍦', name: 'icecream' },
+        { emoji: '🍗', name: 'chicken' },
+        { emoji: '🧁', name: 'cupcake' },
+        { emoji: '🍪', name: 'cookie' },
+        { emoji: '🥧', name: 'pie' },
+        { emoji: '🍰', name: 'cake' },
+        { emoji: '🌯', name: 'wrap' },
+        { emoji: '🥙', name: 'kebab' },
+        { emoji: '🧆', name: 'falafel' },
+        { emoji: '🍇', name: 'dates' }
+      ];
+
+      // Water is special - bonus points for avoiding!
+      const waterType = { emoji: '💧', name: 'water', isWater: true };
+
+      // Draw the Muslim man
+      function drawPlayer() {
+        if (playerFlashing && Math.floor(flashCount / 5) % 2 === 0) {
+          return; // Skip drawing for flash effect
+        }
+
+        const x = player.x;
+        const y = player.y;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath();
+        ctx.ellipse(x, y + 28, 25, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Thobe (long white garment) - broader for a man
+        ctx.fillStyle = '#f5f5f5';
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - 45); // Shoulders
+        ctx.lineTo(x + 18, y - 45);
+        ctx.lineTo(x + 25, y + 25);
+        ctx.lineTo(x - 25, y + 25);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Thobe collar detail
+        ctx.strokeStyle = '#c9a227';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 48);
+        ctx.lineTo(x, y - 40);
+        ctx.lineTo(x + 8, y - 48);
+        ctx.stroke();
+
+        // Head - slightly larger
+        ctx.fillStyle = '#c68642';
+        ctx.beginPath();
+        ctx.arc(x, y - 58, 17, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Keffiyeh/Ghutra (traditional headwear) with Agal
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(x, y - 62, 18, Math.PI, 0);
+        ctx.fill();
+
+        // Keffiyeh draping down sides
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - 62);
+        ctx.lineTo(x - 22, y - 35);
+        ctx.lineTo(x - 12, y - 35);
+        ctx.lineTo(x - 15, y - 55);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + 18, y - 62);
+        ctx.lineTo(x + 22, y - 35);
+        ctx.lineTo(x + 12, y - 35);
+        ctx.lineTo(x + 15, y - 55);
+        ctx.fill();
+
+        // Agal (black cord)
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y - 70, 14, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.stroke();
+
+        // Full beard
+        ctx.fillStyle = '#2c1810';
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y - 50);
+        ctx.quadraticCurveTo(x - 14, y - 38, x - 8, y - 32);
+        ctx.quadraticCurveTo(x, y - 28, x + 8, y - 32);
+        ctx.quadraticCurveTo(x + 14, y - 38, x + 12, y - 50);
+        ctx.quadraticCurveTo(x + 8, y - 45, x, y - 44);
+        ctx.quadraticCurveTo(x - 8, y - 45, x - 12, y - 50);
+        ctx.fill();
+
+        // Mustache
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y - 50);
+        ctx.quadraticCurveTo(x, y - 47, x + 8, y - 50);
+        ctx.quadraticCurveTo(x, y - 52, x - 8, y - 50);
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = '#2c1810';
+        ctx.beginPath();
+        ctx.arc(x - 6, y - 58, 2.5, 0, Math.PI * 2);
+        ctx.arc(x + 6, y - 58, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyebrows (thicker, masculine)
+        ctx.strokeStyle = '#2c1810';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 10, y - 63);
+        ctx.lineTo(x - 3, y - 62);
+        ctx.moveTo(x + 10, y - 63);
+        ctx.lineTo(x + 3, y - 62);
+        ctx.stroke();
+
+        // Nose
+        ctx.strokeStyle = '#a0522d';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 57);
+        ctx.lineTo(x, y - 51);
+        ctx.stroke();
+
+        // Arms (broader)
+        ctx.strokeStyle = '#c68642';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y - 40);
+        ctx.lineTo(x - 30, y - 15);
+        ctx.moveTo(x + 18, y - 40);
+        ctx.lineTo(x + 30, y - 15);
+        ctx.stroke();
+
+        // Hands
+        ctx.fillStyle = '#c68642';
+        ctx.beginPath();
+        ctx.arc(x - 30, y - 15, 6, 0, Math.PI * 2);
+        ctx.arc(x + 30, y - 15, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Spawn food
+      function spawnFood() {
+        // 20% chance to spawn water (collect for points!)
+        const isWater = Math.random() < 0.20;
+        const type = isWater ? waterType : foodTypes[Math.floor(Math.random() * foodTypes.length)];
+        const baseSpeed = 2 + level * 0.5;
+        const speedVariation = Math.random() * 2;
+
+        // Much more varied sizes - from tiny to huge
+        const sizeRoll = Math.random();
+        let size;
+        if (sizeRoll < 0.2) {
+          size = 20 + Math.random() * 15; // Tiny
+        } else if (sizeRoll < 0.6) {
+          size = 35 + Math.random() * 20; // Medium
+        } else if (sizeRoll < 0.85) {
+          size = 55 + Math.random() * 25; // Large
+        } else {
+          size = 80 + Math.random() * 40; // Huge
+        }
+
+        // Water drops are nicely sized
+        if (isWater) {
+          size = 25 + Math.random() * 10;
+        }
+
+        foods.push({
+          x: Math.random() * (canvas.width - 40) + 20,
+          y: -30,
+          type: type,
+          speed: baseSpeed + speedVariation,
+          size: size,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.1,
+          isWater: isWater
+        });
+      }
+
+      // Draw food
+      function drawFood(food) {
+        ctx.save();
+        ctx.translate(food.x, food.y);
+
+        if (food.isWater) {
+          // Draw beautiful water droplet
+          const size = food.size;
+
+          // Glow effect
+          ctx.shadowColor = '#00bfff';
+          ctx.shadowBlur = 15;
+
+          // Main droplet shape (teardrop)
+          ctx.beginPath();
+          ctx.moveTo(0, -size * 0.6);
+          ctx.bezierCurveTo(
+            size * 0.5, -size * 0.2,
+            size * 0.5, size * 0.4,
+            0, size * 0.5
+          );
+          ctx.bezierCurveTo(
+            -size * 0.5, size * 0.4,
+            -size * 0.5, -size * 0.2,
+            0, -size * 0.6
+          );
+
+          // Gradient fill
+          const gradient = ctx.createLinearGradient(-size * 0.3, -size * 0.4, size * 0.3, size * 0.4);
+          gradient.addColorStop(0, '#87CEFA');
+          gradient.addColorStop(0.3, '#00BFFF');
+          gradient.addColorStop(0.7, '#1E90FF');
+          gradient.addColorStop(1, '#0066CC');
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          // Shine highlight
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.ellipse(-size * 0.15, -size * 0.2, size * 0.12, size * 0.2, -0.3, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+          ctx.fill();
+
+          // Small shine dot
+          ctx.beginPath();
+          ctx.arc(-size * 0.1, -size * 0.35, size * 0.06, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.fill();
+
+        } else {
+          // Regular food - rotate and draw emoji
+          ctx.rotate(food.rotation);
+          ctx.font = `${food.size}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(food.type.emoji, 0, 0);
+        }
+
+        ctx.restore();
+      }
+
+      // Water bonus notification and splash particles
+      let waterBonusTexts = [];
+      let splashParticles = [];
+
+      function showWaterBonus(x, y) {
+        waterBonusTexts.push({
+          x: x,
+          y: y,
+          alpha: 1,
+          text: `+${50 * level}`
+        });
+
+        // Create splash particles
+        for (let i = 0; i < 8; i++) {
+          const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
+          splashParticles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * (3 + Math.random() * 3),
+            vy: Math.sin(angle) * (3 + Math.random() * 3) - 2,
+            size: 4 + Math.random() * 4,
+            alpha: 1
+          });
+        }
+      }
+
+      function drawWaterBonus() {
+        // Draw splash particles
+        splashParticles.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(100, 180, 255, ${p.alpha})`;
+          ctx.fill();
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.2; // gravity
+          p.alpha -= 0.03;
+          p.size *= 0.97;
+        });
+        splashParticles = splashParticles.filter(p => p.alpha > 0);
+
+        // Draw bonus text
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        waterBonusTexts.forEach(bonus => {
+          ctx.fillStyle = `rgba(0, 150, 255, ${bonus.alpha})`;
+          ctx.strokeStyle = `rgba(255, 255, 255, ${bonus.alpha})`;
+          ctx.lineWidth = 3;
+          ctx.strokeText(bonus.text, bonus.x, bonus.y);
+          ctx.fillText(bonus.text, bonus.x, bonus.y);
+          bonus.y -= 2;
+          bonus.alpha -= 0.025;
+        });
+        waterBonusTexts = waterBonusTexts.filter(b => b.alpha > 0);
+      }
+
+      // Draw giant food for death sequence
+      function drawGiantFood() {
+        if (!giantFood) return;
+
+        ctx.save();
+        ctx.translate(giantFood.x, giantFood.y);
+        ctx.font = `${giantFood.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetY = 20;
+
+        ctx.fillText(giantFood.type.emoji, 0, 0);
+        ctx.restore();
+      }
+
+      // Draw blood splatters
+      function drawBlood() {
+        bloodSplatters.forEach(blood => {
+          ctx.fillStyle = `rgba(180, 0, 0, ${blood.alpha})`;
+          ctx.beginPath();
+          ctx.ellipse(blood.x, blood.y, blood.rx, blood.ry, blood.angle, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // Check collision
+      function checkCollision(food) {
+        const playerLeft = player.x - player.width / 2;
+        const playerRight = player.x + player.width / 2;
+        const playerTop = player.y - player.height;
+        const playerBottom = player.y + 30;
+
+        const foodRadius = food.size / 2;
+        const foodLeft = food.x - foodRadius;
+        const foodRight = food.x + foodRadius;
+        const foodTop = food.y - foodRadius;
+        const foodBottom = food.y + foodRadius;
+
+        return playerLeft < foodRight &&
+               playerRight > foodLeft &&
+               playerTop < foodBottom &&
+               playerBottom > foodTop;
+      }
+
+      // Start death sequence
+      function startDeathSequence(hitFood) {
+        deathSequence = true;
+        playerFlashing = true;
+        flashCount = 0;
+
+        // Flash for a bit, then drop giant food
+        const flashInterval = setInterval(() => {
+          flashCount++;
+          if (flashCount > 30) {
+            clearInterval(flashInterval);
+            playerFlashing = false;
+            foods = []; // Clear all food
+
+            // Create giant food
+            giantFood = {
+              x: player.x,
+              y: -200,
+              type: hitFood.type,
+              size: 300,
+              speed: 15
+            };
+          }
+        }, 50);
+      }
+
+      // Create blood splatter
+      function createBloodSplatter() {
+        for (let i = 0; i < 30; i++) {
+          bloodSplatters.push({
+            x: player.x + (Math.random() - 0.5) * 150,
+            y: player.y + (Math.random() - 0.5) * 100,
+            rx: 10 + Math.random() * 40,
+            ry: 5 + Math.random() * 20,
+            angle: Math.random() * Math.PI,
+            alpha: 0.7 + Math.random() * 0.3
+          });
+        }
+      }
+
+      // Show death screen
+      function showDeathScreen() {
+        document.getElementById('final-score').textContent = `Score: ${score}`;
+        document.getElementById('final-level').textContent = `Reached Level: ${level}`;
+        document.getElementById('death-screen').style.display = 'flex';
+      }
+
+      // Update game
+      function update() {
+        if (!gameRunning) return;
+
+        // Move player
+        if (player.movingLeft) {
+          player.x = Math.max(player.width / 2, player.x - player.speed);
+        }
+        if (player.movingRight) {
+          player.x = Math.min(canvas.width - player.width / 2, player.x + player.speed);
+        }
+
+        if (!deathSequence) {
+          // Update score based on time
+          const elapsed = Date.now() - startTime;
+          score = Math.floor(elapsed / 100) * level;
+
+          // Update level based on score
+          const newLevel = Math.floor(score / 500) + 1;
+          if (newLevel > level) {
+            level = Math.min(newLevel, 20);
+          }
+
+          // Spawn food
+          const spawnRate = Math.max(30 - level * 2, 10);
+          if (Math.random() < 1 / spawnRate) {
+            spawnFood();
+          }
+
+          // Update foods
+          foods.forEach(food => {
+            food.y += food.speed;
+            food.rotation += food.rotationSpeed;
+          });
+
+          // Check collisions
+          for (let i = foods.length - 1; i >= 0; i--) {
+            const food = foods[i];
+            if (checkCollision(food)) {
+              if (food.isWater) {
+                // Drink water - bonus points!
+                score += 50 * level;
+                showWaterBonus(food.x, food.y);
+                foods.splice(i, 1);
+              } else {
+                // Hit by food - death!
+                startDeathSequence(food);
+                break;
+              }
+            }
+          }
+
+          // Remove off-screen food
+          foods = foods.filter(f => f.y < canvas.height + 50);
+
+          // Update UI
+          const mins = Math.floor(elapsed / 60000);
+          const secs = Math.floor((elapsed % 60000) / 1000);
+          document.getElementById('level').textContent = `Level: ${level}`;
+          document.getElementById('score').textContent = `Score: ${score}`;
+          document.getElementById('time').textContent = `Time Fasting: ${mins}:${secs.toString().padStart(2, '0')}`;
+        } else {
+          // Death sequence
+          if (giantFood) {
+            giantFood.y += giantFood.speed;
+
+            // Check if giant food hit player
+            if (giantFood.y >= player.y - 50 && bloodSplatters.length === 0) {
+              createBloodSplatter();
+              // Shake screen
+              canvas.style.transform = 'translateX(10px)';
+              setTimeout(() => canvas.style.transform = 'translateX(-10px)', 50);
+              setTimeout(() => canvas.style.transform = 'translateX(5px)', 100);
+              setTimeout(() => canvas.style.transform = 'translateX(-5px)', 150);
+              setTimeout(() => canvas.style.transform = '', 200);
+
+              // Show death screen after a moment
+              setTimeout(showDeathScreen, 1500);
+            }
+          }
+        }
+      }
+
+      // Draw game
+      function draw() {
+        // Background - hot desert sky
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#87CEEB');
+        gradient.addColorStop(0.3, '#f6d365');
+        gradient.addColorStop(0.6, '#fda085');
+        gradient.addColorStop(1, '#e6b980');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Blazing sun
+        ctx.fillStyle = '#fff5c0';
+        ctx.shadowColor = '#ff9500';
+        ctx.shadowBlur = 60;
+        ctx.beginPath();
+        ctx.arc(480, 100, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Heat shimmer lines (subtle)
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          const yBase = 400 + i * 40;
+          ctx.moveTo(0, yBase);
+          for (let x = 0; x < canvas.width; x += 20) {
+            ctx.lineTo(x, yBase + Math.sin((x + Date.now() / 200) / 30) * 3);
+          }
+          ctx.stroke();
+        }
+
+        // Sand dunes (background)
+        ctx.fillStyle = '#daa520';
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 100);
+        ctx.quadraticCurveTo(150, canvas.height - 180, 300, canvas.height - 120);
+        ctx.quadraticCurveTo(450, canvas.height - 60, 600, canvas.height - 140);
+        ctx.lineTo(600, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.fill();
+
+        // Sand dunes (foreground)
+        ctx.fillStyle = '#e6b422';
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 50);
+        ctx.quadraticCurveTo(100, canvas.height - 90, 200, canvas.height - 60);
+        ctx.quadraticCurveTo(350, canvas.height - 30, 450, canvas.height - 70);
+        ctx.quadraticCurveTo(550, canvas.height - 100, 600, canvas.height - 50);
+        ctx.lineTo(600, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.fill();
+
+        // Ground
+        ctx.fillStyle = '#d4a420';
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+        // Cactus
+        ctx.fillStyle = '#228B22';
+        // Cactus 1
+        ctx.fillRect(80, canvas.height - 110, 15, 60);
+        ctx.fillRect(60, canvas.height - 90, 20, 12);
+        ctx.fillRect(60, canvas.height - 90, 8, -25);
+        ctx.fillRect(100, canvas.height - 80, 20, 12);
+        ctx.fillRect(112, canvas.height - 80, 8, -20);
+
+        // Cactus 2
+        ctx.fillRect(520, canvas.height - 95, 12, 45);
+        ctx.fillRect(505, canvas.height - 75, 15, 10);
+        ctx.fillRect(505, canvas.height - 75, 6, -18);
+
+        // Draw foods
+        foods.forEach(drawFood);
+
+        // Draw water bonus texts
+        drawWaterBonus();
+
+        // Draw giant food if in death sequence
+        drawGiantFood();
+
+        // Draw blood
+        drawBlood();
+
+        // Draw player (unless squashed)
+        if (!(giantFood && giantFood.y >= player.y - 50)) {
+          drawPlayer();
+        }
+      }
+
+      // Game loop
+      function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start game
+      function startGame() {
+        document.getElementById('title-screen').classList.add('hidden');
+        document.getElementById('death-screen').style.display = 'none';
+
+        // Reset state
+        gameRunning = true;
+        score = 0;
+        level = 1;
+        startTime = Date.now();
+        foods = [];
+        deathSequence = false;
+        giantFood = null;
+        bloodSplatters = [];
+        playerFlashing = false;
+        waterBonusTexts = [];
+        splashParticles = [];
+        player.x = 300;
+      }
+
+      // Input handling
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a') {
+          player.movingLeft = true;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'd') {
+          player.movingRight = true;
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a') {
+          player.movingLeft = false;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'd') {
+          player.movingRight = false;
+        }
+      });
+
+      // Make startGame available globally
+      window.startGame = startGame;
+
+      // Start the loop
+      gameLoop();
+    </script>
+  </body>
+</html>

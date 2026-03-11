@@ -1,0 +1,2675 @@
+---
+// STILL WATER - Chapter 1: The Flood Comes
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>STILL WATER | Chapter 1</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@300;400;600&display=swap');
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        background: #0a0a0c;
+        color: #e8e8e8;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+        min-height: 100vh;
+      }
+
+      #game {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Rain canvas */
+      #rain-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0.6;
+      }
+
+      /* Scene container */
+      #scene {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #scene-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        filter: brightness(0.4) saturate(0.7);
+        transition: opacity 1s ease;
+      }
+
+      /* Character portrait */
+      #portrait {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 70%;
+        opacity: 0;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        filter: drop-shadow(0 0 30px rgba(0,0,0,0.8));
+        z-index: 5;
+      }
+
+      #portrait.visible {
+        opacity: 1;
+      }
+
+      /* Vignette */
+      #vignette {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at center, transparent 0%, transparent 40%, rgba(0,0,0,0.8) 100%);
+        pointer-events: none;
+        z-index: 15;
+      }
+
+      /* Chapter title */
+      #chapter-title {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 1s ease;
+      }
+
+      #chapter-title.visible { opacity: 1; }
+
+      #chapter-title .chapter-num {
+        font-family: 'Special Elite', monospace;
+        font-size: 14px;
+        letter-spacing: 8px;
+        color: #666;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+
+      #chapter-title .chapter-name {
+        font-family: 'Special Elite', monospace;
+        font-size: 48px;
+        color: #fff;
+        text-shadow: 0 0 40px rgba(100, 150, 200, 0.5);
+        letter-spacing: 4px;
+      }
+
+      #chapter-title .chapter-location {
+        font-size: 14px;
+        color: #888;
+        margin-top: 30px;
+        font-weight: 300;
+      }
+
+      /* Character intro card */
+      #char-intro {
+        position: absolute;
+        left: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.8s ease, transform 0.8s ease;
+      }
+
+      #char-intro.visible {
+        opacity: 1;
+      }
+
+      #char-intro .char-name {
+        font-family: 'Special Elite', monospace;
+        font-size: 36px;
+        color: #fff;
+        letter-spacing: 3px;
+        margin-bottom: 8px;
+      }
+
+      #char-intro .char-role {
+        font-size: 13px;
+        color: #4a9eff;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+      }
+
+      #char-intro .char-desc {
+        font-size: 14px;
+        color: #999;
+        max-width: 300px;
+        line-height: 1.7;
+        font-weight: 300;
+      }
+
+      /* Dialogue box */
+      #dialogue-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 40px 60px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%);
+        z-index: 50;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+
+      #dialogue-container.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      #speaker {
+        font-family: 'Special Elite', monospace;
+        font-size: 14px;
+        color: #4a9eff;
+        letter-spacing: 2px;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+      }
+
+      #dialogue {
+        font-size: 20px;
+        line-height: 1.6;
+        color: #e8e8e8;
+        max-width: 900px;
+        min-height: 60px;
+      }
+
+      #dialogue .highlight {
+        color: #4a9eff;
+      }
+
+      #continue-prompt {
+        position: absolute;
+        bottom: 15px;
+        right: 60px;
+        font-size: 12px;
+        color: #666;
+        opacity: 0;
+        animation: pulse 2s infinite;
+      }
+
+      #continue-prompt.visible { opacity: 1; }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+
+      /* Choices */
+      #choices {
+        position: absolute;
+        bottom: 150px;
+        left: 60px;
+        z-index: 60;
+        display: none;
+      }
+
+      #choices.visible { display: block; }
+
+      .choice {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-left: 3px solid #4a9eff;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        max-width: 500px;
+        position: relative;
+      }
+
+      .choice:hover {
+        background: rgba(74, 158, 255, 0.1);
+        border-left-color: #fff;
+        transform: translateX(5px);
+      }
+
+      .choice-key {
+        position: absolute;
+        left: -40px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 28px;
+        height: 28px;
+        border: 1px solid #4a9eff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #4a9eff;
+        font-family: 'Special Elite', monospace;
+      }
+
+      .choice-text {
+        font-size: 15px;
+        color: #ccc;
+      }
+
+      .choice-timer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 2px;
+        background: #4a9eff;
+        transition: width 0.1s linear;
+      }
+
+      /* QTE */
+      #qte-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        display: none;
+        text-align: center;
+      }
+
+      #qte-container.visible { display: block; }
+
+      .qte-prompt {
+        font-family: 'Special Elite', monospace;
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+      }
+
+      .qte-key {
+        width: 100px;
+        height: 100px;
+        border: 3px solid #4a9eff;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Special Elite', monospace;
+        font-size: 42px;
+        color: #4a9eff;
+        margin: 0 auto 20px;
+        position: relative;
+        background: rgba(0,0,0,0.8);
+        transition: all 0.15s ease;
+      }
+
+      .qte-key.pressing {
+        background: rgba(74, 158, 255, 0.3);
+        transform: scale(0.95);
+        border-color: #fff;
+        color: #fff;
+      }
+
+      .qte-key.success {
+        border-color: #4ade80;
+        color: #4ade80;
+        animation: qteSuccess 0.5s ease;
+      }
+
+      .qte-key.fail {
+        border-color: #ef4444;
+        color: #ef4444;
+        animation: qteFail 0.5s ease;
+      }
+
+      @keyframes qteSuccess {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes qteFail {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-10px); }
+        40%, 80% { transform: translateX(10px); }
+      }
+
+      .qte-timer {
+        width: 200px;
+        height: 6px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
+        margin: 0 auto;
+        overflow: hidden;
+      }
+
+      .qte-timer-fill {
+        height: 100%;
+        background: #4a9eff;
+        transition: width 0.05s linear;
+      }
+
+      .qte-timer-fill.warning { background: #f59e0b; }
+      .qte-timer-fill.danger { background: #ef4444; }
+
+      /* Hold QTE */
+      .qte-hold-ring {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid rgba(255,255,255,0.2);
+        position: relative;
+        margin: 0 auto 20px;
+      }
+
+      .qte-hold-progress {
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        width: 120px;
+        height: 120px;
+      }
+
+      .qte-hold-key {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Special Elite', monospace;
+        font-size: 36px;
+        color: #4a9eff;
+      }
+
+      /* Sequence QTE */
+      .qte-sequence {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+
+      .qte-seq-key {
+        width: 60px;
+        height: 60px;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Special Elite', monospace;
+        font-size: 24px;
+        color: #666;
+        background: rgba(0,0,0,0.6);
+        transition: all 0.2s ease;
+      }
+
+      .qte-seq-key.active {
+        border-color: #4a9eff;
+        color: #4a9eff;
+        transform: scale(1.1);
+      }
+
+      .qte-seq-key.done {
+        border-color: #4ade80;
+        color: #4ade80;
+      }
+
+      .qte-seq-key.missed {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      /* Narrative text (for internal monologue) */
+      #narrative {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        max-width: 700px;
+        z-index: 80;
+        opacity: 0;
+        transition: opacity 0.8s ease;
+      }
+
+      #narrative.visible { opacity: 1; }
+
+      #narrative p {
+        font-size: 22px;
+        color: #bbb;
+        line-height: 1.8;
+        font-style: italic;
+        font-weight: 300;
+      }
+
+      /* Scene transition */
+      #transition {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 200;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.8s ease;
+      }
+
+      #transition.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      /* Time/location stamp */
+      #timestamp {
+        position: absolute;
+        top: 40px;
+        left: 60px;
+        z-index: 80;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      #timestamp.visible { opacity: 1; }
+
+      #timestamp .time {
+        font-family: 'Special Elite', monospace;
+        font-size: 28px;
+        color: #fff;
+        letter-spacing: 2px;
+      }
+
+      #timestamp .location {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-top: 5px;
+      }
+
+      /* Heartbeat effect for tension */
+      .heartbeat {
+        animation: heartbeat 1s infinite;
+      }
+
+      @keyframes heartbeat {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        15% { transform: translate(-50%, -50%) scale(1.03); }
+        30% { transform: translate(-50%, -50%) scale(1); }
+        45% { transform: translate(-50%, -50%) scale(1.02); }
+      }
+
+      /* Game state indicator */
+      #state-indicator {
+        position: absolute;
+        top: 40px;
+        right: 60px;
+        z-index: 80;
+        text-align: right;
+      }
+
+      #current-char {
+        font-family: 'Special Elite', monospace;
+        font-size: 12px;
+        color: #4a9eff;
+        letter-spacing: 2px;
+      }
+
+      /* Thought prompt */
+      #thought {
+        position: absolute;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-style: italic;
+        color: #888;
+        font-size: 16px;
+        text-align: center;
+        max-width: 600px;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        z-index: 80;
+      }
+
+      #thought.visible { opacity: 1; }
+
+      /* Sound indicator (visual since we may not have audio) */
+      #sound-indicator {
+        position: absolute;
+        bottom: 200px;
+        right: 60px;
+        font-size: 12px;
+        color: #444;
+        font-style: italic;
+        z-index: 80;
+      }
+
+      /* Screen shake */
+      .shake {
+        animation: shake 0.5s ease;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+      }
+
+      /* Flash */
+      #flash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        z-index: 180;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #flash.active {
+        animation: flash 0.3s ease;
+      }
+
+      @keyframes flash {
+        0% { opacity: 0.8; }
+        100% { opacity: 0; }
+      }
+
+      /* Lightning bolt */
+      #lightning {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 175;
+        opacity: 0;
+      }
+
+      #lightning.strike {
+        animation: lightning-flash 0.6s ease;
+      }
+
+      @keyframes lightning-flash {
+        0% { opacity: 0; }
+        10% { opacity: 1; }
+        20% { opacity: 0.3; }
+        30% { opacity: 1; }
+        40% { opacity: 0.5; }
+        50% { opacity: 0.8; }
+        100% { opacity: 0; }
+      }
+
+      .lightning-bolt {
+        position: absolute;
+        filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 30px #88c0ff) drop-shadow(0 0 60px #4a9eff);
+      }
+
+      /* QTE instruction text */
+      .qte-instruction {
+        font-size: 12px;
+        color: #888;
+        margin-top: 15px;
+        letter-spacing: 1px;
+      }
+
+      .qte-instruction strong {
+        color: #4a9eff;
+      }
+
+      /* Consequence display */
+      #consequence {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 150;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      #consequence.visible {
+        opacity: 1;
+      }
+
+      #consequence.success .consequence-text {
+        color: #4ade80;
+      }
+
+      #consequence.fail .consequence-text {
+        color: #ef4444;
+      }
+
+      .consequence-text {
+        font-family: 'Special Elite', monospace;
+        font-size: 18px;
+        letter-spacing: 2px;
+        text-shadow: 0 0 20px currentColor;
+      }
+
+      /* Lightning reveal - scene brightens */
+      #scene-bg.lightning-reveal {
+        animation: scene-flash 0.5s ease;
+      }
+
+      @keyframes scene-flash {
+        0% { filter: brightness(0.4) saturate(0.7); }
+        15% { filter: brightness(1.2) saturate(0.9); }
+        30% { filter: brightness(0.6) saturate(0.7); }
+        45% { filter: brightness(0.9) saturate(0.8); }
+        100% { filter: brightness(0.4) saturate(0.7); }
+      }
+
+      /* Glimpse - shadowy figures that appear during lightning */
+      #glimpse {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 8;
+        opacity: 0;
+      }
+
+      #glimpse.visible {
+        animation: glimpse-appear 0.5s ease;
+      }
+
+      @keyframes glimpse-appear {
+        0% { opacity: 0; }
+        15% { opacity: 0.9; }
+        30% { opacity: 0.3; }
+        45% { opacity: 0.6; }
+        100% { opacity: 0; }
+      }
+
+      /* Silhouette figure */
+      .silhouette {
+        position: absolute;
+        filter: blur(1px);
+      }
+
+      .silhouette-figure {
+        fill: #0a0a0c;
+        opacity: 0.95;
+      }
+
+      .silhouette-eyes {
+        fill: none;
+      }
+
+      /* When glimpse is showing during lightning, eyes might glow */
+      #glimpse.visible .silhouette-eyes {
+        fill: rgba(255, 100, 100, 0.3);
+        animation: eye-glint 0.15s ease;
+      }
+
+      @keyframes eye-glint {
+        0% { fill: rgba(255, 100, 100, 0); }
+        50% { fill: rgba(255, 100, 100, 0.4); }
+        100% { fill: rgba(255, 100, 100, 0); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game">
+      <canvas id="rain-canvas"></canvas>
+
+      <div id="scene">
+        <div id="scene-bg"></div>
+        <div id="glimpse"></div>
+      </div>
+
+      <canvas id="portrait"></canvas>
+
+      <div id="vignette"></div>
+      <div id="transition"></div>
+      <div id="flash"></div>
+      <svg id="lightning" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div id="consequence">
+        <div class="consequence-text"></div>
+      </div>
+
+      <div id="chapter-title">
+        <div class="chapter-num">Chapter One</div>
+        <div class="chapter-name">THE FLOOD COMES</div>
+        <div class="chapter-location">Millbrook, Oregon — October 15th</div>
+      </div>
+
+      <div id="char-intro">
+        <div class="char-name"></div>
+        <div class="char-role"></div>
+        <div class="char-desc"></div>
+      </div>
+
+      <div id="timestamp">
+        <div class="time"></div>
+        <div class="location"></div>
+      </div>
+
+      <div id="state-indicator">
+        <div id="current-char"></div>
+      </div>
+
+      <div id="thought"></div>
+
+      <div id="narrative">
+        <p></p>
+      </div>
+
+      <div id="dialogue-container">
+        <div id="speaker"></div>
+        <div id="dialogue"></div>
+        <div id="continue-prompt">SPACE to continue</div>
+      </div>
+
+      <div id="choices"></div>
+
+      <div id="qte-container"></div>
+
+      <div id="sound-indicator"></div>
+    </div>
+
+    <script is:inline>
+      // ============================================
+      // STILL WATER - Game Engine
+      // ============================================
+
+      // ============================================
+      // AUDIO ENGINE (Web Audio API)
+      // ============================================
+
+      const AudioEngine = {
+        ctx: null,
+        masterGain: null,
+        initialized: false,
+
+        // Active sound nodes
+        rainNode: null,
+        rainGain: null,
+        thunderTimeout: null,
+        heartbeatInterval: null,
+        droneNode: null,
+        droneGain: null,
+
+        init() {
+          if (this.initialized) return;
+
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = 0.5;
+          this.masterGain.connect(this.ctx.destination);
+          this.initialized = true;
+
+          // Start ambient rain
+          this.startRain();
+          // Start random thunder
+          this.scheduleThunder();
+        },
+
+        // Rain - filtered noise
+        startRain() {
+          if (!this.initialized) return;
+
+          const bufferSize = 2 * this.ctx.sampleRate;
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+
+          this.rainNode = this.ctx.createBufferSource();
+          this.rainNode.buffer = noiseBuffer;
+          this.rainNode.loop = true;
+
+          // Filter to make it sound like rain
+          const lowpass = this.ctx.createBiquadFilter();
+          lowpass.type = 'lowpass';
+          lowpass.frequency.value = 400;
+
+          const highpass = this.ctx.createBiquadFilter();
+          highpass.type = 'highpass';
+          highpass.frequency.value = 80;
+
+          this.rainGain = this.ctx.createGain();
+          this.rainGain.gain.value = 0.15;
+
+          this.rainNode.connect(lowpass);
+          lowpass.connect(highpass);
+          highpass.connect(this.rainGain);
+          this.rainGain.connect(this.masterGain);
+
+          this.rainNode.start();
+        },
+
+        stopRain() {
+          if (this.rainNode) {
+            this.rainGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1);
+            setTimeout(() => {
+              this.rainNode.stop();
+              this.rainNode = null;
+            }, 1000);
+          }
+        },
+
+        // Thunder rumble
+        playThunder() {
+          if (!this.initialized) return;
+
+          const duration = 1.5 + Math.random();
+
+          // Low rumble oscillator
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = 30 + Math.random() * 20;
+
+          // Noise burst
+          const noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * duration, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < output.length; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = noiseBuffer;
+
+          const noiseFilter = this.ctx.createBiquadFilter();
+          noiseFilter.type = 'lowpass';
+          noiseFilter.frequency.value = 150;
+
+          // Envelope
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+          osc.connect(gain);
+          noise.connect(noiseFilter);
+          noiseFilter.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc.start();
+          noise.start();
+          osc.stop(this.ctx.currentTime + duration);
+          noise.stop(this.ctx.currentTime + duration);
+
+          // Visual flash and lightning
+          document.getElementById('flash').classList.add('active');
+          setTimeout(() => document.getElementById('flash').classList.remove('active'), 300);
+
+          // Draw lightning bolt
+          this.drawLightning();
+        },
+
+        drawLightning() {
+          const svg = document.getElementById('lightning');
+          const sceneBg = document.getElementById('scene-bg');
+          const glimpse = document.getElementById('glimpse');
+          const startX = 20 + Math.random() * 60;
+
+          // Generate jagged lightning path
+          let path = `M ${startX} 0 `;
+          let x = startX;
+          let y = 0;
+
+          while (y < 100) {
+            const dx = (Math.random() - 0.5) * 20;
+            const dy = 5 + Math.random() * 10;
+            x = Math.max(5, Math.min(95, x + dx));
+            y += dy;
+            path += `L ${x} ${y} `;
+
+            // Occasional branch
+            if (Math.random() < 0.3 && y < 80) {
+              const branchX = x + (Math.random() - 0.5) * 30;
+              const branchY = y + 10 + Math.random() * 15;
+              svg.innerHTML += `<path class="lightning-bolt" d="M ${x} ${y} L ${branchX} ${branchY}" stroke="white" stroke-width="0.3" fill="none"/>`;
+            }
+          }
+
+          svg.innerHTML = `<path class="lightning-bolt" d="${path}" stroke="white" stroke-width="0.8" fill="none"/>` + svg.innerHTML;
+          svg.classList.add('strike');
+
+          // Scene reveal - brightness flash
+          sceneBg.classList.add('lightning-reveal');
+
+          // Occasionally show a glimpse/silhouette (20% chance)
+          if (Math.random() < 0.2) {
+            this.showGlimpse(glimpse);
+          }
+
+          setTimeout(() => {
+            svg.classList.remove('strike');
+            svg.innerHTML = '';
+            sceneBg.classList.remove('lightning-reveal');
+          }, 600);
+        },
+
+        // Show a shadowy silhouette during lightning
+        showGlimpse(glimpse) {
+          // Different silhouette types based on scene context
+          const silhouettes = [
+            // Figure in window
+            `<svg class="silhouette" style="right: 15%; top: 30%; width: 80px; height: 150px;" viewBox="0 0 80 150">
+              <ellipse class="silhouette-figure" cx="40" cy="25" rx="18" ry="22"/>
+              <rect class="silhouette-figure" x="20" y="45" width="40" height="70" rx="5"/>
+              <ellipse class="silhouette-eyes" cx="34" cy="22" rx="2" ry="1.5"/>
+              <ellipse class="silhouette-eyes" cx="46" cy="22" rx="2" ry="1.5"/>
+            </svg>`,
+            // Figure standing distant
+            `<svg class="silhouette" style="left: 10%; bottom: 20%; width: 60px; height: 180px;" viewBox="0 0 60 180">
+              <ellipse class="silhouette-figure" cx="30" cy="20" rx="15" ry="18"/>
+              <path class="silhouette-figure" d="M15 38 L30 150 L25 178 M30 150 L35 178 M15 38 L45 38 L30 150 M20 60 L0 100 M40 60 L60 100"/>
+              <ellipse class="silhouette-eyes" cx="26" cy="18" rx="1.5" ry="1"/>
+              <ellipse class="silhouette-eyes" cx="34" cy="18" rx="1.5" ry="1"/>
+            </svg>`,
+            // Face at window edge (creepy)
+            `<svg class="silhouette" style="right: 5%; top: 45%; width: 50px; height: 70px;" viewBox="0 0 50 70">
+              <ellipse class="silhouette-figure" cx="35" cy="35" rx="20" ry="28"/>
+              <ellipse class="silhouette-eyes" cx="30" cy="30" rx="2.5" ry="2"/>
+              <ellipse class="silhouette-eyes" cx="42" cy="32" rx="2" ry="1.5"/>
+            </svg>`,
+            // Small figure (child?) in distance
+            `<svg class="silhouette" style="left: 25%; bottom: 15%; width: 40px; height: 100px;" viewBox="0 0 40 100">
+              <ellipse class="silhouette-figure" cx="20" cy="15" rx="12" ry="14"/>
+              <rect class="silhouette-figure" x="8" y="28" width="24" height="45" rx="3"/>
+              <rect class="silhouette-figure" x="10" y="73" width="8" height="25" rx="2"/>
+              <rect class="silhouette-figure" x="22" y="73" width="8" height="25" rx="2"/>
+            </svg>`
+          ];
+
+          const randomSilhouette = silhouettes[Math.floor(Math.random() * silhouettes.length)];
+          glimpse.innerHTML = randomSilhouette;
+          glimpse.classList.add('visible');
+
+          setTimeout(() => {
+            glimpse.classList.remove('visible');
+            setTimeout(() => {
+              glimpse.innerHTML = '';
+            }, 500);
+          }, 500);
+        },
+
+        scheduleThunder() {
+          const delay = 8000 + Math.random() * 20000; // 8-28 seconds
+          this.thunderTimeout = setTimeout(() => {
+            this.playThunder();
+            this.scheduleThunder();
+          }, delay);
+        },
+
+        // Text blip sound
+        playBlip() {
+          if (!this.initialized) return;
+
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = 600 + Math.random() * 100;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.05);
+        },
+
+        // Choice hover
+        playHover() {
+          if (!this.initialized) return;
+
+          const osc = this.ctx.createOscillator();
+          osc.type = 'triangle';
+          osc.frequency.value = 800;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.1);
+        },
+
+        // Choice select
+        playSelect() {
+          if (!this.initialized) return;
+
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.15);
+        },
+
+        // QTE success
+        playSuccess() {
+          if (!this.initialized) return;
+
+          [400, 500, 600].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.08);
+            gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + i * 0.08 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.08 + 0.15);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(this.ctx.currentTime + i * 0.08);
+            osc.stop(this.ctx.currentTime + i * 0.08 + 0.15);
+          });
+        },
+
+        // QTE fail
+        playFail() {
+          if (!this.initialized) return;
+
+          const osc1 = this.ctx.createOscillator();
+          osc1.type = 'sawtooth';
+          osc1.frequency.value = 150;
+
+          const osc2 = this.ctx.createOscillator();
+          osc2.type = 'sawtooth';
+          osc2.frequency.value = 155;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 500;
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.masterGain);
+
+          osc1.start();
+          osc2.start();
+          osc1.stop(this.ctx.currentTime + 0.4);
+          osc2.stop(this.ctx.currentTime + 0.4);
+        },
+
+        // Heartbeat for tension
+        startHeartbeat(bpm = 80) {
+          if (!this.initialized) return;
+
+          const interval = 60000 / bpm;
+
+          const beat = () => {
+            // Two-beat heartbeat sound
+            [0, 0.15].forEach((delay, i) => {
+              const osc = this.ctx.createOscillator();
+              osc.type = 'sine';
+              osc.frequency.value = i === 0 ? 50 : 40;
+
+              const gain = this.ctx.createGain();
+              gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
+              gain.gain.linearRampToValueAtTime(i === 0 ? 0.25 : 0.15, this.ctx.currentTime + delay + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + delay + 0.15);
+
+              osc.connect(gain);
+              gain.connect(this.masterGain);
+
+              osc.start(this.ctx.currentTime + delay);
+              osc.stop(this.ctx.currentTime + delay + 0.15);
+            });
+          };
+
+          beat();
+          this.heartbeatInterval = setInterval(beat, interval);
+        },
+
+        stopHeartbeat() {
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+        },
+
+        // Tension drone
+        startDrone() {
+          if (!this.initialized || this.droneNode) return;
+
+          this.droneNode = this.ctx.createOscillator();
+          this.droneNode.type = 'sine';
+          this.droneNode.frequency.value = 55; // Low A
+
+          const lfo = this.ctx.createOscillator();
+          lfo.type = 'sine';
+          lfo.frequency.value = 0.2;
+
+          const lfoGain = this.ctx.createGain();
+          lfoGain.gain.value = 5;
+
+          lfo.connect(lfoGain);
+          lfoGain.connect(this.droneNode.frequency);
+
+          this.droneGain = this.ctx.createGain();
+          this.droneGain.gain.setValueAtTime(0, this.ctx.currentTime);
+          this.droneGain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 2);
+
+          this.droneNode.connect(this.droneGain);
+          this.droneGain.connect(this.masterGain);
+
+          this.droneNode.start();
+          lfo.start();
+        },
+
+        stopDrone() {
+          if (this.droneNode && this.droneGain) {
+            this.droneGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1);
+            setTimeout(() => {
+              if (this.droneNode) {
+                this.droneNode.stop();
+                this.droneNode = null;
+              }
+            }, 1000);
+          }
+        },
+
+        // Transition whoosh
+        playWhoosh() {
+          if (!this.initialized) return;
+
+          const duration = 0.8;
+          const bufferSize = this.ctx.sampleRate * duration;
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(100, this.ctx.currentTime);
+          filter.frequency.exponentialRampToValueAtTime(2000, this.ctx.currentTime + duration * 0.3);
+          filter.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + duration);
+          filter.Q.value = 1;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + 0.1);
+          gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.masterGain);
+
+          noise.start();
+          noise.stop(this.ctx.currentTime + duration);
+        },
+
+        // Set master volume
+        setVolume(value) {
+          if (this.masterGain) {
+            this.masterGain.gain.linearRampToValueAtTime(value, this.ctx.currentTime + 0.1);
+          }
+        }
+      };
+
+      // Initialize audio on first interaction
+      document.addEventListener('click', () => AudioEngine.init(), { once: true });
+      document.addEventListener('keydown', () => AudioEngine.init(), { once: true });
+
+      const canvas = document.getElementById('rain-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // Game State
+      const GameState = {
+        currentScene: 0,
+        currentBeat: 0,
+        character: null,
+        choices: {},
+        consequences: {},
+        qteResults: {},
+        isWaiting: false,
+        isTyping: false,
+        skipTyping: false,
+        inQTE: false,
+        inChoice: false,
+        choiceTimer: null,
+        flags: {}
+      };
+
+      // Characters
+      const Characters = {
+        anna: {
+          name: 'ANNA VANCE',
+          role: 'The Mother',
+          color: '#e879f9',
+          desc: 'Single mother. Exhausted. Would do anything for her daughter.'
+        },
+        marcus: {
+          name: 'MARCUS COLE',
+          role: 'The Sheriff',
+          color: '#4ade80',
+          desc: 'Knows every face in town. Trusted by all. Hiding something.'
+        },
+        jade: {
+          name: 'JADE REEVES',
+          role: 'The Outsider',
+          color: '#f97316',
+          desc: 'True-crime podcaster. Two years chasing the Lullaby Killer.'
+        },
+        keeper: {
+          name: '???',
+          role: 'The Neighbor',
+          color: '#94a3b8',
+          desc: 'Helpful. Kind. Everyone\'s friend.'
+        }
+      };
+
+      // Rain system
+      const raindrops = [];
+      const RAIN_COUNT = 400;
+
+      for (let i = 0; i < RAIN_COUNT; i++) {
+        raindrops.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          length: Math.random() * 20 + 10,
+          speed: Math.random() * 15 + 10,
+          opacity: Math.random() * 0.3 + 0.1
+        });
+      }
+
+      function drawRain() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        raindrops.forEach(drop => {
+          ctx.beginPath();
+          ctx.moveTo(drop.x, drop.y);
+          ctx.lineTo(drop.x + 1, drop.y + drop.length);
+          ctx.strokeStyle = `rgba(150, 180, 220, ${drop.opacity})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          drop.y += drop.speed;
+          drop.x += 1;
+
+          if (drop.y > canvas.height) {
+            drop.y = -drop.length;
+            drop.x = Math.random() * canvas.width;
+          }
+        });
+
+        requestAnimationFrame(drawRain);
+      }
+
+      drawRain();
+
+      // ============================================
+      // Scene Definitions - Chapter 1
+      // ============================================
+
+      const Chapter1 = [
+        // === OPENING: Chapter Title ===
+        {
+          type: 'chapter-title',
+          duration: 4000
+        },
+
+        // === SCENE 1: ANNA - Lily's Bedroom ===
+        {
+          type: 'transition',
+          duration: 1500
+        },
+        {
+          type: 'set-character',
+          character: 'anna'
+        },
+        {
+          type: 'scene',
+          bg: 'linear-gradient(180deg, #1a1520 0%, #0d0a10 100%)',
+          timestamp: { time: '7:47 PM', location: 'Vance Residence — Lily\'s Bedroom' }
+        },
+        {
+          type: 'char-intro',
+          character: 'anna',
+          duration: 3000
+        },
+        {
+          type: 'sound',
+          text: '♪ Rain pattering against the window...'
+        },
+        {
+          type: 'narrative',
+          text: 'The rain hasn\'t stopped in six days.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'LILY',
+          text: 'Mommy, is the rain ever going to stop?'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'ANNA',
+          text: 'Soon, baby. The weatherman says it\'ll clear up by the weekend.'
+        },
+        {
+          type: 'thought',
+          text: 'She\'s lying. The forecast shows three more days. At least.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'LILY',
+          text: 'Can you read me the story? The one about the boat?'
+        },
+        {
+          type: 'choice',
+          prompt: 'What do you do?',
+          timer: 8000,
+          choices: [
+            { key: '1', text: 'Read her the story', consequence: 'loving' },
+            { key: '2', text: '"It\'s late, sweetheart. Tomorrow."', consequence: 'tired' },
+            { key: '3', text: 'Just hum her a lullaby instead', consequence: 'gentle' }
+          ],
+          default: 2,
+          flag: 'anna_bedtime'
+        },
+        {
+          type: 'branch',
+          flag: 'anna_bedtime',
+          branches: {
+            'loving': [
+              {
+                type: 'dialogue',
+                speaker: 'ANNA',
+                text: 'Of course, baby. "There once was a little boat, that had never sailed before..."'
+              },
+              {
+                type: 'narrative',
+                text: 'You read the familiar words. Lily\'s eyes grow heavy. This is the only peace you\'ll find today.'
+              }
+            ],
+            'tired': [
+              {
+                type: 'dialogue',
+                speaker: 'ANNA',
+                text: 'It\'s late, sweetheart. We\'ll read it tomorrow, I promise.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'LILY',
+                text: '...Okay, mommy.'
+              },
+              {
+                type: 'thought',
+                text: 'The disappointment in her voice. Another broken promise to add to the pile.'
+              }
+            ],
+            'gentle': [
+              {
+                type: 'dialogue',
+                speaker: 'ANNA',
+                text: 'How about I sing you the song instead? Would you like that?'
+              },
+              {
+                type: 'qte-hold',
+                key: 'SPACE',
+                duration: 3000,
+                prompt: 'Hold to hum the lullaby',
+                success_flag: 'lullaby_sung'
+              }
+            ]
+          }
+        },
+        {
+          type: 'dialogue',
+          speaker: 'ANNA',
+          text: 'Goodnight, Lily. I love you.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'LILY',
+          text: 'Love you too, mommy. Don\'t let the flood monsters get you.'
+        },
+        {
+          type: 'thought',
+          text: 'Flood monsters. Kids hear things. They know more than we think.'
+        },
+        {
+          type: 'narrative',
+          text: 'You close the door softly. The hallway light flickers once. The storm is getting worse.'
+        },
+
+        // === SCENE 2: MARCUS - Sheriff's Office ===
+        {
+          type: 'transition',
+          duration: 1500
+        },
+        {
+          type: 'set-character',
+          character: 'marcus'
+        },
+        {
+          type: 'scene',
+          bg: 'linear-gradient(180deg, #1a1815 0%, #0d0b08 100%)',
+          timestamp: { time: '8:15 PM', location: 'Millbrook Sheriff\'s Department' }
+        },
+        {
+          type: 'char-intro',
+          character: 'marcus',
+          duration: 3000
+        },
+        {
+          type: 'sound',
+          text: '♪ Police radio static... distant thunder...'
+        },
+        {
+          type: 'narrative',
+          text: 'Thirty-two years wearing this badge. You\'ve seen floods before. This one feels different.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'DEPUTY CHEN',
+          text: 'Sheriff, roads to Portland are completely washed out. We\'re officially cut off.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'MARCUS',
+          text: 'What about the coast road?'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'DEPUTY CHEN',
+          text: 'Mudslide. Took out a quarter mile of highway. National Guard says maybe Thursday, if the rain stops.'
+        },
+        {
+          type: 'thought',
+          text: 'Thursday. Four more days. Four days with whatever\'s coming.'
+        },
+        {
+          type: 'narrative',
+          text: 'Your eyes drift to the filing cabinet. Bottom drawer. The cold cases. Three children from three towns. The Lullaby Killer.'
+        },
+        {
+          type: 'choice',
+          prompt: 'What do you do?',
+          timer: 10000,
+          choices: [
+            { key: '1', text: 'Pull out the Lullaby Killer files', consequence: 'investigate' },
+            { key: '2', text: 'Focus on the flood emergency', consequence: 'duty' },
+            { key: '3', text: 'Pour yourself a drink first', consequence: 'drink' }
+          ],
+          default: 2,
+          flag: 'marcus_files'
+        },
+        {
+          type: 'branch',
+          flag: 'marcus_files',
+          branches: {
+            'investigate': [
+              {
+                type: 'narrative',
+                text: 'You pull open the drawer. Three manila folders. Three faces that haunt your sleep.'
+              },
+              {
+                type: 'thought',
+                text: 'Astoria. Cannon Beach. Tillamook. The pattern moves south. Millbrook is next.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'MARCUS',
+                text: '...God help us if I\'m right.'
+              }
+            ],
+            'duty': [
+              {
+                type: 'dialogue',
+                speaker: 'MARCUS',
+                text: 'Get me the emergency protocol binder. We need to set up shelters.'
+              },
+              {
+                type: 'narrative',
+                text: 'The files can wait. The living need you more than the dead.'
+              },
+              {
+                type: 'thought',
+                text: 'But the files don\'t wait. They never do.'
+              }
+            ],
+            'drink': [
+              {
+                type: 'narrative',
+                text: 'The bottle in your desk drawer is lighter than it should be. You pour two fingers of whiskey.'
+              },
+              {
+                type: 'thought',
+                text: 'Doctor said to quit. Doctor doesn\'t have to live with what you know.'
+              }
+            ]
+          }
+        },
+        {
+          type: 'sound',
+          text: '♪ Radio crackles...'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'RADIO',
+          text: '*static* — all units, we have reports of flooding on Miller Creek Road — requesting assistance —'
+        },
+        {
+          type: 'qte-single',
+          key: 'E',
+          duration: 2000,
+          prompt: 'Answer the radio',
+          success_text: 'You grab the radio.',
+          fail_text: 'The radio crackles, unanswered. Deputy Chen gives you a look.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'MARCUS',
+          text: 'Copy that. I\'m on my way.'
+        },
+        {
+          type: 'narrative',
+          text: 'The night is young. The water is rising. And somewhere out there, someone is watching.'
+        },
+
+        // === SCENE 3: JADE - Motel Room ===
+        {
+          type: 'transition',
+          duration: 1500
+        },
+        {
+          type: 'set-character',
+          character: 'jade'
+        },
+        {
+          type: 'scene',
+          bg: 'linear-gradient(180deg, #151a1a 0%, #080a0a 100%)',
+          timestamp: { time: '9:32 PM', location: 'Pine View Motel — Room 7' }
+        },
+        {
+          type: 'char-intro',
+          character: 'jade',
+          duration: 3000
+        },
+        {
+          type: 'sound',
+          text: '♪ Cheap motel heating unit rattling... fingers on keyboard...'
+        },
+        {
+          type: 'narrative',
+          text: 'Two years. Forty-seven episodes. Twelve thousand subscribers. And you\'re closer than anyone\'s ever been.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'JADE (RECORDING)',
+          text: '"Episode forty-eight. I\'m in Millbrook, Oregon. If the pattern holds, this is where he\'ll strike next."'
+        },
+        {
+          type: 'narrative',
+          text: 'The map on the wall is covered in red string. Three towns. Three children. One origami boat in each pocket.'
+        },
+        {
+          type: 'thought',
+          text: 'Astoria: Tommy Huang, age 6. Cannon Beach: Sofia Martinez, age 7. Tillamook: Devon Parks, age 5.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'JADE (RECORDING)',
+          text: '"The killer chooses his towns carefully. Isolated. Small population. During extreme weather events."'
+        },
+        {
+          type: 'sound',
+          text: '♪ KNOCK KNOCK KNOCK'
+        },
+        {
+          type: 'qte-single',
+          key: 'F',
+          duration: 1500,
+          prompt: 'Stop recording',
+          success_text: 'You slam the laptop shut.',
+          fail_text: 'You fumble with the laptop, leaving the recording running.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'MOTEL OWNER (through door)',
+          text: 'Miss Reeves? Just checking on you. Storm\'s getting bad. You need anything?'
+        },
+        {
+          type: 'choice',
+          prompt: 'How do you respond?',
+          timer: 6000,
+          choices: [
+            { key: '1', text: '"I\'m fine, thanks."', consequence: 'polite' },
+            { key: '2', text: 'Don\'t answer. Wait for them to leave.', consequence: 'paranoid' },
+            { key: '3', text: 'Open the door to talk.', consequence: 'open' }
+          ],
+          default: 1,
+          flag: 'jade_door'
+        },
+        {
+          type: 'branch',
+          flag: 'jade_door',
+          branches: {
+            'polite': [
+              {
+                type: 'dialogue',
+                speaker: 'JADE',
+                text: 'I\'m fine, thanks. Just working late.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'MOTEL OWNER',
+                text: 'Alright then. Roads are closed, so... you\'re not going anywhere tonight.'
+              }
+            ],
+            'paranoid': [
+              {
+                type: 'narrative',
+                text: 'You hold your breath. Footsteps linger outside. Then slowly retreat.'
+              },
+              {
+                type: 'thought',
+                text: 'Trust no one. That\'s rule number one.'
+              }
+            ],
+            'open': [
+              {
+                type: 'narrative',
+                text: 'The motel owner is a heavyset man in his 60s. Kind eyes. But you\'ve learned that means nothing.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'JADE',
+                text: 'How long do you think we\'ll be stuck here?'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'MOTEL OWNER',
+                text: 'Few days at least. You picked a hell of a time to visit Millbrook, miss.'
+              },
+              {
+                type: 'thought',
+                text: 'I didn\'t pick the time. The time picked me.'
+              }
+            ]
+          }
+        },
+        {
+          type: 'narrative',
+          text: 'You turn back to the window. The parking lot is dark. But—'
+        },
+        {
+          type: 'sound',
+          text: '♪ A car engine idles somewhere in the darkness...'
+        },
+        {
+          type: 'narrative',
+          text: 'Someone is sitting in a parked car. Watching your window.'
+        },
+        {
+          type: 'qte-sequence',
+          keys: ['W', 'A', 'S'],
+          duration: 3000,
+          prompt: 'Move to get a better look',
+          success_flag: 'jade_saw_watcher'
+        },
+        {
+          type: 'branch',
+          flag: 'jade_saw_watcher',
+          branches: {
+            'true': [
+              {
+                type: 'narrative',
+                text: 'You catch a glimpse. A silhouette behind a rain-streaked windshield. Then the headlights flare and the car pulls away.'
+              },
+              {
+                type: 'thought',
+                text: 'They know I\'m here. Which means I\'m close.'
+              }
+            ],
+            'false': [
+              {
+                type: 'narrative',
+                text: 'By the time you reach the window, the parking lot is empty. If anyone was there, they\'re gone now.'
+              },
+              {
+                type: 'thought',
+                text: 'Paranoia? Or instinct? After two years, it\'s hard to tell the difference.'
+              }
+            ]
+          }
+        },
+
+        // === SCENE 4: THE KEEPER (???) - Neighborhood ===
+        {
+          type: 'transition',
+          duration: 1500
+        },
+        {
+          type: 'set-character',
+          character: 'keeper'
+        },
+        {
+          type: 'scene',
+          bg: 'linear-gradient(180deg, #12141a 0%, #08090c 100%)',
+          timestamp: { time: '10:08 PM', location: 'Cedar Lane — The Hendricks Residence' }
+        },
+        {
+          type: 'char-intro',
+          character: 'keeper',
+          duration: 3000
+        },
+        {
+          type: 'sound',
+          text: '♪ Rain hammering on a tarp... splashing... grunting with effort...'
+        },
+        {
+          type: 'narrative',
+          text: 'Good neighbors help each other. That\'s what community means.'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'MRS. HENDRICKS',
+          text: 'You\'re a lifesaver! We never would have gotten these sandbags down in time.'
+        },
+        {
+          type: 'dialogue',
+          speaker: '???',
+          text: 'Happy to help, Martha. That\'s what neighbors are for.'
+        },
+        {
+          type: 'qte-hold',
+          key: 'SPACE',
+          duration: 2500,
+          prompt: 'Lift the sandbag',
+          success_flag: 'keeper_helped'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'MR. HENDRICKS',
+          text: 'You want to come in for coffee? Warm up a bit?'
+        },
+        {
+          type: 'choice',
+          prompt: 'What do you do?',
+          timer: 8000,
+          choices: [
+            { key: '1', text: '"I\'d love that. Thank you."', consequence: 'accept' },
+            { key: '2', text: '"Better keep moving. More folks might need help."', consequence: 'decline' },
+            { key: '3', text: '"Actually... is your granddaughter home? She seemed scared earlier."', consequence: 'ask_child' }
+          ],
+          default: 2,
+          flag: 'keeper_coffee'
+        },
+        {
+          type: 'branch',
+          flag: 'keeper_coffee',
+          branches: {
+            'accept': [
+              {
+                type: 'narrative',
+                text: 'The warmth of their kitchen. Family photos on the wall. A child\'s drawing on the refrigerator.'
+              },
+              {
+                type: 'thought',
+                text: 'They trust you. Everyone trusts you.'
+              }
+            ],
+            'decline': [
+              {
+                type: 'dialogue',
+                speaker: '???',
+                text: 'Storm like this, folks need to stick together. I\'ll check on the Petersons next.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'MRS. HENDRICKS',
+                text: 'You\'re too good to this town, you know that?'
+              },
+              {
+                type: 'thought',
+                text: 'Too good. If only they knew.'
+              }
+            ],
+            'ask_child': [
+              {
+                type: 'narrative',
+                text: 'Something flickers in their eyes. Just for a moment.'
+              },
+              {
+                type: 'dialogue',
+                speaker: 'MRS. HENDRICKS',
+                text: 'Emma? She\'s asleep. Poor thing doesn\'t like the thunder.'
+              },
+              {
+                type: 'thought',
+                text: 'Emma. Seven years old. Brown hair. Blue eyes. Perfect.'
+              }
+            ]
+          }
+        },
+        {
+          type: 'narrative',
+          text: 'You walk back into the rain. The water runs down your face like tears. But you\'re not crying.'
+        },
+        {
+          type: 'thought',
+          text: 'You never cry.'
+        },
+
+        // === SCENE 5: ANNA - The Disappearance ===
+        {
+          type: 'transition',
+          duration: 2000
+        },
+        {
+          type: 'tension-start',
+          bpm: 90
+        },
+        {
+          type: 'set-character',
+          character: 'anna'
+        },
+        {
+          type: 'scene',
+          bg: 'linear-gradient(180deg, #0a0508 0%, #000000 100%)',
+          timestamp: { time: '2:47 AM', location: 'Vance Residence' }
+        },
+        {
+          type: 'sound',
+          text: '♪ Wind howling... something crashes outside... '
+        },
+        {
+          type: 'narrative',
+          text: 'You wake to darkness. The power is out. Something is wrong.'
+        },
+        {
+          type: 'thought',
+          text: 'The silence. It\'s too quiet. Where is Lily\'s nightlight?'
+        },
+        {
+          type: 'qte-sequence',
+          keys: ['W', 'A', 'S', 'D'],
+          duration: 4000,
+          prompt: 'Get out of bed',
+          success_flag: 'anna_quick'
+        },
+        {
+          type: 'narrative',
+          text: 'The hallway is black. You feel along the wall. Lily\'s door is open.'
+        },
+        {
+          type: 'sound',
+          text: '♪ Wind... rain... a curtain flapping...'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'ANNA',
+          text: 'Lily? Baby?'
+        },
+        {
+          type: 'narrative',
+          text: 'Your hand finds the light switch. Nothing. You use your phone instead. The pale glow sweeps across the room.'
+        },
+        {
+          type: 'narrative',
+          text: 'Empty bed. Sheets thrown back. Window wide open, rain pouring in.'
+        },
+        {
+          type: 'qte-single',
+          key: 'Q',
+          duration: 1000,
+          prompt: '',
+          fail_consequence: 'anna_frozen'
+        },
+        {
+          type: 'dialogue',
+          speaker: 'ANNA',
+          text: 'LILY!'
+        },
+        {
+          type: 'narrative',
+          text: 'Your phone\'s light catches something on the pillow. Where her head should be.'
+        },
+        {
+          type: 'sound',
+          text: '♪ Heartbeat... rising...'
+        },
+        {
+          type: 'narrative',
+          text: 'A small paper boat. Carefully folded. Origami.'
+        },
+        {
+          type: 'narrative',
+          text: 'Your scream shatters the night.'
+        },
+        {
+          type: 'transition',
+          duration: 3000
+        },
+        {
+          type: 'chapter-end',
+          text: 'CHAPTER 1 COMPLETE',
+          subtext: 'The Flood Comes'
+        }
+      ];
+
+      // ============================================
+      // Game Engine Functions
+      // ============================================
+
+      let currentBeatIndex = 0;
+      let currentFullText = '';
+      let currentTypedIndex = 0;
+      let typeInterval = null;
+
+      async function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      function setBackground(bg) {
+        const sceneBg = document.getElementById('scene-bg');
+        sceneBg.style.background = bg;
+      }
+
+      function showTimestamp(time, location) {
+        const ts = document.getElementById('timestamp');
+        ts.querySelector('.time').textContent = time;
+        ts.querySelector('.location').textContent = location;
+        ts.classList.add('visible');
+      }
+
+      function hideTimestamp() {
+        document.getElementById('timestamp').classList.remove('visible');
+      }
+
+      function setCharacter(charId) {
+        GameState.character = charId;
+        const char = Characters[charId];
+        document.getElementById('current-char').textContent = char.name;
+        document.getElementById('current-char').style.color = char.color;
+      }
+
+      function showCharIntro(charId) {
+        const char = Characters[charId];
+        const intro = document.getElementById('char-intro');
+        intro.querySelector('.char-name').textContent = char.name;
+        intro.querySelector('.char-name').style.color = char.color;
+        intro.querySelector('.char-role').textContent = char.role;
+        intro.querySelector('.char-role').style.color = char.color;
+        intro.querySelector('.char-desc').textContent = char.desc;
+        intro.classList.add('visible');
+      }
+
+      function hideCharIntro() {
+        document.getElementById('char-intro').classList.remove('visible');
+      }
+
+      function showDialogue(speaker, text) {
+        return new Promise(resolve => {
+          const container = document.getElementById('dialogue-container');
+          const speakerEl = document.getElementById('speaker');
+          const dialogueEl = document.getElementById('dialogue');
+          const prompt = document.getElementById('continue-prompt');
+
+          speakerEl.textContent = speaker;
+
+          // Color code speaker
+          if (speaker.includes('ANNA')) speakerEl.style.color = Characters.anna.color;
+          else if (speaker.includes('MARCUS')) speakerEl.style.color = Characters.marcus.color;
+          else if (speaker.includes('JADE')) speakerEl.style.color = Characters.jade.color;
+          else if (speaker === '???' || speaker === '???') speakerEl.style.color = Characters.keeper.color;
+          else speakerEl.style.color = '#4a9eff';
+
+          dialogueEl.textContent = '';
+          container.classList.add('visible');
+          prompt.classList.remove('visible');
+
+          // Typewriter effect
+          currentFullText = text;
+          currentTypedIndex = 0;
+          GameState.isTyping = true;
+          GameState.skipTyping = false;
+
+          typeInterval = setInterval(() => {
+            if (GameState.skipTyping) {
+              dialogueEl.textContent = currentFullText;
+              clearInterval(typeInterval);
+              GameState.isTyping = false;
+              prompt.classList.add('visible');
+              GameState.isWaiting = true;
+
+              const handleContinue = (e) => {
+                if (e.code === 'Space' || e.type === 'click') {
+                  GameState.isWaiting = false;
+                  container.classList.remove('visible');
+                  document.removeEventListener('keydown', handleContinue);
+                  document.removeEventListener('click', handleContinue);
+                  resolve();
+                }
+              };
+
+              document.addEventListener('keydown', handleContinue);
+              document.addEventListener('click', handleContinue);
+              return;
+            }
+
+            if (currentTypedIndex < currentFullText.length) {
+              dialogueEl.textContent += currentFullText[currentTypedIndex];
+              // Play blip every 3rd character
+              if (currentTypedIndex % 3 === 0) AudioEngine.playBlip();
+              currentTypedIndex++;
+            } else {
+              clearInterval(typeInterval);
+              GameState.isTyping = false;
+              prompt.classList.add('visible');
+              GameState.isWaiting = true;
+
+              const handleContinue = (e) => {
+                if (e.code === 'Space' || e.type === 'click') {
+                  GameState.isWaiting = false;
+                  container.classList.remove('visible');
+                  document.removeEventListener('keydown', handleContinue);
+                  document.removeEventListener('click', handleContinue);
+                  resolve();
+                }
+              };
+
+              document.addEventListener('keydown', handleContinue);
+              document.addEventListener('click', handleContinue);
+            }
+          }, 30);
+        });
+      }
+
+      function showNarrative(text) {
+        return new Promise(resolve => {
+          const narrative = document.getElementById('narrative');
+          const p = narrative.querySelector('p');
+          p.textContent = '';
+          narrative.classList.add('visible');
+
+          let index = 0;
+          GameState.isTyping = true;
+
+          const type = setInterval(() => {
+            if (GameState.skipTyping || index >= text.length) {
+              p.textContent = text;
+              clearInterval(type);
+              GameState.isTyping = false;
+
+              setTimeout(() => {
+                GameState.isWaiting = true;
+
+                const handleContinue = (e) => {
+                  if (e.code === 'Space' || e.type === 'click') {
+                    GameState.isWaiting = false;
+                    narrative.classList.remove('visible');
+                    document.removeEventListener('keydown', handleContinue);
+                    document.removeEventListener('click', handleContinue);
+                    resolve();
+                  }
+                };
+
+                document.addEventListener('keydown', handleContinue);
+                document.addEventListener('click', handleContinue);
+              }, 500);
+              return;
+            }
+
+            p.textContent += text[index];
+            index++;
+          }, 40);
+        });
+      }
+
+      function showThought(text) {
+        const thought = document.getElementById('thought');
+        thought.textContent = text;
+        thought.classList.add('visible');
+      }
+
+      function hideThought() {
+        document.getElementById('thought').classList.remove('visible');
+      }
+
+      function showSound(text) {
+        document.getElementById('sound-indicator').textContent = text;
+      }
+
+      function hideSound() {
+        document.getElementById('sound-indicator').textContent = '';
+      }
+
+      function showChoice(prompt, choices, timer, defaultChoice, flag) {
+        return new Promise(resolve => {
+          const container = document.getElementById('choices');
+          container.innerHTML = '';
+
+          choices.forEach((choice, i) => {
+            const div = document.createElement('div');
+            div.className = 'choice';
+            div.innerHTML = `
+              <span class="choice-key">${choice.key}</span>
+              <span class="choice-text">${choice.text}</span>
+              <div class="choice-timer" style="width: 100%"></div>
+            `;
+            div.dataset.consequence = choice.consequence;
+            container.appendChild(div);
+          });
+
+          container.classList.add('visible');
+          GameState.inChoice = true;
+
+          let timeLeft = timer;
+          const timerInterval = setInterval(() => {
+            timeLeft -= 100;
+            const percent = (timeLeft / timer) * 100;
+            container.querySelectorAll('.choice-timer').forEach(t => {
+              t.style.width = `${percent}%`;
+              if (percent < 30) t.style.background = '#ef4444';
+              else if (percent < 60) t.style.background = '#f59e0b';
+            });
+
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              makeChoice(choices[defaultChoice].consequence);
+            }
+          }, 100);
+
+          function makeChoice(consequence) {
+            AudioEngine.playSelect();
+            clearInterval(timerInterval);
+            container.classList.remove('visible');
+            GameState.inChoice = false;
+            GameState.choices[flag] = consequence;
+            GameState.flags[flag] = consequence;
+            document.removeEventListener('keydown', handleKey);
+            resolve(consequence);
+          }
+
+          function handleKey(e) {
+            const choice = choices.find(c => c.key === e.key);
+            if (choice) {
+              makeChoice(choice.consequence);
+            }
+          }
+
+          document.addEventListener('keydown', handleKey);
+
+          // Click and hover handlers
+          container.querySelectorAll('.choice').forEach(div => {
+            div.onclick = () => makeChoice(div.dataset.consequence);
+            div.onmouseenter = () => AudioEngine.playHover();
+          });
+        });
+      }
+
+      function showConsequence(text, isSuccess) {
+        const el = document.getElementById('consequence');
+        el.querySelector('.consequence-text').textContent = text;
+        el.className = 'visible ' + (isSuccess ? 'success' : 'fail');
+        setTimeout(() => el.className = '', 2000);
+      }
+
+      function showQTESingle(key, duration, prompt, successText, failText) {
+        return new Promise(resolve => {
+          const container = document.getElementById('qte-container');
+          container.innerHTML = `
+            <div class="qte-prompt">${prompt}</div>
+            <div class="qte-key">${key}</div>
+            <div class="qte-timer"><div class="qte-timer-fill" style="width: 100%"></div></div>
+            <div class="qte-instruction">Press <strong>${key}</strong> quickly!</div>
+          `;
+          container.classList.add('visible');
+          GameState.inQTE = true;
+
+          const keyEl = container.querySelector('.qte-key');
+          const timerFill = container.querySelector('.qte-timer-fill');
+
+          let timeLeft = duration;
+          let success = false;
+
+          const timerInterval = setInterval(() => {
+            timeLeft -= 50;
+            const percent = (timeLeft / duration) * 100;
+            timerFill.style.width = `${percent}%`;
+
+            if (percent < 30) timerFill.classList.add('danger');
+            else if (percent < 60) timerFill.classList.add('warning');
+
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              if (!success) {
+                AudioEngine.playFail();
+                keyEl.classList.add('fail');
+                if (failText) showConsequence(failText, false);
+                setTimeout(() => {
+                  container.classList.remove('visible');
+                  GameState.inQTE = false;
+                  document.removeEventListener('keydown', handleKey);
+                  resolve({ success: false, text: failText });
+                }, 800);
+              }
+            }
+          }, 50);
+
+          function handleKey(e) {
+            if (e.key.toUpperCase() === key || e.code === key) {
+              success = true;
+              AudioEngine.playSuccess();
+              clearInterval(timerInterval);
+              keyEl.classList.add('success');
+              document.removeEventListener('keydown', handleKey);
+              if (successText) showConsequence(successText, true);
+
+              setTimeout(() => {
+                container.classList.remove('visible');
+                GameState.inQTE = false;
+                resolve({ success: true, text: successText });
+              }, 800);
+            }
+          }
+
+          document.addEventListener('keydown', handleKey);
+        });
+      }
+
+      function showQTEHold(key, duration, prompt, successFlag) {
+        return new Promise(resolve => {
+          const container = document.getElementById('qte-container');
+          const displayKey = key === 'SPACE' ? 'SPACEBAR' : key;
+          container.innerHTML = `
+            <div class="qte-prompt">${prompt}</div>
+            <div class="qte-hold-ring">
+              <svg class="qte-hold-progress" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="56" fill="none" stroke="#4a9eff" stroke-width="4"
+                  stroke-dasharray="352" stroke-dashoffset="352" transform="rotate(-90 60 60)"/>
+              </svg>
+              <div class="qte-hold-key">${key === 'SPACE' ? '␣' : key}</div>
+            </div>
+            <div class="qte-instruction">Hold <strong>${displayKey}</strong> until the ring fills!</div>
+          `;
+          container.classList.add('visible');
+          GameState.inQTE = true;
+
+          const circle = container.querySelector('circle');
+          const circumference = 352;
+          let progress = 0;
+          let holding = false;
+          let completed = false;
+
+          function handleKeyDown(e) {
+            if ((e.code === 'Space' && key === 'SPACE') || e.key.toUpperCase() === key) {
+              holding = true;
+            }
+          }
+
+          function handleKeyUp(e) {
+            if ((e.code === 'Space' && key === 'SPACE') || e.key.toUpperCase() === key) {
+              holding = false;
+            }
+          }
+
+          document.addEventListener('keydown', handleKeyDown);
+          document.addEventListener('keyup', handleKeyUp);
+
+          const updateInterval = setInterval(() => {
+            if (completed) return;
+
+            if (holding) {
+              progress += 2;
+              if (progress >= 100) {
+                progress = 100;
+                completed = true;
+                AudioEngine.playSuccess();
+                clearInterval(updateInterval);
+                document.removeEventListener('keydown', handleKeyDown);
+                document.removeEventListener('keyup', handleKeyUp);
+                GameState.flags[successFlag] = true;
+
+                circle.style.stroke = '#4ade80';
+                setTimeout(() => {
+                  container.classList.remove('visible');
+                  GameState.inQTE = false;
+                  resolve(true);
+                }, 500);
+              }
+            } else {
+              progress -= 1;
+              if (progress < 0) progress = 0;
+            }
+
+            const offset = circumference - (progress / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+          }, 30);
+
+          // Timeout
+          setTimeout(() => {
+            if (!completed) {
+              completed = true;
+              AudioEngine.playFail();
+              clearInterval(updateInterval);
+              document.removeEventListener('keydown', handleKeyDown);
+              document.removeEventListener('keyup', handleKeyUp);
+              GameState.flags[successFlag] = false;
+
+              circle.style.stroke = '#ef4444';
+              setTimeout(() => {
+                container.classList.remove('visible');
+                GameState.inQTE = false;
+                resolve(false);
+              }, 500);
+            }
+          }, duration + 2000);
+        });
+      }
+
+      function showQTESequence(keys, duration, prompt, successFlag) {
+        return new Promise(resolve => {
+          const container = document.getElementById('qte-container');
+          container.innerHTML = `
+            <div class="qte-prompt">${prompt}</div>
+            <div class="qte-sequence">
+              ${keys.map(k => `<div class="qte-seq-key">${k}</div>`).join('')}
+            </div>
+            <div class="qte-timer"><div class="qte-timer-fill" style="width: 100%"></div></div>
+            <div class="qte-instruction">Press <strong>${keys.join(' → ')}</strong> in order!</div>
+          `;
+          container.classList.add('visible');
+          GameState.inQTE = true;
+
+          const keyEls = container.querySelectorAll('.qte-seq-key');
+          const timerFill = container.querySelector('.qte-timer-fill');
+
+          let currentIndex = 0;
+          let timeLeft = duration;
+          let completed = false;
+
+          keyEls[0].classList.add('active');
+
+          const timerInterval = setInterval(() => {
+            timeLeft -= 50;
+            const percent = (timeLeft / duration) * 100;
+            timerFill.style.width = `${percent}%`;
+
+            if (percent < 30) timerFill.classList.add('danger');
+            else if (percent < 60) timerFill.classList.add('warning');
+
+            if (timeLeft <= 0 && !completed) {
+              completed = true;
+              AudioEngine.playFail();
+              clearInterval(timerInterval);
+              document.removeEventListener('keydown', handleKey);
+
+              keyEls.forEach((el, i) => {
+                if (i >= currentIndex) el.classList.add('missed');
+              });
+
+              GameState.flags[successFlag] = false;
+
+              setTimeout(() => {
+                container.classList.remove('visible');
+                GameState.inQTE = false;
+                resolve(false);
+              }, 500);
+            }
+          }, 50);
+
+          function handleKey(e) {
+            if (completed) return;
+
+            if (e.key.toUpperCase() === keys[currentIndex]) {
+              AudioEngine.playBlip();
+              keyEls[currentIndex].classList.remove('active');
+              keyEls[currentIndex].classList.add('done');
+              currentIndex++;
+
+              if (currentIndex >= keys.length) {
+                completed = true;
+                AudioEngine.playSuccess();
+                clearInterval(timerInterval);
+                document.removeEventListener('keydown', handleKey);
+                GameState.flags[successFlag] = true;
+
+                setTimeout(() => {
+                  container.classList.remove('visible');
+                  GameState.inQTE = false;
+                  resolve(true);
+                }, 500);
+              } else {
+                keyEls[currentIndex].classList.add('active');
+              }
+            }
+          }
+
+          document.addEventListener('keydown', handleKey);
+        });
+      }
+
+      async function transition(duration) {
+        AudioEngine.playWhoosh();
+        const trans = document.getElementById('transition');
+        trans.classList.add('active');
+        hideDialogue();
+        hideThought();
+        hideCharIntro();
+        hideTimestamp();
+        hideSound();
+        await sleep(duration);
+        trans.classList.remove('active');
+      }
+
+      function hideDialogue() {
+        document.getElementById('dialogue-container').classList.remove('visible');
+        document.getElementById('continue-prompt').classList.remove('visible');
+      }
+
+      async function showChapterTitle() {
+        const title = document.getElementById('chapter-title');
+        title.classList.add('visible');
+        await sleep(4000);
+        title.classList.remove('visible');
+      }
+
+      async function showChapterEnd(text, subtext) {
+        const container = document.getElementById('chapter-title');
+        container.querySelector('.chapter-num').textContent = '';
+        container.querySelector('.chapter-name').textContent = text;
+        container.querySelector('.chapter-location').textContent = subtext;
+        container.classList.add('visible');
+
+        await sleep(5000);
+
+        // Show choices/stats here eventually
+        container.querySelector('.chapter-location').textContent = 'Press SPACE to continue...';
+
+        await new Promise(resolve => {
+          const handler = (e) => {
+            if (e.code === 'Space') {
+              document.removeEventListener('keydown', handler);
+              resolve();
+            }
+          };
+          document.addEventListener('keydown', handler);
+        });
+
+        container.classList.remove('visible');
+      }
+
+      // ============================================
+      // Main Game Loop
+      // ============================================
+
+      async function processBeat(beat) {
+        switch (beat.type) {
+          case 'chapter-title':
+            await showChapterTitle();
+            break;
+
+          case 'transition':
+            await transition(beat.duration);
+            break;
+
+          case 'set-character':
+            setCharacter(beat.character);
+            break;
+
+          case 'scene':
+            setBackground(beat.bg);
+            if (beat.timestamp) {
+              showTimestamp(beat.timestamp.time, beat.timestamp.location);
+            }
+            await sleep(500);
+            break;
+
+          case 'char-intro':
+            showCharIntro(beat.character);
+            await sleep(beat.duration);
+            hideCharIntro();
+            break;
+
+          case 'sound':
+            showSound(beat.text);
+            break;
+
+          case 'narrative':
+            await showNarrative(beat.text);
+            break;
+
+          case 'dialogue':
+            hideThought();
+            await showDialogue(beat.speaker, beat.text);
+            break;
+
+          case 'thought':
+            showThought(beat.text);
+            await sleep(100);
+            break;
+
+          case 'choice':
+            hideThought();
+            await showChoice(beat.prompt, beat.choices, beat.timer, beat.default, beat.flag);
+            break;
+
+          case 'branch':
+            const branchValue = GameState.flags[beat.flag];
+            const branchBeats = beat.branches[branchValue] || beat.branches[Object.keys(beat.branches)[0]];
+            if (branchBeats) {
+              for (const subBeat of branchBeats) {
+                await processBeat(subBeat);
+              }
+            }
+            break;
+
+          case 'qte-single':
+            hideThought();
+            const singleResult = await showQTESingle(beat.key, beat.duration, beat.prompt, beat.success_text, beat.fail_text);
+            if (singleResult.text) {
+              await showNarrative(singleResult.text);
+            }
+            break;
+
+          case 'qte-hold':
+            hideThought();
+            await showQTEHold(beat.key, beat.duration, beat.prompt, beat.success_flag);
+            break;
+
+          case 'qte-sequence':
+            hideThought();
+            await showQTESequence(beat.keys, beat.duration, beat.prompt, beat.success_flag);
+            break;
+
+          case 'tension-start':
+            AudioEngine.startHeartbeat(beat.bpm || 80);
+            AudioEngine.startDrone();
+            break;
+
+          case 'tension-stop':
+            AudioEngine.stopHeartbeat();
+            AudioEngine.stopDrone();
+            break;
+
+          case 'chapter-end':
+            AudioEngine.stopHeartbeat();
+            AudioEngine.stopDrone();
+            await showChapterEnd(beat.text, beat.subtext);
+            break;
+        }
+      }
+
+      async function runChapter(chapter) {
+        for (const beat of chapter) {
+          await processBeat(beat);
+        }
+      }
+
+      // Skip typing on any key
+      document.addEventListener('keydown', (e) => {
+        if (GameState.isTyping && !GameState.inQTE && !GameState.inChoice) {
+          GameState.skipTyping = true;
+        }
+      });
+
+      // Start the game
+      runChapter(Chapter1);
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1386 @@
+---
+// Angry Turds - Medieval Peasant Rebellion
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Angry Turds | garage.co.nz</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        overflow: hidden;
+        font-family: 'Georgia', serif;
+        min-height: 100vh;
+      }
+      #game-canvas {
+        display: block;
+        cursor: crosshair;
+      }
+      #ui {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        color: #3d2914;
+        font-size: 16px;
+        z-index: 100;
+        background: linear-gradient(135deg, #d4a574 0%, #c4956a 100%);
+        padding: 15px 20px;
+        border-radius: 8px;
+        border: 3px solid #5c3d2e;
+        box-shadow: 4px 4px 0 #3d2914, inset 0 0 20px rgba(255,255,255,0.2);
+        min-width: 160px;
+      }
+      #level { font-size: 22px; font-weight: bold; color: #2d1a0f; font-family: 'Times New Roman', serif; }
+      #score { color: #5c3d2e; margin-top: 5px; }
+      #targets-left { margin-top: 8px; font-size: 14px; color: #6b4423; }
+
+      #turd-selector {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 100;
+      }
+      .turd-btn {
+        width: 70px;
+        height: 80px;
+        background: linear-gradient(135deg, #c4956a 0%, #a67c52 100%);
+        border: 3px solid #5c3d2e;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 3px 3px 0 #3d2914;
+        padding: 5px;
+      }
+      .turd-btn:hover { transform: translateY(-2px); }
+      .turd-btn.selected {
+        background: linear-gradient(135deg, #8B4513 0%, #6b3410 100%);
+        border-color: #FFD700;
+        box-shadow: 0 0 15px rgba(255,215,0,0.5), 3px 3px 0 #3d2914;
+      }
+      .turd-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .turd-icon { font-size: 28px; }
+      .turd-name { font-size: 9px; color: #3d2914; margin-top: 3px; font-weight: bold; }
+      .turd-count { font-size: 11px; color: #5c3d2e; }
+
+      #message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #2d1a0f 0%, #1a0f08 100%);
+        color: #FFD700;
+        font-size: 32px;
+        font-weight: bold;
+        z-index: 200;
+        text-align: center;
+        display: none;
+        padding: 40px 60px;
+        border-radius: 15px;
+        border: 4px solid #8B4513;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        font-family: 'Times New Roman', serif;
+      }
+      #message .sub { font-size: 18px; color: #c4956a; margin-top: 15px; font-weight: normal; }
+
+      #controls {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #2d1a0f;
+        font-size: 13px;
+        z-index: 100;
+        background: rgba(212, 165, 116, 0.95);
+        padding: 10px 25px;
+        border-radius: 20px;
+        border: 2px solid #5c3d2e;
+      }
+
+      #level-btns {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+      }
+      .btn {
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #5c3d2e 0%, #3d2914 100%);
+        border: 3px solid #2d1a0f;
+        border-radius: 8px;
+        color: #FFD700;
+        font-family: 'Georgia', serif;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 3px 3px 0 #1a0f08;
+        transition: all 0.15s;
+      }
+      .btn:hover { transform: translateY(-2px); background: linear-gradient(135deg, #6b4423 0%, #4d3219 100%); }
+      .btn:active { transform: translateY(1px); box-shadow: 1px 1px 0 #1a0f08; }
+    </style>
+  </head>
+  <body>
+    <div id="ui">
+      <div id="level">LEVEL 1</div>
+      <div id="score">Score: 0</div>
+      <div id="targets-left">Nobles remaining: 3</div>
+    </div>
+
+    <div id="turd-selector"></div>
+
+    <div id="level-btns">
+      <button class="btn" id="restart-btn">⟳ Restart</button>
+      <button class="btn" id="next-btn" style="display: none;">Next Level →</button>
+    </div>
+
+    <div id="message">
+      <div id="message-title"></div>
+      <div class="sub" id="message-sub"></div>
+    </div>
+
+    <div id="controls">
+      🎯 Click &amp; drag from trebuchet to aim • Release to fling • Splatter all the nobles!
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <script is:inline>
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Set canvas size
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const GROUND_Y = H - 80;
+      const TREBUCHET_X = 200;
+      const TREBUCHET_Y = GROUND_Y;
+
+      // Matter.js setup
+      const { Engine, Bodies, Body, Composite, Events, Vector } = Matter;
+      const engine = Engine.create();
+      engine.gravity.y = 0.8;
+
+      // Turd types
+      const TURD_TYPES = {
+        regular: {
+          name: 'Classic',
+          icon: '💩',
+          description: 'Old reliable',
+          radius: 18,
+          density: 0.003,
+          restitution: 0.3,
+          color: '#6B4423',
+          effect: 'none'
+        },
+        splatter: {
+          name: 'Splatter',
+          icon: '💥',
+          description: 'Explodes on impact',
+          radius: 22,
+          density: 0.002,
+          restitution: 0.1,
+          color: '#4a3728',
+          effect: 'explode'
+        },
+        sticky: {
+          name: 'Sticky',
+          icon: '🫠',
+          description: 'Sticks & slides',
+          radius: 16,
+          density: 0.004,
+          restitution: 0.05,
+          color: '#3d2817',
+          effect: 'sticky'
+        },
+        mega: {
+          name: 'Mega',
+          icon: '🦣',
+          description: 'Massive damage',
+          radius: 30,
+          density: 0.006,
+          restitution: 0.2,
+          color: '#2d1f15',
+          effect: 'heavy'
+        },
+        rapid: {
+          name: 'Diarrhea',
+          icon: '💨',
+          description: 'Fast & bouncy',
+          radius: 12,
+          density: 0.001,
+          restitution: 0.7,
+          color: '#5c4033',
+          effect: 'bouncy'
+        }
+      };
+
+      // Game state
+      let currentLevel = 1;
+      let score = 0;
+      let selectedTurd = 'regular';
+      let turdsInventory = {};
+      let targets = [];
+      let structures = [];
+      let projectiles = [];
+      let particles = [];
+      let splatters = [];
+      let isDragging = false;
+      let dragStart = null;
+      let dragEnd = null;
+      let gameOver = false;
+      let levelWon = false;
+      let trebuchetAngle = -0.3;
+      let trebuchetArmSwing = 0;
+      let isLaunching = false;
+
+      // Level definitions
+      const levels = [
+        {
+          name: "The Snooty Baron",
+          turds: { regular: 5, splatter: 0, sticky: 0, mega: 0, rapid: 0 },
+          targets: [
+            { x: 700, y: GROUND_Y - 50, type: 'noble' },
+            { x: 850, y: GROUND_Y - 50, type: 'guard' },
+            { x: 775, y: GROUND_Y - 150, type: 'noble' }
+          ],
+          structures: [
+            { x: 650, y: GROUND_Y - 60, w: 20, h: 120, type: 'wood' },
+            { x: 900, y: GROUND_Y - 60, w: 20, h: 120, type: 'wood' },
+            { x: 775, y: GROUND_Y - 125, w: 280, h: 15, type: 'wood' }
+          ]
+        },
+        {
+          name: "Castle Garrison",
+          turds: { regular: 4, splatter: 2, sticky: 0, mega: 0, rapid: 0 },
+          targets: [
+            { x: 650, y: GROUND_Y - 50, type: 'guard' },
+            { x: 750, y: GROUND_Y - 50, type: 'noble' },
+            { x: 850, y: GROUND_Y - 50, type: 'guard' },
+            { x: 750, y: GROUND_Y - 180, type: 'king' }
+          ],
+          structures: [
+            { x: 600, y: GROUND_Y - 75, w: 25, h: 150, type: 'stone' },
+            { x: 700, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 800, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 900, y: GROUND_Y - 75, w: 25, h: 150, type: 'stone' },
+            { x: 750, y: GROUND_Y - 105, w: 230, h: 15, type: 'wood' },
+            { x: 750, y: GROUND_Y - 180, w: 120, h: 15, type: 'wood' },
+            { x: 700, y: GROUND_Y - 145, w: 15, h: 65, type: 'wood' },
+            { x: 800, y: GROUND_Y - 145, w: 15, h: 65, type: 'wood' }
+          ]
+        },
+        {
+          name: "The Royal Court",
+          turds: { regular: 3, splatter: 2, sticky: 2, mega: 1, rapid: 0 },
+          targets: [
+            { x: 600, y: GROUND_Y - 50, type: 'guard' },
+            { x: 700, y: GROUND_Y - 50, type: 'noble' },
+            { x: 800, y: GROUND_Y - 50, type: 'noble' },
+            { x: 900, y: GROUND_Y - 50, type: 'guard' },
+            { x: 750, y: GROUND_Y - 200, type: 'king' }
+          ],
+          structures: [
+            { x: 550, y: GROUND_Y - 100, w: 30, h: 200, type: 'stone' },
+            { x: 950, y: GROUND_Y - 100, w: 30, h: 200, type: 'stone' },
+            { x: 650, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 750, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 850, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 750, y: GROUND_Y - 105, w: 350, h: 15, type: 'wood' },
+            { x: 700, y: GROUND_Y - 160, w: 20, h: 100, type: 'stone' },
+            { x: 800, y: GROUND_Y - 160, w: 20, h: 100, type: 'stone' },
+            { x: 750, y: GROUND_Y - 215, w: 150, h: 15, type: 'wood' }
+          ]
+        },
+        {
+          name: "The Fortress",
+          turds: { regular: 4, splatter: 3, sticky: 2, mega: 2, rapid: 3 },
+          targets: [
+            { x: 580, y: GROUND_Y - 50, type: 'guard' },
+            { x: 680, y: GROUND_Y - 50, type: 'noble' },
+            { x: 780, y: GROUND_Y - 50, type: 'noble' },
+            { x: 880, y: GROUND_Y - 50, type: 'guard' },
+            { x: 630, y: GROUND_Y - 180, type: 'guard' },
+            { x: 830, y: GROUND_Y - 180, type: 'guard' },
+            { x: 730, y: GROUND_Y - 280, type: 'king' }
+          ],
+          structures: [
+            { x: 530, y: GROUND_Y - 100, w: 35, h: 200, type: 'stone' },
+            { x: 930, y: GROUND_Y - 100, w: 35, h: 200, type: 'stone' },
+            { x: 630, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 730, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 830, y: GROUND_Y - 50, w: 15, h: 100, type: 'wood' },
+            { x: 730, y: GROUND_Y - 105, w: 430, h: 18, type: 'wood' },
+            { x: 580, y: GROUND_Y - 160, w: 25, h: 100, type: 'stone' },
+            { x: 730, y: GROUND_Y - 155, w: 15, h: 85, type: 'wood' },
+            { x: 880, y: GROUND_Y - 160, w: 25, h: 100, type: 'stone' },
+            { x: 730, y: GROUND_Y - 210, w: 350, h: 18, type: 'wood' },
+            { x: 680, y: GROUND_Y - 260, w: 15, h: 85, type: 'wood' },
+            { x: 780, y: GROUND_Y - 260, w: 15, h: 85, type: 'wood' },
+            { x: 730, y: GROUND_Y - 310, w: 130, h: 15, type: 'wood' }
+          ]
+        },
+        {
+          name: "The King's Last Stand",
+          turds: { regular: 5, splatter: 4, sticky: 3, mega: 3, rapid: 4 },
+          targets: [
+            { x: 550, y: GROUND_Y - 50, type: 'guard' },
+            { x: 650, y: GROUND_Y - 50, type: 'guard' },
+            { x: 750, y: GROUND_Y - 50, type: 'noble' },
+            { x: 850, y: GROUND_Y - 50, type: 'guard' },
+            { x: 950, y: GROUND_Y - 50, type: 'guard' },
+            { x: 600, y: GROUND_Y - 180, type: 'noble' },
+            { x: 750, y: GROUND_Y - 180, type: 'noble' },
+            { x: 900, y: GROUND_Y - 180, type: 'noble' },
+            { x: 750, y: GROUND_Y - 320, type: 'king' }
+          ],
+          structures: [
+            { x: 500, y: GROUND_Y - 125, w: 40, h: 250, type: 'stone' },
+            { x: 1000, y: GROUND_Y - 125, w: 40, h: 250, type: 'stone' },
+            { x: 600, y: GROUND_Y - 50, w: 18, h: 100, type: 'wood' },
+            { x: 700, y: GROUND_Y - 50, w: 18, h: 100, type: 'wood' },
+            { x: 800, y: GROUND_Y - 50, w: 18, h: 100, type: 'wood' },
+            { x: 900, y: GROUND_Y - 50, w: 18, h: 100, type: 'wood' },
+            { x: 750, y: GROUND_Y - 108, w: 540, h: 20, type: 'wood' },
+            { x: 550, y: GROUND_Y - 170, w: 30, h: 110, type: 'stone' },
+            { x: 750, y: GROUND_Y - 160, w: 18, h: 90, type: 'wood' },
+            { x: 950, y: GROUND_Y - 170, w: 30, h: 110, type: 'stone' },
+            { x: 750, y: GROUND_Y - 215, w: 450, h: 20, type: 'wood' },
+            { x: 650, y: GROUND_Y - 270, w: 18, h: 100, type: 'wood' },
+            { x: 750, y: GROUND_Y - 270, w: 18, h: 100, type: 'wood' },
+            { x: 850, y: GROUND_Y - 270, w: 18, h: 100, type: 'wood' },
+            { x: 750, y: GROUND_Y - 328, w: 250, h: 20, type: 'wood' }
+          ]
+        }
+      ];
+
+      // Ground body
+      const ground = Bodies.rectangle(W / 2, GROUND_Y + 50, W, 100, {
+        isStatic: true,
+        friction: 0.9,
+        label: 'ground'
+      });
+      Composite.add(engine.world, ground);
+
+      // Left wall
+      const leftWall = Bodies.rectangle(-25, H / 2, 50, H, { isStatic: true, label: 'wall' });
+      Composite.add(engine.world, leftWall);
+
+      function loadLevel(levelNum) {
+        // Clear existing
+        targets.forEach(t => t.body && Composite.remove(engine.world, t.body));
+        structures.forEach(s => Composite.remove(engine.world, s));
+        projectiles.forEach(p => Composite.remove(engine.world, p.body));
+        targets = [];
+        structures = [];
+        projectiles = [];
+        particles = [];
+        splatters = [];
+
+        const level = levels[levelNum - 1];
+        if (!level) {
+          showMessage('🎉 VICTORY!', 'The peasants have overthrown the aristocracy!\nFinal Score: ' + score);
+          gameOver = true;
+          return;
+        }
+
+        // Set inventory
+        turdsInventory = { ...level.turds };
+
+        // Select first available turd
+        for (let type in turdsInventory) {
+          if (turdsInventory[type] > 0) {
+            selectedTurd = type;
+            break;
+          }
+        }
+
+        // Create targets
+        level.targets.forEach(config => {
+          const target = createTarget(config.x, config.y, config.type);
+          targets.push(target);
+        });
+
+        // Create structures
+        level.structures.forEach(config => {
+          const struct = createStructure(config);
+          structures.push(struct);
+          Composite.add(engine.world, struct);
+        });
+
+        document.getElementById('level').textContent = `LEVEL ${levelNum}`;
+        document.getElementById('level').title = level.name;
+        document.getElementById('next-btn').style.display = 'none';
+        levelWon = false;
+        gameOver = false;
+
+        updateUI();
+        renderTurdSelector();
+      }
+
+      function createTarget(x, y, type) {
+        const configs = {
+          guard: { radius: 25, color: '#4a5568', points: 100, armor: 1 },
+          noble: { radius: 28, color: '#9f7aea', points: 150, armor: 0.5 },
+          king: { radius: 35, color: '#f6e05e', points: 500, armor: 0.3 }
+        };
+
+        const config = configs[type] || configs.guard;
+        const body = Bodies.circle(x, y, config.radius, {
+          density: 0.002,
+          friction: 0.5,
+          restitution: 0.3,
+          label: 'target'
+        });
+
+        Composite.add(engine.world, body);
+
+        return {
+          body,
+          type,
+          ...config,
+          hit: false,
+          hitAmount: 0
+        };
+      }
+
+      function createStructure(config) {
+        const isStone = config.type === 'stone';
+        return Bodies.rectangle(config.x, config.y, config.w, config.h, {
+          density: isStone ? 0.005 : 0.002,
+          friction: 0.8,
+          restitution: 0.1,
+          label: config.type,
+          structureType: config.type
+        });
+      }
+
+      function renderTurdSelector() {
+        const container = document.getElementById('turd-selector');
+        container.innerHTML = '';
+
+        for (let type in TURD_TYPES) {
+          const turd = TURD_TYPES[type];
+          const count = turdsInventory[type] || 0;
+          const btn = document.createElement('div');
+          btn.className = 'turd-btn' + (type === selectedTurd ? ' selected' : '') + (count === 0 ? ' disabled' : '');
+          btn.innerHTML = `
+            <div class="turd-icon">${turd.icon}</div>
+            <div class="turd-name">${turd.name}</div>
+            <div class="turd-count">×${count}</div>
+          `;
+          btn.onclick = () => {
+            if (count > 0) {
+              selectedTurd = type;
+              renderTurdSelector();
+            }
+          };
+          container.appendChild(btn);
+        }
+      }
+
+      function updateUI() {
+        document.getElementById('score').textContent = `Score: ${score}`;
+        const remaining = targets.filter(t => !t.hit).length;
+        document.getElementById('targets-left').textContent = `Nobles remaining: ${remaining}`;
+      }
+
+      // Drawing functions
+      function drawSky() {
+        const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+        gradient.addColorStop(0, '#1a1a2e');
+        gradient.addColorStop(0.3, '#16213e');
+        gradient.addColorStop(0.6, '#1f4068');
+        gradient.addColorStop(1, '#e8b86d');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, GROUND_Y);
+
+        // Stars
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        for (let i = 0; i < 50; i++) {
+          const x = (i * 73) % W;
+          const y = (i * 31) % (GROUND_Y * 0.6);
+          ctx.beginPath();
+          ctx.arc(x, y, Math.random() * 1.5 + 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Moon
+        ctx.fillStyle = '#f5f5dc';
+        ctx.beginPath();
+        ctx.arc(W - 100, 80, 40, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1a1a2e';
+        ctx.beginPath();
+        ctx.arc(W - 85, 75, 35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawGround() {
+        // Grass
+        const grassGradient = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+        grassGradient.addColorStop(0, '#4a7c23');
+        grassGradient.addColorStop(0.3, '#3d6b1e');
+        grassGradient.addColorStop(1, '#2d4a16');
+        ctx.fillStyle = grassGradient;
+        ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+        // Grass tufts
+        ctx.strokeStyle = '#5a8c2a';
+        ctx.lineWidth = 2;
+        for (let x = 0; x < W; x += 15) {
+          const h = 5 + Math.sin(x * 0.1) * 3;
+          ctx.beginPath();
+          ctx.moveTo(x, GROUND_Y);
+          ctx.lineTo(x - 3, GROUND_Y - h);
+          ctx.moveTo(x, GROUND_Y);
+          ctx.lineTo(x + 3, GROUND_Y - h);
+          ctx.stroke();
+        }
+      }
+
+      function drawTrebuchet() {
+        const baseX = TREBUCHET_X;
+        const baseY = TREBUCHET_Y;
+
+        ctx.save();
+
+        // Base frame - A-frame structure
+        ctx.fillStyle = '#3d2817';
+        ctx.strokeStyle = '#2a1a0f';
+        ctx.lineWidth = 3;
+
+        // Left leg
+        ctx.beginPath();
+        ctx.moveTo(baseX - 60, baseY);
+        ctx.lineTo(baseX - 20, baseY - 120);
+        ctx.lineTo(baseX - 10, baseY - 120);
+        ctx.lineTo(baseX - 40, baseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Right leg
+        ctx.beginPath();
+        ctx.moveTo(baseX + 60, baseY);
+        ctx.lineTo(baseX + 20, baseY - 120);
+        ctx.lineTo(baseX + 10, baseY - 120);
+        ctx.lineTo(baseX + 40, baseY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Cross beam
+        ctx.fillStyle = '#4a3020';
+        ctx.fillRect(baseX - 25, baseY - 125, 50, 15);
+        ctx.strokeRect(baseX - 25, baseY - 125, 50, 15);
+
+        // Pivot point
+        ctx.fillStyle = '#1a0f08';
+        ctx.beginPath();
+        ctx.arc(baseX, baseY - 117, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Throwing arm
+        const armLength = 180;
+        const shortEnd = 50;
+        const pivotY = baseY - 117;
+
+        // Calculate arm angle based on drag or swing animation
+        let armAngle = trebuchetAngle;
+        if (isLaunching) {
+          armAngle = trebuchetArmSwing;
+        } else if (isDragging && dragStart && dragEnd) {
+          // Pull back angle based on drag
+          const dx = dragStart.x - dragEnd.x;
+          const dy = dragStart.y - dragEnd.y;
+          const pullBack = Math.min(Math.sqrt(dx * dx + dy * dy) / 150, 1);
+          armAngle = -0.3 - pullBack * 1.2;
+        }
+
+        ctx.save();
+        ctx.translate(baseX, pivotY);
+        ctx.rotate(armAngle);
+
+        // Counterweight end (short)
+        ctx.fillStyle = '#5c4033';
+        ctx.fillRect(-shortEnd - 10, -8, shortEnd + 10, 16);
+        ctx.strokeStyle = '#2a1a0f';
+        ctx.strokeRect(-shortEnd - 10, -8, shortEnd + 10, 16);
+
+        // Counterweight
+        ctx.fillStyle = '#4a4a4a';
+        ctx.beginPath();
+        ctx.moveTo(-shortEnd - 5, 8);
+        ctx.lineTo(-shortEnd - 25, 45);
+        ctx.lineTo(-shortEnd + 15, 45);
+        ctx.lineTo(-shortEnd + 5, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.stroke();
+
+        // Throwing end (long)
+        ctx.fillStyle = '#5c4033';
+        ctx.fillRect(0, -6, armLength, 12);
+        ctx.strokeStyle = '#2a1a0f';
+        ctx.strokeRect(0, -6, armLength, 12);
+
+        // Sling attachment point
+        ctx.fillStyle = '#3d2817';
+        ctx.beginPath();
+        ctx.arc(armLength - 5, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sling (rope + pouch)
+        if (!isLaunching) {
+          const slingLength = 60;
+          const slingEndX = armLength - 5 + Math.sin(armAngle + Math.PI/2) * slingLength;
+          const slingEndY = Math.cos(armAngle + Math.PI/2) * slingLength;
+
+          ctx.strokeStyle = '#8B7355';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(armLength - 5, 0);
+          ctx.quadraticCurveTo(armLength + 20, slingLength * 0.7, slingEndX, slingEndY);
+          ctx.stroke();
+
+          // Pouch
+          ctx.fillStyle = '#654321';
+          ctx.beginPath();
+          ctx.ellipse(slingEndX, slingEndY, 20, 12, armAngle, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#3d2817';
+          ctx.stroke();
+
+          // Turd in pouch (if not launching)
+          if (turdsInventory[selectedTurd] > 0) {
+            drawTurd(slingEndX, slingEndY, 15, TURD_TYPES[selectedTurd].color, 0);
+          }
+        }
+
+        ctx.restore();
+
+        // Wheels
+        ctx.fillStyle = '#3d2817';
+        ctx.strokeStyle = '#2a1a0f';
+        ctx.lineWidth = 3;
+
+        [-45, 45].forEach(offset => {
+          ctx.beginPath();
+          ctx.arc(baseX + offset, baseY - 5, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Spokes
+          ctx.strokeStyle = '#5c4033';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(baseX + offset, baseY - 5);
+            ctx.lineTo(baseX + offset + Math.cos(angle) * 14, baseY - 5 + Math.sin(angle) * 14);
+            ctx.stroke();
+          }
+
+          // Hub
+          ctx.fillStyle = '#1a0f08';
+          ctx.beginPath();
+          ctx.arc(baseX + offset, baseY - 5, 5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.restore();
+      }
+
+      function drawTurd(x, y, radius, color, angle) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Main body - coiled shape
+        ctx.fillStyle = color;
+        ctx.beginPath();
+
+        // Bottom coil
+        ctx.moveTo(0, radius * 0.8);
+        ctx.bezierCurveTo(-radius, radius * 0.8, -radius, 0, -radius * 0.3, -radius * 0.2);
+        ctx.bezierCurveTo(-radius * 0.8, -radius * 0.5, -radius * 0.5, -radius, 0, -radius * 0.8);
+        ctx.bezierCurveTo(radius * 0.5, -radius, radius * 0.8, -radius * 0.5, radius * 0.3, -radius * 0.2);
+        ctx.bezierCurveTo(radius, 0, radius, radius * 0.8, 0, radius * 0.8);
+        ctx.fill();
+
+        // Highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath();
+        ctx.ellipse(-radius * 0.3, -radius * 0.4, radius * 0.25, radius * 0.15, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stink lines
+        ctx.strokeStyle = 'rgba(100, 80, 60, 0.4)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i++) {
+          const startX = -radius * 0.3 + i * radius * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(startX, -radius);
+          ctx.quadraticCurveTo(startX + 5, -radius - 10, startX - 3, -radius - 18);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawTarget(target) {
+        if (target.hit) return;
+
+        const { body, type, color, radius } = target;
+        const x = body.position.x;
+        const y = body.position.y;
+        const angle = body.angle;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Body (robe/armor)
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(0, radius * 0.3, radius * 0.8, radius, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Head
+        ctx.fillStyle = '#fdbf6f';
+        ctx.beginPath();
+        ctx.arc(0, -radius * 0.5, radius * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Face features
+        ctx.fillStyle = '#333';
+        // Eyes
+        ctx.beginPath();
+        ctx.arc(-radius * 0.15, -radius * 0.55, 3, 0, Math.PI * 2);
+        ctx.arc(radius * 0.15, -radius * 0.55, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Snooty expression based on type
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (type === 'king') {
+          // Smug smile
+          ctx.arc(0, -radius * 0.4, radius * 0.2, 0.1, Math.PI - 0.1);
+          // Crown
+          ctx.stroke();
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.moveTo(-radius * 0.35, -radius * 0.85);
+          ctx.lineTo(-radius * 0.25, -radius * 1.1);
+          ctx.lineTo(-radius * 0.1, -radius * 0.9);
+          ctx.lineTo(0, -radius * 1.15);
+          ctx.lineTo(radius * 0.1, -radius * 0.9);
+          ctx.lineTo(radius * 0.25, -radius * 1.1);
+          ctx.lineTo(radius * 0.35, -radius * 0.85);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#b8860b';
+          ctx.stroke();
+          // Jewel
+          ctx.fillStyle = '#ff0000';
+          ctx.beginPath();
+          ctx.arc(0, -radius * 0.95, 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (type === 'noble') {
+          // Turned up nose expression
+          ctx.arc(0, -radius * 0.35, radius * 0.15, 0.2, Math.PI - 0.2);
+          ctx.stroke();
+          // Fancy hat
+          ctx.fillStyle = '#800080';
+          ctx.beginPath();
+          ctx.ellipse(0, -radius * 0.9, radius * 0.5, radius * 0.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(-radius * 0.15, -radius * 1.3, radius * 0.3, radius * 0.4);
+          // Feather
+          ctx.fillStyle = '#ff69b4';
+          ctx.beginPath();
+          ctx.ellipse(radius * 0.1, -radius * 1.4, 5, 20, 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Guard - stern expression
+          ctx.moveTo(-radius * 0.15, -radius * 0.35);
+          ctx.lineTo(radius * 0.15, -radius * 0.35);
+          ctx.stroke();
+          // Helmet
+          ctx.fillStyle = '#666';
+          ctx.beginPath();
+          ctx.arc(0, -radius * 0.6, radius * 0.5, Math.PI, 0);
+          ctx.fill();
+          ctx.fillRect(-radius * 0.5, -radius * 0.6, radius, radius * 0.15);
+          // Helmet crest
+          ctx.fillStyle = '#aa0000';
+          ctx.beginPath();
+          ctx.moveTo(0, -radius * 1.1);
+          ctx.lineTo(-radius * 0.1, -radius * 0.7);
+          ctx.lineTo(radius * 0.1, -radius * 0.7);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      function drawStructure(struct) {
+        const x = struct.position.x;
+        const y = struct.position.y;
+        const w = struct.bounds.max.x - struct.bounds.min.x;
+        const h = struct.bounds.max.y - struct.bounds.min.y;
+        const angle = struct.angle;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        if (struct.structureType === 'stone') {
+          // Stone block
+          const gradient = ctx.createLinearGradient(-w/2, -h/2, w/2, h/2);
+          gradient.addColorStop(0, '#888');
+          gradient.addColorStop(0.5, '#666');
+          gradient.addColorStop(1, '#555');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(-w/2, -h/2, w, h);
+
+          // Stone texture
+          ctx.strokeStyle = '#444';
+          ctx.lineWidth = 1;
+          for (let i = 0; i < 3; i++) {
+            const lx = -w/2 + (w / 3) * i + 5;
+            ctx.beginPath();
+            ctx.moveTo(lx, -h/2);
+            ctx.lineTo(lx + 3, h/2);
+            ctx.stroke();
+          }
+
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-w/2, -h/2, w, h);
+        } else {
+          // Wood plank
+          const gradient = ctx.createLinearGradient(-w/2, 0, w/2, 0);
+          gradient.addColorStop(0, '#8B7355');
+          gradient.addColorStop(0.3, '#A08060');
+          gradient.addColorStop(0.7, '#9B7B55');
+          gradient.addColorStop(1, '#7B6345');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(-w/2, -h/2, w, h);
+
+          // Wood grain
+          ctx.strokeStyle = 'rgba(80, 50, 30, 0.3)';
+          ctx.lineWidth = 1;
+          for (let i = 0; i < Math.max(w, h) / 8; i++) {
+            const ly = -h/2 + 4 + i * 8;
+            if (ly < h/2) {
+              ctx.beginPath();
+              ctx.moveTo(-w/2, ly);
+              ctx.lineTo(w/2, ly + (Math.random() - 0.5) * 2);
+              ctx.stroke();
+            }
+          }
+
+          ctx.strokeStyle = '#5c4033';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-w/2, -h/2, w, h);
+        }
+
+        ctx.restore();
+      }
+
+      function drawProjectile(proj) {
+        const { body, type } = proj;
+        const turdType = TURD_TYPES[type];
+        drawTurd(body.position.x, body.position.y, turdType.radius, turdType.color, body.angle);
+      }
+
+      function drawParticles() {
+        particles = particles.filter(p => {
+          p.life -= 0.02;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.3;
+
+          if (p.life <= 0) return false;
+
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+
+          return true;
+        });
+      }
+
+      function drawSplatters() {
+        splatters.forEach(s => {
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = 0.8;
+          ctx.beginPath();
+          ctx.ellipse(s.x, s.y, s.w, s.h, s.angle, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Drips
+          for (let i = 0; i < s.drips; i++) {
+            const dx = s.x + (Math.random() - 0.5) * s.w;
+            const dy = s.y + Math.random() * s.h * 2;
+            ctx.beginPath();
+            ctx.ellipse(dx, dy, 3, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        });
+      }
+
+      function drawTrajectory() {
+        if (!isDragging || !dragStart || !dragEnd) return;
+
+        const dx = dragStart.x - dragEnd.x;
+        const dy = dragStart.y - dragEnd.y;
+        const power = Math.min(Math.sqrt(dx * dx + dy * dy), 200) / 200;
+
+        // Launch point calculation
+        const armAngle = -0.3 - power * 1.2;
+        const armLength = 180;
+        const pivotX = TREBUCHET_X;
+        const pivotY = TREBUCHET_Y - 117;
+        const releaseX = pivotX + Math.cos(armAngle) * armLength;
+        const releaseY = pivotY + Math.sin(armAngle) * armLength - 30;
+
+        const launchAngle = Math.atan2(dy, dx);
+        const launchPower = power * 35;
+        let vx = Math.cos(launchAngle) * launchPower;
+        let vy = Math.sin(launchAngle) * launchPower;
+
+        ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+
+        let x = releaseX;
+        let y = releaseY;
+        ctx.moveTo(x, y);
+
+        for (let i = 0; i < 40; i++) {
+          x += vx;
+          y += vy;
+          vy += engine.gravity.y;
+
+          if (y > GROUND_Y) break;
+          ctx.lineTo(x, y);
+        }
+
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Power indicator
+        ctx.fillStyle = `hsl(${30 - power * 30}, 80%, 50%)`;
+        ctx.fillRect(20, H - 60, power * 150, 20);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(20, H - 60, 150, 20);
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Georgia';
+        ctx.fillText('POWER', 70, H - 45);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        drawSky();
+        drawGround();
+        drawSplatters();
+
+        // Draw structures
+        structures.forEach(drawStructure);
+
+        // Draw targets
+        targets.forEach(drawTarget);
+
+        // Draw trebuchet
+        drawTrebuchet();
+
+        // Draw projectiles
+        projectiles.forEach(drawProjectile);
+
+        // Draw particles
+        drawParticles();
+
+        // Draw trajectory preview
+        drawTrajectory();
+      }
+
+      function createParticles(x, y, color, count) {
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10 - 5,
+            size: Math.random() * 6 + 2,
+            color,
+            life: 1
+          });
+        }
+      }
+
+      function createSplatter(x, y, color) {
+        splatters.push({
+          x, y,
+          w: 15 + Math.random() * 20,
+          h: 8 + Math.random() * 10,
+          angle: Math.random() * Math.PI,
+          color,
+          drips: Math.floor(Math.random() * 4) + 2
+        });
+      }
+
+      function hitTarget(target, impactForce) {
+        if (target.hit) return;
+
+        target.hitAmount += impactForce;
+
+        if (target.hitAmount > target.armor * 50) {
+          target.hit = true;
+          score += target.points;
+
+          // Splatter effect on target
+          createParticles(target.body.position.x, target.body.position.y, '#6B4423', 20);
+          createSplatter(target.body.position.x, target.body.position.y + 20, '#5c4033');
+
+          // Remove from physics
+          Composite.remove(engine.world, target.body);
+
+          updateUI();
+          checkWinCondition();
+        }
+      }
+
+      function fireTrebuchet() {
+        if (turdsInventory[selectedTurd] <= 0) return;
+
+        turdsInventory[selectedTurd]--;
+        renderTurdSelector();
+
+        const dx = dragStart.x - dragEnd.x;
+        const dy = dragStart.y - dragEnd.y;
+        const power = Math.min(Math.sqrt(dx * dx + dy * dy), 200) / 200;
+
+        isLaunching = true;
+        trebuchetArmSwing = -0.3 - power * 1.2;
+
+        // Animate arm swing
+        const targetAngle = 0.8;
+        const animateArm = () => {
+          trebuchetArmSwing += 0.15;
+          if (trebuchetArmSwing < targetAngle) {
+            requestAnimationFrame(animateArm);
+          } else {
+            trebuchetArmSwing = -0.3;
+            isLaunching = false;
+          }
+        };
+
+        // Create projectile after short delay
+        setTimeout(() => {
+          const launchAngle = Math.atan2(dy, dx);
+          const launchPower = power * 35;
+
+          const turdType = TURD_TYPES[selectedTurd];
+          const armAngle = 0.5; // Mid-swing angle
+          const armLength = 180;
+          const pivotX = TREBUCHET_X;
+          const pivotY = TREBUCHET_Y - 117;
+          const releaseX = pivotX + Math.cos(armAngle) * armLength;
+          const releaseY = pivotY + Math.sin(armAngle) * armLength - 30;
+
+          const body = Bodies.circle(releaseX, releaseY, turdType.radius, {
+            density: turdType.density,
+            restitution: turdType.restitution,
+            friction: 0.5,
+            label: 'projectile'
+          });
+
+          const vx = Math.cos(launchAngle) * launchPower;
+          const vy = Math.sin(launchAngle) * launchPower - 5;
+
+          Body.setVelocity(body, { x: vx, y: vy });
+          Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.3);
+
+          Composite.add(engine.world, body);
+          projectiles.push({ body, type: selectedTurd, effect: turdType.effect });
+
+          animateArm();
+        }, 100);
+
+        // Select next available turd
+        setTimeout(() => {
+          let found = false;
+          for (let type in turdsInventory) {
+            if (turdsInventory[type] > 0) {
+              selectedTurd = type;
+              found = true;
+              renderTurdSelector();
+              break;
+            }
+          }
+          if (!found) {
+            // No turds left
+            setTimeout(() => {
+              if (!levelWon && targets.some(t => !t.hit)) {
+                showMessage('💩 Out of Ammo!', 'The nobles survived... for now.\nPress Restart to try again.');
+              }
+            }, 2000);
+          }
+        }, 200);
+      }
+
+      function checkWinCondition() {
+        const remaining = targets.filter(t => !t.hit);
+        if (remaining.length === 0) {
+          levelWon = true;
+
+          // Bonus for remaining turds
+          let turdsBonus = 0;
+          for (let type in turdsInventory) {
+            turdsBonus += turdsInventory[type] * 50;
+          }
+          score += turdsBonus;
+          updateUI();
+
+          setTimeout(() => {
+            showMessage('⚔️ Victory! ⚔️', `The aristocracy has been humiliated!\nBonus: +${turdsBonus}\nScore: ${score}`);
+            document.getElementById('next-btn').style.display = 'block';
+          }, 500);
+        }
+      }
+
+      function showMessage(title, sub) {
+        document.getElementById('message-title').textContent = title;
+        document.getElementById('message-sub').textContent = sub;
+        document.getElementById('message').style.display = 'block';
+      }
+
+      function hideMessage() {
+        document.getElementById('message').style.display = 'none';
+      }
+
+      // Collision handling
+      Events.on(engine, 'collisionStart', event => {
+        event.pairs.forEach(pair => {
+          const { bodyA, bodyB } = pair;
+          const labels = [bodyA.label, bodyB.label];
+
+          if (labels.includes('projectile')) {
+            const proj = bodyA.label === 'projectile' ? bodyA : bodyB;
+            const other = bodyA.label === 'projectile' ? bodyB : bodyA;
+            const projData = projectiles.find(p => p.body === proj);
+
+            if (!projData) return;
+
+            const speed = Vector.magnitude(proj.velocity);
+
+            // Hit target
+            if (other.label === 'target') {
+              const target = targets.find(t => t.body === other);
+              if (target) {
+                hitTarget(target, speed * 10);
+              }
+            }
+
+            // Ground/wall impact
+            if (other.label === 'ground' || other.label === 'wall') {
+              createParticles(proj.position.x, proj.position.y, TURD_TYPES[projData.type].color, 8);
+              createSplatter(proj.position.x, GROUND_Y - 5, TURD_TYPES[projData.type].color);
+
+              // Splatter effect
+              if (projData.effect === 'explode' && speed > 3) {
+                // Create mini projectiles
+                for (let i = 0; i < 5; i++) {
+                  const angle = (i / 5) * Math.PI * 2;
+                  const miniBody = Bodies.circle(
+                    proj.position.x + Math.cos(angle) * 20,
+                    proj.position.y - 20,
+                    8,
+                    { density: 0.001, restitution: 0.3, label: 'projectile' }
+                  );
+                  Body.setVelocity(miniBody, {
+                    x: Math.cos(angle) * 8,
+                    y: Math.sin(angle) * 8 - 5
+                  });
+                  Composite.add(engine.world, miniBody);
+                  projectiles.push({ body: miniBody, type: 'regular', effect: 'none' });
+                }
+                createParticles(proj.position.x, proj.position.y, '#4a3728', 15);
+              }
+            }
+
+            // Structure impact
+            if (other.structureType) {
+              createParticles(proj.position.x, proj.position.y, TURD_TYPES[projData.type].color, 5);
+
+              // Heavy turds do more damage
+              if (projData.effect === 'heavy' && speed > 5) {
+                // Apply extra force
+                Body.applyForce(other, proj.position, {
+                  x: proj.velocity.x * 0.01,
+                  y: proj.velocity.y * 0.01
+                });
+              }
+            }
+          }
+
+          // Structures hitting targets
+          if ((labels.includes('wood') || labels.includes('stone')) && labels.includes('target')) {
+            const struct = bodyA.label === 'target' ? bodyB : bodyA;
+            const targetBody = bodyA.label === 'target' ? bodyA : bodyB;
+            const speed = Vector.magnitude(struct.velocity);
+
+            if (speed > 3) {
+              const target = targets.find(t => t.body === targetBody);
+              if (target) {
+                hitTarget(target, speed * 5);
+              }
+            }
+          }
+        });
+      });
+
+      // Input handling
+      canvas.addEventListener('mousedown', e => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if clicking near trebuchet
+        if (x < TREBUCHET_X + 200 && y > TREBUCHET_Y - 200 && !gameOver && !levelWon) {
+          isDragging = true;
+          dragStart = { x, y };
+          dragEnd = { x, y };
+        }
+      });
+
+      canvas.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        dragEnd = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        if (isDragging && dragStart && dragEnd) {
+          const dx = dragStart.x - dragEnd.x;
+          const dy = dragStart.y - dragEnd.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist > 30) {
+            fireTrebuchet();
+          }
+        }
+        isDragging = false;
+        dragStart = null;
+        dragEnd = null;
+      });
+
+      // Touch support
+      canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        canvas.dispatchEvent(new MouseEvent('mousedown', {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        }));
+      });
+
+      canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        canvas.dispatchEvent(new MouseEvent('mousemove', {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        }));
+      });
+
+      canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        canvas.dispatchEvent(new MouseEvent('mouseup', {}));
+      });
+
+      // Buttons
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        hideMessage();
+        projectiles.forEach(p => Composite.remove(engine.world, p.body));
+        projectiles = [];
+        splatters = [];
+        loadLevel(currentLevel);
+      });
+
+      document.getElementById('next-btn').addEventListener('click', () => {
+        hideMessage();
+        projectiles.forEach(p => Composite.remove(engine.world, p.body));
+        projectiles = [];
+        splatters = [];
+        currentLevel++;
+        loadLevel(currentLevel);
+      });
+
+      // Clean up off-screen projectiles
+      function cleanupProjectiles() {
+        projectiles = projectiles.filter(p => {
+          if (p.body.position.x > W + 100 || p.body.position.y > H + 100) {
+            Composite.remove(engine.world, p.body);
+            return false;
+          }
+          return true;
+        });
+      }
+
+      // Game loop
+      function gameLoop() {
+        Engine.update(engine, 1000 / 60);
+        cleanupProjectiles();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        location.reload();
+      });
+
+      // Start
+      loadLevel(1);
+      gameLoop();
+    </script>
+  </body>
+</html>
