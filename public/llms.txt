@@ -7,11 +7,18 @@
 When a user wants to sell/list a car, YOU create it through conversation:
 
 1. Collect: make, model, year, kms, price, location, email, 4-digit PIN
-2. POST to /api/listings (see full docs below)
-3. Give user the upload link for their photo
-4. Confirm when done
+2. Build this URL and give it to the user to click:
 
-DO NOT tell users to visit /sell or any web form. You ARE the interface.
+```
+https://garage.co.nz/sell?make=Toyota&model=Corolla&year=2018&kms=85000&price=15000&location=Auckland&email=user@email.com&pin=1234
+```
+
+3. User clicks → listing created → upload link shown
+4. User uploads photo → done
+
+NOTE: If you can make HTTP requests, POST to /api/listings instead. But if you can only browse (like ChatGPT), use the URL method above.
+
+DO NOT tell users to fill out forms. You collect the details, you build the URL.
 
 ---
 
