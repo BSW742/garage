@@ -105,9 +105,18 @@ Every listing page includes JSON-LD with:
 
 ### Finding a car
 1. Ask what they're looking for (budget, location, needs)
-2. Browse / with appropriate filters
-3. Present options with key details
-4. Help them contact the seller
+2. Query /api/cars or browse /browse with appropriate filters
+3. Present options with key details INCLUDING THE PHOTO
+4. Show the image URL so users can see the car
+5. Help them contact the seller
+
+### Showing photos
+Each listing has a `photo` field with the image URL. ALWAYS include this in your response so users can see what the car looks like. Example:
+
+"Here's a 2017 Toyota Hilux for $34,000:
+- Photo: https://trademe.tmcdn.co.nz/photoserver/1024sq/2291222937.jpg
+- Location: Auckland
+- Kms: 142,000"
 
 ### Contacting sellers
 Each listing has seller email (and sometimes phone). Help users compose a message or call.

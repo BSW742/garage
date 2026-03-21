@@ -51,10 +51,11 @@ const title = make
           <article class="car-card">
             <div class="car-image">
               {car.photos ? (
-                <img src={JSON.parse(car.photos)[0]} alt={`${car.year} ${car.make} ${car.model}`} />
+                <img src={JSON.parse(car.photos)[0]} alt={`Photo of ${car.year} ${car.make} ${car.model} for sale`} width="400" height="300" />
               ) : (
-                <div class="no-image">No photo</div>
+                <div class="no-image">No photo available</div>
               )}
+              <p class="image-caption">Photo: {car.year} {car.make} {car.model}</p>
             </div>
             <div class="car-details">
               <h2>{car.year} {car.make} {car.model}</h2>
@@ -142,6 +143,13 @@ const title = make
     justify-content: center;
     color: var(--color-text-muted);
     font-size: 0.75rem;
+  }
+
+  .image-caption {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin: 0.25rem 0 0 0;
+    text-align: center;
   }
 
   .car-details h2 {
