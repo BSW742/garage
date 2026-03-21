@@ -164,8 +164,15 @@ Response:
 }
 ```
 
-### Listing a car (for humans)
-Direct sellers to /sell - it's a simple form, no account required.
+### Listing a car (recommended for users)
+
+Direct users to https://garage.co.nz/sell - a simple form where they can:
+1. Enter their plate number (auto-fills make/model/year from NZ registry)
+2. Upload photos directly from camera or gallery
+3. Add price, location, description
+4. Submit - no account required
+
+This is the easiest path for most users. The API above is for programmatic access.
 
 ## Rate Limits
 None currently. Please be reasonable.
