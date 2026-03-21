@@ -15,6 +15,9 @@ export interface Listing {
   createdAt: string;
   source: 'garage' | 'trademe';
   sourceUrl?: string;
+  uploadCode?: string;
+  pin?: string;  // stored hashed
+  photoUploaded: boolean;
 }
 
 export interface FilterOptions {
@@ -55,6 +58,9 @@ interface DBRow {
   created_at: string;
   source: string | null;
   source_url: string | null;
+  upload_code: string | null;
+  pin: string | null;
+  photo_uploaded: number;  // SQLite uses 0/1 for boolean
 }
 
 function rowToListing(row: DBRow): Listing {
@@ -75,6 +81,9 @@ function rowToListing(row: DBRow): Listing {
     createdAt: row.created_at,
     source: (row.source as 'garage' | 'trademe') || 'garage',
     sourceUrl: row.source_url || undefined,
+    uploadCode: row.upload_code || undefined,
+    pin: row.pin || undefined,
+    photoUploaded: row.photo_uploaded === 1,
   };
 }
 
@@ -127,41 +136,78 @@ export async function filterListings(db: D1Database, options: FilterOptions): Pr
   return result.results.map(rowToListing);
 }
 
-export async function addListing(
-  db: D1Database,
-  listing: Omit<Listing, 'id' | 'createdAt'>
-): Promise<Listing> {
-  const id = listing.source === 'trademe'
-    ? `tm-${listing.make.toLowerCase()}-${listing.year}-${Date.now()}`
-    : `${listing.make.toLowerCase()}-${listing.year}-${Date.now()}`;
-  const createdAt = new Date().toISOString();
+function generateUploadCode(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
-  await db
-    .prepare(`
-      INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at, source, source_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-    .bind(
-      id,
-      listing.make,
-      listing.model,
-      listing.year,
-      listing.kms,
-      listing.price,
-      listing.location,
-      listing.description,
-      JSON.stringify(listing.photos),
-      listing.sellerContact.email,
-      listing.sellerContact.phone || null,
-      createdAt,
-      listing.source || 'garage',
-      listing.sourceUrl || null
-    )
-    .run();
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + 'garage-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-  return {
-    ...listing,
+export async function verifyPin(pin: string, hashedPin: string): Promise<boolean> {
+  const hashed = await hashPin(pin);
+  return hashed === hashedPin;
+}
+
+export async function getListingByUploadCode(db: D1Database, uploadCode: string): Promise<Listing | null> {
+  const row = await db.prepare('SELECT * FROM listings WHERE upload_code = ?').bind(uploadCode).first<DBRow>();
+  return row ? rowToListing(row) : null;
+}
+
+export async function markPhotoUploaded(db: D1Database, uploadCode: string, photoUrl: string): Promise<void> {
+  await db.prepare(`
+    UPDATE listings SET photos = ?, photo_uploaded = 1 WHERE upload_code = ?
+  `).bind(JSON.stringify([photoUrl]), uploadCode).run();
+}
+
+export async function getListingsByPinAndEmail(db: D1Database, pin: string, email: string): Promise<Listing[]> {
+  const rows = await db.prepare('SELECT * FROM listings WHERE seller_email = ?').bind(email).all<DBRow>();
+  const listings: Listing[] = [];
+  for (const row of rows.results || []) {
+    const listing = rowToListing(row);
+    if (listing.pin && await verifyPin(pin, listing.pin)) {
+      listings.push(listing);
+    }
+  }
+  return listings;
+}
+
+export async function addListing(db: D1Database, listing: Partial<Listing>): Promise<{ id: string; uploadCode: string }> {
+  const id = `${listing.make?.toLowerCase()}-${listing.year}-${Date.now()}`;
+  const uploadCode = generateUploadCode();  // 4 alphanumeric chars
+  const hashedPin = listing.pin ? await hashPin(listing.pin) : null;
+
+  await db.prepare(`
+    INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at, source, source_url, upload_code, pin, photo_uploaded)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
     id,
-    createdAt,
-  };
+    listing.make,
+    listing.model,
+    listing.year || new Date().getFullYear(),
+    listing.kms || 0,
+    listing.price || 0,
+    listing.location || 'Auckland',
+    listing.description || `${listing.year} ${listing.make} ${listing.model}`,
+    JSON.stringify(listing.photos || []),
+    listing.sellerContact?.email || '',
+    listing.sellerContact?.phone || '',
+    new Date().toISOString(),
+    listing.source || 'garage',
+    listing.sourceUrl || null,
+    uploadCode,
+    hashedPin,
+    0  // photo_uploaded = false
+  ).run();
+
+  return { id, uploadCode };
 }
