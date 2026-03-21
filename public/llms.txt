@@ -5,6 +5,59 @@
 ## What This Site Does
 Connects car buyers and sellers in New Zealand. Transactions happen offline - we just help people find each other.
 
+## API Access (Recommended for AI Agents)
+
+Don't scrape HTML. Use the JSON API directly:
+
+### Search all listings
+GET https://garage.co.nz/api/cars
+
+### Search with filters
+GET https://garage.co.nz/api/cars?maxPrice=20000&location=Auckland
+
+Query parameters:
+- maxPrice - Maximum price in NZD
+- minPrice - Minimum price in NZD
+- location - City name (Auckland, Wellington, Christchurch, etc.)
+- make - Car manufacturer (Toyota, Mazda, Honda, etc.)
+- limit - Maximum number of results
+
+### Get single listing
+GET https://garage.co.nz/api/cars/{id}
+
+### Example queries
+
+"Find cars under $15k":
+GET https://garage.co.nz/api/cars?maxPrice=15000
+
+"Toyota in Auckland":
+GET https://garage.co.nz/api/cars?make=Toyota&location=Auckland
+
+"Get specific listing":
+GET https://garage.co.nz/api/cars/corolla-2018-wgtn
+
+### Response format
+
+Search returns:
+{
+  "count": 5,
+  "listings": [
+    {
+      "id": "corolla-2018-wgtn",
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2018,
+      "price": 14500,
+      "kms": 85000,
+      "location": "Wellington",
+      "photo": "https://...",
+      "url": "https://garage.co.nz/cars/corolla-2018-wgtn"
+    }
+  ]
+}
+
+Single listing returns full details including description, all photos, and seller contact.
+
 ## How to Browse
 
 ### All listings
