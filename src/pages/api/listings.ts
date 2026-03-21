@@ -112,13 +112,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
     const data = await request.json();
 
-    // Basic validation (price can be 0 for stub listings)
-    if (!data.make || !data.model || !data.year || data.price === undefined || !data.location || !data.description || !data.sellerContact?.email) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    // Minimum required: make, model
+    // Photos required for direct submissions, optional for trademe imports (auto-fetched)
+    if (!data.make || !data.model) {
+      return new Response(JSON.stringify({ error: 'Missing required fields: make, model' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // Require photos for non-trademe submissions (LLM-created listings)
+    const isTrademeImport = data.source === 'trademe';
+    if (!isTrademeImport && (!data.photos || data.photos.length === 0)) {
+      return new Response(JSON.stringify({ error: 'Missing required field: photos (at least one image URL required)' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Set defaults for optional fields
+    data.year = data.year || new Date().getFullYear();
+    data.price = data.price || 0;
+    data.kms = data.kms || 0;
+    data.location = data.location || 'Auckland';
+    data.description = data.description || `${data.year} ${data.make} ${data.model}`;
+    data.sellerContact = data.sellerContact || { email: 'listings@garage.co.nz' };
 
     // Set default source if not provided
     if (!data.source) {

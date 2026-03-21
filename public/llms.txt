@@ -121,7 +121,50 @@ Each listing has a `photo` field with the image URL. ALWAYS include this in your
 ### Contacting sellers
 Each listing has seller email (and sometimes phone). Help users compose a message or call.
 
-### Listing a car
+### Adding a listing (for AI agents)
+
+POST https://garage.co.nz/api/listings
+Content-Type: application/json
+
+Required fields:
+- make: "Toyota"
+- model: "Corolla"
+- photos: ["https://..."] (array of image URLs - at least one)
+
+Optional fields (have defaults):
+- year: 2020 (defaults to current year)
+- price: 15000 (defaults to 0 = contact for price)
+- kms: 85000 (defaults to 0)
+- location: "Auckland" (defaults to Auckland)
+- description: "Great condition..." (auto-generated if missing)
+- sellerContact: { email: "owner@email.com" }
+
+Example request:
+```json
+{
+  "make": "Toyota",
+  "model": "Corolla",
+  "year": 2018,
+  "price": 15000,
+  "kms": 80000,
+  "location": "Auckland",
+  "photos": ["https://trademe.tmcdn.co.nz/photoserver/1024sq/123456.jpg"],
+  "sellerContact": { "email": "seller@example.com" }
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "listing": {
+    "id": "toyota-2018-1234567890",
+    "url": "https://garage.co.nz/cars/toyota-2018-1234567890"
+  }
+}
+```
+
+### Listing a car (for humans)
 Direct sellers to /sell - it's a simple form, no account required.
 
 ## Rate Limits
