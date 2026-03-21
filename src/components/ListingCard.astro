@@ -13,8 +13,8 @@ const displayPrice = listing.price.toLocaleString('en-NZ');
   <a href={`/cars/${listing.id}`}>
     <img src={listing.photos[0]} alt={`${listing.year} ${listing.make} ${listing.model}`} loading="lazy" />
     <div class="content">
-      <h3>{listing.year} {listing.make} {listing.model}</h3>
       <p class="price">${displayPrice}</p>
+      <h3>{listing.year} {listing.make} {listing.model}</h3>
       <p class="meta">{listing.kms.toLocaleString()} km · {listing.location}</p>
     </div>
   </a>
@@ -22,16 +22,16 @@ const displayPrice = listing.price.toLocaleString('en-NZ');
 
 <style>
   .card {
-    background: #171717;
-    border-radius: 12px;
+    background: var(--color-surface);
+    border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #262626;
-    transition: border-color 0.2s, transform 0.2s;
+    border: 1px solid var(--color-border);
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   .card:hover {
-    border-color: #10b981;
-    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.1);
   }
 
   .card a {
@@ -43,27 +43,29 @@ const displayPrice = listing.price.toLocaleString('en-NZ');
     width: 100%;
     aspect-ratio: 16/10;
     object-fit: cover;
+    background: var(--color-bg);
   }
 
   .content {
     padding: 1rem;
   }
 
-  h3 {
-    font-size: 1.125rem;
-    margin-bottom: 0.5rem;
-    color: #fafafa;
-  }
-
   .price {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #10b981;
+    color: var(--color-primary);
     margin-bottom: 0.25rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
   }
 
   .meta {
     font-size: 0.875rem;
-    color: #737373;
+    color: var(--color-text-muted);
   }
 </style>

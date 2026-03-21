@@ -25,19 +25,24 @@ const siteUrl = "https://garage.co.nz";
       "description": "The AI-native car marketplace for New Zealand",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": `${siteUrl}/cars?q={search_term_string}`,
+        "target": `${siteUrl}/?q={search_term_string}`,
         "query-input": "required name=search_term_string"
       }
     })} />
   </head>
   <body>
-    <header>
-      <nav>
-        <a href="/" class="logo">garage.co.nz</a>
-        <div class="nav-links">
-          <a href="/cars">Browse Cars</a>
-          <a href="/sell">Sell Your Car</a>
+    <header class="site-header">
+      <a href="/" class="logo">
+        <div class="logo-icon">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
         </div>
+        <span class="logo-text">garage</span>
+      </a>
+      <nav class="nav">
+        <a href="/sell">Sell</a>
+        <a href="/about">About</a>
       </nav>
     </header>
 
@@ -54,11 +59,13 @@ const siteUrl = "https://garage.co.nz";
 
 <style>
   :root {
-    --bg: #0a0a0a;
-    --fg: #fafafa;
-    --accent: #10b981;
-    --muted: #737373;
-    --border: #262626;
+    --color-primary: #0066ff;
+    --color-primary-dark: #0052cc;
+    --color-bg: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-text: #1a1a1a;
+    --color-text-muted: #666666;
+    --color-border: #e0e0e0;
   }
 
   * {
@@ -69,8 +76,8 @@ const siteUrl = "https://garage.co.nz";
 
   html {
     font-family: system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--fg);
+    background: var(--color-bg);
+    color: var(--color-text);
   }
 
   body {
@@ -79,58 +86,84 @@ const siteUrl = "https://garage.co.nz";
     flex-direction: column;
   }
 
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
-  }
-
-  nav {
-    max-width: 1200px;
-    margin: 0 auto;
+  .site-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .logo {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--fg);
-    text-decoration: none;
-  }
-
-  .nav-links {
     display: flex;
-    gap: 2rem;
-  }
-
-  .nav-links a {
-    color: var(--muted);
+    align-items: center;
+    gap: 0.5rem;
     text-decoration: none;
-    transition: color 0.2s;
   }
 
-  .nav-links a:hover {
-    color: var(--fg);
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--color-primary);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .logo-icon .bar {
+    width: 20px;
+    height: 4px;
+    background: white;
+    border-radius: 1px;
+  }
+
+  .logo-text {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: var(--color-text);
+  }
+
+  .nav {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .nav a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+
+  .nav a:hover {
+    color: var(--color-primary);
   }
 
   main {
     flex: 1;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1.5rem;
     width: 100%;
   }
 
   footer {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--color-border);
     padding: 2rem;
     text-align: center;
-    color: var(--muted);
+    color: var(--color-text-muted);
     font-size: 0.875rem;
+    background: var(--color-surface);
   }
 
   footer a {
-    color: var(--muted);
+    color: var(--color-text-muted);
+  }
+
+  footer a:hover {
+    color: var(--color-primary);
   }
 </style>

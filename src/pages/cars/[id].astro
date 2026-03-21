@@ -6,7 +6,7 @@ const { id } = Astro.params;
 const listing = getListingById(id!);
 
 if (!listing) {
-  return Astro.redirect('/cars');
+  return Astro.redirect('/');
 }
 
 const displayPrice = listing.price.toLocaleString('en-NZ');
@@ -49,7 +49,7 @@ const jsonLd = {
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <article class="listing-detail">
-    <a href="/cars" class="back-link">← Back to listings</a>
+    <a href="/" class="back-link">← Back to listings</a>
 
     <div class="gallery">
       <img src={listing.photos[0]} alt={title} />
@@ -105,13 +105,13 @@ const jsonLd = {
 <style>
   .back-link {
     display: inline-block;
-    color: #737373;
+    color: var(--color-text-muted);
     text-decoration: none;
     margin-bottom: 1.5rem;
   }
 
   .back-link:hover {
-    color: #fafafa;
+    color: var(--color-primary);
   }
 
   .listing-detail {
@@ -124,6 +124,7 @@ const jsonLd = {
     object-fit: cover;
     border-radius: 12px;
     margin-bottom: 2rem;
+    background: var(--color-bg);
   }
 
   header {
@@ -138,22 +139,23 @@ const jsonLd = {
   .price {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #10b981;
+    color: var(--color-primary);
   }
 
   .specs {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1rem;
-    background: #171717;
+    background: var(--color-surface);
     padding: 1.5rem;
     border-radius: 12px;
     margin-bottom: 2rem;
+    border: 1px solid var(--color-border);
   }
 
   .spec dt {
     font-size: 0.875rem;
-    color: #737373;
+    color: var(--color-text-muted);
     margin-bottom: 0.25rem;
   }
 
@@ -171,7 +173,7 @@ const jsonLd = {
   }
 
   .description p {
-    color: #a3a3a3;
+    color: var(--color-text-muted);
     line-height: 1.6;
   }
 
@@ -188,21 +190,25 @@ const jsonLd = {
     border-radius: 8px;
     font-weight: 600;
     text-decoration: none;
-    transition: opacity 0.2s;
+    transition: background 0.2s;
   }
 
   .contact-btn.email {
-    background: #10b981;
-    color: #000;
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .contact-btn.email:hover {
+    background: var(--color-primary-dark);
   }
 
   .contact-btn.phone {
-    background: #262626;
-    color: #fafafa;
-    border: 1px solid #404040;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
   }
 
-  .contact-btn:hover {
-    opacity: 0.9;
+  .contact-btn.phone:hover {
+    border-color: var(--color-primary);
   }
 </style>
