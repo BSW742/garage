@@ -1,829 +1,224 @@
 ---
-// 3D Pac-Man Game
+import Layout from '../components/Layout.astro';
+import ListingCard from '../components/ListingCard.astro';
+import { getFeaturedListings } from '../lib/listings';
+
+const featured = getFeaturedListings(6);
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <title>3D Pac-Man | garage.co.nz</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        overflow: hidden;
-        background: #000;
-        font-family: 'Press Start 2P', monospace;
-      }
-      #game-container {
-        width: 100vw;
-        height: 100vh;
-        display: block;
-      }
-      #ui {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        color: #fff;
-        font-family: 'Courier New', monospace;
-        font-size: 18px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-        z-index: 100;
-      }
-      #score { color: #ffff00; font-size: 24px; font-weight: bold; }
-      #lives { margin-top: 10px; }
-      #message {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #ffff00;
-        font-size: 32px;
-        font-weight: bold;
-        text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
-        z-index: 100;
-        text-align: center;
-        display: none;
-        white-space: pre-line;
-      }
-      #instructions {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        color: #888;
-        font-family: 'Courier New', monospace;
-        font-size: 14px;
-        z-index: 100;
-      }
-      #fps-btn {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: linear-gradient(135deg, #ff0000, #ff6600);
-        border: none;
-        border-radius: 8px;
-        color: white;
-        font-family: 'Courier New', monospace;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 100;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        box-shadow: 0 4px 15px rgba(255,0,0,0.4);
-        transition: all 0.2s;
-      }
-      #fps-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(255,0,0,0.6);
-      }
-      #fps-btn.active {
-        background: linear-gradient(135deg, #00ff00, #00aa00);
-        box-shadow: 0 4px 15px rgba(0,255,0,0.4);
-      }
-      #crosshair {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 30px;
-        height: 30px;
-        pointer-events: none;
-        z-index: 100;
-        display: none;
-      }
-      #crosshair::before, #crosshair::after {
-        content: '';
-        position: absolute;
-        background: rgba(255,255,0,0.8);
-      }
-      #crosshair::before {
-        width: 2px;
-        height: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      #crosshair::after {
-        height: 2px;
-        width: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-      #minimap {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 180px;
-        height: 180px;
-        background: rgba(0, 0, 20, 0.85);
-        border: 2px solid #0066ff;
-        border-radius: 8px;
-        z-index: 100;
-        display: none;
-        box-shadow: 0 0 20px rgba(0, 102, 255, 0.4);
-      }
-    </style>
-  </head>
-  <body>
-    <div id="ui">
-      <div id="score">SCORE: 0</div>
-      <div id="lives">LIVES: ❤️❤️❤️</div>
+<Layout title="The AI-Native Car Marketplace">
+  <section class="hero">
+    <h1>Buy and sell cars with your AI</h1>
+    <p class="tagline">The marketplace designed for ChatGPT, Claude, and the AI assistants you already use.</p>
+
+    <div class="prompt-box">
+      <p class="prompt-label">Copy this into ChatGPT:</p>
+      <code class="prompt">"Find me a reliable car under $20,000 in Wellington on garage.co.nz"</code>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('Find me a reliable car under $20,000 in Wellington on garage.co.nz')">Copy</button>
     </div>
-    <button id="fps-btn">🎮 FPS MODE</button>
-    <canvas id="minimap" width="180" height="180"></canvas>
-    <div id="crosshair"></div>
-    <div id="message"></div>
-    <div id="instructions">WASD or Arrow Keys to move | Eat all pellets to win!</div>
-    <div id="game-container"></div>
-
-    <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-    </script>
-
-    <script type="module">
-      import * as THREE from 'three';
-
-      // Game state
-      let score = 0;
-      let lives = 3;
-      let gameOver = false;
-      let gameWon = false;
-      let pellets = [];
-      let powerPellets = [];
-      let ghosts = [];
-      let pacman;
-      let pacmanDirection = new THREE.Vector3(0, 0, 0);
-      let nextDirection = new THREE.Vector3(0, 0, 0);
-      let isPoweredUp = false;
-      let powerUpTimer = 0;
-      let isFPSMode = false;
-      let pacmanLight; // Flashlight for FPS mode
-
-      // Maze layout (1 = wall, 0 = path, 2 = pellet, 3 = power pellet, 4 = ghost spawn)
-      const maze = [
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,3,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,3,1],
-        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-        [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-        [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
-        [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-        [1,1,1,1,2,1,1,1,0,1,0,1,1,1,2,1,1,1,1],
-        [0,0,0,1,2,1,0,0,0,4,0,0,0,1,2,1,0,0,0],
-        [1,1,1,1,2,1,0,1,1,0,1,1,0,1,2,1,1,1,1],
-        [0,0,0,0,2,0,0,1,4,4,4,1,0,0,2,0,0,0,0],
-        [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-        [0,0,0,1,2,1,0,0,0,0,0,0,0,1,2,1,0,0,0],
-        [1,1,1,1,2,1,0,1,1,1,1,1,0,1,2,1,1,1,1],
-        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
-        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
-        [1,3,2,1,2,2,2,2,2,0,2,2,2,2,2,1,2,3,1],
-        [1,1,2,1,2,1,2,1,1,1,1,1,2,1,2,1,2,1,1],
-        [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
-        [1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1],
-        [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-      ];
-
-      const CELL_SIZE = 2;
-      const MAZE_WIDTH = maze[0].length;
-      const MAZE_HEIGHT = maze.length;
-
-      // Scene setup
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000020);
-
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(MAZE_WIDTH * CELL_SIZE / 2, 35, MAZE_HEIGHT * CELL_SIZE + 10);
-      camera.lookAt(MAZE_WIDTH * CELL_SIZE / 2, 0, MAZE_HEIGHT * CELL_SIZE / 2);
-
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.shadowMap.enabled = true;
-      document.getElementById('game-container').appendChild(renderer.domElement);
-
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
-      scene.add(ambientLight);
-
-      const mainLight = new THREE.DirectionalLight(0xffffff, 1);
-      mainLight.position.set(20, 30, 20);
-      mainLight.castShadow = true;
-      scene.add(mainLight);
-
-      // Add point lights for atmosphere
-      const blueLight = new THREE.PointLight(0x0066ff, 0.5, 50);
-      blueLight.position.set(0, 10, 0);
-      scene.add(blueLight);
-
-      // Floor
-      const floorGeometry = new THREE.PlaneGeometry(MAZE_WIDTH * CELL_SIZE + 4, MAZE_HEIGHT * CELL_SIZE + 4);
-      const floorMaterial = new THREE.MeshStandardMaterial({
-        color: 0x000033,
-        roughness: 0.8,
-        metalness: 0.2
-      });
-      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.set(MAZE_WIDTH * CELL_SIZE / 2, -0.5, MAZE_HEIGHT * CELL_SIZE / 2);
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Create maze walls (tall enough for FPS mode)
-      const WALL_HEIGHT = 3;
-      const wallGeometry = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
-      const wallMaterial = new THREE.MeshStandardMaterial({
-        color: 0x0000aa,
-        roughness: 0.3,
-        metalness: 0.5,
-        emissive: 0x000044
-      });
-
-      for (let y = 0; y < MAZE_HEIGHT; y++) {
-        for (let x = 0; x < MAZE_WIDTH; x++) {
-          if (maze[y][x] === 1) {
-            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-            wall.position.set(x * CELL_SIZE + CELL_SIZE/2, WALL_HEIGHT/2 - 0.5, y * CELL_SIZE + CELL_SIZE/2);
-            wall.castShadow = true;
-            wall.receiveShadow = true;
-            scene.add(wall);
-          }
-        }
-      }
-
-      // Add ceiling for FPS mode atmosphere (hidden by default)
-      const ceilingGeometry = new THREE.PlaneGeometry(MAZE_WIDTH * CELL_SIZE + 4, MAZE_HEIGHT * CELL_SIZE + 4);
-      const ceilingMaterial = new THREE.MeshStandardMaterial({
-        color: 0x000011,
-        roughness: 1,
-        side: THREE.DoubleSide
-      });
-      const ceiling = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
-      ceiling.rotation.x = Math.PI / 2;
-      ceiling.position.set(MAZE_WIDTH * CELL_SIZE / 2, WALL_HEIGHT, MAZE_HEIGHT * CELL_SIZE / 2);
-      ceiling.visible = false; // Hidden until FPS mode
-      scene.add(ceiling);
-
-      // Create pellets
-      const pelletGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-      const pelletMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00,
-        emissive: 0x666600
-      });
-
-      const powerPelletGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-      const powerPelletMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00,
-        emissive: 0xffaa00
-      });
-
-      for (let y = 0; y < MAZE_HEIGHT; y++) {
-        for (let x = 0; x < MAZE_WIDTH; x++) {
-          if (maze[y][x] === 2) {
-            const pellet = new THREE.Mesh(pelletGeometry, pelletMaterial);
-            pellet.position.set(x * CELL_SIZE + CELL_SIZE/2, 0.5, y * CELL_SIZE + CELL_SIZE/2);
-            pellet.userData = { x, y, type: 'pellet' };
-            scene.add(pellet);
-            pellets.push(pellet);
-          } else if (maze[y][x] === 3) {
-            const powerPellet = new THREE.Mesh(powerPelletGeometry, powerPelletMaterial);
-            powerPellet.position.set(x * CELL_SIZE + CELL_SIZE/2, 0.5, y * CELL_SIZE + CELL_SIZE/2);
-            powerPellet.userData = { x, y, type: 'power' };
-            scene.add(powerPellet);
-            powerPellets.push(powerPellet);
-          }
-        }
-      }
-
-      // Create Pac-Man
-      const pacmanGeometry = new THREE.SphereGeometry(0.7, 32, 32);
-      const pacmanMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00,
-        emissive: 0x444400,
-        roughness: 0.3
-      });
-      pacman = new THREE.Mesh(pacmanGeometry, pacmanMaterial);
-      pacman.position.set(9 * CELL_SIZE + CELL_SIZE/2, 0.7, 15 * CELL_SIZE + CELL_SIZE/2);
-      pacman.castShadow = true;
-      scene.add(pacman);
-
-      // Pac-Man eyes
-      const eyeGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-      const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-      const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      leftEye.position.set(-0.25, 0.3, -0.55);
-      pacman.add(leftEye);
-      const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-      rightEye.position.set(0.25, 0.3, -0.55);
-      pacman.add(rightEye);
-
-      // Pac-Man flashlight for FPS mode
-      pacmanLight = new THREE.SpotLight(0xffff00, 2, 15, Math.PI / 4, 0.3);
-      pacmanLight.position.set(0, 0.5, 0);
-      pacmanLight.castShadow = true;
-      pacmanLight.visible = false;
-      scene.add(pacmanLight);
-      scene.add(pacmanLight.target);
-
-      // Create Ghosts
-      const ghostColors = [0xff0000, 0x00ffff, 0xff69b4, 0xffa500]; // Red, Cyan, Pink, Orange
-      const ghostNames = ['Blinky', 'Inky', 'Pinky', 'Clyde'];
-      const ghostSpawns = [
-        { x: 9, y: 9 },
-        { x: 8, y: 9 },
-        { x: 10, y: 9 },
-        { x: 9, y: 7 }
-      ];
-
-      function createGhost(color, x, y, name) {
-        const ghostGroup = new THREE.Group();
-
-        // Body (half sphere + cylinder)
-        const bodyGeometry = new THREE.SphereGeometry(0.6, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
-        const bodyMaterial = new THREE.MeshStandardMaterial({
-          color: color,
-          emissive: color,
-          emissiveIntensity: 0.2
-        });
-        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.rotation.x = Math.PI;
-        body.position.y = 0.6;
-        ghostGroup.add(body);
-
-        // Skirt
-        const skirtGeometry = new THREE.CylinderGeometry(0.6, 0.6, 0.6, 32);
-        const skirt = new THREE.Mesh(skirtGeometry, bodyMaterial);
-        skirt.position.y = 0.3;
-        ghostGroup.add(skirt);
-
-        // Wavy bottom
-        for (let i = 0; i < 6; i++) {
-          const waveGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-          const wave = new THREE.Mesh(waveGeometry, bodyMaterial);
-          const angle = (i / 6) * Math.PI * 2;
-          wave.position.set(Math.cos(angle) * 0.4, 0, Math.sin(angle) * 0.4);
-          ghostGroup.add(wave);
-        }
-
-        // Eyes
-        const eyeWhiteGeometry = new THREE.SphereGeometry(0.2, 16, 16);
-        const eyeWhiteMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const eyePupilGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-        const eyePupilMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-
-        const leftEyeWhite = new THREE.Mesh(eyeWhiteGeometry, eyeWhiteMaterial);
-        leftEyeWhite.position.set(-0.2, 0.7, -0.45);
-        ghostGroup.add(leftEyeWhite);
-
-        const leftPupil = new THREE.Mesh(eyePupilGeometry, eyePupilMaterial);
-        leftPupil.position.set(-0.2, 0.7, -0.6);
-        ghostGroup.add(leftPupil);
-
-        const rightEyeWhite = new THREE.Mesh(eyeWhiteGeometry, eyeWhiteMaterial);
-        rightEyeWhite.position.set(0.2, 0.7, -0.45);
-        ghostGroup.add(rightEyeWhite);
-
-        const rightPupil = new THREE.Mesh(eyePupilGeometry, eyePupilMaterial);
-        rightPupil.position.set(0.2, 0.7, -0.6);
-        ghostGroup.add(rightPupil);
-
-        ghostGroup.position.set(x * CELL_SIZE + CELL_SIZE/2, 0, y * CELL_SIZE + CELL_SIZE/2);
-        ghostGroup.userData = {
-          name,
-          originalColor: color,
-          direction: new THREE.Vector3(0, 0, 1),
-          speed: 0.06 + Math.random() * 0.02
-        };
-
-        scene.add(ghostGroup);
-        return ghostGroup;
-      }
-
-      ghostSpawns.forEach((spawn, i) => {
-        ghosts.push(createGhost(ghostColors[i], spawn.x, spawn.y, ghostNames[i]));
-      });
-
-      // Input handling
-      const keys = {};
-      window.addEventListener('keydown', (e) => {
-        keys[e.key.toLowerCase()] = true;
-        keys[e.code] = true;
-
-        if (['w', 'arrowup'].includes(e.key.toLowerCase()) || e.code === 'ArrowUp') {
-          nextDirection.set(0, 0, -1);
-        } else if (['s', 'arrowdown'].includes(e.key.toLowerCase()) || e.code === 'ArrowDown') {
-          nextDirection.set(0, 0, 1);
-        } else if (['a', 'arrowleft'].includes(e.key.toLowerCase()) || e.code === 'ArrowLeft') {
-          nextDirection.set(-1, 0, 0);
-        } else if (['d', 'arrowright'].includes(e.key.toLowerCase()) || e.code === 'ArrowRight') {
-          nextDirection.set(1, 0, 0);
-        }
-      });
-
-      window.addEventListener('keyup', (e) => {
-        keys[e.key.toLowerCase()] = false;
-        keys[e.code] = false;
-      });
-
-      // Collision detection - check if position is valid
-      function isWall(cellX, cellY) {
-        if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
-          return false; // Allow wrapping at edges
-        }
-        return maze[cellY][cellX] === 1;
-      }
-
-      function canMove(x, z, direction) {
-        const radius = 0.6; // Pac-Man's collision radius
-        const step = 0.15; // How far ahead to check
-
-        // Check the point ahead in the direction of movement
-        const nextX = x + direction.x * step;
-        const nextZ = z + direction.z * step;
-
-        // Check multiple points around pacman's edge in the direction of movement
-        const checkPoints = [
-          { x: nextX + direction.x * radius, z: nextZ + direction.z * radius }, // Front center
-          { x: nextX + direction.x * radius + direction.z * radius * 0.5, z: nextZ + direction.z * radius - direction.x * radius * 0.5 }, // Front right
-          { x: nextX + direction.x * radius - direction.z * radius * 0.5, z: nextZ + direction.z * radius + direction.x * radius * 0.5 }, // Front left
-        ];
-
-        for (const point of checkPoints) {
-          const cellX = Math.floor(point.x / CELL_SIZE);
-          const cellY = Math.floor(point.z / CELL_SIZE);
-          if (isWall(cellX, cellY)) {
-            return false;
-          }
-        }
-
-        return true;
-      }
-
-      function getMazeCell(x, z) {
-        const cellX = Math.floor(x / CELL_SIZE);
-        const cellY = Math.floor(z / CELL_SIZE);
-        return { x: cellX, y: cellY };
-      }
-
-      // Ghost AI
-      function updateGhost(ghost) {
-        const speed = isPoweredUp ? ghost.userData.speed * 0.5 : ghost.userData.speed;
-
-        // Move in current direction
-        const nextPos = ghost.position.clone().add(ghost.userData.direction.clone().multiplyScalar(speed));
-
-        // Check if can continue or need to change direction
-        if (!canMove(ghost.position.x, ghost.position.z, ghost.userData.direction)) {
-          // Pick new random direction
-          const directions = [
-            new THREE.Vector3(1, 0, 0),
-            new THREE.Vector3(-1, 0, 0),
-            new THREE.Vector3(0, 0, 1),
-            new THREE.Vector3(0, 0, -1)
-          ];
-
-          const validDirs = directions.filter(d => canMove(ghost.position.x, ghost.position.z, d));
-          if (validDirs.length > 0) {
-            ghost.userData.direction = validDirs[Math.floor(Math.random() * validDirs.length)];
-          }
-        } else {
-          ghost.position.add(ghost.userData.direction.clone().multiplyScalar(speed));
-
-          // Occasionally change direction at intersections
-          if (Math.random() < 0.02) {
-            const directions = [
-              new THREE.Vector3(1, 0, 0),
-              new THREE.Vector3(-1, 0, 0),
-              new THREE.Vector3(0, 0, 1),
-              new THREE.Vector3(0, 0, -1)
-            ];
-            const validDirs = directions.filter(d => canMove(ghost.position.x, ghost.position.z, d));
-            if (validDirs.length > 1) {
-              ghost.userData.direction = validDirs[Math.floor(Math.random() * validDirs.length)];
-            }
-          }
-        }
-
-        // Wrap around
-        if (ghost.position.x < 0) ghost.position.x = MAZE_WIDTH * CELL_SIZE;
-        if (ghost.position.x > MAZE_WIDTH * CELL_SIZE) ghost.position.x = 0;
-
-        // Update ghost color based on power-up state
-        ghost.children.forEach(child => {
-          if (child.material && child.material.color) {
-            if (isPoweredUp) {
-              child.material.color.setHex(0x0000ff);
-              child.material.emissive?.setHex(0x0000ff);
-            } else {
-              child.material.color.setHex(ghost.userData.originalColor);
-              child.material.emissive?.setHex(ghost.userData.originalColor);
-            }
-          }
-        });
-      }
-
-      // Update UI
-      function updateUI() {
-        document.getElementById('score').textContent = `SCORE: ${score}`;
-        document.getElementById('lives').textContent = `LIVES: ${'❤️'.repeat(lives)}`;
-      }
-
-      function showMessage(text) {
-        const msg = document.getElementById('message');
-        msg.textContent = text;
-        msg.style.display = 'block';
-      }
-
-      // Respawn pacman
-      function respawnPacman() {
-        pacman.position.set(9 * CELL_SIZE + CELL_SIZE/2, 0.7, 15 * CELL_SIZE + CELL_SIZE/2);
-        pacmanDirection.set(0, 0, 0);
-        nextDirection.set(0, 0, 0);
-      }
-
-      // Animation loop
-      const clock = new THREE.Clock();
-
-      function animate() {
-        if (gameOver || gameWon) {
-          renderer.render(scene, camera);
-          requestAnimationFrame(animate);
-          return;
-        }
-
-        const time = clock.getElapsedTime();
-
-        // Animate power pellets
-        powerPellets.forEach(pp => {
-          pp.scale.setScalar(1 + Math.sin(time * 5) * 0.2);
-        });
-
-        // Try to change direction
-        if (nextDirection.length() > 0 && canMove(pacman.position.x, pacman.position.z, nextDirection)) {
-          pacmanDirection.copy(nextDirection);
-        }
-
-        // Move Pac-Man
-        if (pacmanDirection.length() > 0 && canMove(pacman.position.x, pacman.position.z, pacmanDirection)) {
-          pacman.position.add(pacmanDirection.clone().multiplyScalar(0.12));
-
-          // Rotate to face direction
-          if (pacmanDirection.z < 0) pacman.rotation.y = 0;
-          else if (pacmanDirection.z > 0) pacman.rotation.y = Math.PI;
-          else if (pacmanDirection.x < 0) pacman.rotation.y = Math.PI / 2;
-          else if (pacmanDirection.x > 0) pacman.rotation.y = -Math.PI / 2;
-        }
-
-        // Wrap around tunnels
-        if (pacman.position.x < 0) pacman.position.x = MAZE_WIDTH * CELL_SIZE;
-        if (pacman.position.x > MAZE_WIDTH * CELL_SIZE) pacman.position.x = 0;
-
-        // Check pellet collisions
-        for (let i = pellets.length - 1; i >= 0; i--) {
-          const pellet = pellets[i];
-          if (pacman.position.distanceTo(pellet.position) < 0.8) {
-            scene.remove(pellet);
-            pellets.splice(i, 1);
-            score += 10;
-            updateUI();
-          }
-        }
-
-        // Check power pellet collisions
-        for (let i = powerPellets.length - 1; i >= 0; i--) {
-          const pp = powerPellets[i];
-          if (pacman.position.distanceTo(pp.position) < 1) {
-            scene.remove(pp);
-            powerPellets.splice(i, 1);
-            score += 50;
-            isPoweredUp = true;
-            powerUpTimer = 8; // 8 seconds
-            updateUI();
-          }
-        }
-
-        // Power-up timer
-        if (isPoweredUp) {
-          powerUpTimer -= 1/60;
-          if (powerUpTimer <= 0) {
-            isPoweredUp = false;
-          }
-          // Flash pacman when powered up
-          pacmanMaterial.emissive.setHex(Math.sin(time * 10) > 0 ? 0x666600 : 0xaaaa00);
-        } else {
-          pacmanMaterial.emissive.setHex(0x444400);
-        }
-
-        // Update ghosts
-        ghosts.forEach(ghost => {
-          updateGhost(ghost);
-
-          // Check collision with pacman
-          if (pacman.position.distanceTo(ghost.position) < 1.2) {
-            if (isPoweredUp) {
-              // Eat ghost
-              const spawn = ghostSpawns[ghosts.indexOf(ghost)];
-              ghost.position.set(spawn.x * CELL_SIZE + CELL_SIZE/2, 0, spawn.y * CELL_SIZE + CELL_SIZE/2);
-              score += 200;
-              updateUI();
-            } else {
-              // Lose a life
-              lives--;
-              updateUI();
-              if (lives <= 0) {
-                gameOver = true;
-                showMessage('GAME OVER\n\nPress R to restart');
-              } else {
-                respawnPacman();
-              }
-            }
-          }
-        });
-
-        // Check win condition
-        if (pellets.length === 0 && powerPellets.length === 0) {
-          gameWon = true;
-          showMessage(`YOU WIN!\n\nScore: ${score}\n\nPress R to restart`);
-        }
-
-        // Animate ghosts bobbing
-        ghosts.forEach((ghost, i) => {
-          ghost.position.y = Math.sin(time * 3 + i) * 0.1;
-        });
-
-        // Animate pacman
-        pacman.position.y = 0.7 + Math.sin(time * 8) * 0.05;
-
-        // FPS Camera Update
-        if (isFPSMode) {
-          // Position camera at pacman's location
-          camera.position.set(pacman.position.x, 1.2, pacman.position.z);
-
-          // Calculate look direction based on pacman direction
-          let lookX = pacman.position.x;
-          let lookZ = pacman.position.z;
-
-          if (pacmanDirection.length() > 0) {
-            lookX += pacmanDirection.x * 5;
-            lookZ += pacmanDirection.z * 5;
-          } else {
-            // Default look direction (forward in Z)
-            lookZ -= 5;
-          }
-
-          camera.lookAt(lookX, 1.2, lookZ);
-
-          // Update flashlight position and direction
-          pacmanLight.position.copy(camera.position);
-          pacmanLight.target.position.set(lookX, 0.5, lookZ);
-
-          // Add head bob effect
-          camera.position.y += Math.sin(time * 12) * 0.05;
-
-          // Render minimap
-          renderMinimap();
-        }
-
-        renderer.render(scene, camera);
-        requestAnimationFrame(animate);
-      }
-
-      // Handle restart
-      window.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === 'r' && (gameOver || gameWon)) {
-          location.reload();
-        }
-        // Toggle FPS mode with F key
-        if (e.key.toLowerCase() === 'f') {
-          toggleFPSMode();
-        }
-      });
-
-      // Minimap setup
-      const minimapCanvas = document.getElementById('minimap');
-      const minimapCtx = minimapCanvas.getContext('2d');
-      const MINIMAP_SCALE = minimapCanvas.width / (MAZE_WIDTH * CELL_SIZE);
-
-      function renderMinimap() {
-        const ctx = minimapCtx;
-        const scale = MINIMAP_SCALE;
-
-        // Clear
-        ctx.fillStyle = 'rgba(0, 0, 30, 0.9)';
-        ctx.fillRect(0, 0, minimapCanvas.width, minimapCanvas.height);
-
-        // Draw walls
-        ctx.fillStyle = '#0044aa';
-        for (let y = 0; y < MAZE_HEIGHT; y++) {
-          for (let x = 0; x < MAZE_WIDTH; x++) {
-            if (maze[y][x] === 1) {
-              ctx.fillRect(
-                x * CELL_SIZE * scale,
-                y * CELL_SIZE * scale,
-                CELL_SIZE * scale,
-                CELL_SIZE * scale
-              );
-            }
-          }
-        }
-
-        // Draw pellets (tiny dots)
-        ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
-        pellets.forEach(p => {
-          ctx.beginPath();
-          ctx.arc(p.position.x * scale, p.position.z * scale, 1.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // Draw power pellets
-        ctx.fillStyle = 'rgba(255, 200, 0, 0.8)';
-        powerPellets.forEach(p => {
-          ctx.beginPath();
-          ctx.arc(p.position.x * scale, p.position.z * scale, 3, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // Draw ghosts
-        ghosts.forEach(ghost => {
-          ctx.fillStyle = isPoweredUp ? '#0000ff' : '#' + ghost.userData.originalColor.toString(16).padStart(6, '0');
-          ctx.beginPath();
-          ctx.arc(ghost.position.x * scale, ghost.position.z * scale, 4, 0, Math.PI * 2);
-          ctx.fill();
-        });
-
-        // Draw Pac-Man (yellow with direction indicator)
-        const px = pacman.position.x * scale;
-        const pz = pacman.position.z * scale;
-
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath();
-        ctx.arc(px, pz, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Direction indicator
-        if (pacmanDirection.length() > 0) {
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(px, pz);
-          ctx.lineTo(px + pacmanDirection.x * 8, pz + pacmanDirection.z * 8);
-          ctx.stroke();
-        }
-
-        // Border glow effect
-        ctx.strokeStyle = '#0066ff';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(1, 1, minimapCanvas.width - 2, minimapCanvas.height - 2);
-      }
-
-      // FPS Mode Toggle
-      function toggleFPSMode() {
-        isFPSMode = !isFPSMode;
-        const btn = document.getElementById('fps-btn');
-        const crosshair = document.getElementById('crosshair');
-        const minimap = document.getElementById('minimap');
-
-        if (isFPSMode) {
-          btn.textContent = '🔙 TOP VIEW';
-          btn.classList.add('active');
-          crosshair.style.display = 'block';
-          minimap.style.display = 'block';
-          pacman.visible = false;
-          pacmanLight.visible = true;
-          ceiling.visible = true; // Show ceiling in FPS
-          camera.fov = 90; // Wider FOV for FPS
-          camera.updateProjectionMatrix();
-        } else {
-          btn.textContent = '🎮 FPS MODE';
-          btn.classList.remove('active');
-          crosshair.style.display = 'none';
-          minimap.style.display = 'none';
-          pacman.visible = true;
-          pacmanLight.visible = false;
-          ceiling.visible = false; // Hide ceiling for top-down
-          camera.fov = 60;
-          camera.updateProjectionMatrix();
-          // Reset to top-down view
-          camera.position.set(MAZE_WIDTH * CELL_SIZE / 2, 35, MAZE_HEIGHT * CELL_SIZE + 10);
-          camera.lookAt(MAZE_WIDTH * CELL_SIZE / 2, 0, MAZE_HEIGHT * CELL_SIZE / 2);
-        }
-      }
-
-      document.getElementById('fps-btn').addEventListener('click', toggleFPSMode);
-
-      // Handle resize
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      animate();
-    </script>
-  </body>
-</html>
+  </section>
+
+  <section class="how-it-works">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <h3>Ask your AI</h3>
+        <p>Tell ChatGPT what kind of car you want. It browses our listings for you.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <h3>Get matched</h3>
+        <p>Your AI finds cars that match your criteria and shows you the best options.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <h3>Contact seller</h3>
+        <p>Your AI helps you reach out. Meet up, inspect, and drive away.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="featured">
+    <h2>Featured listings</h2>
+    <div class="grid">
+      {featured.map(listing => (
+        <ListingCard listing={listing} />
+      ))}
+    </div>
+    <a href="/cars" class="view-all">View all cars →</a>
+  </section>
+
+  <section class="sell-cta">
+    <h2>Selling a car?</h2>
+    <p>List it in 2 minutes. Free, no fees.</p>
+    <a href="/sell" class="btn">List your car</a>
+  </section>
+</Layout>
+
+<style>
+  .hero {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, #10b981, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    font-size: 1.25rem;
+    color: #a3a3a3;
+    margin-bottom: 3rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .prompt-box {
+    background: #171717;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .prompt-label {
+    font-size: 0.875rem;
+    color: #737373;
+    margin-bottom: 0.75rem;
+  }
+
+  .prompt {
+    display: block;
+    font-size: 1rem;
+    color: #10b981;
+    margin-bottom: 1rem;
+  }
+
+  .copy-btn {
+    background: #10b981;
+    color: #000;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .copy-btn:hover {
+    opacity: 0.9;
+  }
+
+  .how-it-works {
+    padding: 4rem 0;
+    border-top: 1px solid #262626;
+  }
+
+  .how-it-works h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: #10b981;
+    color: #000;
+    font-weight: 700;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+  }
+
+  .step h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  .step p {
+    color: #737373;
+    font-size: 0.9375rem;
+  }
+
+  .featured {
+    padding: 4rem 0;
+    border-top: 1px solid #262626;
+  }
+
+  .featured h2 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .view-all {
+    display: inline-block;
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .view-all:hover {
+    text-decoration: underline;
+  }
+
+  .sell-cta {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #171717;
+    border-radius: 16px;
+    margin-top: 2rem;
+  }
+
+  .sell-cta h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sell-cta p {
+    color: #737373;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn {
+    display: inline-block;
+    background: #10b981;
+    color: #000;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover {
+    opacity: 0.9;
+  }
+</style>
