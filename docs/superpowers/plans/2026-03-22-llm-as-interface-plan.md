@@ -1255,7 +1255,9 @@ import Layout from '../components/Layout.astro';
 
     try {
       const res = await fetch(`/api/listings/${currentListing.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin })
       });
 
       if (res.ok) {
