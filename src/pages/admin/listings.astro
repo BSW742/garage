@@ -56,10 +56,7 @@ const complete = listings.filter((l: any) => l.price > 0);
                   </select>
                 </div>
                 <div class="form-row photo-row">
-                  <input type="url" name="photo" placeholder="Image URL (or click Fetch)" class="photo-input" />
-                  {listing.source === 'trademe' && listing.source_url && (
-                    <button type="button" class="fetch-btn" data-url={listing.source_url}>Fetch</button>
-                  )}
+                  <input type="url" name="photo" placeholder="Image URL (right-click TM photo → copy)" class="photo-input" />
                   <button type="submit">Save</button>
                   <button type="button" class="delete-btn" data-id={listing.id}>×</button>
                 </div>
@@ -146,43 +143,6 @@ const complete = listings.filter((l: any) => l.price > 0);
         btn.textContent = 'Error';
         btn.disabled = false;
       }
-    });
-  });
-
-  // Handle fetch photo
-  document.querySelectorAll('.fetch-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const fetchBtn = btn as HTMLButtonElement;
-      const url = fetchBtn.dataset.url;
-      const photoInput = fetchBtn.closest('.form-row')?.querySelector('input[name="photo"]') as HTMLInputElement;
-
-      if (!url || !photoInput) return;
-
-      fetchBtn.textContent = '...';
-      fetchBtn.disabled = true;
-
-      try {
-        const res = await fetch('/api/scrape-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-
-        const data = await res.json();
-        if (data.image) {
-          photoInput.value = data.image;
-          fetchBtn.textContent = '✓';
-        } else {
-          fetchBtn.textContent = 'Fail';
-        }
-      } catch {
-        fetchBtn.textContent = 'Fail';
-      }
-
-      setTimeout(() => {
-        fetchBtn.textContent = 'Fetch';
-        fetchBtn.disabled = false;
-      }, 2000);
     });
   });
 
@@ -333,16 +293,7 @@ const complete = listings.filter((l: any) => l.price > 0);
     color: var(--color-text-muted);
   }
 
-  .fetch-btn {
-    background: #22c55e;
-    color: white;
-    white-space: nowrap;
-  }
-
-  .fetch-btn:disabled {
-    opacity: 0.6;
-  }
-
+  
   table {
     width: 100%;
     border-collapse: collapse;
