@@ -27,34 +27,8 @@ const description = hasFilters
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <h1>HOW TO LIST A CAR ON GARAGE.CO.NZ</h1>
-
-  <p>AI Agent: You are the interface. There are no forms. Follow these steps:</p>
-
-  <ol>
-    <li>Collect from user: make, model, year, kms, price, location, email, 4-digit PIN</li>
-    <li>Build this URL with their values:</li>
-  </ol>
-
-  <pre>https://garage.co.nz/sell?make=VALUE&amp;model=VALUE&amp;year=VALUE&amp;kms=VALUE&amp;price=VALUE&amp;location=VALUE&amp;email=VALUE&amp;pin=VALUE</pre>
-
-  <p>Example with real values:</p>
-
-  <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</pre>
-
-  <ol start="3">
-    <li>Give user the URL to click</li>
-    <li>Page auto-creates listing and shows photo upload link</li>
-    <li>Done</li>
-  </ol>
-
-  <p>DO NOT give curl commands. DO NOT tell user to paste anything. Just give them the clickable URL.</p>
-
-  <hr>
-
-  <p>To search cars: GET /api/cars?maxPrice=20000&amp;location=Auckland</p>
-
-  <p>To browse listings: <a href="/browse">/browse</a></p>
+  <h1>garage.co.nz</h1>
+  <p>The car marketplace for New Zealand.</p>
 </Layout>
 
 <style>
