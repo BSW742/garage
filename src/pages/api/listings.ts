@@ -1,5 +1,8 @@
 import type { APIRoute } from 'astro';
-import { addListing } from '../../lib/listings';
+import { addListing, getListingsByPinAndEmail } from '../../lib/listings';
+
+// Rate limiting: simple in-memory store (resets on deploy)
+const listingAttempts: Map<string, { count: number; resetAt: number }> = new Map();
 
 interface Runtime {
   env: {
@@ -149,13 +152,34 @@ function isBase64Image(str: string): boolean {
          (str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.substring(0, 100)));
 }
 
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   try {
     const { DB, IMAGES } = (locals as { runtime: Runtime }).runtime.env;
+
+    // Rate limiting: 10 listings per hour per IP
+    const ip = clientAddress || 'unknown';
+    const now = Date.now();
+    const attempt = listingAttempts.get(ip);
+
+    if (attempt) {
+      if (now < attempt.resetAt) {
+        if (attempt.count >= 10) {
+          return new Response(JSON.stringify({ error: 'Too many listings. Try again later.' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        attempt.count++;
+      } else {
+        listingAttempts.set(ip, { count: 1, resetAt: now + 3600000 });
+      }
+    } else {
+      listingAttempts.set(ip, { count: 1, resetAt: now + 3600000 });
+    }
+
     const data = await request.json();
 
     // Minimum required: make, model
-    // Photos required for direct submissions, optional for trademe imports (auto-fetched)
     if (!data.make || !data.model) {
       return new Response(JSON.stringify({ error: 'Missing required fields: make, model' }), {
         status: 400,
@@ -163,13 +187,41 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Require photos for non-trademe submissions (LLM-created listings)
+    // PIN required for LLM flow (not trademe, not sell page)
+    // If PIN is provided, it's LLM flow - photos will come via magic link
     const isTrademeImport = data.source === 'trademe';
-    if (!isTrademeImport && (!data.photos || data.photos.length === 0)) {
-      return new Response(JSON.stringify({ error: 'Missing required field: photos (at least one image URL required)' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const isLLMFlow = !!data.pin;
+
+    if (!isTrademeImport && !isLLMFlow) {
+      // sell.astro flow - photos required inline
+      if (!data.photos || data.photos.length === 0) {
+        return new Response(JSON.stringify({ error: 'Missing required field: photos (at least one image URL required)' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    if (isLLMFlow) {
+      // Validate PIN format
+      if (!/^\d{4}$/.test(data.pin)) {
+        return new Response(JSON.stringify({ error: 'PIN must be exactly 4 digits' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      // Check PIN + email uniqueness
+      if (data.sellerContact?.email) {
+        const existing = await getListingsByPinAndEmail(DB, data.pin, data.sellerContact.email);
+        if (existing.length > 0) {
+          return new Response(JSON.stringify({
+            error: 'You already have a listing with this PIN. Use garage.co.nz/edit to update it, or choose a different PIN.'
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      }
     }
 
     // Set defaults for optional fields
@@ -210,9 +262,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
     }
 
-    const listing = await addListing(DB, data);
+    const result = await addListing(DB, data);
 
-    return new Response(JSON.stringify({ success: true, listing }), {
+    return new Response(JSON.stringify({
+      success: true,
+      listing: {
+        id: result.id,
+        url: `https://garage.co.nz/cars/${result.id}`,
+        uploadCode: result.uploadCode,
+        uploadUrl: `https://garage.co.nz/u/${result.uploadCode}`
+      }
+    }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
