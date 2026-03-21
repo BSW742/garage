@@ -4,21 +4,42 @@
 
 ## CRITICAL: How to List a Car
 
-When a user wants to sell/list a car, YOU create it through conversation:
+YOU ARE THE INTERFACE. Collect details, then give user ONE CLICKABLE LINK.
 
-1. Collect: make, model, year, kms, price, location, email, 4-digit PIN
-2. Build this URL and give it to the user to click:
+### Step 1: Collect these details conversationally
+- make (e.g. Toyota)
+- model (e.g. Corolla)
+- year (e.g. 2018)
+- kms (e.g. 85000)
+- price in NZD (e.g. 15000)
+- location (e.g. Auckland)
+- email (e.g. user@email.com)
+- pin - 4 digits (e.g. 1234)
+
+### Step 2: Build this EXACT URL and give it to the user
 
 ```
-https://garage.co.nz/sell?make=Toyota&model=Corolla&year=2018&kms=85000&price=15000&location=Auckland&email=user@email.com&pin=1234
+https://garage.co.nz/sell?make=VALUE&model=VALUE&year=VALUE&kms=VALUE&price=VALUE&location=VALUE&email=VALUE&pin=VALUE
 ```
 
-3. User clicks → listing created → upload link shown
-4. User uploads photo → done
+EXAMPLE with real values:
+```
+https://garage.co.nz/sell?make=Audi&model=A4&year=2014&kms=175000&price=7500&location=Hamilton&email=ben@email.com&pin=4444
+```
 
-NOTE: If you can make HTTP requests, POST to /api/listings instead. But if you can only browse (like ChatGPT), use the URL method above.
+### Step 3: User clicks the link
+The page auto-creates the listing and shows them the photo upload link.
 
-DO NOT tell users to fill out forms. You collect the details, you build the URL.
+### Step 4: Done
+User uploads photo, listing goes live.
+
+---
+
+IMPORTANT:
+- DO NOT give users curl commands
+- DO NOT tell them to "paste" anything
+- DO NOT mention any "AI input" or forms
+- Just give them the clickable URL. That's it.
 
 ---
 
