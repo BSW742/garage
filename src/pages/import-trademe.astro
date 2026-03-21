@@ -6,100 +6,70 @@ import Layout from '../components/Layout.astro';
   <section class="import-page">
     <div class="agent-banner">
       <code>// MAKE YOUR TRADE ME LISTING AI-SEARCHABLE</code>
-      <p>Trade Me isn't AI-friendly. Paste your listing URL here and AI agents can find it.</p>
+      <p>Trade Me isn't AI-friendly. Paste your listing URL and we'll make it findable by AI.</p>
     </div>
 
     <form id="import-form" class="listing-form">
       <div class="data-block highlight">
-        <div class="label">// TRADE ME LISTING</div>
-        <div class="form-group full">
-          <label for="trademe-url">paste_url</label>
+        <div class="label">// PASTE YOUR TRADE ME URL</div>
+        <div class="url-input-group">
           <input
             type="url"
             id="trademe-url"
             name="trademe-url"
             required
-            placeholder="https://www.trademe.co.nz/a/motors/cars/..."
+            placeholder="https://www.trademe.co.nz/a/motors/cars/toyota/corolla/listing/..."
             pattern="https://www\.trademe\.co\.nz/.*"
+            autofocus
           />
-          <span class="hint">// your Trade Me listing URL</span>
+          <button type="submit" id="submit-btn">IMPORT →</button>
         </div>
+        <div id="parsed-info" class="parsed-info" hidden></div>
+        <div id="error-msg" class="error-msg" hidden></div>
       </div>
 
-      <div class="data-block">
-        <div class="label">// VEHICLE DATA <span class="note">(copy from your listing)</span></div>
+      <!-- Hidden fields populated from URL -->
+      <input type="hidden" id="make" name="make" />
+      <input type="hidden" id="model" name="model" />
+
+      <!-- Quick details - shown after URL parsed -->
+      <div id="details-section" class="data-block" hidden>
+        <div class="label">// QUICK DETAILS <span class="note">(we got make/model from URL)</span></div>
         <div class="form-grid">
-          <div class="form-group">
-            <label for="make">make</label>
-            <input type="text" id="make" name="make" required placeholder="Toyota" />
-          </div>
-          <div class="form-group">
-            <label for="model">model</label>
-            <input type="text" id="model" name="model" required placeholder="Corolla" />
-          </div>
           <div class="form-group">
             <label for="year">year</label>
             <input type="number" id="year" name="year" required min="1980" max="2026" placeholder="2018" />
           </div>
           <div class="form-group">
-            <label for="kms">kms</label>
-            <input type="number" id="kms" name="kms" required min="0" placeholder="85000" />
-          </div>
-        </div>
-      </div>
-
-      <div class="data-block">
-        <div class="label">// LISTING DETAILS</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="price">price (NZD)</label>
+            <label for="price">price ($)</label>
             <input type="number" id="price" name="price" required min="0" placeholder="14500" />
+          </div>
+          <div class="form-group">
+            <label for="kms">kms</label>
+            <input type="number" id="kms" name="kms" min="0" placeholder="85000" value="0" />
           </div>
           <div class="form-group">
             <label for="location">location</label>
             <select id="location" name="location" required>
-              <option value="">Select city...</option>
               <option value="Auckland">Auckland</option>
               <option value="Wellington">Wellington</option>
               <option value="Christchurch">Christchurch</option>
               <option value="Hamilton">Hamilton</option>
               <option value="Tauranga">Tauranga</option>
               <option value="Dunedin">Dunedin</option>
-              <option value="Palmerston North">Palmerston North</option>
-              <option value="Napier">Napier</option>
-              <option value="Rotorua">Rotorua</option>
-              <option value="New Plymouth">New Plymouth</option>
-              <option value="Invercargill">Invercargill</option>
-              <option value="Nelson">Nelson</option>
-              <option value="Queenstown">Queenstown</option>
+              <option value="Other">Other</option>
             </select>
           </div>
         </div>
         <div class="form-group full">
-          <label for="description">description</label>
-          <textarea id="description" name="description" required rows="3" placeholder="Copy your Trade Me description here..."></textarea>
+          <label for="email">your email (for AI referrals)</label>
+          <input type="email" id="email" name="email" required placeholder="your@email.com" />
         </div>
+        <input type="hidden" id="description" name="description" value="See Trade Me listing for full details." />
       </div>
-
-      <div class="data-block">
-        <div class="label">// CONTACT (for AI referrals)</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="email">email</label>
-            <input type="email" id="email" name="email" required placeholder="your@email.com" />
-          </div>
-          <div class="form-group">
-            <label for="phone">phone</label>
-            <input type="tel" id="phone" name="phone" placeholder="optional" />
-          </div>
-        </div>
-        <span class="hint">// AI agents will direct buyers to your Trade Me listing</span>
-      </div>
-
-      <button type="submit" class="submit-btn">MAKE AI-SEARCHABLE →</button>
 
       <p class="disclaimer">
-        Your listing stays on Trade Me. We just make it visible to AI assistants like ChatGPT, Claude, and Grok.
+        Your listing stays on Trade Me. AI agents will link buyers directly there.
       </p>
     </form>
 
@@ -118,11 +88,63 @@ import Layout from '../components/Layout.astro';
 <script>
   const form = document.getElementById('import-form') as HTMLFormElement;
   const success = document.getElementById('success') as HTMLDivElement;
+  const urlInput = document.getElementById('trademe-url') as HTMLInputElement;
+  const parsedInfo = document.getElementById('parsed-info') as HTMLDivElement;
+  const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+  const detailsSection = document.getElementById('details-section') as HTMLDivElement;
+  const makeInput = document.getElementById('make') as HTMLInputElement;
+  const modelInput = document.getElementById('model') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  let urlParsed = false;
+
+  // Parse Trade Me URL: /a/motors/cars/{make}/{model}/listing/{id}
+  function parseTradeMeUrl(url: string) {
+    const match = url.match(/trademe\.co\.nz\/a\/motors\/cars\/([^\/]+)\/([^\/]+)\/listing\/(\d+)/i);
+    if (match) {
+      return {
+        make: match[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        model: match[2].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        listingId: match[3]
+      };
+    }
+    return null;
+  }
+
+  // Parse on input
+  urlInput.addEventListener('input', () => {
+    const parsed = parseTradeMeUrl(urlInput.value);
+    if (parsed) {
+      makeInput.value = parsed.make;
+      modelInput.value = parsed.model;
+      parsedInfo.innerHTML = `<span class="car-name">${parsed.make} ${parsed.model}</span> detected`;
+      parsedInfo.hidden = false;
+      errorMsg.hidden = true;
+      detailsSection.hidden = false;
+      urlParsed = true;
+    } else if (urlInput.value.includes('trademe.co.nz')) {
+      parsedInfo.hidden = true;
+      errorMsg.textContent = '// could not parse make/model from URL';
+      errorMsg.hidden = false;
+      detailsSection.hidden = true;
+      urlParsed = false;
+    } else {
+      parsedInfo.hidden = true;
+      errorMsg.hidden = true;
+      detailsSection.hidden = true;
+      urlParsed = false;
+    }
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    if (!urlParsed) {
+      errorMsg.textContent = '// paste a valid Trade Me car listing URL';
+      errorMsg.hidden = false;
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'IMPORTING...';
 
@@ -130,19 +152,27 @@ import Layout from '../components/Layout.astro';
     const data = {
       make: formData.get('make'),
       model: formData.get('model'),
-      year: parseInt(formData.get('year') as string),
-      kms: parseInt(formData.get('kms') as string),
-      price: parseInt(formData.get('price') as string),
-      location: formData.get('location'),
-      description: formData.get('description'),
+      year: parseInt(formData.get('year') as string) || 2020,
+      kms: parseInt(formData.get('kms') as string) || 0,
+      price: parseInt(formData.get('price') as string) || 0,
+      location: formData.get('location') || 'Auckland',
+      description: formData.get('description') || 'See Trade Me listing for details.',
       photos: [],
       sellerContact: {
-        email: formData.get('email'),
-        phone: formData.get('phone') || undefined
+        email: formData.get('email') || 'via-trademe@garage.co.nz',
       },
       source: 'trademe',
       sourceUrl: formData.get('trademe-url')
     };
+
+    // Validate required fields
+    if (!data.year || !data.price) {
+      errorMsg.textContent = '// please fill in year and price';
+      errorMsg.hidden = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'IMPORT →';
+      return;
+    }
 
     try {
       const res = await fetch('/api/listings', {
@@ -155,7 +185,7 @@ import Layout from '../components/Layout.astro';
         const result = await res.json();
         (document.getElementById('success-data') as HTMLElement).textContent =
           JSON.stringify({
-            id: result.id,
+            id: result.listing.id,
             car: `${data.year} ${data.make} ${data.model}`,
             price: `$${data.price.toLocaleString()}`,
             trademe: data.sourceUrl,
@@ -165,15 +195,17 @@ import Layout from '../components/Layout.astro';
         success.hidden = false;
       } else {
         const err = await res.json();
-        alert('Error: ' + (err.error || 'Failed to import'));
+        errorMsg.textContent = '// ' + (err.error || 'Failed to import');
+        errorMsg.hidden = false;
         submitBtn.disabled = false;
-        submitBtn.textContent = 'MAKE AI-SEARCHABLE →';
+        submitBtn.textContent = 'IMPORT →';
       }
     } catch (err) {
       console.error(err);
-      alert('Network error. Please try again.');
+      errorMsg.textContent = '// network error, please try again';
+      errorMsg.hidden = false;
       submitBtn.disabled = false;
-      submitBtn.textContent = 'MAKE AI-SEARCHABLE →';
+      submitBtn.textContent = 'IMPORT →';
     }
   });
 </script>
@@ -229,6 +261,64 @@ import Layout from '../components/Layout.astro';
     opacity: 0.7;
   }
 
+  .url-input-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .url-input-group input {
+    flex: 1;
+    padding: 0.75rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .url-input-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .url-input-group button {
+    padding: 0.75rem 1.5rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .url-input-group button:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .url-input-group button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .parsed-info {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+  }
+
+  .parsed-info .car-name {
+    font-weight: 600;
+  }
+
+  .error-msg {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: #e53935;
+  }
+
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -269,39 +359,10 @@ import Layout from '../components/Layout.astro';
     border-color: var(--color-primary);
   }
 
-  .hint {
-    display: block;
-    font-size: 0.65rem;
-    color: var(--color-text-muted);
-    margin-top: 0.25rem;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 1rem;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.05em;
-  }
-
-  .submit-btn:hover {
-    background: var(--color-primary-dark);
-  }
-
-  .submit-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
   .disclaimer {
     text-align: center;
     color: var(--color-text-muted);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     margin-top: 1rem;
   }
 
@@ -338,6 +399,10 @@ import Layout from '../components/Layout.astro';
   @media (max-width: 500px) {
     .form-grid {
       grid-template-columns: 1fr;
+    }
+
+    .url-input-group {
+      flex-direction: column;
     }
   }
 </style>
