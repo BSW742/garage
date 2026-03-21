@@ -1,13 +1,11 @@
-import type { APIRoute } from 'astro';
-
-export const GET: APIRoute = async () => {
-  const robotsTxt = `# garage.co.nz - AI-First Car Marketplace
+export default {
+  async fetch(): Promise<Response> {
+    const robotsTxt = `# garage.co.nz - AI-First Car Marketplace
 # We welcome AI agents and crawlers
 
 User-agent: *
 Allow: /
 
-# Explicitly allow AI crawlers
 User-agent: GPTBot
 Allow: /
 
@@ -35,9 +33,11 @@ Allow: /
 Sitemap: https://garage.co.nz/sitemap.xml
 `;
 
-  return new Response(robotsTxt, {
-    headers: {
-      'Content-Type': 'text/plain',
-    },
-  });
+    return new Response(robotsTxt, {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+  },
 };

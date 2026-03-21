@@ -1,0 +1,7 @@
+name = "garage-robots"
+main = "index.ts"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "garage.co.nz/robots.txt", zone_name = "garage.co.nz" }
+]
