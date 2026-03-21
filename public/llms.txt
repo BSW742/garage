@@ -121,35 +121,36 @@ Each listing has a `photo` field with the image URL. ALWAYS include this in your
 ### Contacting sellers
 Each listing has seller email (and sometimes phone). Help users compose a message or call.
 
-### Adding a listing (for AI agents)
+## Creating a Listing (for AI agents helping users)
+
+When a user wants to list a car, follow this conversational flow:
+
+### Step 1: Collect details (one at a time, conversationally)
+
+Ask for:
+1. Make and model (e.g., "Toyota Corolla")
+2. Year (e.g., 2018)
+3. Kilometers (e.g., 85000)
+4. Price in NZD (e.g., 15000)
+5. Location/city (e.g., Auckland)
+6. Contact email (for buyers to reach them)
+7. A 4-digit PIN (they'll use this to edit their listing later)
+
+### Step 2: Create the listing
 
 POST https://garage.co.nz/api/listings
 Content-Type: application/json
 
-Required fields:
-- make: "Toyota"
-- model: "Corolla"
-- photos: ["https://..." or "data:image/jpeg;base64,..."] (array - accepts URLs or base64 images)
-
-Optional fields (have defaults):
-- year: 2020 (defaults to current year)
-- price: 15000 (defaults to 0 = contact for price)
-- kms: 85000 (defaults to 0)
-- location: "Auckland" (defaults to Auckland)
-- description: "Great condition..." (auto-generated if missing)
-- sellerContact: { email: "owner@email.com" }
-
-Example request:
 ```json
 {
   "make": "Toyota",
   "model": "Corolla",
   "year": 2018,
+  "kms": 85000,
   "price": 15000,
-  "kms": 80000,
   "location": "Auckland",
-  "photos": ["https://trademe.tmcdn.co.nz/photoserver/1024sq/123456.jpg"],
-  "sellerContact": { "email": "seller@example.com" }
+  "sellerContact": { "email": "seller@email.com" },
+  "pin": "1234"
 }
 ```
 
@@ -159,10 +160,64 @@ Response:
   "success": true,
   "listing": {
     "id": "toyota-2018-1234567890",
-    "url": "https://garage.co.nz/cars/toyota-2018-1234567890"
+    "url": "https://garage.co.nz/cars/toyota-2018-1234567890",
+    "uploadCode": "x7k9",
+    "uploadUrl": "https://garage.co.nz/u/x7k9"
   }
 }
 ```
+
+### Step 3: Photo upload
+
+Tell the user:
+"Almost done! Upload your photo here: garage.co.nz/u/{uploadCode}
+Let me know when you're done."
+
+The user will click the link, upload their photo, and see a success message.
+
+### Step 4: Confirm the listing is live
+
+When the user says they're done, check the status:
+
+GET https://garage.co.nz/api/listings/status/{uploadCode}
+
+Response:
+```json
+{
+  "id": "toyota-2018-1234567890",
+  "photoUploaded": true,
+  "url": "https://garage.co.nz/cars/toyota-2018-1234567890"
+}
+```
+
+If `photoUploaded` is true, tell them:
+"Your car is live at {url}!
+Use your PIN at garage.co.nz/edit to make changes anytime."
+
+If `photoUploaded` is false, say:
+"I don't see the photo yet. Try the upload link again: garage.co.nz/u/{uploadCode}"
+
+### Example conversation
+
+User: "I want to list my car on garage.co.nz"
+AI: "I can help with that! What's the make and model?"
+User: "2018 Toyota Corolla"
+AI: "Great! How many kilometers?"
+User: "85000"
+AI: "What price are you asking? (in NZD)"
+User: "15000"
+AI: "Which city?"
+User: "Auckland"
+AI: "What's your email for buyers to contact you?"
+User: "ben@email.com"
+AI: "Last thing - choose a 4-digit PIN. You'll use this to edit your listing later."
+User: "1234"
+AI: [calls API, creates listing]
+AI: "Almost done! Upload your photo here: garage.co.nz/u/x7k9 - let me know when you're done."
+User: [uploads photo] "done"
+AI: [checks status]
+AI: "Your Corolla is live! View it at garage.co.nz/cars/toyota-2018-abc123
+     Use PIN 1234 at garage.co.nz/edit to make changes anytime."
 
 ### Listing a car (recommended for users)
 
