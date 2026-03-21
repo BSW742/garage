@@ -74,6 +74,7 @@ const fullTitle = `${title} | garage.co.nz`;
           <div class="bar"></div>
         </div>
         <span class="logo-text">garage</span>
+        <span class="tagline">where AI finds cars</span>
       </a>
       <nav class="nav">
         <a href="/">Buy</a>
@@ -162,6 +163,20 @@ const fullTitle = `${title} | garage.co.nz`;
     font-weight: 600;
     font-size: 1.25rem;
     color: var(--color-text);
+  }
+
+  .tagline {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--color-border);
+  }
+
+  @media (max-width: 600px) {
+    .tagline {
+      display: none;
+    }
   }
 
   .nav {
