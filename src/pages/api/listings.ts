@@ -1,6 +1,21 @@
 import type { APIRoute } from 'astro';
 import { addListing } from '../../lib/listings';
 
+interface Runtime {
+  env: {
+    DB: D1Database;
+  };
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+}
+
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement;
+  run(): Promise<unknown>;
+}
+
 async function fetchCarImageFromWikipedia(make: string, model: string): Promise<string | null> {
   try {
     // Search Wikipedia for the car model
@@ -92,8 +107,9 @@ async function fetchCarImage(make: string, model: string, year: number): Promise
   return null;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    const { DB } = (locals as { runtime: Runtime }).runtime.env;
     const data = await request.json();
 
     // Basic validation
@@ -115,7 +131,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    const listing = addListing(data);
+    const listing = await addListing(DB, data);
 
     return new Response(JSON.stringify({ success: true, listing }), {
       status: 201,

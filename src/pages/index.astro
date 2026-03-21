@@ -2,6 +2,8 @@
 import Layout from '../components/Layout.astro';
 import { getAllListings, filterListings, type FilterOptions } from '../lib/listings';
 
+const { DB } = Astro.locals.runtime.env;
+
 const url = new URL(Astro.request.url);
 const location = url.searchParams.get('location');
 const maxPrice = url.searchParams.get('maxPrice');
@@ -15,7 +17,7 @@ if (minPrice) filterOptions.minPrice = parseInt(minPrice);
 if (make) filterOptions.make = make;
 
 const hasFilters = Object.keys(filterOptions).length > 0;
-const listings = hasFilters ? filterListings(filterOptions) : getAllListings();
+const listings = hasFilters ? await filterListings(DB, filterOptions) : await getAllListings(DB);
 
 const description = hasFilters
   ? `${listings.length} cars found matching your criteria`

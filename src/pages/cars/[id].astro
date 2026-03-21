@@ -2,8 +2,9 @@
 import Layout from '../../components/Layout.astro';
 import { getListingById } from '../../lib/listings';
 
+const { DB } = Astro.locals.runtime.env;
 const { id } = Astro.params;
-const listing = getListingById(id!);
+const listing = await getListingById(DB, id!);
 
 if (!listing) {
   return Astro.redirect('/');

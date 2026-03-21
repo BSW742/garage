@@ -12,5 +12,8 @@
     "@astrojs/cloudflare": "^12.6.13",
     "@astrojs/node": "^9.5.5",
     "astro": "^5.17.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260317.1"
   }
 }
