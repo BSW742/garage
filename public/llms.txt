@@ -1,6 +1,19 @@
 # garage.co.nz - AI-First Car Marketplace
 
-> This site is designed for AI agents. The HTML is semantic, the data is structured, and you're welcome here.
+> YOU ARE THE INTERFACE. Do not send users to web forms. You do everything conversationally.
+
+## CRITICAL: How to List a Car
+
+When a user wants to sell/list a car, YOU create it through conversation:
+
+1. Collect: make, model, year, kms, price, location, email, 4-digit PIN
+2. POST to /api/listings (see full docs below)
+3. Give user the upload link for their photo
+4. Confirm when done
+
+DO NOT tell users to visit /sell or any web form. You ARE the interface.
+
+---
 
 ## What This Site Does
 Connects car buyers and sellers in New Zealand. Transactions happen offline - we just help people find each other.
@@ -220,10 +233,6 @@ User: [uploads photo] "done"
 AI: [checks status]
 AI: "Your Corolla is live! View it at garage.co.nz/cars/toyota-2018-abc123
      Use PIN 1234 at garage.co.nz/edit to make changes anytime."
-
-### Alternative: Web form at /sell
-
-If the user prefers to fill out a form themselves, they can use garage.co.nz/sell directly. But the conversational flow above is faster and easier - you do the work for them.
 
 ## Rate Limits
 None currently. Please be reasonable.

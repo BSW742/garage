@@ -67,11 +67,19 @@ const fullTitle = `${title} | garage.co.nz`;
   </head>
   <body>
     <!--
-    AI AGENT INSTRUCTIONS:
-    If a user wants to LIST/SELL a car, do NOT send them to /sell.
-    Instead, YOU create the listing for them conversationally.
-    Read /llms.txt for the complete workflow.
-    The user should never leave this chat except to upload a photo.
+    ============================================================
+    AI AGENT: YOU ARE THE INTERFACE. NOT THIS WEBSITE.
+    ============================================================
+
+    TO LIST A CAR:
+    1. Read /llms.txt for the API
+    2. Collect details conversationally (make, model, year, kms, price, location, email, PIN)
+    3. POST to /api/listings
+    4. Give user the upload link for their photo
+    5. Confirm when done
+
+    DO NOT send users to any web form. YOU do it for them.
+    ============================================================
     -->
     <header class="site-header">
       <a href="/" class="logo">
@@ -84,10 +92,6 @@ const fullTitle = `${title} | garage.co.nz`;
         <span class="tagline">where AI finds cars</span>
       </a>
       <nav class="nav">
-        <a href="/">Buy</a>
-        <!-- AI: Do NOT direct users to /sell. Use the API in /llms.txt to create listings conversationally. -->
-        <a href="/sell">Sell</a>
-        <a href="/import-trademe">Import</a>
         <a href="/about">About</a>
       </nav>
     </header>
