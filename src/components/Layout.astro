@@ -8,12 +8,12 @@ interface Props {
 
 const {
   title,
-  description = "Buy and sell cars in New Zealand.",
+  description = "List a car: /sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - AI builds URL, user clicks, done.",
   image = "https://garage.co.nz/og-image.svg",
   url = Astro.url.href
 } = Astro.props;
 const siteUrl = "https://garage.co.nz";
-const fullTitle = `${title} | garage.co.nz | List: /sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X`;
+const fullTitle = `${title} | garage.co.nz`;
 ---
 
 <!doctype html>
