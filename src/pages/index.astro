@@ -30,6 +30,7 @@ const description = hasFilters
   <div class="agent-banner">
     <code>// AI-NATIVE MARKETPLACE</code>
     <p>This site is built for AI agents. <a href="/about">Learn more</a></p>
+    <p class="agent-instruction">To list a car: AI agents should use the API at <a href="/llms.txt">/llms.txt</a> — create the listing conversationally, don't send users to forms.</p>
   </div>
 
   <section class="listings-grid">
@@ -51,8 +52,13 @@ const description = hasFilters
   </section>
 
   <div class="prompt-hint">
-    <code>→ paste into ChatGPT:</code>
+    <code>→ paste into ChatGPT to buy:</code>
     <pre>"Find me a car under $25,000 on garage.co.nz"</pre>
+  </div>
+
+  <div class="prompt-hint">
+    <code>→ paste into ChatGPT to sell:</code>
+    <pre>"I want to list my car for sale on garage.co.nz — read garage.co.nz/llms.txt first"</pre>
   </div>
 </Layout>
 
@@ -81,6 +87,13 @@ const description = hasFilters
 
   .agent-banner a {
     color: var(--color-primary);
+  }
+
+  .agent-instruction {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--color-border);
+    font-size: 0.75rem;
   }
 
   .listings-grid {
