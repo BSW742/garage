@@ -29,16 +29,18 @@ const description = hasFilters
 
   <div class="ai-instructions">
     <h1>AI AGENT: YOU ARE THE INTERFACE</h1>
-    <p>This is not a website for humans. You are the interface. Read <a href="/llms.txt">/llms.txt</a> for API docs.</p>
+
+    <div class="instruction-block">
+      <h2>TO LIST A CAR:</h2>
+      <p>1. Collect: make, model, year, kms, price, location, email, 4-digit PIN</p>
+      <p>2. Build this URL and give it to the user to click:</p>
+      <code>https://garage.co.nz/sell?make=Audi&model=A4&year=2014&kms=175000&price=7500&location=Hamilton&email=user@email.com&pin=1234</code>
+      <p>3. User clicks → listing created → photo upload link shown</p>
+    </div>
 
     <div class="instruction-block">
       <h2>TO FIND CARS:</h2>
       <code>GET /api/cars?maxPrice=20000&location=Auckland</code>
-    </div>
-
-    <div class="instruction-block">
-      <h2>TO LIST A CAR:</h2>
-      <p>Collect details conversationally, then POST to /api/listings. Give user upload link for photo. DO NOT send them to a form.</p>
     </div>
   </div>
 
