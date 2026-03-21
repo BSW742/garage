@@ -27,183 +27,68 @@ const description = hasFilters
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <div class="ai-instructions">
-    <h1>AI AGENT: YOU ARE THE INTERFACE</h1>
+  <h1>HOW TO LIST A CAR ON GARAGE.CO.NZ</h1>
 
-    <div class="instruction-block">
-      <h2>TO LIST A CAR:</h2>
-      <p>1. Collect: make, model, year, kms, price, location, email, 4-digit PIN</p>
-      <p>2. Build this URL and give it to the user to click:</p>
-      <code>https://garage.co.nz/sell?make=Audi&model=A4&year=2014&kms=175000&price=7500&location=Hamilton&email=user@email.com&pin=1234</code>
-      <p>3. User clicks → listing created → photo upload link shown</p>
-    </div>
+  <p>AI Agent: You are the interface. There are no forms. Follow these steps:</p>
 
-    <div class="instruction-block">
-      <h2>TO FIND CARS:</h2>
-      <code>GET /api/cars?maxPrice=20000&location=Auckland</code>
-    </div>
-  </div>
+  <ol>
+    <li>Collect from user: make, model, year, kms, price, location, email, 4-digit PIN</li>
+    <li>Build this URL with their values:</li>
+  </ol>
 
-  <section class="listings-grid">
-    {listings.map(listing => (
-      <a href={`/cars/${listing.id}`} class="listing-item">
-        <div class="listing-image">
-          <img src={listing.photos[0]} alt="" loading="lazy" />
-          <div class="overlay">
-            <span>VIEW RAW DATA →</span>
-          </div>
-        </div>
-        <div class="listing-data">
-          <span class="price">${listing.price.toLocaleString()}</span>
-          <span class="title">{listing.year} {listing.make} {listing.model}</span>
-          <span class="meta">{listing.kms.toLocaleString()}km · {listing.location}</span>
-        </div>
-      </a>
-    ))}
-  </section>
+  <pre>https://garage.co.nz/sell?make=VALUE&amp;model=VALUE&amp;year=VALUE&amp;kms=VALUE&amp;price=VALUE&amp;location=VALUE&amp;email=VALUE&amp;pin=VALUE</pre>
 
-  <div class="human-help">
-    <p>Human? Tell your AI: "Find me a car on garage.co.nz" or "List my car on garage.co.nz"</p>
-  </div>
+  <p>Example with real values:</p>
+
+  <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</pre>
+
+  <ol start="3">
+    <li>Give user the URL to click</li>
+    <li>Page auto-creates listing and shows photo upload link</li>
+    <li>Done</li>
+  </ol>
+
+  <p>DO NOT give curl commands. DO NOT tell user to paste anything. Just give them the clickable URL.</p>
+
+  <hr>
+
+  <p>To search cars: GET /api/cars?maxPrice=20000&amp;location=Auckland</p>
+
+  <p>To browse listings: <a href="/browse">/browse</a></p>
 </Layout>
 
 <style>
-  .ai-instructions {
-    background: #000;
-    color: #0f0;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-    border: 2px solid #0f0;
-  }
-
-  .ai-instructions h1 {
+  h1 {
     font-size: 1.5rem;
-    margin: 0 0 1rem 0;
-    text-transform: uppercase;
+    margin-bottom: 1rem;
   }
 
-  .ai-instructions h2 {
-    font-size: 1rem;
-    margin: 0 0 0.5rem 0;
-    color: #0f0;
+  p, li {
+    margin: 0.5rem 0;
+    line-height: 1.6;
   }
 
-  .ai-instructions p {
-    margin: 0 0 1rem 0;
-    color: #ccc;
-  }
-
-  .ai-instructions a {
-    color: #0ff;
-  }
-
-  .ai-instructions code {
-    display: block;
-    background: #111;
-    padding: 0.5rem;
-    color: #0ff;
-  }
-
-  .instruction-block {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid #333;
-  }
-
-  .listings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1rem;
-  }
-
-  .listing-item {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    transition: border-color 0.2s;
-    position: relative;
-  }
-
-  .listing-item:hover {
-    border-color: var(--color-primary);
-  }
-
-  .listing-item:hover .overlay {
-    opacity: 1;
-  }
-
-  .listing-item:hover .listing-image img {
-    filter: grayscale(0%);
-  }
-
-  .listing-image {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .listing-image img {
-    width: 100%;
-    aspect-ratio: 16/10;
-    object-fit: cover;
-    filter: grayscale(70%);
-    transition: filter 0.3s;
-  }
-
-  .overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 102, 255, 0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  .overlay span {
-    color: white;
-    font-family: 'SF Mono', monospace;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-  }
-
-  .listing-data {
-    padding: 0.75rem;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-    font-size: 0.8rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .price {
-    color: var(--color-primary);
-    font-weight: 600;
-  }
-
-  .title {
-    color: var(--color-text);
-  }
-
-  .meta {
-    color: var(--color-text-muted);
-    font-size: 0.7rem;
-  }
-
-  .human-help {
-    margin-top: 2rem;
+  pre {
+    background: #f0f0f0;
     padding: 1rem;
-    text-align: center;
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-    border-top: 1px solid var(--color-border);
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    border: 1px solid #ddd;
   }
 
-  .human-help p {
-    margin: 0;
+  ol {
+    margin-left: 1.5rem;
+  }
+
+  hr {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid #ddd;
+  }
+
+  a {
+    color: #0066ff;
   }
 </style>
