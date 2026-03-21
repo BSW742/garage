@@ -1,0 +1,136 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "The AI-native car marketplace for New Zealand" } = Astro.props;
+const siteUrl = "https://garage.co.nz";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title} | garage.co.nz</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "garage.co.nz",
+      "url": siteUrl,
+      "description": "The AI-native car marketplace for New Zealand",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${siteUrl}/cars?q={search_term_string}`,
+        "query-input": "required name=search_term_string"
+      }
+    })} />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/" class="logo">garage.co.nz</a>
+        <div class="nav-links">
+          <a href="/cars">Browse Cars</a>
+          <a href="/sell">Sell Your Car</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <p>garage.co.nz — The AI-native car marketplace</p>
+      <p><a href="/llms.txt">For AI agents</a></p>
+    </footer>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --fg: #fafafa;
+    --accent: #10b981;
+    --muted: #737373;
+    --border: #262626;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+  }
+
+  nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--fg);
+  }
+
+  main {
+    flex: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    width: 100%;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  footer a {
+    color: var(--muted);
+  }
+</style>
