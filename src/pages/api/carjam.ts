@@ -26,12 +26,10 @@ export const GET: APIRoute = async ({ url }) => {
     }
 
     const html = await response.text();
-
-    // Parse vehicle data from CarJam HTML
     const vehicle = parseCarJamHtml(html, plate);
 
     if (!vehicle.make) {
-      return new Response(JSON.stringify({ error: 'Could not parse vehicle data' }), {
+      return new Response(JSON.stringify({ error: 'Vehicle not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -55,11 +53,7 @@ function parseCarJamHtml(html: string, plate: string): {
   make: string;
   model: string;
   year: number | null;
-  engineSize: string;
-  fuelType: string;
-  bodyStyle: string;
   colour: string;
-  vin: string;
   kms: number | null;
 } {
   const result = {
@@ -67,77 +61,68 @@ function parseCarJamHtml(html: string, plate: string): {
     make: '',
     model: '',
     year: null as number | null,
-    engineSize: '',
-    fuelType: '',
-    bodyStyle: '',
     colour: '',
-    vin: '',
     kms: null as number | null
   };
 
-  // Extract make - look for pattern like "Mitsubishi" in title or heading
-  const makeMatch = html.match(/<h1[^>]*>.*?(\d{4})\s+([A-Za-z]+)\s+([A-Za-z0-9\s-]+)/i);
-  if (makeMatch) {
-    result.year = parseInt(makeMatch[1]);
-    result.make = makeMatch[2];
-    result.model = makeMatch[3].trim();
+  // Method 1: Parse from title tag
+  // Format: "Report - ABC123 - 1997 MITSUBISHI DELICA in Green with Grey"
+  const titleMatch = html.match(/<title>[^-]*-[^-]*-\s*(\d{4})\s+([A-Z]+)\s+([A-Z0-9\s]+?)\s+in\s+([^|<]+)/i);
+  if (titleMatch) {
+    result.year = parseInt(titleMatch[1]);
+    result.make = titleMatch[2].charAt(0) + titleMatch[2].slice(1).toLowerCase();
+    result.model = titleMatch[3].trim().split(/\s+/).map(w =>
+      w.charAt(0) + w.slice(1).toLowerCase()
+    ).join(' ');
+    result.colour = titleMatch[4].trim();
   }
 
-  // Alternative: look for make in meta or structured data
-  const yearMatch = html.match(/Year[:\s]*<[^>]*>(\d{4})/i) || html.match(/"vehicleModelDate":\s*"(\d{4})"/);
-  if (yearMatch && !result.year) {
-    result.year = parseInt(yearMatch[1]);
+  // Method 2: Parse from window.report.idh.vehicle JSON
+  const vehicleJsonMatch = html.match(/window\.report\.idh\.vehicle\s*=\s*(\{[^}]+\})/);
+  if (vehicleJsonMatch) {
+    try {
+      const vehicleData = JSON.parse(vehicleJsonMatch[1]);
+      if (vehicleData.make && !result.make) {
+        result.make = vehicleData.make.charAt(0) + vehicleData.make.slice(1).toLowerCase();
+      }
+      if (vehicleData.year_of_manufacture && !result.year) {
+        result.year = parseInt(vehicleData.year_of_manufacture);
+      }
+    } catch (e) {
+      // JSON parse failed, continue with other methods
+    }
   }
 
-  const makeAlt = html.match(/Make[:\s]*<[^>]*>([^<]+)/i) || html.match(/"brand"[^}]*"name":\s*"([^"]+)"/);
-  if (makeAlt && !result.make) {
-    result.make = makeAlt[1].trim();
+  // Method 3: Parse from h1 links
+  // <a href="/pedia/?m=MITSUBISHI">MITSUBISHI</a>
+  // <a href="/pedia/?m=MITSUBISHI&mo=DELICA">DELICA</a>
+  if (!result.make) {
+    const makeMatch = html.match(/href="\/pedia\/\?m=([A-Z]+)"[^>]*>\s*<nobr>([A-Z]+)<\/nobr>/i);
+    if (makeMatch) {
+      result.make = makeMatch[2].charAt(0) + makeMatch[2].slice(1).toLowerCase();
+    }
   }
 
-  const modelAlt = html.match(/Model[:\s]*<[^>]*>([^<]+)/i) || html.match(/"model":\s*"([^"]+)"/);
-  if (modelAlt && !result.model) {
-    result.model = modelAlt[1].trim();
+  if (!result.model) {
+    const modelMatch = html.match(/href="\/pedia\/\?m=[A-Z]+&mo=([A-Z0-9]+)"[^>]*>.*?<span[^>]*>([A-Z0-9\s]+)<\/span>/i);
+    if (modelMatch) {
+      result.model = modelMatch[2].trim().split(/\s+/).map(w =>
+        w.charAt(0) + w.slice(1).toLowerCase()
+      ).join(' ');
+    }
   }
 
-  // Engine
-  const engineMatch = html.match(/(\d[,\d]*)\s*cc/i);
-  if (engineMatch) {
-    result.engineSize = engineMatch[1].replace(',', '') + 'cc';
-  }
-
-  // Fuel type
-  if (html.toLowerCase().includes('diesel')) {
-    result.fuelType = 'Diesel';
-  } else if (html.toLowerCase().includes('petrol')) {
-    result.fuelType = 'Petrol';
-  } else if (html.toLowerCase().includes('electric')) {
-    result.fuelType = 'Electric';
-  } else if (html.toLowerCase().includes('hybrid')) {
-    result.fuelType = 'Hybrid';
-  }
-
-  // Body style
-  const bodyMatch = html.match(/Body Style[:\s]*<[^>]*>([^<]+)/i);
-  if (bodyMatch) {
-    result.bodyStyle = bodyMatch[1].trim();
-  }
-
-  // Colour
-  const colourMatch = html.match(/Colour[s]?[:\s]*<[^>]*>([^<]+)/i);
-  if (colourMatch) {
-    result.colour = colourMatch[1].trim();
-  }
-
-  // VIN
-  const vinMatch = html.match(/VIN[:\s]*<[^>]*>([A-HJ-NPR-Z0-9]{17})/i) || html.match(/"vin":\s*"([A-HJ-NPR-Z0-9]{17})"/i);
-  if (vinMatch) {
-    result.vin = vinMatch[1];
-  }
-
-  // Odometer - look for most recent reading
-  const odometerMatch = html.match(/(\d{1,3}(?:,\d{3})*)\s*km/i);
+  // Get odometer from the odometer history (most recent reading)
+  const odometerMatch = html.match(/window\.report\.idh\.odometer_history\s*=\s*\[(\{[^}]+\})/);
   if (odometerMatch) {
-    result.kms = parseInt(odometerMatch[1].replace(/,/g, ''));
+    try {
+      const odometerData = JSON.parse(odometerMatch[1]);
+      if (odometerData.odometer_reading) {
+        result.kms = parseInt(odometerData.odometer_reading);
+      }
+    } catch (e) {
+      // JSON parse failed
+    }
   }
 
   return result;

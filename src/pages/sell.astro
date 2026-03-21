@@ -6,7 +6,7 @@ import Layout from '../components/Layout.astro';
   <section class="sell-page">
     <div class="agent-banner">
       <code>// ONE-CLICK LISTING</code>
-      <p>Enter your plate. We'll fetch the details from CarJam.</p>
+      <p>Enter your plate. We'll fetch the details.</p>
     </div>
 
     <div class="plate-lookup">
@@ -118,7 +118,7 @@ import Layout from '../components/Layout.astro';
       return;
     }
 
-    lookupStatus.textContent = '// fetching from carjam...';
+    lookupStatus.textContent = '// fetching vehicle data...';
     lookupStatus.className = 'status loading';
     lookupBtn.disabled = true;
 

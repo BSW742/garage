@@ -1,0 +1,882 @@
+---
+// GARAGE WEB - Project Tracker
+// Simple admin for tracking website revamp prospects
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <title>GARAGE WEB | Projects</title>
+    <style is:global>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      :root {
+        --bg-base: #09090b;
+        --bg-card: #18181b;
+        --bg-elevated: #27272a;
+        --bg-hover: #3f3f46;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+        --text-primary: #fafafa;
+        --text-secondary: #a1a1aa;
+        --text-muted: #71717a;
+        --border: #27272a;
+        --border-hover: #3f3f46;
+        --success: #22c55e;
+        --warning: #eab308;
+        --danger: #ef4444;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+
+      body {
+        background: var(--bg-base);
+        color: var(--text-primary);
+        font-family: 'Inter', -apple-system, sans-serif;
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      /* Layout */
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 48px 24px;
+      }
+
+      /* Header */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 48px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-mark {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .logo-text {
+        font-weight: 600;
+        font-size: 18px;
+        letter-spacing: -0.3px;
+      }
+
+      .logo-text span {
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      /* Buttons */
+      .btn {
+        padding: 10px 18px;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        font-family: inherit;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+
+      .btn-secondary {
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+      }
+
+      .btn-secondary:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-hover);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-secondary);
+        padding: 8px;
+      }
+
+      .btn-ghost:hover {
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+      }
+
+      .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+
+      /* Stats */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+      }
+
+      .stat-label {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+      }
+
+      .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .stat-value.blue { color: var(--accent); }
+      .stat-value.green { color: var(--success); }
+      .stat-value.yellow { color: var(--warning); }
+
+      /* Filters */
+      .filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      .filter-btn {
+        padding: 8px 16px;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+      }
+
+      .filter-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--text-primary);
+      }
+
+      .filter-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .filter-btn .count {
+        background: rgba(255,255,255,0.2);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-left: 6px;
+      }
+
+      .filter-btn:not(.active) .count {
+        background: var(--bg-elevated);
+      }
+
+      /* Projects Grid */
+      .projects {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+      }
+
+      .project {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        transition: all 0.15s;
+      }
+
+      .project:hover {
+        border-color: var(--border-hover);
+      }
+
+      .project-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+      }
+
+      .project-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+
+      .project-url {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .project-url a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .project-url a:hover {
+        color: var(--accent);
+      }
+
+      .status-badge {
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .status-pending {
+        background: rgba(234, 179, 8, 0.15);
+        color: var(--warning);
+      }
+
+      .status-active {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--accent);
+      }
+
+      .status-done {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--success);
+      }
+
+      .project-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 12px 0;
+      }
+
+      .project-meta svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+      }
+
+      .project-meta > div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .project-notes {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+
+      .project-actions {
+        display: flex;
+        gap: 8px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+
+      .project-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: var(--radius);
+        color: var(--success);
+        font-size: 12px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.15s;
+      }
+
+      .project-link:hover {
+        background: rgba(34, 197, 94, 0.2);
+      }
+
+      /* Empty State */
+      .empty {
+        text-align: center;
+        padding: 80px 20px;
+        color: var(--text-muted);
+      }
+
+      .empty svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        opacity: 0.4;
+      }
+
+      .empty p {
+        font-size: 15px;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 24px;
+      }
+
+      .modal-overlay.visible {
+        display: flex;
+      }
+
+      .modal {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 480px;
+      }
+
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 24px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .modal-close:hover {
+        color: var(--text-primary);
+      }
+
+      .modal-body {
+        padding: 24px;
+      }
+
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      /* Forms */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .form-input, .form-select, .form-textarea {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg-base);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+
+      .form-textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1001;
+      }
+
+      .toast {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        padding: 12px 16px;
+        border-radius: var(--radius);
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        animation: slideIn 0.2s ease;
+      }
+
+      .toast.success { border-color: var(--success); }
+      .toast.error { border-color: var(--danger); }
+
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .stats { grid-template-columns: repeat(2, 1fr); }
+        .projects { grid-template-columns: 1fr; }
+        .form-row { grid-template-columns: 1fr; }
+        .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="logo">
+          <div class="logo-mark">G</div>
+          <div class="logo-text">GARAGE <span>WEB</span></div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add Project
+        </button>
+      </header>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value yellow" id="stat-pending">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-value blue" id="stat-active">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Done</div>
+          <div class="stat-value green" id="stat-done">0</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All <span class="count" id="count-all">0</span></button>
+        <button class="filter-btn" data-filter="pending">Pending <span class="count" id="count-pending">0</span></button>
+        <button class="filter-btn" data-filter="active">In Progress <span class="count" id="count-active">0</span></button>
+        <button class="filter-btn" data-filter="done">Done <span class="count" id="count-done">0</span></button>
+      </div>
+
+      <div class="projects" id="projects"></div>
+
+      <div class="empty" id="empty" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+        </svg>
+        <p>No projects yet. Add one to get started.</p>
+      </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal-overlay" id="add-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Add Project</h2>
+          <button class="modal-close" onclick="closeModal('add-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Website URL *</label>
+            <input type="url" class="form-input" id="input-url" placeholder="https://example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Business Name *</label>
+            <input type="text" class="form-input" id="input-business" placeholder="Acme Corp">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-input" id="input-location" placeholder="Auckland">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input type="email" class="form-input" id="input-email" placeholder="contact@example.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="input-notes" placeholder="Any notes about this prospect..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('add-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="addProject()">Add Project</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Edit Project</h2>
+          <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-id">
+          <div class="form-group">
+            <label class="form-label">Website URL</label>
+            <input type="url" class="form-input" id="edit-url">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Business Name</label>
+            <input type="text" class="form-input" id="edit-business">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location</label>
+              <input type="text" class="form-input" id="edit-location">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input type="email" class="form-input" id="edit-email">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="edit-status">
+              <option value="pending">Pending</option>
+              <option value="active">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Generated Site Path</label>
+            <input type="text" class="form-input" id="edit-path" placeholder="/sites/example">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="edit-notes"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('edit-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveProject()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script is:inline>
+      const STORAGE_KEY = 'garage-web-projects';
+
+      function getProjects() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch {
+          return [];
+        }
+      }
+
+      function saveProjects(projects) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      }
+
+      function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+      }
+
+      function toast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${type === 'success' ? 'var(--success)' : 'var(--danger)'}" stroke-width="2">
+            ${type === 'success'
+              ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>'
+              : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'
+            }
+          </svg>
+          ${message}
+        `;
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+
+      // Modal helpers
+      function openAddModal() {
+        document.getElementById('input-url').value = '';
+        document.getElementById('input-business').value = '';
+        document.getElementById('input-location').value = '';
+        document.getElementById('input-email').value = '';
+        document.getElementById('input-notes').value = '';
+        document.getElementById('add-modal').classList.add('visible');
+      }
+
+      function openEditModal(id) {
+        const project = getProjects().find(p => p.id === id);
+        if (!project) return;
+
+        document.getElementById('edit-id').value = project.id;
+        document.getElementById('edit-url').value = project.url || '';
+        document.getElementById('edit-business').value = project.business || '';
+        document.getElementById('edit-location').value = project.location || '';
+        document.getElementById('edit-email').value = project.email || '';
+        document.getElementById('edit-status').value = project.status || 'pending';
+        document.getElementById('edit-path').value = project.generatedPath || '';
+        document.getElementById('edit-notes').value = project.notes || '';
+        document.getElementById('edit-modal').classList.add('visible');
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove('visible');
+      }
+
+      // CRUD
+      function addProject() {
+        const url = document.getElementById('input-url').value.trim();
+        const business = document.getElementById('input-business').value.trim();
+
+        if (!url || !business) {
+          toast('URL and business name are required', 'error');
+          return;
+        }
+
+        const projects = getProjects();
+        projects.push({
+          id: generateId(),
+          url,
+          business,
+          location: document.getElementById('input-location').value.trim(),
+          email: document.getElementById('input-email').value.trim(),
+          notes: document.getElementById('input-notes').value.trim(),
+          status: 'pending',
+          generatedPath: null,
+          createdAt: new Date().toISOString()
+        });
+
+        saveProjects(projects);
+        closeModal('add-modal');
+        render();
+        toast('Project added');
+      }
+
+      function saveProject() {
+        const id = document.getElementById('edit-id').value;
+        const projects = getProjects();
+        const index = projects.findIndex(p => p.id === id);
+
+        if (index === -1) return;
+
+        projects[index] = {
+          ...projects[index],
+          url: document.getElementById('edit-url').value.trim(),
+          business: document.getElementById('edit-business').value.trim(),
+          location: document.getElementById('edit-location').value.trim(),
+          email: document.getElementById('edit-email').value.trim(),
+          status: document.getElementById('edit-status').value,
+          generatedPath: document.getElementById('edit-path').value.trim() || null,
+          notes: document.getElementById('edit-notes').value.trim()
+        };
+
+        saveProjects(projects);
+        closeModal('edit-modal');
+        render();
+        toast('Project updated');
+      }
+
+      function deleteProject(id) {
+        if (!confirm('Delete this project?')) return;
+        const projects = getProjects().filter(p => p.id !== id);
+        saveProjects(projects);
+        render();
+        toast('Project deleted');
+      }
+
+      function setStatus(id, status) {
+        const projects = getProjects();
+        const project = projects.find(p => p.id === id);
+        if (project) {
+          project.status = status;
+          saveProjects(projects);
+          render();
+        }
+      }
+
+      // Render
+      let currentFilter = 'all';
+
+      function render() {
+        const projects = getProjects();
+
+        // Stats
+        const counts = {
+          all: projects.length,
+          pending: projects.filter(p => p.status === 'pending').length,
+          active: projects.filter(p => p.status === 'active').length,
+          done: projects.filter(p => p.status === 'done').length
+        };
+
+        document.getElementById('stat-total').textContent = counts.all;
+        document.getElementById('stat-pending').textContent = counts.pending;
+        document.getElementById('stat-active').textContent = counts.active;
+        document.getElementById('stat-done').textContent = counts.done;
+
+        document.getElementById('count-all').textContent = counts.all;
+        document.getElementById('count-pending').textContent = counts.pending;
+        document.getElementById('count-active').textContent = counts.active;
+        document.getElementById('count-done').textContent = counts.done;
+
+        // Filter
+        const filtered = currentFilter === 'all'
+          ? projects
+          : projects.filter(p => p.status === currentFilter);
+
+        const container = document.getElementById('projects');
+        const empty = document.getElementById('empty');
+
+        if (filtered.length === 0) {
+          container.innerHTML = '';
+          empty.style.display = 'block';
+        } else {
+          empty.style.display = 'none';
+          container.innerHTML = filtered.map(renderProject).join('');
+        }
+      }
+
+      function renderProject(p) {
+        const statusLabels = { pending: 'Pending', active: 'In Progress', done: 'Done' };
+        const cleanUrl = p.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+        return `
+          <div class="project">
+            <div class="project-header">
+              <div>
+                <div class="project-name">${p.business}</div>
+                <div class="project-url"><a href="${p.url}" target="_blank">${cleanUrl}</a></div>
+              </div>
+              <span class="status-badge status-${p.status}">${statusLabels[p.status]}</span>
+            </div>
+
+            ${p.location || p.email ? `
+              <div class="project-meta">
+                ${p.location ? `<div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${p.location}
+                </div>` : ''}
+                ${p.email ? `<div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg>
+                  ${p.email}
+                </div>` : ''}
+              </div>
+            ` : ''}
+
+            ${p.notes ? `<div class="project-notes">${p.notes}</div>` : ''}
+
+            <div class="project-actions">
+              ${p.status === 'pending' ? `
+                <button class="btn btn-primary btn-sm" onclick="setStatus('${p.id}', 'active')">Start</button>
+              ` : ''}
+              ${p.status === 'active' ? `
+                <button class="btn btn-primary btn-sm" onclick="setStatus('${p.id}', 'done')">Mark Done</button>
+              ` : ''}
+              ${p.generatedPath ? `
+                <a href="${p.generatedPath}" target="_blank" class="project-link">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                  View Site
+                </a>
+              ` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="openEditModal('${p.id}')">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="deleteProject('${p.id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Filter buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.filter;
+          render();
+        });
+      });
+
+      // Init
+      render();
+    </script>
+  </body>
+</html>

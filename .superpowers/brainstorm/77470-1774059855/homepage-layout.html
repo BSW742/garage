@@ -1,0 +1,157 @@
+<h2>Homepage layout</h2>
+<p class="subtitle">Listings front and center - how much chrome?</p>
+
+<div class="cards">
+  <div class="card" data-choice="minimal" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #f8f9fa; padding: 1rem;">
+      <!-- Minimal header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: white; border-bottom: 1px solid #e0e0e0; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 24px; height: 24px; background: #0066ff; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1px;">
+            <div style="width: 14px; height: 2px; background: white;"></div>
+            <div style="width: 14px; height: 2px; background: white;"></div>
+            <div style="width: 14px; height: 2px; background: white;"></div>
+          </div>
+          <span style="font-weight: 600; font-size: 0.9rem; color: #1a1a1a;">garage</span>
+        </div>
+        <div style="display: flex; gap: 1rem; font-size: 0.75rem; color: #666;">
+          <span>Sell</span>
+          <span>About</span>
+        </div>
+      </div>
+      <!-- Cards grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 40px; background: #ddd;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$14,500</div>
+            <div style="font-size: 0.4rem; color: #666;">2018 Toyota Corolla</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 40px; background: #ccc;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$18,900</div>
+            <div style="font-size: 0.4rem; color: #666;">2020 Suzuki Swift</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 40px; background: #bbb;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$42,000</div>
+            <div style="font-size: 0.4rem; color: #666;">2019 Toyota Hilux</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Minimal</h3>
+      <p>Just logo + nav. Straight into listings. No hero, no tagline.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="search-bar" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #f8f9fa; padding: 1rem;">
+      <!-- Header with search -->
+      <div style="padding: 0.75rem 1rem; background: white; border-bottom: 1px solid #e0e0e0; margin-bottom: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 24px; height: 24px; background: #0066ff; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1px;">
+              <div style="width: 14px; height: 2px; background: white;"></div>
+              <div style="width: 14px; height: 2px; background: white;"></div>
+              <div style="width: 14px; height: 2px; background: white;"></div>
+            </div>
+            <span style="font-weight: 600; font-size: 0.9rem; color: #1a1a1a;">garage</span>
+          </div>
+          <div style="display: flex; gap: 1rem; font-size: 0.75rem; color: #666;">
+            <span>Sell</span>
+            <span>About</span>
+          </div>
+        </div>
+        <!-- Search bar -->
+        <div style="display: flex; gap: 0.25rem;">
+          <div style="flex: 1; height: 20px; background: #f0f0f0; border-radius: 4px; border: 1px solid #ddd;"></div>
+          <div style="width: 50px; height: 20px; background: #0066ff; border-radius: 4px;"></div>
+        </div>
+      </div>
+      <!-- Cards grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 35px; background: #ddd;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$14,500</div>
+            <div style="font-size: 0.4rem; color: #666;">2018 Corolla</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 35px; background: #ccc;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$18,900</div>
+            <div style="font-size: 0.4rem; color: #666;">2020 Swift</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 35px; background: #bbb;"></div>
+          <div style="padding: 0.4rem;">
+            <div style="font-size: 0.5rem; font-weight: 600;">$42,000</div>
+            <div style="font-size: 0.4rem; color: #666;">2019 Hilux</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Search Bar</h3>
+      <p>Prominent search in header. Users can filter immediately. TradeMe-style.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hero-lite" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #f8f9fa; padding: 1rem;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background: white; border-bottom: 1px solid #e0e0e0;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 20px; height: 20px; background: #0066ff; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1px;">
+            <div style="width: 12px; height: 2px; background: white;"></div>
+            <div style="width: 12px; height: 2px; background: white;"></div>
+            <div style="width: 12px; height: 2px; background: white;"></div>
+          </div>
+          <span style="font-weight: 600; font-size: 0.75rem; color: #1a1a1a;">garage</span>
+        </div>
+        <div style="display: flex; gap: 1rem; font-size: 0.6rem; color: #666;">
+          <span>Sell</span>
+          <span>About</span>
+        </div>
+      </div>
+      <!-- Mini hero -->
+      <div style="text-align: center; padding: 0.75rem; background: white;">
+        <div style="font-size: 0.7rem; font-weight: 600; color: #1a1a1a;">20 cars for sale in NZ</div>
+        <div style="font-size: 0.5rem; color: #666;">Find your next car</div>
+      </div>
+      <!-- Cards grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.5rem;">
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 30px; background: #ddd;"></div>
+          <div style="padding: 0.3rem;">
+            <div style="font-size: 0.45rem; font-weight: 600;">$14,500</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 30px; background: #ccc;"></div>
+          <div style="padding: 0.3rem;">
+            <div style="font-size: 0.45rem; font-weight: 600;">$18,900</div>
+          </div>
+        </div>
+        <div style="background: white; border-radius: 6px; overflow: hidden; border: 1px solid #e0e0e0;">
+          <div style="height: 30px; background: #bbb;"></div>
+          <div style="padding: 0.3rem;">
+            <div style="font-size: 0.45rem; font-weight: 600;">$42,000</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Hero Lite</h3>
+      <p>One-liner headline + count, then straight to listings. Context without bloat.</p>
+    </div>
+  </div>
+</div>
