@@ -1,0 +1,250 @@
+---
+import Layout from '../../components/Layout.astro';
+import { getListingByUploadCode } from '../../lib/listings';
+
+const { DB } = Astro.locals.runtime.env;
+const { code } = Astro.params;
+
+const listing = code ? await getListingByUploadCode(DB, code) : null;
+
+if (!listing) {
+  return Astro.redirect('/sell?error=invalid-code');
+}
+
+if (listing.photoUploaded) {
+  return Astro.redirect(`/cars/${listing.id}`);
+}
+---
+
+<Layout title="Upload Photo" description="Upload photo for your listing">
+  <section class="upload-page">
+    <div class="upload-card">
+      <h1>Upload photo for your</h1>
+      <p class="car-name">{listing.year} {listing.make} {listing.model}</p>
+
+      <div id="drop-zone" class="drop-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <p>Drop photo here<br/>or tap to select</p>
+      </div>
+
+      <div id="preview" class="preview" hidden>
+        <img id="preview-img" alt="Preview" />
+      </div>
+
+      <button id="upload-btn" class="upload-btn" disabled>UPLOAD</button>
+
+      <p id="status" class="status"></p>
+    </div>
+
+    <div id="success" class="success-card" hidden>
+      <h1>Listed!</h1>
+      <p class="car-name">{listing.year} {listing.make} {listing.model}</p>
+      <p class="price">${listing.price?.toLocaleString() || 'Contact for price'}</p>
+      <a id="listing-url" href={`/cars/${listing.id}`} class="view-link">View your listing →</a>
+      <p class="edit-hint">Edit anytime at <a href="/edit">garage.co.nz/edit</a> using your PIN</p>
+    </div>
+  </section>
+</Layout>
+
+<script define:vars={{ code }}>
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const preview = document.getElementById('preview');
+  const previewImg = document.getElementById('preview-img');
+  const uploadBtn = document.getElementById('upload-btn');
+  const status = document.getElementById('status');
+  const successCard = document.getElementById('success');
+  const uploadCard = document.querySelector('.upload-card');
+
+  let selectedFile = null;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFile(file);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  function handleFile(file) {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      preview.hidden = false;
+      dropZone.hidden = true;
+      uploadBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'UPLOADING...';
+    status.textContent = '';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const res = await fetch(`/api/upload/${code}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: e.target.result })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          uploadCard.hidden = true;
+          successCard.hidden = false;
+        } else {
+          status.textContent = data.error || 'Upload failed';
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'UPLOAD';
+        }
+      } catch (err) {
+        status.textContent = 'Upload failed. Please try again.';
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'UPLOAD';
+      }
+    };
+    reader.readAsDataURL(selectedFile);
+  });
+</script>
+
+<style>
+  .upload-page {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .upload-card, .success-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0 0 0.5rem 0;
+    font-weight: normal;
+  }
+
+  .car-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 2rem 0;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--color-border);
+    padding: 3rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--color-primary);
+  }
+
+  .drop-zone input {
+    display: none;
+  }
+
+  .drop-zone p {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .preview {
+    margin: 1rem 0;
+  }
+
+  .preview img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+  }
+
+  .upload-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+
+  .upload-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .status {
+    color: #e53935;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .success-card {
+    border-color: var(--color-primary);
+  }
+
+  .success-card h1 {
+    color: var(--color-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .price {
+    font-size: 1.25rem;
+    color: var(--color-primary);
+    margin: 0 0 1.5rem 0;
+  }
+
+  .view-link {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .edit-hint {
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .edit-hint a {
+    color: var(--color-primary);
+  }
+</style>
