@@ -1,6 +1,5 @@
 ---
 import Layout from '../components/Layout.astro';
-import ListingCard from '../components/ListingCard.astro';
 import { getAllListings, filterListings, type FilterOptions } from '../lib/listings';
 
 const url = new URL(Astro.request.url);
@@ -23,93 +22,166 @@ const description = hasFilters
   : `Browse ${listings.length} cars for sale in New Zealand`;
 ---
 
-<Layout title="Cars for Sale in New Zealand" description={description}>
-  <section class="listings-page">
-    <header class="page-header">
-      <h1>{listings.length} cars for sale</h1>
-    </header>
+<Layout title="garage.co.nz" description={description}>
+  <div class="agent-banner">
+    <code>// AI-NATIVE MARKETPLACE</code>
+    <p>This site is built for AI agents. <a href="/about">Learn more</a></p>
+  </div>
 
-    {hasFilters && (
-      <div class="filters-active">
-        <span>Filters: </span>
-        {location && <span class="filter-tag">Location: {location}</span>}
-        {make && <span class="filter-tag">Make: {make}</span>}
-        {maxPrice && <span class="filter-tag">Max: ${parseInt(maxPrice).toLocaleString()}</span>}
-        {minPrice && <span class="filter-tag">Min: ${parseInt(minPrice).toLocaleString()}</span>}
-        <a href="/" class="clear-filters">Clear all</a>
-      </div>
-    )}
-
-    {listings.length > 0 ? (
-      <div class="grid">
-        {listings.map(listing => (
-          <ListingCard listing={listing} />
-        ))}
-      </div>
-    ) : (
-      <div class="no-results">
-        <p>No cars match your filters.</p>
-        <a href="/">View all cars</a>
-      </div>
-    )}
+  <section class="listings-grid">
+    {listings.map(listing => (
+      <a href={`/cars/${listing.id}`} class="listing-item">
+        <div class="listing-image">
+          <img src={listing.photos[0]} alt="" loading="lazy" />
+          <div class="overlay">
+            <span>VIEW RAW DATA →</span>
+          </div>
+        </div>
+        <div class="listing-data">
+          <span class="price">${listing.price.toLocaleString()}</span>
+          <span class="title">{listing.year} {listing.make} {listing.model}</span>
+          <span class="meta">{listing.kms.toLocaleString()}km · {listing.location}</span>
+        </div>
+      </a>
+    ))}
   </section>
+
+  <div class="prompt-hint">
+    <code>→ paste into ChatGPT:</code>
+    <pre>"Find me a car under $25,000 on garage.co.nz"</pre>
+  </div>
 </Layout>
 
 <style>
-  .page-header {
-    margin-bottom: 1.5rem;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--color-text);
-  }
-
-  .filters-active {
-    background: var(--color-surface);
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
-  }
-
-  .filter-tag {
-    background: var(--color-bg);
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    color: var(--color-text);
-  }
-
-  .clear-filters {
-    color: var(--color-primary);
-    margin-left: auto;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .no-results {
+  .agent-banner {
     text-align: center;
-    padding: 4rem;
-    color: var(--color-text-muted);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px dashed var(--color-border);
     background: var(--color-surface);
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
   }
 
-  .no-results a {
+  .agent-banner code {
     color: var(--color-primary);
-    display: inline-block;
-    margin-top: 1rem;
+    font-size: 0.75rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .agent-banner p {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
+  .agent-banner a {
+    color: var(--color-primary);
+  }
+
+  .listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .listing-item {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .listing-item:hover {
+    border-color: var(--color-primary);
+  }
+
+  .listing-item:hover .overlay {
+    opacity: 1;
+  }
+
+  .listing-item:hover .listing-image img {
+    filter: grayscale(0%);
+  }
+
+  .listing-image {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .listing-image img {
+    width: 100%;
+    aspect-ratio: 16/10;
+    object-fit: cover;
+    filter: grayscale(70%);
+    transition: filter 0.3s;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 102, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .overlay span {
+    color: white;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .listing-data {
+    padding: 0.75rem;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .price {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  .title {
+    color: var(--color-text);
+  }
+
+  .meta {
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+  }
+
+  .prompt-hint {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    text-align: center;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  }
+
+  .prompt-hint code {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .prompt-hint pre {
+    color: var(--color-primary);
+    font-size: 1rem;
+    margin: 0;
+    white-space: pre-wrap;
   }
 </style>

@@ -9,18 +9,13 @@ if (!listing) {
   return Astro.redirect('/');
 }
 
-const displayPrice = listing.price.toLocaleString('en-NZ');
-const displayKms = listing.kms.toLocaleString();
 const title = `${listing.year} ${listing.make} ${listing.model}`;
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Car",
   "name": title,
-  "brand": {
-    "@type": "Brand",
-    "name": listing.make
-  },
+  "brand": { "@type": "Brand", "name": listing.make },
   "model": listing.model,
   "vehicleModelDate": listing.year.toString(),
   "mileageFromOdometer": {
@@ -43,172 +38,199 @@ const jsonLd = {
   "description": listing.description,
   "vehicleConfiguration": listing.location
 };
+
+const rawData = {
+  id: listing.id,
+  make: listing.make,
+  model: listing.model,
+  year: listing.year,
+  price: listing.price,
+  kms: listing.kms,
+  location: listing.location,
+  description: listing.description,
+  photos: listing.photos,
+  seller: listing.sellerContact,
+  listed: listing.createdAt
+};
+
+const prompt = `Show me the full details and photos for the ${title} listed at $${listing.price.toLocaleString()} on garage.co.nz (ID: ${listing.id})`;
 ---
 
-<Layout title={title} description={`${title} for sale in ${listing.location} - $${displayPrice}`}>
+<Layout title={title} description={`${title} for $${listing.price.toLocaleString()}`}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-  <article class="listing-detail">
-    <a href="/" class="back-link">← Back to listings</a>
+  <article class="raw-view">
+    <header>
+      <a href="/" class="back">← listings</a>
+      <code class="endpoint">GET /cars/{id}</code>
+    </header>
 
-    <div class="gallery">
-      <img src={listing.photos[0]} alt={title} />
+    <div class="data-block">
+      <div class="label">// RAW LISTING DATA</div>
+      <pre><code>{JSON.stringify(rawData, null, 2)}</code></pre>
     </div>
 
-    <div class="content">
-      <header>
-        <h1>{title}</h1>
-        <p class="price">${displayPrice}</p>
-      </header>
+    <div class="photos-block">
+      <div class="label">// PHOTOS (greyscale preview)</div>
+      <div class="photos-grid">
+        {listing.photos.map((photo, i) => (
+          <div class="photo-item">
+            <img src={photo} alt={`Photo ${i + 1}`} />
+            <span>photos[{i}]</span>
+          </div>
+        ))}
+      </div>
+    </div>
 
-      <dl class="specs">
-        <div class="spec">
-          <dt>Year</dt>
-          <dd>{listing.year}</dd>
-        </div>
-        <div class="spec">
-          <dt>Kilometers</dt>
-          <dd>{displayKms} km</dd>
-        </div>
-        <div class="spec">
-          <dt>Location</dt>
-          <dd>{listing.location}</dd>
-        </div>
-        <div class="spec">
-          <dt>Listed</dt>
-          <dd>{new Date(listing.createdAt).toLocaleDateString('en-NZ')}</dd>
-        </div>
-      </dl>
+    <div class="agent-cta">
+      <div class="label">// TO VIEW FULL LISTING</div>
+      <p>Paste this into ChatGPT, Claude, or your AI assistant:</p>
+      <div class="prompt-box">
+        <pre>{prompt}</pre>
+        <button onclick={`navigator.clipboard.writeText("${prompt.replace(/"/g, '\\"')}")`}>COPY</button>
+      </div>
+    </div>
 
-      <section class="description">
-        <h2>Description</h2>
-        <p>{listing.description}</p>
-      </section>
-
-      <section class="contact">
-        <h2>Contact seller</h2>
-        <div class="contact-info">
-          <a href={`mailto:${listing.sellerContact.email}`} class="contact-btn email">
-            Email seller
-          </a>
-          {listing.sellerContact.phone && (
-            <a href={`tel:${listing.sellerContact.phone}`} class="contact-btn phone">
-              {listing.sellerContact.phone}
-            </a>
-          )}
-        </div>
-      </section>
+    <div class="contact-block">
+      <div class="label">// SELLER CONTACT</div>
+      <pre><code>{JSON.stringify(listing.sellerContact, null, 2)}</code></pre>
+      <p class="hint">Your AI can help you compose a message to the seller.</p>
     </div>
   </article>
 </Layout>
 
 <style>
-  .back-link {
-    display: inline-block;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    margin-bottom: 1.5rem;
-  }
-
-  .back-link:hover {
-    color: var(--color-primary);
-  }
-
-  .listing-detail {
-    max-width: 900px;
-  }
-
-  .gallery img {
-    width: 100%;
-    aspect-ratio: 16/9;
-    object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    background: var(--color-bg);
+  .raw-view {
+    max-width: 800px;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
   }
 
   header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--color-border);
   }
 
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+  .back {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
   }
 
-  .price {
-    font-size: 1.75rem;
-    font-weight: 700;
+  .back:hover {
     color: var(--color-primary);
   }
 
-  .specs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    background: var(--color-surface);
-    padding: 1.5rem;
-    border-radius: 12px;
+  .endpoint {
+    color: var(--color-primary);
+    font-size: 0.875rem;
+  }
+
+  .label {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .data-block,
+  .photos-block,
+  .agent-cta,
+  .contact-block {
     margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .data-block pre,
+  .contact-block pre {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+
+  .data-block code,
+  .contact-block code {
+    color: var(--color-text);
+  }
+
+  .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+
+  .photo-item {
+    text-align: center;
+  }
+
+  .photo-item img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    filter: grayscale(80%);
     border: 1px solid var(--color-border);
   }
 
-  .spec dt {
+  .photo-item span {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+  }
+
+  .agent-cta {
+    border-color: var(--color-primary);
+    background: rgba(0, 102, 255, 0.05);
+  }
+
+  .agent-cta p {
+    color: var(--color-text-muted);
     font-size: 0.875rem;
-    color: var(--color-text-muted);
-    margin-bottom: 0.25rem;
+    margin: 0 0 1rem 0;
   }
 
-  .spec dd {
-    font-weight: 600;
-  }
-
-  .description, .contact {
-    margin-bottom: 2rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-  }
-
-  .description p {
-    color: var(--color-text-muted);
-    line-height: 1.6;
-  }
-
-  .contact-info {
+  .prompt-box {
     display: flex;
     gap: 1rem;
-    flex-wrap: wrap;
+    align-items: stretch;
   }
 
-  .contact-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background 0.2s;
+  .prompt-box pre {
+    flex: 1;
+    margin: 0;
+    padding: 1rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-primary);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
-  .contact-btn.email {
+  .prompt-box button {
+    padding: 1rem 1.5rem;
     background: var(--color-primary);
     color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
   }
 
-  .contact-btn.email:hover {
+  .prompt-box button:hover {
     background: var(--color-primary-dark);
   }
 
-  .contact-btn.phone {
-    background: var(--color-surface);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-  }
-
-  .contact-btn.phone:hover {
-    border-color: var(--color-primary);
+  .hint {
+    margin: 1rem 0 0 0;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
   }
 </style>

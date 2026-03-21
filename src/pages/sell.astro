@@ -2,96 +2,153 @@
 import Layout from '../components/Layout.astro';
 ---
 
-<Layout title="Sell Your Car">
+<Layout title="List Your Car">
   <section class="sell-page">
-    <header>
-      <h1>List your car</h1>
-      <p>Free to list. No fees. Reach buyers using AI assistants.</p>
-    </header>
+    <div class="agent-banner">
+      <code>// ONE-CLICK LISTING</code>
+      <p>Enter your plate. We'll fetch the details from CarJam.</p>
+    </div>
 
-    <form id="sell-form" class="listing-form">
-      <div class="form-section">
-        <h2>Vehicle details</h2>
+    <div class="plate-lookup">
+      <div class="plate-input-group">
+        <input
+          type="text"
+          id="plate"
+          placeholder="ABC123"
+          maxlength="7"
+          autocomplete="off"
+        />
+        <button id="lookup-btn" type="button">FETCH →</button>
+      </div>
+      <div id="lookup-status" class="status"></div>
+    </div>
 
-        <div class="form-row">
+    <form id="sell-form" class="listing-form" hidden>
+      <div class="data-block">
+        <div class="label">// VEHICLE DATA</div>
+        <div class="form-grid">
           <div class="form-group">
-            <label for="make">Make</label>
-            <input type="text" id="make" name="make" required placeholder="e.g. Toyota" />
+            <label for="make">make</label>
+            <input type="text" id="make" name="make" required />
           </div>
           <div class="form-group">
-            <label for="model">Model</label>
-            <input type="text" id="model" name="model" required placeholder="e.g. Corolla" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="year">Year</label>
-            <input type="number" id="year" name="year" required min="1980" max="2026" placeholder="2020" />
+            <label for="model">model</label>
+            <input type="text" id="model" name="model" required />
           </div>
           <div class="form-group">
-            <label for="kms">Kilometers</label>
-            <input type="number" id="kms" name="kms" required min="0" placeholder="50000" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="price">Price (NZD)</label>
-            <input type="number" id="price" name="price" required min="0" placeholder="25000" />
+            <label for="year">year</label>
+            <input type="number" id="year" name="year" required min="1980" max="2026" />
           </div>
           <div class="form-group">
-            <label for="location">Location</label>
-            <input type="text" id="location" name="location" required placeholder="e.g. Wellington" />
+            <label for="kms">kms</label>
+            <input type="number" id="kms" name="kms" required min="0" />
           </div>
         </div>
       </div>
 
-      <div class="form-section">
-        <h2>Description</h2>
-        <div class="form-group">
-          <label for="description">Tell buyers about your car</label>
-          <textarea id="description" name="description" required rows="4" placeholder="Service history, condition, features..."></textarea>
+      <div class="data-block">
+        <div class="label">// LISTING DETAILS</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="price">price (NZD)</label>
+            <input type="number" id="price" name="price" required min="0" />
+          </div>
+          <div class="form-group">
+            <label for="location">location</label>
+            <input type="text" id="location" name="location" required placeholder="Auckland" />
+          </div>
+        </div>
+        <div class="form-group full">
+          <label for="description">description</label>
+          <textarea id="description" name="description" required rows="3" placeholder="Service history, condition, features..."></textarea>
         </div>
       </div>
 
-      <div class="form-section">
-        <h2>Photos</h2>
-        <div class="form-group">
-          <label for="photo">Photo URL</label>
+      <div class="data-block">
+        <div class="label">// PHOTOS</div>
+        <div class="form-group full">
+          <label for="photo">photo_url</label>
           <input type="url" id="photo" name="photo" placeholder="https://..." />
-          <p class="hint">Paste a link to a photo of your car</p>
+          <span class="hint">// optional: paste image URL</span>
         </div>
       </div>
 
-      <div class="form-section">
-        <h2>Contact details</h2>
-        <div class="form-row">
+      <div class="data-block">
+        <div class="label">// SELLER CONTACT</div>
+        <div class="form-grid">
           <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required placeholder="you@example.com" />
+            <label for="email">email</label>
+            <input type="email" id="email" name="email" required />
           </div>
           <div class="form-group">
-            <label for="phone">Phone (optional)</label>
-            <input type="tel" id="phone" name="phone" placeholder="021 123 4567" />
+            <label for="phone">phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="optional" />
           </div>
         </div>
       </div>
 
-      <button type="submit" class="submit-btn">List my car</button>
+      <button type="submit" class="submit-btn">LIST CAR →</button>
     </form>
 
-    <div id="success" class="success-message" hidden>
-      <h2>Car listed!</h2>
-      <p>Your listing is now live.</p>
-      <a href="/" class="view-btn">View all listings</a>
+    <div id="success" class="success-block" hidden>
+      <div class="label">// LISTING CREATED</div>
+      <pre><code id="success-data"></code></pre>
+      <p>Your car is now listed. AI agents can find it.</p>
+      <a href="/" class="back-link">← view all listings</a>
     </div>
   </section>
 </Layout>
 
 <script>
+  const plateInput = document.getElementById('plate') as HTMLInputElement;
+  const lookupBtn = document.getElementById('lookup-btn') as HTMLButtonElement;
+  const lookupStatus = document.getElementById('lookup-status') as HTMLDivElement;
   const form = document.getElementById('sell-form') as HTMLFormElement;
   const success = document.getElementById('success') as HTMLDivElement;
+
+  plateInput.addEventListener('input', () => {
+    plateInput.value = plateInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  lookupBtn.addEventListener('click', async () => {
+    const plate = plateInput.value.trim();
+    if (!plate) {
+      lookupStatus.textContent = '// error: enter plate number';
+      lookupStatus.className = 'status error';
+      return;
+    }
+
+    lookupStatus.textContent = '// fetching from carjam...';
+    lookupStatus.className = 'status loading';
+    lookupBtn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/carjam?plate=${encodeURIComponent(plate)}`);
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        lookupStatus.textContent = `// error: ${data.error || 'vehicle not found'}`;
+        lookupStatus.className = 'status error';
+        return;
+      }
+
+      // Populate form
+      (document.getElementById('make') as HTMLInputElement).value = data.make || '';
+      (document.getElementById('model') as HTMLInputElement).value = data.model || '';
+      (document.getElementById('year') as HTMLInputElement).value = data.year || '';
+      (document.getElementById('kms') as HTMLInputElement).value = data.kms || '';
+
+      lookupStatus.textContent = `// found: ${data.year} ${data.make} ${data.model}`;
+      lookupStatus.className = 'status success';
+      form.hidden = false;
+
+    } catch (err) {
+      lookupStatus.textContent = '// error: failed to fetch';
+      lookupStatus.className = 'status error';
+    } finally {
+      lookupBtn.disabled = false;
+    }
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -120,6 +177,10 @@ import Layout from '../components/Layout.astro';
       });
 
       if (res.ok) {
+        const result = await res.json();
+        (document.getElementById('success-data') as HTMLElement).textContent =
+          JSON.stringify({ id: result.id, ...data }, null, 2);
+        document.querySelector('.plate-lookup')?.remove();
         form.hidden = true;
         success.hidden = false;
       }
@@ -131,84 +192,153 @@ import Layout from '../components/Layout.astro';
 
 <style>
   .sell-page {
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
   }
 
-  header {
+  .agent-banner {
+    text-align: center;
+    padding: 1.5rem;
     margin-bottom: 2rem;
+    border: 1px dashed var(--color-border);
+    background: var(--color-surface);
   }
 
-  h1 {
-    font-size: 2rem;
+  .agent-banner code {
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    display: block;
     margin-bottom: 0.5rem;
   }
 
-  header p {
+  .agent-banner p {
     color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
   }
 
-  .listing-form {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 2rem;
-  }
-
-  .form-section {
+  .plate-lookup {
     margin-bottom: 2rem;
   }
 
-  .form-section h2 {
-    font-size: 1.125rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-border);
+  .plate-input-group {
+    display: flex;
+    gap: 1rem;
   }
 
-  .form-row {
+  .plate-input-group input {
+    flex: 1;
+    padding: 1rem;
+    font-size: 1.5rem;
+    font-family: inherit;
+    text-align: center;
+    letter-spacing: 0.2em;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .plate-input-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .plate-input-group button {
+    padding: 1rem 2rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .plate-input-group button:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .plate-input-group button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .status {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .status.error {
+    color: #e53935;
+  }
+
+  .status.success {
+    color: var(--color-primary);
+  }
+
+  .status.loading {
+    color: var(--color-text-muted);
+  }
+
+  .data-block {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .label {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
 
-  @media (max-width: 600px) {
-    .form-row {
-      grid-template-columns: 1fr;
-    }
-  }
-
   .form-group {
-    margin-bottom: 1rem;
-  }
-
-  label {
-    display: block;
-    font-size: 0.875rem;
     margin-bottom: 0.5rem;
-    color: var(--color-text-muted);
   }
 
-  input, textarea {
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.5rem;
+    font-family: inherit;
+    font-size: 0.875rem;
     background: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
     color: var(--color-text);
-    font-size: 1rem;
-    font-family: inherit;
   }
 
-  input:focus, textarea:focus {
+  .form-group input:focus,
+  .form-group textarea:focus {
     outline: none;
     border-color: var(--color-primary);
   }
 
   .hint {
-    font-size: 0.75rem;
+    display: block;
+    font-size: 0.65rem;
     color: var(--color-text-muted);
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
   }
 
   .submit-btn {
@@ -217,46 +347,48 @@ import Layout from '../components/Layout.astro';
     background: var(--color-primary);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
+    font-family: inherit;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    letter-spacing: 0.05em;
   }
 
   .submit-btn:hover {
     background: var(--color-primary-dark);
   }
 
-  .success-message {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: var(--color-surface);
-    border-radius: 12px;
-    border: 1px solid var(--color-border);
+  .success-block {
+    padding: 2rem;
+    border: 1px solid var(--color-primary);
+    background: rgba(0, 102, 255, 0.05);
   }
 
-  .success-message h2 {
-    color: var(--color-primary);
-    margin-bottom: 0.5rem;
+  .success-block pre {
+    margin: 0 0 1rem 0;
+    font-size: 0.75rem;
+    overflow-x: auto;
   }
 
-  .success-message p {
+  .success-block p {
     color: var(--color-text-muted);
-    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    margin: 0 0 1rem 0;
   }
 
-  .view-btn {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    background: var(--color-bg);
-    color: var(--color-text);
-    border-radius: 8px;
+  .back-link {
+    color: var(--color-primary);
+    font-size: 0.875rem;
     text-decoration: none;
-    border: 1px solid var(--color-border);
   }
 
-  .view-btn:hover {
-    border-color: var(--color-primary);
+  @media (max-width: 500px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .plate-input-group {
+      flex-direction: column;
+    }
   }
 </style>
