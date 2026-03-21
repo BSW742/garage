@@ -67,9 +67,10 @@ import Layout from '../components/Layout.astro';
       <div class="data-block">
         <div class="label">// PHOTOS</div>
         <div class="form-group full">
-          <label for="photo">photo_url</label>
-          <input type="url" id="photo" name="photo" placeholder="https://..." />
-          <span class="hint">// optional: paste image URL</span>
+          <label for="photos">upload photos</label>
+          <input type="file" id="photos" name="photos" accept="image/*" multiple />
+          <span class="hint">// select from camera or gallery</span>
+          <div id="photo-previews" class="photo-previews"></div>
         </div>
       </div>
 
@@ -150,8 +151,41 @@ import Layout from '../components/Layout.astro';
     }
   });
 
+  // Photo upload handling
+  const photosInput = document.getElementById('photos') as HTMLInputElement;
+  const photoPreviews = document.getElementById('photo-previews') as HTMLDivElement;
+  let photoBase64List: string[] = [];
+
+  photosInput.addEventListener('change', async () => {
+    photoBase64List = [];
+    photoPreviews.innerHTML = '';
+
+    const files = photosInput.files;
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        photoBase64List.push(base64);
+
+        // Show preview
+        const preview = document.createElement('div');
+        preview.className = 'preview-item';
+        preview.innerHTML = `<img src="${base64}" alt="Preview" />`;
+        photoPreviews.appendChild(preview);
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const submitBtn = form.querySelector('.submit-btn') as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'UPLOADING...';
+    submitBtn.disabled = true;
 
     const formData = new FormData(form);
     const data = {
@@ -162,7 +196,7 @@ import Layout from '../components/Layout.astro';
       price: parseInt(formData.get('price') as string),
       location: formData.get('location'),
       description: formData.get('description'),
-      photos: formData.get('photo') ? [formData.get('photo')] : [],
+      photos: photoBase64List,
       sellerContact: {
         email: formData.get('email'),
         phone: formData.get('phone') || undefined
@@ -179,13 +213,20 @@ import Layout from '../components/Layout.astro';
       if (res.ok) {
         const result = await res.json();
         (document.getElementById('success-data') as HTMLElement).textContent =
-          JSON.stringify({ id: result.id, ...data }, null, 2);
+          JSON.stringify({ id: result.listing?.id, url: result.listing?.url }, null, 2);
         document.querySelector('.plate-lookup')?.remove();
         form.hidden = true;
         success.hidden = false;
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Failed to create listing');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
       }
     } catch (err) {
       console.error(err);
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
   });
 </script>
@@ -339,6 +380,32 @@ import Layout from '../components/Layout.astro';
     font-size: 0.65rem;
     color: var(--color-text-muted);
     margin-top: 0.25rem;
+  }
+
+  .photo-previews {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+
+  .preview-item {
+    width: 80px;
+    height: 60px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  .preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  input[type="file"] {
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
   }
 
   .submit-btn {
