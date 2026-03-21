@@ -177,9 +177,16 @@ git commit -m "feat: add upload_code, pin, photo_uploaded to listings"
 
 - [ ] **Step 1: Create migration SQL**
 
-Run in terminal to add columns to production D1:
+Run in terminal to add columns. For **local development**, add `--local` flag:
 
 ```bash
+# Local development
+npx wrangler d1 execute garage-db --local --command "ALTER TABLE listings ADD COLUMN upload_code TEXT;"
+npx wrangler d1 execute garage-db --local --command "ALTER TABLE listings ADD COLUMN pin TEXT;"
+npx wrangler d1 execute garage-db --local --command "ALTER TABLE listings ADD COLUMN photo_uploaded INTEGER DEFAULT 0;"
+npx wrangler d1 execute garage-db --local --command "CREATE INDEX idx_upload_code ON listings(upload_code);"
+
+# Production (remove --local)
 npx wrangler d1 execute garage-db --command "ALTER TABLE listings ADD COLUMN upload_code TEXT;"
 npx wrangler d1 execute garage-db --command "ALTER TABLE listings ADD COLUMN pin TEXT;"
 npx wrangler d1 execute garage-db --command "ALTER TABLE listings ADD COLUMN photo_uploaded INTEGER DEFAULT 0;"
@@ -252,7 +259,14 @@ export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
 
     // PIN required for new conversational listings (but not for trademe imports)
     const isTrademeImport = data.source === 'trademe';
-    if (!isTrademeImport && data.pin !== undefined) {
+    if (!isTrademeImport) {
+      // Require PIN for non-trademe listings
+      if (!data.pin) {
+        return new Response(JSON.stringify({ error: 'PIN required. Choose a 4-digit PIN to edit your listing later.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       // Validate PIN is 4 numeric digits
       if (!/^\d{4}$/.test(data.pin)) {
         return new Response(JSON.stringify({ error: 'PIN must be exactly 4 digits' }), {
