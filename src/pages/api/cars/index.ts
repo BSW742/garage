@@ -18,7 +18,7 @@ interface D1PreparedStatement {
 }
 
 function formatListingForApi(listing: Listing) {
-  return {
+  const base = {
     id: listing.id,
     make: listing.make,
     model: listing.model,
@@ -29,6 +29,17 @@ function formatListingForApi(listing: Listing) {
     photo: listing.photos[0] || null,
     url: `https://garage.co.nz/cars/${listing.id}`,
   };
+
+  // Add Trade Me info if it's a Trade Me listing
+  if (listing.source === 'trademe' && listing.sourceUrl) {
+    return {
+      ...base,
+      source: 'trademe',
+      trademeUrl: listing.sourceUrl,
+    };
+  }
+
+  return base;
 }
 
 export const GET: APIRoute = async ({ url, locals }) => {

@@ -13,6 +13,8 @@ export interface Listing {
     phone?: string;
   };
   createdAt: string;
+  source: 'garage' | 'trademe';
+  sourceUrl?: string;
 }
 
 export interface FilterOptions {
@@ -51,6 +53,8 @@ interface DBRow {
   seller_email: string;
   seller_phone: string | null;
   created_at: string;
+  source: string | null;
+  source_url: string | null;
 }
 
 function rowToListing(row: DBRow): Listing {
@@ -69,6 +73,8 @@ function rowToListing(row: DBRow): Listing {
       phone: row.seller_phone || undefined,
     },
     createdAt: row.created_at,
+    source: (row.source as 'garage' | 'trademe') || 'garage',
+    sourceUrl: row.source_url || undefined,
   };
 }
 
@@ -123,13 +129,15 @@ export async function addListing(
   db: D1Database,
   listing: Omit<Listing, 'id' | 'createdAt'>
 ): Promise<Listing> {
-  const id = `${listing.make.toLowerCase()}-${listing.year}-${Date.now()}`;
+  const id = listing.source === 'trademe'
+    ? `tm-${listing.make.toLowerCase()}-${listing.year}-${Date.now()}`
+    : `${listing.make.toLowerCase()}-${listing.year}-${Date.now()}`;
   const createdAt = new Date().toISOString();
 
   await db
     .prepare(`
-      INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at, source, source_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .bind(
       id,
@@ -143,7 +151,9 @@ export async function addListing(
       JSON.stringify(listing.photos),
       listing.sellerContact.email,
       listing.sellerContact.phone || null,
-      createdAt
+      createdAt,
+      listing.source || 'garage',
+      listing.sourceUrl || null
     )
     .run();
 

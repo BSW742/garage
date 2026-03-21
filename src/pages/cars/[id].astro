@@ -51,8 +51,14 @@ const rawData = {
   description: listing.description,
   photos: listing.photos,
   seller: listing.sellerContact,
-  listed: listing.createdAt
+  listed: listing.createdAt,
+  ...(listing.source === 'trademe' && {
+    source: 'trademe',
+    trademeUrl: listing.sourceUrl
+  })
 };
+
+const isTrademe = listing.source === 'trademe';
 
 const prompt = `Show me the full details and photos for the ${title} listed at $${listing.price.toLocaleString()} on garage.co.nz (ID: ${listing.id})`;
 ---
@@ -65,6 +71,14 @@ const prompt = `Show me the full details and photos for the ${title} listed at $
       <a href="/" class="back">← listings</a>
       <code class="endpoint">GET /cars/{id}</code>
     </header>
+
+    {isTrademe && (
+      <div class="trademe-banner">
+        <span class="badge">TRADE ME LISTING</span>
+        <p>This listing is from Trade Me and made AI-searchable via garage.co.nz</p>
+        <a href={listing.sourceUrl} target="_blank" rel="noopener">View on Trade Me →</a>
+      </div>
+    )}
 
     <div class="data-block">
       <div class="label">// RAW LISTING DATA</div>
@@ -233,5 +247,40 @@ const prompt = `Show me the full details and photos for the ${title} listed at $
     margin: 1rem 0 0 0;
     font-size: 0.75rem;
     color: var(--color-text-muted);
+  }
+
+  .trademe-banner {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+  }
+
+  .trademe-banner .badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #f59e0b;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .trademe-banner p {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .trademe-banner a {
+    color: #f59e0b;
+    font-size: 0.875rem;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .trademe-banner a:hover {
+    text-decoration: underline;
   }
 </style>

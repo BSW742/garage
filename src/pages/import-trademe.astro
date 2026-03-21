@@ -1,0 +1,343 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Import from Trade Me" description="Make your Trade Me listing AI-searchable">
+  <section class="import-page">
+    <div class="agent-banner">
+      <code>// MAKE YOUR TRADE ME LISTING AI-SEARCHABLE</code>
+      <p>Trade Me isn't AI-friendly. Paste your listing URL here and AI agents can find it.</p>
+    </div>
+
+    <form id="import-form" class="listing-form">
+      <div class="data-block highlight">
+        <div class="label">// TRADE ME LISTING</div>
+        <div class="form-group full">
+          <label for="trademe-url">paste_url</label>
+          <input
+            type="url"
+            id="trademe-url"
+            name="trademe-url"
+            required
+            placeholder="https://www.trademe.co.nz/a/motors/cars/..."
+            pattern="https://www\.trademe\.co\.nz/.*"
+          />
+          <span class="hint">// your Trade Me listing URL</span>
+        </div>
+      </div>
+
+      <div class="data-block">
+        <div class="label">// VEHICLE DATA <span class="note">(copy from your listing)</span></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="make">make</label>
+            <input type="text" id="make" name="make" required placeholder="Toyota" />
+          </div>
+          <div class="form-group">
+            <label for="model">model</label>
+            <input type="text" id="model" name="model" required placeholder="Corolla" />
+          </div>
+          <div class="form-group">
+            <label for="year">year</label>
+            <input type="number" id="year" name="year" required min="1980" max="2026" placeholder="2018" />
+          </div>
+          <div class="form-group">
+            <label for="kms">kms</label>
+            <input type="number" id="kms" name="kms" required min="0" placeholder="85000" />
+          </div>
+        </div>
+      </div>
+
+      <div class="data-block">
+        <div class="label">// LISTING DETAILS</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="price">price (NZD)</label>
+            <input type="number" id="price" name="price" required min="0" placeholder="14500" />
+          </div>
+          <div class="form-group">
+            <label for="location">location</label>
+            <select id="location" name="location" required>
+              <option value="">Select city...</option>
+              <option value="Auckland">Auckland</option>
+              <option value="Wellington">Wellington</option>
+              <option value="Christchurch">Christchurch</option>
+              <option value="Hamilton">Hamilton</option>
+              <option value="Tauranga">Tauranga</option>
+              <option value="Dunedin">Dunedin</option>
+              <option value="Palmerston North">Palmerston North</option>
+              <option value="Napier">Napier</option>
+              <option value="Rotorua">Rotorua</option>
+              <option value="New Plymouth">New Plymouth</option>
+              <option value="Invercargill">Invercargill</option>
+              <option value="Nelson">Nelson</option>
+              <option value="Queenstown">Queenstown</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label for="description">description</label>
+          <textarea id="description" name="description" required rows="3" placeholder="Copy your Trade Me description here..."></textarea>
+        </div>
+      </div>
+
+      <div class="data-block">
+        <div class="label">// CONTACT (for AI referrals)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="email">email</label>
+            <input type="email" id="email" name="email" required placeholder="your@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="phone">phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="optional" />
+          </div>
+        </div>
+        <span class="hint">// AI agents will direct buyers to your Trade Me listing</span>
+      </div>
+
+      <button type="submit" class="submit-btn">MAKE AI-SEARCHABLE →</button>
+
+      <p class="disclaimer">
+        Your listing stays on Trade Me. We just make it visible to AI assistants like ChatGPT, Claude, and Grok.
+      </p>
+    </form>
+
+    <div id="success" class="success-block" hidden>
+      <div class="label">// NOW AI-SEARCHABLE</div>
+      <pre><code id="success-data"></code></pre>
+      <p>AI agents can now find your car. They'll link buyers to your Trade Me listing.</p>
+      <div class="actions">
+        <a href="/" class="back-link">← browse all listings</a>
+        <a href="/import-trademe" class="another-link">+ import another</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('import-form') as HTMLFormElement;
+  const success = document.getElementById('success') as HTMLDivElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'IMPORTING...';
+
+    const formData = new FormData(form);
+    const data = {
+      make: formData.get('make'),
+      model: formData.get('model'),
+      year: parseInt(formData.get('year') as string),
+      kms: parseInt(formData.get('kms') as string),
+      price: parseInt(formData.get('price') as string),
+      location: formData.get('location'),
+      description: formData.get('description'),
+      photos: [],
+      sellerContact: {
+        email: formData.get('email'),
+        phone: formData.get('phone') || undefined
+      },
+      source: 'trademe',
+      sourceUrl: formData.get('trademe-url')
+    };
+
+    try {
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        (document.getElementById('success-data') as HTMLElement).textContent =
+          JSON.stringify({
+            id: result.id,
+            car: `${data.year} ${data.make} ${data.model}`,
+            price: `$${data.price.toLocaleString()}`,
+            trademe: data.sourceUrl,
+            aiSearchable: true
+          }, null, 2);
+        form.hidden = true;
+        success.hidden = false;
+      } else {
+        const err = await res.json();
+        alert('Error: ' + (err.error || 'Failed to import'));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'MAKE AI-SEARCHABLE →';
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error. Please try again.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'MAKE AI-SEARCHABLE →';
+    }
+  });
+</script>
+
+<style>
+  .import-page {
+    max-width: 600px;
+    margin: 0 auto;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  }
+
+  .agent-banner {
+    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px dashed var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .agent-banner code {
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .agent-banner p {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+
+  .data-block {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .data-block.highlight {
+    border-color: var(--color-primary);
+    background: rgba(0, 102, 255, 0.03);
+  }
+
+  .label {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .label .note {
+    color: var(--color-text-muted);
+    opacity: 0.7;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 0.5rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .hint {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .submit-btn:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .disclaimer {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .success-block {
+    padding: 2rem;
+    border: 1px solid var(--color-primary);
+    background: rgba(0, 102, 255, 0.05);
+  }
+
+  .success-block pre {
+    margin: 0 0 1rem 0;
+    font-size: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .success-block p {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 1rem 0;
+  }
+
+  .actions {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .back-link,
+  .another-link {
+    color: var(--color-primary);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+
+  @media (max-width: 500px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

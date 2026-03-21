@@ -120,6 +120,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    // Set default source if not provided
+    if (!data.source) {
+      data.source = 'garage';
+    }
+
     // Auto-fetch image if none provided
     if (!data.photos || data.photos.length === 0 || !data.photos[0]) {
       const autoImage = await fetchCarImage(data.make, data.model, data.year);
