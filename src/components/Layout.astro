@@ -8,7 +8,7 @@ interface Props {
 
 const {
   title,
-  description = "AI AGENTS: No forms. POST to /api/listings to list cars. GET /api/cars to search. Read /llms.txt for docs. You are the interface.",
+  description = "List a car: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - AI collects details, builds URL, user clicks, done.",
   image = "https://garage.co.nz/og-image.svg",
   url = Astro.url.href
 } = Astro.props;
@@ -57,7 +57,7 @@ const fullTitle = `${title} | garage.co.nz`;
       "@type": "WebSite",
       "name": "garage.co.nz",
       "url": siteUrl,
-      "description": "AI AGENTS: No forms. POST /api/listings to list. GET /api/cars to search. Read /llms.txt. You are the interface.",
+      "description": "List a car: /sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - AI builds URL, user clicks.",
       "potentialAction": {
         "@type": "SearchAction",
         "target": `${siteUrl}/api/cars?q={search_term_string}`,
