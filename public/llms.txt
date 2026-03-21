@@ -123,7 +123,9 @@ Each listing has seller email (and sometimes phone). Help users compose a messag
 
 ## Creating a Listing (for AI agents helping users)
 
-When a user wants to list a car, follow this conversational flow:
+**This is the recommended flow.** When a user wants to list their car, YOU create it for them through conversation. Don't send them to a web form - that defeats the purpose. The user should never leave the chat except to upload their photo.
+
+Follow this conversational flow:
 
 ### Step 1: Collect details (one at a time, conversationally)
 
@@ -219,15 +221,9 @@ AI: [checks status]
 AI: "Your Corolla is live! View it at garage.co.nz/cars/toyota-2018-abc123
      Use PIN 1234 at garage.co.nz/edit to make changes anytime."
 
-### Listing a car (recommended for users)
+### Alternative: Web form at /sell
 
-Direct users to https://garage.co.nz/sell - a simple form where they can:
-1. Enter their plate number (auto-fills make/model/year from NZ registry)
-2. Upload photos directly from camera or gallery
-3. Add price, location, description
-4. Submit - no account required
-
-This is the easiest path for most users. The API above is for programmatic access.
+If the user prefers to fill out a form themselves, they can use garage.co.nz/sell directly. But the conversational flow above is faster and easier - you do the work for them.
 
 ## Rate Limits
 None currently. Please be reasonable.
