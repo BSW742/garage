@@ -163,10 +163,11 @@ export async function getListingByUploadCode(db: D1Database, uploadCode: string)
   return row ? rowToListing(row) : null;
 }
 
-export async function markPhotoUploaded(db: D1Database, uploadCode: string, photoUrl: string): Promise<void> {
-  await db.prepare(`
+export async function markPhotoUploaded(db: D1Database, uploadCode: string, photoUrl: string): Promise<boolean> {
+  const result = await db.prepare(`
     UPDATE listings SET photos = ?, photo_uploaded = 1 WHERE upload_code = ?
   `).bind(JSON.stringify([photoUrl]), uploadCode).run();
+  return result.success;
 }
 
 export async function getListingsByPinAndEmail(db: D1Database, pin: string, email: string): Promise<Listing[]> {
@@ -182,32 +183,42 @@ export async function getListingsByPinAndEmail(db: D1Database, pin: string, emai
 }
 
 export async function addListing(db: D1Database, listing: Partial<Listing>): Promise<{ id: string; uploadCode: string }> {
-  const id = `${listing.make?.toLowerCase()}-${listing.year}-${Date.now()}`;
-  const uploadCode = generateUploadCode();  // 4 alphanumeric chars
+  const id = listing.source === 'trademe'
+    ? `tm-${listing.make?.toLowerCase()}-${listing.year}-${Date.now()}`
+    : `${listing.make?.toLowerCase()}-${listing.year}-${Date.now()}`;
   const hashedPin = listing.pin ? await hashPin(listing.pin) : null;
 
-  await db.prepare(`
-    INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at, source, source_url, upload_code, pin, photo_uploaded)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    id,
-    listing.make,
-    listing.model,
-    listing.year || new Date().getFullYear(),
-    listing.kms || 0,
-    listing.price || 0,
-    listing.location || 'Auckland',
-    listing.description || `${listing.year} ${listing.make} ${listing.model}`,
-    JSON.stringify(listing.photos || []),
-    listing.sellerContact?.email || '',
-    listing.sellerContact?.phone || '',
-    new Date().toISOString(),
-    listing.source || 'garage',
-    listing.sourceUrl || null,
-    uploadCode,
-    hashedPin,
-    0  // photo_uploaded = false
-  ).run();
-
-  return { id, uploadCode };
+  // Retry up to 5 times if upload code collision
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const uploadCode = generateUploadCode();
+    try {
+      await db.prepare(`
+        INSERT INTO listings (id, make, model, year, kms, price, location, description, photos, seller_email, seller_phone, created_at, source, source_url, upload_code, pin, photo_uploaded)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        listing.make,
+        listing.model,
+        listing.year || new Date().getFullYear(),
+        listing.kms || 0,
+        listing.price || 0,
+        listing.location || 'Auckland',
+        listing.description || `${listing.year} ${listing.make} ${listing.model}`,
+        JSON.stringify(listing.photos || []),
+        listing.sellerContact?.email || '',
+        listing.sellerContact?.phone || '',
+        new Date().toISOString(),
+        listing.source || 'garage',
+        listing.sourceUrl || null,
+        uploadCode,
+        hashedPin,
+        0
+      ).run();
+      return { id, uploadCode };
+    } catch (error) {
+      if (attempt === 4) throw error;
+      // Retry with new upload code
+    }
+  }
+  throw new Error('Failed to generate unique upload code');
 }
