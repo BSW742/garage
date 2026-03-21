@@ -1,0 +1,69 @@
+---
+import type { Listing } from '../lib/listings';
+
+interface Props {
+  listing: Listing;
+}
+
+const { listing } = Astro.props;
+const displayPrice = listing.price.toLocaleString('en-NZ');
+---
+
+<article class="card">
+  <a href={`/cars/${listing.id}`}>
+    <img src={listing.photos[0]} alt={`${listing.year} ${listing.make} ${listing.model}`} loading="lazy" />
+    <div class="content">
+      <h3>{listing.year} {listing.make} {listing.model}</h3>
+      <p class="price">${displayPrice}</p>
+      <p class="meta">{listing.kms.toLocaleString()} km · {listing.location}</p>
+    </div>
+  </a>
+</article>
+
+<style>
+  .card {
+    background: #171717;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #262626;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: #10b981;
+    transform: translateY(-2px);
+  }
+
+  .card a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .card img {
+    width: 100%;
+    aspect-ratio: 16/10;
+    object-fit: cover;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+    color: #fafafa;
+  }
+
+  .price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 0.25rem;
+  }
+
+  .meta {
+    font-size: 0.875rem;
+    color: #737373;
+  }
+</style>
