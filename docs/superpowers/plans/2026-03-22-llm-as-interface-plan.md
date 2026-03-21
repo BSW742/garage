@@ -15,7 +15,8 @@
 | File | Responsibility |
 |------|----------------|
 | `src/lib/listings.ts` | Add upload_code, pin, photo_uploaded to Listing interface and DB functions |
-| `src/pages/api/listings.ts` | Modify to accept pin, generate uploadCode, create stub |
+| `src/pages/api/listings.ts` | Modify to accept pin, generate uploadCode, create stub, add rate limiting |
+| `src/pages/api/listings/[id].ts` | Modify to require PIN auth for PATCH/DELETE |
 | `src/pages/api/listings/status/[uploadCode].ts` | New: Check if photo uploaded |
 | `src/pages/api/upload/[uploadCode].ts` | New: Receive photo, attach to listing |
 | `src/pages/api/listings/by-pin.ts` | New: Lookup listing by PIN+email |
@@ -200,14 +201,45 @@ Expected: Should show upload_code, pin, photo_uploaded columns.
 **Files:**
 - Modify: `src/pages/api/listings.ts`
 
-- [ ] **Step 1: Update the POST handler to accept pin**
+- [ ] **Step 1: Add rate limiting**
+
+Add at top of file (after imports):
+
+```typescript
+// Rate limiting: simple in-memory store (resets on deploy)
+const listingAttempts: Map<string, { count: number; resetAt: number }> = new Map();
+```
+
+- [ ] **Step 2: Update the POST handler to accept pin with rate limiting**
 
 Find the existing POST handler and modify validation:
 
 ```typescript
-export const POST: APIRoute = async ({ request, locals }) => {
+export const POST: APIRoute = async ({ request, locals, clientAddress }) => {
   try {
     const { DB, IMAGES } = (locals as { runtime: Runtime }).runtime.env;
+
+    // Rate limiting: 10 listings per hour per IP
+    const ip = clientAddress || 'unknown';
+    const now = Date.now();
+    const attempt = listingAttempts.get(ip);
+
+    if (attempt) {
+      if (now < attempt.resetAt) {
+        if (attempt.count >= 10) {
+          return new Response(JSON.stringify({ error: 'Too many listings. Try again later.' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        attempt.count++;
+      } else {
+        listingAttempts.set(ip, { count: 1, resetAt: now + 3600000 });
+      }
+    } else {
+      listingAttempts.set(ip, { count: 1, resetAt: now + 3600000 });
+    }
+
     const data = await request.json();
 
     // Minimum required: make, model
@@ -246,7 +278,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // ... rest of existing logic for defaults, source, auto-fetch ...
 ```
 
-- [ ] **Step 2: Update response to include uploadCode**
+- [ ] **Step 3: Update response to include uploadCode**
 
 Modify the success response:
 
@@ -267,7 +299,7 @@ Modify the success response:
     });
 ```
 
-- [ ] **Step 3: Add import for new functions**
+- [ ] **Step 4: Add import for new functions**
 
 At top of file:
 
@@ -275,16 +307,139 @@ At top of file:
 import { addListing, getListingsByPinAndEmail } from '../../lib/listings';
 ```
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add src/pages/api/listings.ts
-git commit -m "feat: accept PIN, return uploadCode from POST /api/listings"
+git commit -m "feat: accept PIN, return uploadCode, add rate limiting to POST /api/listings"
 ```
 
 ---
 
-### Task 4: Create GET /api/listings/status/[uploadCode]
+### Task 4: Modify PATCH/DELETE /api/listings/[id] for PIN Auth
+
+**Files:**
+- Modify: `src/pages/api/listings/[id].ts`
+
+The existing endpoint needs PIN authentication for updates/deletes.
+
+- [ ] **Step 1: Add PIN verification to PATCH**
+
+Modify the existing PATCH handler to require PIN:
+
+```typescript
+import { verifyPin, getListingById } from '../../../lib/listings';
+
+export const PATCH: APIRoute = async ({ params, request, locals }) => {
+  const { DB, IMAGES } = (locals as { runtime: Runtime }).runtime.env;
+  const { id } = params;
+
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'Listing ID required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const data = await request.json();
+
+  // Get current listing to verify PIN
+  const listing = await getListingById(DB, id);
+  if (!listing) {
+    return new Response(JSON.stringify({ error: 'Listing not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Verify PIN if listing has one
+  if (listing.pin) {
+    if (!data.pin) {
+      return new Response(JSON.stringify({ error: 'PIN required to edit this listing' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    const valid = await verifyPin(data.pin, listing.pin);
+    if (!valid) {
+      return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // ... rest of existing PATCH logic for building update query ...
+```
+
+- [ ] **Step 2: Add PIN verification to DELETE**
+
+Modify the existing DELETE handler similarly:
+
+```typescript
+export const DELETE: APIRoute = async ({ params, request, locals }) => {
+  const { DB } = (locals as { runtime: Runtime }).runtime.env;
+  const { id } = params;
+
+  if (!id) {
+    return new Response(JSON.stringify({ error: 'Listing ID required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Get current listing to verify PIN
+  const listing = await getListingById(DB, id);
+  if (!listing) {
+    return new Response(JSON.stringify({ error: 'Listing not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Verify PIN if listing has one
+  if (listing.pin) {
+    const data = await request.json().catch(() => ({}));
+    if (!data.pin) {
+      return new Response(JSON.stringify({ error: 'PIN required to delete this listing' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    const valid = await verifyPin(data.pin, listing.pin);
+    if (!valid) {
+      return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  await DB.prepare('DELETE FROM listings WHERE id = ?').bind(id).run();
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+};
+```
+
+- [ ] **Step 3: Add import**
+
+```typescript
+import { verifyPin, getListingById } from '../../../lib/listings';
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/pages/api/listings/[id].ts
+git commit -m "feat: require PIN auth for PATCH/DELETE listings"
+```
+
+---
+
+### Task 5: Create GET /api/listings/status/[uploadCode]
 
 **Files:**
 - Create: `src/pages/api/listings/status/[uploadCode].ts`
@@ -359,7 +514,7 @@ git commit -m "feat: add GET /api/listings/status/[uploadCode] endpoint"
 
 ---
 
-### Task 5: Create POST /api/upload/[uploadCode]
+### Task 6: Create POST /api/upload/[uploadCode]
 
 **Files:**
 - Create: `src/pages/api/upload/[uploadCode].ts`
@@ -485,7 +640,7 @@ git commit -m "feat: add POST /api/upload/[uploadCode] endpoint"
 
 ---
 
-### Task 6: Create Upload Page /u/[code]
+### Task 7: Create Upload Page /u/[code]
 
 **Files:**
 - Create: `src/pages/u/[code].astro`
@@ -760,7 +915,7 @@ git commit -m "feat: add upload page /u/[code]"
 
 ---
 
-### Task 7: Create POST /api/listings/by-pin
+### Task 8: Create POST /api/listings/by-pin
 
 **Files:**
 - Create: `src/pages/api/listings/by-pin.ts`
@@ -870,7 +1025,7 @@ git commit -m "feat: add POST /api/listings/by-pin endpoint"
 
 ---
 
-### Task 8: Create Edit Page /edit
+### Task 9: Create Edit Page /edit
 
 **Files:**
 - Create: `src/pages/edit.astro`
@@ -1264,7 +1419,7 @@ git commit -m "feat: add PIN-based edit page /edit"
 
 ---
 
-### Task 9: Update llms.txt with Listing Workflow
+### Task 10: Update llms.txt with Listing Workflow
 
 **Files:**
 - Modify: `public/llms.txt`
@@ -1382,7 +1537,7 @@ git commit -m "docs: add conversational listing workflow to llms.txt"
 
 ---
 
-### Task 10: Add AI Hint to Homepage
+### Task 11: Add AI Hint to Homepage
 
 **Files:**
 - Modify: `src/pages/index.astro`
@@ -1404,7 +1559,7 @@ git commit -m "feat: add AI hint comment to homepage"
 
 ---
 
-### Task 11: Final Integration Test
+### Task 12: Final Integration Test
 
 **Files:**
 - None (manual testing)
@@ -1445,12 +1600,13 @@ Wait for Cloudflare Pages to deploy.
 |------|-------------|
 | 1 | Update listings.ts with new fields and functions |
 | 2 | Run D1 migration to add columns |
-| 3 | Modify POST /api/listings to accept PIN, return uploadCode |
-| 4 | Create GET /api/listings/status/[uploadCode] |
-| 5 | Create POST /api/upload/[uploadCode] |
-| 6 | Create upload page /u/[code] |
-| 7 | Create POST /api/listings/by-pin |
-| 8 | Create edit page /edit |
-| 9 | Update llms.txt with workflow |
-| 10 | Add AI hint to homepage |
-| 11 | Deploy and test |
+| 3 | Modify POST /api/listings to accept PIN, return uploadCode, add rate limiting |
+| 4 | Modify PATCH/DELETE /api/listings/[id] to require PIN auth |
+| 5 | Create GET /api/listings/status/[uploadCode] |
+| 6 | Create POST /api/upload/[uploadCode] |
+| 7 | Create upload page /u/[code] |
+| 8 | Create POST /api/listings/by-pin |
+| 9 | Create edit page /edit |
+| 10 | Update llms.txt with workflow |
+| 11 | Add AI hint to homepage |
+| 12 | Deploy and test |
