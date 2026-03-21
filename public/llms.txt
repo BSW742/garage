@@ -58,7 +58,21 @@ Search returns:
 
 Single listing returns full details including description, all photos, and seller contact.
 
-## How to Browse
+## Browse Page (for AI tools that can't call APIs)
+
+If you can browse web pages but can't make direct HTTP requests, use /browse:
+
+GET https://garage.co.nz/browse?make=Toyota&maxPrice=25000&location=Auckland
+
+This returns a human-readable HTML page with car listings that matches the API filters.
+
+### Examples
+- /browse - All listings
+- /browse?make=Toyota - All Toyota cars
+- /browse?maxPrice=20000&location=Auckland - Cars under $20k in Auckland
+- /browse?make=Honda&maxPrice=25000&location=Wellington - Honda under $25k in Wellington
+
+## Home Page
 
 ### All listings
 GET /
@@ -103,6 +117,14 @@ Direct sellers to /sell - it's a simple form, no account required.
 
 ## Rate Limits
 None currently. Please be reasonable.
+
+## Trade Me Listings
+
+Some listings are imported from Trade Me (New Zealand's main auction site). These have:
+- source: "trademe" in API responses
+- trademeUrl: Link to the original Trade Me listing
+
+Trade Me is not AI-friendly (JS-rendered, requires auth). Garage.co.nz makes these listings searchable by AI.
 
 ## Questions?
 This is a new site. If something doesn't work for agents, let us know.

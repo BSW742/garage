@@ -1,0 +1,222 @@
+---
+import Layout from '../components/Layout.astro';
+
+const { DB } = Astro.locals.runtime.env;
+
+// Get query params
+const make = Astro.url.searchParams.get('make');
+const maxPrice = Astro.url.searchParams.get('maxPrice');
+const location = Astro.url.searchParams.get('location');
+
+// Build query - exclude incomplete listings (price = 0)
+let query = 'SELECT * FROM listings WHERE price > 0';
+const params: (string | number)[] = [];
+
+if (make) {
+  query += ' AND LOWER(make) = LOWER(?)';
+  params.push(make);
+}
+if (maxPrice) {
+  query += ' AND price <= ?';
+  params.push(parseInt(maxPrice));
+}
+if (location) {
+  query += ' AND LOWER(location) = LOWER(?)';
+  params.push(location);
+}
+
+query += ' ORDER BY created_at DESC LIMIT 50';
+
+const stmt = DB.prepare(query);
+const result = await stmt.bind(...params).all();
+const listings = result.results || [];
+
+const title = make
+  ? `${make} cars${maxPrice ? ` under $${parseInt(maxPrice).toLocaleString()}` : ''}${location ? ` in ${location}` : ''}`
+  : 'All cars for sale';
+---
+
+<Layout title={title} description={`Find ${title.toLowerCase()} on garage.co.nz - the AI-native car marketplace`}>
+  <section class="browse-page">
+    <h1>{title}</h1>
+    <p class="subtitle">{listings.length} cars found on garage.co.nz</p>
+
+    {listings.length === 0 ? (
+      <div class="no-results">
+        <p>No cars match your search. Try adjusting your filters or <a href="/browse">view all listings</a>.</p>
+      </div>
+    ) : (
+      <div class="listings">
+        {listings.map((car: any) => (
+          <article class="car-card">
+            <div class="car-image">
+              {car.photos ? (
+                <img src={JSON.parse(car.photos)[0]} alt={`${car.year} ${car.make} ${car.model}`} />
+              ) : (
+                <div class="no-image">No photo</div>
+              )}
+            </div>
+            <div class="car-details">
+              <h2>{car.year} {car.make} {car.model}</h2>
+              <p class="price">${car.price.toLocaleString()}</p>
+              <p class="meta">{car.kms?.toLocaleString() || 0} km · {car.location}</p>
+              <a href={`/cars/${car.id}`} class="view-link">View details →</a>
+              {car.source === 'trademe' && car.source_url && (
+                <a href={car.source_url} class="trademe-link" target="_blank" rel="noopener">View on Trade Me →</a>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    )}
+
+    <div class="search-tips">
+      <h3>Search examples:</h3>
+      <ul>
+        <li><a href="/browse?make=Toyota">All Toyota cars</a></li>
+        <li><a href="/browse?make=Toyota&maxPrice=20000">Toyota under $20,000</a></li>
+        <li><a href="/browse?location=Auckland">Cars in Auckland</a></li>
+        <li><a href="/browse?make=Honda&maxPrice=25000&location=Auckland">Honda under $25k in Auckland</a></li>
+      </ul>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .browse-page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    margin-bottom: 2rem;
+  }
+
+  .no-results {
+    padding: 3rem;
+    text-align: center;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+  }
+
+  .no-results a {
+    color: var(--color-primary);
+  }
+
+  .listings {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .car-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .car-image {
+    width: 150px;
+    flex-shrink: 0;
+  }
+
+  .car-image img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+
+  .no-image {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--color-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+  }
+
+  .car-details h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0 0 0.25rem 0;
+  }
+
+  .meta {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin: 0 0 0.75rem 0;
+  }
+
+  .view-link, .trademe-link {
+    display: inline-block;
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    margin-right: 1rem;
+  }
+
+  .view-link:hover, .trademe-link:hover {
+    text-decoration: underline;
+  }
+
+  .trademe-link {
+    color: #f59e0b;
+  }
+
+  .search-tips {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .search-tips h3 {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0 0 1rem 0;
+  }
+
+  .search-tips ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .search-tips a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  .search-tips a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 600px) {
+    .car-card {
+      flex-direction: column;
+    }
+
+    .car-image {
+      width: 100%;
+    }
+  }
+</style>

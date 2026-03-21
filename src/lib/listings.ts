@@ -78,10 +78,11 @@ function rowToListing(row: DBRow): Listing {
   };
 }
 
-export async function getAllListings(db: D1Database): Promise<Listing[]> {
-  const result = await db
-    .prepare('SELECT * FROM listings ORDER BY created_at DESC')
-    .all<DBRow>();
+export async function getAllListings(db: D1Database, includeIncomplete = false): Promise<Listing[]> {
+  const query = includeIncomplete
+    ? 'SELECT * FROM listings ORDER BY created_at DESC'
+    : 'SELECT * FROM listings WHERE price > 0 ORDER BY created_at DESC';
+  const result = await db.prepare(query).all<DBRow>();
   return result.results.map(rowToListing);
 }
 
@@ -94,7 +95,8 @@ export async function getListingById(db: D1Database, id: string): Promise<Listin
 }
 
 export async function filterListings(db: D1Database, options: FilterOptions): Promise<Listing[]> {
-  let query = 'SELECT * FROM listings WHERE 1=1';
+  // Always exclude incomplete listings (price = 0)
+  let query = 'SELECT * FROM listings WHERE price > 0';
   const params: unknown[] = [];
 
   if (options.location) {

@@ -1,0 +1,368 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const { DB } = Astro.locals.runtime.env;
+
+// Get all listings, incomplete first (price = 0)
+const result = await DB.prepare(`
+  SELECT * FROM listings
+  ORDER BY
+    CASE WHEN price = 0 THEN 0 ELSE 1 END,
+    created_at DESC
+`).all();
+
+const listings = result.results || [];
+const incomplete = listings.filter((l: any) => l.price === 0);
+const complete = listings.filter((l: any) => l.price > 0);
+---
+
+<Layout title="Admin - Listings" description="Manage car listings">
+  <section class="admin-listings">
+    <header>
+      <h1>Listings</h1>
+      <div class="stats">
+        <span class="incomplete">{incomplete.length} need details</span>
+        <span class="complete">{complete.length} complete</span>
+      </div>
+      <a href="/admin/bulk-import" class="import-btn">+ Bulk Import</a>
+    </header>
+
+    {incomplete.length > 0 && (
+      <div class="section incomplete-section">
+        <h2>Needs Details ({incomplete.length})</h2>
+        <div class="listings-grid">
+          {incomplete.map((listing: any) => (
+            <div class="listing-card incomplete" data-id={listing.id}>
+              <div class="card-header">
+                <span class="make-model">{listing.make} {listing.model}</span>
+                {listing.source === 'trademe' && (
+                  <a href={listing.source_url} target="_blank" class="trademe-link">TM →</a>
+                )}
+              </div>
+              <form class="edit-form" data-id={listing.id}>
+                <div class="form-row">
+                  <input type="number" name="year" placeholder="Year" value={listing.year !== 2020 ? listing.year : ''} required min="1990" max="2026" />
+                  <input type="number" name="price" placeholder="Price $" value={listing.price || ''} required min="1" />
+                  <input type="number" name="kms" placeholder="KMs" value={listing.kms || ''} />
+                </div>
+                <div class="form-row">
+                  <select name="location">
+                    <option value="Auckland" selected={listing.location === 'Auckland'}>Auckland</option>
+                    <option value="Wellington" selected={listing.location === 'Wellington'}>Wellington</option>
+                    <option value="Christchurch" selected={listing.location === 'Christchurch'}>Christchurch</option>
+                    <option value="Hamilton" selected={listing.location === 'Hamilton'}>Hamilton</option>
+                    <option value="Tauranga" selected={listing.location === 'Tauranga'}>Tauranga</option>
+                    <option value="Dunedin" selected={listing.location === 'Dunedin'}>Dunedin</option>
+                  </select>
+                </div>
+                <div class="form-row photo-row">
+                  <input type="url" name="photo" placeholder="Image URL (or click Fetch)" class="photo-input" />
+                  {listing.source === 'trademe' && listing.source_url && (
+                    <button type="button" class="fetch-btn" data-url={listing.source_url}>Fetch</button>
+                  )}
+                  <button type="submit">Save</button>
+                  <button type="button" class="delete-btn" data-id={listing.id}>×</button>
+                </div>
+              </form>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div class="section complete-section">
+      <h2>Complete ({complete.length})</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Car</th>
+            <th>Year</th>
+            <th>Price</th>
+            <th>KMs</th>
+            <th>Location</th>
+            <th>Source</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {complete.map((listing: any) => (
+            <tr data-id={listing.id}>
+              <td>{listing.make} {listing.model}</td>
+              <td>{listing.year}</td>
+              <td>${listing.price.toLocaleString()}</td>
+              <td>{listing.kms?.toLocaleString() || '-'}</td>
+              <td>{listing.location}</td>
+              <td>
+                {listing.source === 'trademe' ? (
+                  <a href={listing.source_url} target="_blank">TM</a>
+                ) : 'native'}
+              </td>
+              <td>
+                <a href={`/cars/${listing.id}`} target="_blank">View</a>
+                <button class="delete-btn small" data-id={listing.id}>×</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  // Handle form submissions
+  document.querySelectorAll('.edit-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formEl = e.target as HTMLFormElement;
+      const id = formEl.dataset.id;
+      const formData = new FormData(formEl);
+
+      const btn = formEl.querySelector('button[type="submit"]') as HTMLButtonElement;
+      btn.textContent = '...';
+      btn.disabled = true;
+
+      try {
+        const photoUrl = formData.get('photo') as string;
+        const res = await fetch(`/api/listings/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            year: parseInt(formData.get('year') as string),
+            price: parseInt(formData.get('price') as string),
+            kms: parseInt(formData.get('kms') as string) || 0,
+            location: formData.get('location'),
+            ...(photoUrl && { photos: [photoUrl] })
+          })
+        });
+
+        if (res.ok) {
+          location.reload();
+        } else {
+          btn.textContent = 'Error';
+          btn.disabled = false;
+        }
+      } catch {
+        btn.textContent = 'Error';
+        btn.disabled = false;
+      }
+    });
+  });
+
+  // Handle fetch photo
+  document.querySelectorAll('.fetch-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const fetchBtn = btn as HTMLButtonElement;
+      const url = fetchBtn.dataset.url;
+      const photoInput = fetchBtn.closest('.form-row')?.querySelector('input[name="photo"]') as HTMLInputElement;
+
+      if (!url || !photoInput) return;
+
+      fetchBtn.textContent = '...';
+      fetchBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/scrape-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await res.json();
+        if (data.image) {
+          photoInput.value = data.image;
+          fetchBtn.textContent = '✓';
+        } else {
+          fetchBtn.textContent = 'Fail';
+        }
+      } catch {
+        fetchBtn.textContent = 'Fail';
+      }
+
+      setTimeout(() => {
+        fetchBtn.textContent = 'Fetch';
+        fetchBtn.disabled = false;
+      }, 2000);
+    });
+  });
+
+  // Handle deletes
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = (btn as HTMLButtonElement).dataset.id;
+      if (!confirm('Delete this listing?')) return;
+
+      try {
+        const res = await fetch(`/api/listings/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          location.reload();
+        }
+      } catch {
+        alert('Failed to delete');
+      }
+    });
+  });
+</script>
+
+<style>
+  .admin-listings {
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: 'SF Mono', monospace;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    margin: 0;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .stats .incomplete { color: #f59e0b; }
+  .stats .complete { color: #22c55e; }
+
+  .import-btn {
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+    background: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  .section {
+    margin-bottom: 2rem;
+  }
+
+  .section h2 {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .listings-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .listing-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+  }
+
+  .listing-card.incomplete {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.05);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .make-model {
+    font-weight: 600;
+  }
+
+  .trademe-link {
+    color: #f59e0b;
+    text-decoration: none;
+    font-size: 0.75rem;
+  }
+
+  .edit-form .form-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .edit-form input,
+  .edit-form select {
+    flex: 1;
+    padding: 0.4rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .edit-form button {
+    padding: 0.4rem 1rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: none;
+  }
+
+  .edit-form button[type="submit"] {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .delete-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .delete-btn.small {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .photo-input {
+    flex: 2;
+    font-size: 0.7rem;
+  }
+
+  .photo-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .fetch-btn {
+    background: #22c55e;
+    color: white;
+    white-space: nowrap;
+  }
+
+  .fetch-btn:disabled {
+    opacity: 0.6;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  th, td {
+    padding: 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  th {
+    color: var(--color-text-muted);
+    font-weight: normal;
+  }
+
+  td a {
+    color: var(--color-primary);
+    text-decoration: none;
+    margin-right: 0.5rem;
+  }
+</style>

@@ -112,8 +112,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
     const data = await request.json();
 
-    // Basic validation
-    if (!data.make || !data.model || !data.year || !data.price || !data.location || !data.description || !data.sellerContact?.email) {
+    // Basic validation (price can be 0 for stub listings)
+    if (!data.make || !data.model || !data.year || data.price === undefined || !data.location || !data.description || !data.sellerContact?.email) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }

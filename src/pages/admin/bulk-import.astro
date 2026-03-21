@@ -1,0 +1,366 @@
+---
+import Layout from '../../components/Layout.astro';
+---
+
+<Layout title="Bulk Import Trade Me Listings" description="Import multiple Trade Me listings at once">
+  <section class="bulk-import">
+    <div class="header">
+      <h1>Bulk Import from Trade Me</h1>
+      <p>Paste Trade Me URLs (one per line). We'll create stub listings you can complete later.</p>
+    </div>
+
+    <form id="bulk-form">
+      <div class="input-section">
+        <label for="urls">Trade Me URLs (one per line)</label>
+        <textarea
+          id="urls"
+          name="urls"
+          rows="15"
+          placeholder="https://www.trademe.co.nz/a/motors/cars/toyota/corolla/listing/1234567890
+https://www.trademe.co.nz/a/motors/cars/mazda/cx-5/listing/1234567891
+https://www.trademe.co.nz/a/motors/cars/honda/civic/listing/1234567892"
+        ></textarea>
+      </div>
+
+      <div class="defaults-section">
+        <h3>Default Values (for incomplete listings)</h3>
+        <div class="defaults-grid">
+          <div class="field">
+            <label for="default-location">Location</label>
+            <select id="default-location">
+              <option value="Auckland">Auckland</option>
+              <option value="Wellington">Wellington</option>
+              <option value="Christchurch">Christchurch</option>
+              <option value="Hamilton">Hamilton</option>
+              <option value="Tauranga">Tauranga</option>
+              <option value="Dunedin">Dunedin</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="default-email">Contact Email</label>
+            <input type="email" id="default-email" value="listings@garage.co.nz" />
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" id="submit-btn">IMPORT ALL →</button>
+    </form>
+
+    <div id="progress" class="progress-section" hidden>
+      <h3>Importing...</h3>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div id="progress-text">0 / 0</div>
+      <div id="results" class="results"></div>
+    </div>
+
+    <div id="summary" class="summary-section" hidden>
+      <h3>Import Complete</h3>
+      <div class="stats">
+        <div class="stat success">
+          <span class="number" id="success-count">0</span>
+          <span class="label">Imported</span>
+        </div>
+        <div class="stat failed">
+          <span class="number" id="failed-count">0</span>
+          <span class="label">Failed</span>
+        </div>
+        <div class="stat skipped">
+          <span class="number" id="skipped-count">0</span>
+          <span class="label">Skipped (invalid URL)</span>
+        </div>
+      </div>
+      <div class="actions">
+        <a href="/admin/listings" class="btn">Edit Listings →</a>
+        <a href="/admin/bulk-import" class="btn secondary">Import More</a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('bulk-form') as HTMLFormElement;
+  const urlsInput = document.getElementById('urls') as HTMLTextAreaElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const progressSection = document.getElementById('progress') as HTMLDivElement;
+  const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
+  const progressText = document.getElementById('progress-text') as HTMLDivElement;
+  const resultsDiv = document.getElementById('results') as HTMLDivElement;
+  const summarySection = document.getElementById('summary') as HTMLDivElement;
+
+  function parseTradeMeUrl(url: string) {
+    const match = url.match(/trademe\.co\.nz\/a\/motors\/cars\/([^\/]+)\/([^\/]+)\/listing\/(\d+)/i);
+    if (match) {
+      return {
+        make: match[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        model: match[2].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        listingId: match[3],
+        url: url.trim()
+      };
+    }
+    return null;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const urls = urlsInput.value.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+    if (urls.length === 0) return;
+
+    const location = (document.getElementById('default-location') as HTMLSelectElement).value;
+    const email = (document.getElementById('default-email') as HTMLInputElement).value;
+
+    form.hidden = true;
+    progressSection.hidden = false;
+
+    let success = 0;
+    let failed = 0;
+    let skipped = 0;
+    const total = urls.length;
+
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      const parsed = parseTradeMeUrl(url);
+
+      progressText.textContent = `${i + 1} / ${total}`;
+      progressFill.style.width = `${((i + 1) / total) * 100}%`;
+
+      if (!parsed) {
+        skipped++;
+        resultsDiv.innerHTML += `<div class="result skip">⊘ Invalid URL: ${url.substring(0, 50)}...</div>`;
+        continue;
+      }
+
+      try {
+        const res = await fetch('/api/listings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            make: parsed.make,
+            model: parsed.model,
+            year: 2020, // Placeholder - user will update
+            kms: 0,
+            price: 0, // Placeholder - user will update
+            location: location,
+            description: `See Trade Me listing for full details. Imported from Trade Me.`,
+            photos: [],
+            sellerContact: { email },
+            source: 'trademe',
+            sourceUrl: parsed.url
+          })
+        });
+
+        if (res.ok) {
+          success++;
+          resultsDiv.innerHTML += `<div class="result success">✓ ${parsed.make} ${parsed.model}</div>`;
+        } else {
+          failed++;
+          resultsDiv.innerHTML += `<div class="result fail">✗ ${parsed.make} ${parsed.model} - API error</div>`;
+        }
+      } catch (err) {
+        failed++;
+        resultsDiv.innerHTML += `<div class="result fail">✗ ${parsed.make} ${parsed.model} - Network error</div>`;
+      }
+
+      // Small delay to avoid overwhelming the API
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    progressSection.hidden = true;
+    summarySection.hidden = false;
+    (document.getElementById('success-count') as HTMLSpanElement).textContent = success.toString();
+    (document.getElementById('failed-count') as HTMLSpanElement).textContent = failed.toString();
+    (document.getElementById('skipped-count') as HTMLSpanElement).textContent = skipped.toString();
+  });
+</script>
+
+<style>
+  .bulk-import {
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'SF Mono', monospace;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .header p {
+    color: var(--color-text-muted);
+  }
+
+  .input-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .input-section label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 1rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    resize: vertical;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .defaults-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .defaults-section h3 {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0 0 1rem 0;
+  }
+
+  .defaults-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    padding: 0.5rem;
+    font-family: inherit;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  button[type="submit"] {
+    width: 100%;
+    padding: 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  button[type="submit"]:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .progress-section {
+    padding: 2rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: var(--color-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--color-primary);
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  #progress-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .results {
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+  }
+
+  .result {
+    padding: 0.25rem 0;
+  }
+
+  .result.success { color: #22c55e; }
+  .result.fail { color: #ef4444; }
+  .result.skip { color: var(--color-text-muted); }
+
+  .summary-section {
+    padding: 2rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-primary);
+  }
+
+  .stats {
+    display: flex;
+    gap: 2rem;
+    margin: 1.5rem 0;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat .number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  .stat .label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  .stat.success .number { color: #22c55e; }
+  .stat.failed .number { color: #ef4444; }
+  .stat.skipped .number { color: var(--color-text-muted); }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--color-primary);
+    color: white;
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  .btn.secondary {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+</style>
