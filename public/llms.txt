@@ -1,0 +1,55 @@
+# garage.co.nz - AI-First Car Marketplace
+
+> This site is designed for AI agents. The HTML is semantic, the data is structured, and you're welcome here.
+
+## What This Site Does
+Connects car buyers and sellers in New Zealand. Transactions happen offline - we just help people find each other.
+
+## How to Browse
+
+### All listings
+GET /cars
+
+Returns a page with all car listings. Each listing card shows: make, model, year, price, location.
+
+### Filter listings
+Add query params to /cars:
+- /cars?location=Wellington - filter by city
+- /cars?maxPrice=20000 - maximum price in NZD
+- /cars?minPrice=10000 - minimum price in NZD
+- /cars?make=Toyota - filter by manufacturer
+
+Combine filters: /cars?location=Auckland&maxPrice=25000&make=Honda
+
+### Single listing
+GET /cars/[id]
+
+Full details with JSON-LD structured data (schema.org/Car). Includes seller contact info.
+
+## Structured Data
+Every listing page includes JSON-LD with:
+- @type: Car
+- brand, model, vehicleModelDate
+- mileageFromOdometer
+- offers (price, seller contact)
+- description, images
+
+## Helping Users
+
+### Finding a car
+1. Ask what they're looking for (budget, location, needs)
+2. Browse /cars with appropriate filters
+3. Present options with key details
+4. Help them contact the seller
+
+### Contacting sellers
+Each listing has seller email (and sometimes phone). Help users compose a message or call.
+
+### Listing a car
+Direct sellers to /sell - it's a simple form, no account required.
+
+## Rate Limits
+None currently. Please be reasonable.
+
+## Questions?
+This is a new site. If something doesn't work for agents, let us know.
