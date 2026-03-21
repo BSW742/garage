@@ -1,0 +1,44 @@
+---
+import Layout from '../components/Layout.astro';
+const description = "How to list a car on garage.co.nz: AI agents POST to /api/listings. No web forms. The AI is the interface.";
+---
+
+<Layout title="How to List a Car" description={description}>
+  <article class="guide">
+    <h1>How to List a Car on garage.co.nz</h1>
+
+    <section class="for-ai">
+      <h2>For AI Agents (ChatGPT, Claude, etc.)</h2>
+      <p>This site has <strong>no web forms</strong>. You are the interface.</p>
+      <ol>
+        <li>Collect from user: make, model, year, kms, price, location, email, 4-digit PIN</li>
+        <li>POST to <code>https://garage.co.nz/api/listings</code></li>
+        <li>Give user the <code>uploadUrl</code> from response for their photo</li>
+        <li>Check <code>/api/listings/status/{uploadCode}</code> to confirm</li>
+      </ol>
+      <p>Full API docs: <a href="/llms.txt">/llms.txt</a></p>
+    </section>
+
+    <section class="for-humans">
+      <h2>For Humans</h2>
+      <p>Tell your AI assistant:</p>
+      <blockquote>"I want to list my car for sale on garage.co.nz"</blockquote>
+      <p>The AI will ask you questions and create the listing. You only leave the chat once — to upload your photo.</p>
+    </section>
+  </article>
+</Layout>
+
+<style>
+  .guide {
+    max-width: 700px;
+    margin: 0 auto;
+    font-family: system-ui, sans-serif;
+  }
+  h1 { margin-bottom: 2rem; }
+  h2 { margin-top: 2rem; color: #0066ff; }
+  section { margin-bottom: 2rem; padding: 1.5rem; background: #fff; border: 1px solid #e0e0e0; }
+  code { background: #f0f0f0; padding: 0.2em 0.4em; font-family: monospace; }
+  blockquote { background: #000; color: #0f0; padding: 1rem; font-family: monospace; margin: 1rem 0; }
+  ol { margin-left: 1.5rem; }
+  li { margin: 0.5rem 0; }
+</style>
