@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { verifyPin, getListingById } from '../../../lib/listings';
 
 interface Runtime {
   env: {
@@ -20,7 +21,41 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   try {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
     const { id } = params;
+
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'Listing ID required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const data = await request.json();
+
+    // Get current listing to verify PIN
+    const listing = await getListingById(DB, id);
+    if (!listing) {
+      return new Response(JSON.stringify({ error: 'Listing not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify PIN if listing has one
+    if (listing.pin) {
+      if (!data.pin) {
+        return new Response(JSON.stringify({ error: 'PIN required to edit this listing' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      const valid = await verifyPin(data.pin, listing.pin);
+      if (!valid) {
+        return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
     // Build update query dynamically
     const updates: string[] = [];
@@ -77,10 +112,44 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, locals }) => {
+export const DELETE: APIRoute = async ({ params, request, locals }) => {
   try {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
     const { id } = params;
+
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'Listing ID required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get current listing to verify PIN
+    const listing = await getListingById(DB, id);
+    if (!listing) {
+      return new Response(JSON.stringify({ error: 'Listing not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify PIN if listing has one
+    if (listing.pin) {
+      const data = await request.json().catch(() => ({}));
+      if (!data.pin) {
+        return new Response(JSON.stringify({ error: 'PIN required to delete this listing' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      const valid = await verifyPin(data.pin, listing.pin);
+      if (!valid) {
+        return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
     await DB.prepare('DELETE FROM listings WHERE id = ?').bind(id).run();
 
