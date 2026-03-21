@@ -1,0 +1,208 @@
+---
+import Layout from '../../components/Layout.astro';
+import { getListingById } from '../../lib/listings';
+
+const { id } = Astro.params;
+const listing = getListingById(id!);
+
+if (!listing) {
+  return Astro.redirect('/cars');
+}
+
+const displayPrice = listing.price.toLocaleString('en-NZ');
+const displayKms = listing.kms.toLocaleString();
+const title = `${listing.year} ${listing.make} ${listing.model}`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Car",
+  "name": title,
+  "brand": {
+    "@type": "Brand",
+    "name": listing.make
+  },
+  "model": listing.model,
+  "vehicleModelDate": listing.year.toString(),
+  "mileageFromOdometer": {
+    "@type": "QuantitativeValue",
+    "value": listing.kms,
+    "unitCode": "KMT"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": listing.price,
+    "priceCurrency": "NZD",
+    "availability": "https://schema.org/InStock",
+    "seller": {
+      "@type": "Person",
+      "email": listing.sellerContact.email,
+      ...(listing.sellerContact.phone && { "telephone": listing.sellerContact.phone })
+    }
+  },
+  "image": listing.photos,
+  "description": listing.description,
+  "vehicleConfiguration": listing.location
+};
+---
+
+<Layout title={title} description={`${title} for sale in ${listing.location} - $${displayPrice}`}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <article class="listing-detail">
+    <a href="/cars" class="back-link">← Back to listings</a>
+
+    <div class="gallery">
+      <img src={listing.photos[0]} alt={title} />
+    </div>
+
+    <div class="content">
+      <header>
+        <h1>{title}</h1>
+        <p class="price">${displayPrice}</p>
+      </header>
+
+      <dl class="specs">
+        <div class="spec">
+          <dt>Year</dt>
+          <dd>{listing.year}</dd>
+        </div>
+        <div class="spec">
+          <dt>Kilometers</dt>
+          <dd>{displayKms} km</dd>
+        </div>
+        <div class="spec">
+          <dt>Location</dt>
+          <dd>{listing.location}</dd>
+        </div>
+        <div class="spec">
+          <dt>Listed</dt>
+          <dd>{new Date(listing.createdAt).toLocaleDateString('en-NZ')}</dd>
+        </div>
+      </dl>
+
+      <section class="description">
+        <h2>Description</h2>
+        <p>{listing.description}</p>
+      </section>
+
+      <section class="contact">
+        <h2>Contact seller</h2>
+        <div class="contact-info">
+          <a href={`mailto:${listing.sellerContact.email}`} class="contact-btn email">
+            Email seller
+          </a>
+          {listing.sellerContact.phone && (
+            <a href={`tel:${listing.sellerContact.phone}`} class="contact-btn phone">
+              {listing.sellerContact.phone}
+            </a>
+          )}
+        </div>
+      </section>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .back-link {
+    display: inline-block;
+    color: #737373;
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link:hover {
+    color: #fafafa;
+  }
+
+  .listing-detail {
+    max-width: 900px;
+  }
+
+  .gallery img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .price {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #10b981;
+  }
+
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    background: #171717;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .spec dt {
+    font-size: 0.875rem;
+    color: #737373;
+    margin-bottom: 0.25rem;
+  }
+
+  .spec dd {
+    font-weight: 600;
+  }
+
+  .description, .contact {
+    margin-bottom: 2rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .description p {
+    color: #a3a3a3;
+    line-height: 1.6;
+  }
+
+  .contact-info {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .contact-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .contact-btn.email {
+    background: #10b981;
+    color: #000;
+  }
+
+  .contact-btn.phone {
+    background: #262626;
+    color: #fafafa;
+    border: 1px solid #404040;
+  }
+
+  .contact-btn:hover {
+    opacity: 0.9;
+  }
+</style>
