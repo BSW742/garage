@@ -1,0 +1,237 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Garage NZ - Car Marketplace API",
+    "description": "JSON API for searching used cars in New Zealand. No authentication required. Perfect for AI agents helping users find cars.",
+    "version": "1.0.0",
+    "contact": {
+      "email": "hello@garage.co.nz"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://garage.co.nz",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/api/cars": {
+      "get": {
+        "operationId": "searchCars",
+        "summary": "Search car listings",
+        "description": "Search all car listings with optional filters. Returns summary info for each car. Use this to help users find cars matching their criteria.",
+        "parameters": [
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Maximum price in NZD. Example: 20000 for cars under $20k",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Minimum price in NZD",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "description": "City name: Auckland, Wellington, Christchurch, Hamilton, Tauranga, Dunedin, etc.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "make",
+            "in": "query",
+            "description": "Car manufacturer: Toyota, Mazda, Honda, Ford, Nissan, Subaru, Mitsubishi, etc.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of results to return",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of matching car listings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "description": "Number of listings returned"
+                    },
+                    "listings": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ListingSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cars/{id}": {
+      "get": {
+        "operationId": "getCarDetails",
+        "summary": "Get full listing details",
+        "description": "Get complete details for a specific car listing including description, all photos, and seller contact information.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The listing ID (e.g., 'corolla-2018-wgtn')",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full listing details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingFull"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Listing not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ListingSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique listing ID"
+          },
+          "make": {
+            "type": "string",
+            "description": "Car manufacturer (Toyota, Honda, etc.)"
+          },
+          "model": {
+            "type": "string",
+            "description": "Car model (Corolla, Civic, etc.)"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Year of manufacture"
+          },
+          "price": {
+            "type": "integer",
+            "description": "Price in NZD"
+          },
+          "kms": {
+            "type": "integer",
+            "description": "Odometer reading in kilometers"
+          },
+          "location": {
+            "type": "string",
+            "description": "City where car is located"
+          },
+          "photo": {
+            "type": "string",
+            "description": "URL of main photo"
+          },
+          "url": {
+            "type": "string",
+            "description": "Full URL to listing page"
+          }
+        }
+      },
+      "ListingFull": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "integer"
+          },
+          "kms": {
+            "type": "integer"
+          },
+          "location": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": "Full description from seller"
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All photo URLs"
+          },
+          "seller": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              }
+            }
+          },
+          "url": {
+            "type": "string"
+          },
+          "listedAt": {
+            "type": "string",
+            "description": "ISO date when listing was created"
+          }
+        }
+      }
+    }
+  }
+}

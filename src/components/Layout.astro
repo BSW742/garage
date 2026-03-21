@@ -2,10 +2,18 @@
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  url?: string;
 }
 
-const { title, description = "The AI-native car marketplace for New Zealand" } = Astro.props;
+const {
+  title,
+  description = "Find used cars for sale in New Zealand. AI-powered search helps you discover the perfect car in Auckland, Wellington, Christchurch and beyond.",
+  image = "https://garage.co.nz/og-image.svg",
+  url = Astro.url.href
+} = Astro.props;
 const siteUrl = "https://garage.co.nz";
+const fullTitle = `${title} | garage.co.nz`;
 ---
 
 <!doctype html>
@@ -14,8 +22,32 @@ const siteUrl = "https://garage.co.nz";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <title>{title} | garage.co.nz</title>
+    <title>{fullTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={url} />
+
+    <!-- OpenGraph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={url} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:site_name" content="garage.co.nz" />
+    <meta property="og:locale" content="en_NZ" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={url} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow" />
+    <meta name="keywords" content="used cars NZ, cars for sale New Zealand, buy car Auckland, buy car Wellington, AI car search, cheap cars NZ" />
+    <meta name="author" content="garage.co.nz" />
+    <meta name="geo.region" content="NZ" />
+    <meta name="geo.placename" content="New Zealand" />
 
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
