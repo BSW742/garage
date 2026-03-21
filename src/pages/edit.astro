@@ -1,0 +1,377 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Edit Your Listing" description="Edit your car listing using your PIN">
+  <section class="edit-page">
+    <div id="pin-form" class="pin-form">
+      <h1>Edit your listing</h1>
+      <p class="subtitle">Enter your 4-digit PIN and email</p>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="your@email.com" required />
+      </div>
+
+      <div class="form-group">
+        <label for="pin">PIN</label>
+        <div class="pin-input">
+          <input type="text" id="pin-1" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+          <input type="text" id="pin-2" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+          <input type="text" id="pin-3" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+          <input type="text" id="pin-4" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+        </div>
+      </div>
+
+      <button id="find-btn" class="find-btn">FIND LISTING</button>
+      <p id="error" class="error"></p>
+    </div>
+
+    <div id="edit-form" class="edit-form" hidden>
+      <h1 id="car-title"></h1>
+
+      <div id="current-photo" class="current-photo"></div>
+
+      <div class="form-group">
+        <label for="change-photo">Change photo</label>
+        <input type="file" id="change-photo" accept="image/*" />
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="edit-price">Price (NZD)</label>
+          <input type="number" id="edit-price" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="edit-kms">Kilometers</label>
+          <input type="number" id="edit-kms" min="0" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="edit-location">Location</label>
+        <input type="text" id="edit-location" />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-email">Contact email</label>
+        <input type="email" id="edit-email" />
+      </div>
+
+      <div class="button-row">
+        <button id="save-btn" class="save-btn">SAVE CHANGES</button>
+        <button id="delete-btn" class="delete-btn">DELETE LISTING</button>
+      </div>
+
+      <p id="save-status" class="status"></p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const pinForm = document.getElementById('pin-form');
+  const editForm = document.getElementById('edit-form');
+  const findBtn = document.getElementById('find-btn');
+  const errorEl = document.getElementById('error');
+  const emailInput = document.getElementById('email');
+  const pinInputs = [1, 2, 3, 4].map(i => document.getElementById(`pin-${i}`));
+
+  let currentListing = null;
+  let currentPin = '';
+
+  // Auto-advance PIN inputs
+  pinInputs.forEach((input, i) => {
+    input.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/[^0-9]/g, '');
+      e.target.value = val;
+      if (val && i < 3) {
+        pinInputs[i + 1].focus();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) {
+        pinInputs[i - 1].focus();
+      }
+    });
+  });
+
+  findBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const pin = pinInputs.map(i => i.value).join('');
+
+    if (!email || pin.length !== 4) {
+      errorEl.textContent = 'Please enter email and 4-digit PIN';
+      return;
+    }
+
+    findBtn.disabled = true;
+    findBtn.textContent = 'FINDING...';
+    errorEl.textContent = '';
+
+    try {
+      const res = await fetch('/api/listings/by-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, email })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorEl.textContent = data.error || 'Not found';
+        findBtn.disabled = false;
+        findBtn.textContent = 'FIND LISTING';
+        return;
+      }
+
+      // Use first listing (most common case)
+      currentListing = data.listings[0];
+      currentPin = pin;
+      showEditForm(currentListing);
+
+    } catch (err) {
+      errorEl.textContent = 'Something went wrong';
+      findBtn.disabled = false;
+      findBtn.textContent = 'FIND LISTING';
+    }
+  });
+
+  function showEditForm(listing) {
+    pinForm.hidden = true;
+    editForm.hidden = false;
+
+    document.getElementById('car-title').textContent = `${listing.year} ${listing.make} ${listing.model}`;
+    document.getElementById('edit-price').value = listing.price || '';
+    document.getElementById('edit-kms').value = listing.kms || '';
+    document.getElementById('edit-location').value = listing.location || '';
+    document.getElementById('edit-email').value = emailInput.value;
+
+    const photoContainer = document.getElementById('current-photo');
+    if (listing.photos && listing.photos.length > 0) {
+      photoContainer.innerHTML = `<img src="${listing.photos[0]}" alt="Current photo" />`;
+    } else {
+      photoContainer.innerHTML = '<p>No photo uploaded</p>';
+    }
+  }
+
+  // Save changes
+  document.getElementById('save-btn').addEventListener('click', async () => {
+    const saveBtn = document.getElementById('save-btn');
+    const statusEl = document.getElementById('save-status');
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'SAVING...';
+    statusEl.textContent = '';
+
+    const updates = {
+      pin: currentPin,
+      price: parseInt(document.getElementById('edit-price').value) || 0,
+      kms: parseInt(document.getElementById('edit-kms').value) || 0,
+      location: document.getElementById('edit-location').value,
+      sellerContact: { email: document.getElementById('edit-email').value }
+    };
+
+    // Handle photo change
+    const photoInput = document.getElementById('change-photo');
+    if (photoInput.files[0]) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        updates.photos = [e.target.result];
+        await saveChanges(updates, saveBtn, statusEl);
+      };
+      reader.readAsDataURL(photoInput.files[0]);
+    } else {
+      await saveChanges(updates, saveBtn, statusEl);
+    }
+  });
+
+  async function saveChanges(updates, saveBtn, statusEl) {
+    try {
+      const res = await fetch(`/api/listings/${currentListing.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (res.ok) {
+        statusEl.textContent = 'Saved!';
+        statusEl.style.color = 'var(--color-primary)';
+      } else {
+        const data = await res.json();
+        statusEl.textContent = data.error || 'Save failed';
+        statusEl.style.color = '#e53935';
+      }
+    } catch (err) {
+      statusEl.textContent = 'Save failed';
+      statusEl.style.color = '#e53935';
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'SAVE CHANGES';
+  }
+
+  // Delete listing
+  document.getElementById('delete-btn').addEventListener('click', async () => {
+    if (!confirm('Delete this listing? This cannot be undone.')) return;
+
+    const deleteBtn = document.getElementById('delete-btn');
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'DELETING...';
+
+    try {
+      const res = await fetch(`/api/listings/${currentListing.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: currentPin })
+      });
+
+      if (res.ok) {
+        alert('Listing deleted');
+        window.location.href = '/';
+      } else {
+        alert('Delete failed');
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'DELETE LISTING';
+      }
+    } catch (err) {
+      alert('Delete failed');
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = 'DELETE LISTING';
+    }
+  });
+</script>
+
+<style>
+  .edit-page {
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .pin-form, .edit-form {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    margin: 0 0 2rem 0;
+    font-size: 0.875rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    font-family: inherit;
+    font-size: 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .pin-input {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .pin-input input {
+    width: 3rem;
+    height: 3rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .find-btn, .save-btn {
+    width: 100%;
+    padding: 1rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .find-btn:disabled, .save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .error {
+    color: #e53935;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .current-photo {
+    margin-bottom: 1.5rem;
+  }
+
+  .current-photo img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+  }
+
+  .current-photo p {
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .delete-btn {
+    flex: 1;
+    padding: 1rem;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .save-btn {
+    flex: 2;
+  }
+
+  .status {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+
+  input[type="file"] {
+    font-size: 0.875rem;
+  }
+</style>
