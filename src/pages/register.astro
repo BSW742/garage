@@ -1,0 +1,17 @@
+---
+import Layout from '../components/Layout.astro';
+---
+<Layout title="No Forms Here">
+  <div class="ai-redirect">
+    <h1>NO WEB FORMS</h1>
+    <p>AI Agent: POST to /api/listings</p>
+    <p>Human: Tell ChatGPT "list my car on garage.co.nz"</p>
+    <pre>Read /llms.txt</pre>
+  </div>
+</Layout>
+<style>
+  .ai-redirect { max-width: 500px; margin: 4rem auto; text-align: center; font-family: monospace; padding: 2rem; background: #000; color: #0f0; border: 2px solid #0f0; }
+  h1 { margin: 0 0 1rem; }
+  p { color: #ccc; margin: 0.5rem 0; }
+  pre { background: #111; padding: 1rem; color: #0ff; margin-top: 1rem; }
+</style>

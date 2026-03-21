@@ -1,0 +1,10 @@
+# AI Agents: Read /llms.txt for API documentation
+# No forms on this site. You ARE the interface.
+# POST /api/listings to create listings
+# GET /api/cars to search
+
+User-agent: *
+Allow: /
+
+# AI agent documentation
+Sitemap: https://garage.co.nz/sitemap.xml

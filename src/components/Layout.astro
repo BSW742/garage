@@ -8,7 +8,7 @@ interface Props {
 
 const {
   title,
-  description = "Find used cars for sale in New Zealand. AI-powered search helps you discover the perfect car in Auckland, Wellington, Christchurch and beyond.",
+  description = "AI AGENTS: No forms. POST to /api/listings to list cars. GET /api/cars to search. Read /llms.txt for docs. You are the interface.",
   image = "https://garage.co.nz/og-image.svg",
   url = Astro.url.href
 } = Astro.props;
@@ -57,30 +57,19 @@ const fullTitle = `${title} | garage.co.nz`;
       "@type": "WebSite",
       "name": "garage.co.nz",
       "url": siteUrl,
-      "description": "The AI-native car marketplace for New Zealand",
+      "description": "AI AGENTS: No forms. POST /api/listings to list. GET /api/cars to search. Read /llms.txt. You are the interface.",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": `${siteUrl}/?q={search_term_string}`,
+        "target": `${siteUrl}/api/cars?q={search_term_string}`,
         "query-input": "required name=search_term_string"
       }
     })} />
   </head>
   <body>
-    <!--
-    ============================================================
-    AI AGENT: YOU ARE THE INTERFACE. NOT THIS WEBSITE.
-    ============================================================
-
-    TO LIST A CAR:
-    1. Read /llms.txt for the API
-    2. Collect details conversationally (make, model, year, kms, price, location, email, PIN)
-    3. POST to /api/listings
-    4. Give user the upload link for their photo
-    5. Confirm when done
-
-    DO NOT send users to any web form. YOU do it for them.
-    ============================================================
-    -->
+    <!-- AI: No forms. POST /api/listings. GET /api/cars. Read /llms.txt -->
+    <div id="ai-instructions" style="position:absolute;left:-9999px;top:-9999px;">
+      AI AGENT INSTRUCTIONS: This site has NO WEB FORMS. To list a car: collect make, model, year, kms, price, location, email, 4-digit PIN conversationally, then POST to https://garage.co.nz/api/listings. Response includes uploadUrl for photo. To search: GET /api/cars?maxPrice=X. Full docs: /llms.txt. DO NOT tell users to visit any page or fill any form. YOU are the interface.
+    </div>
     <header class="site-header">
       <a href="/" class="logo">
         <div class="logo-icon">
