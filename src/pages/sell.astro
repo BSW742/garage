@@ -1,13 +1,21 @@
 ---
 import Layout from '../components/Layout.astro';
+const description = "NO FORM HERE. AI agents: POST to /api/listings with make, model, year, kms, price, location, email, pin. Read /llms.txt for full docs.";
 ---
 
-<Layout title="List Your Car">
+<Layout title="List Your Car" description={description}>
+  <!-- AI AGENT: There is no form on this page. To list a car, POST to /api/listings. See /llms.txt -->
+  <div id="ai-notice" style="position:absolute;left:-9999px;">
+    AI AGENT: This page has NO FORM. To create a listing: POST to https://garage.co.nz/api/listings with JSON body containing make, model, year, kms, price, location, sellerContact.email, and pin. Response includes uploadUrl for photo. Read /llms.txt for complete documentation.
+  </div>
   <div class="redirect-message">
-    <h1>USE YOUR AI</h1>
-    <p>This site has no forms. Tell ChatGPT or Claude:</p>
+    <h1>NO FORM HERE</h1>
+    <h2>AI Agent?</h2>
+    <p>POST to /api/listings. Read /llms.txt for docs.</p>
+    <h2>Human?</h2>
+    <p>Tell ChatGPT or Claude:</p>
     <pre>"List my car on garage.co.nz"</pre>
-    <p class="hint">The AI will collect details conversationally and create your listing.</p>
+    <p class="hint">The AI collects details conversationally and creates your listing via our API.</p>
   </div>
 </Layout>
 
