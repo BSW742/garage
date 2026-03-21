@@ -4,7 +4,12 @@ import { addListing } from '../../lib/listings';
 interface Runtime {
   env: {
     DB: D1Database;
+    IMAGES: R2Bucket;
   };
+}
+
+interface R2Bucket {
+  put(key: string, value: ArrayBuffer | string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
 }
 
 interface D1Database {
@@ -107,9 +112,46 @@ async function fetchCarImage(make: string, model: string, year: number): Promise
   return null;
 }
 
+async function uploadBase64Image(IMAGES: R2Bucket, base64Data: string): Promise<string> {
+  let data = base64Data;
+  let contentType = 'image/jpeg';
+
+  // Parse data URL format
+  if (data.startsWith('data:')) {
+    const matches = data.match(/^data:([^;]+);base64,(.+)$/);
+    if (matches) {
+      contentType = matches[1];
+      data = matches[2];
+    }
+  }
+
+  // Decode base64 to binary
+  const binaryString = atob(data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  // Generate unique filename
+  const ext = contentType.split('/')[1] || 'jpg';
+  const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+  // Upload to R2
+  await IMAGES.put(filename, bytes.buffer, {
+    httpMetadata: { contentType }
+  });
+
+  return `https://garage.co.nz/images/${filename}`;
+}
+
+function isBase64Image(str: string): boolean {
+  return str.startsWith('data:image/') ||
+         (str.length > 100 && /^[A-Za-z0-9+/=]+$/.test(str.substring(0, 100)));
+}
+
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    const { DB } = (locals as { runtime: Runtime }).runtime.env;
+    const { DB, IMAGES } = (locals as { runtime: Runtime }).runtime.env;
     const data = await request.json();
 
     // Minimum required: make, model
@@ -141,6 +183,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Set default source if not provided
     if (!data.source) {
       data.source = 'garage';
+    }
+
+    // Process base64 images - upload to R2 and replace with URLs
+    if (data.photos && data.photos.length > 0) {
+      const processedPhotos: string[] = [];
+      for (const photo of data.photos) {
+        if (isBase64Image(photo)) {
+          const url = await uploadBase64Image(IMAGES, photo);
+          processedPhotos.push(url);
+        } else {
+          processedPhotos.push(photo);
+        }
+      }
+      data.photos = processedPhotos;
     }
 
     // Auto-fetch image if none provided

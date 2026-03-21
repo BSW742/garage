@@ -6,3 +6,7 @@ pages_build_output_dir = "./dist"
 binding = "DB"
 database_name = "garage-db"
 database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "garage-images"

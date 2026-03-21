@@ -129,7 +129,7 @@ Content-Type: application/json
 Required fields:
 - make: "Toyota"
 - model: "Corolla"
-- photos: ["https://..."] (array of image URLs - at least one)
+- photos: ["https://..." or "data:image/jpeg;base64,..."] (array - accepts URLs or base64 images)
 
 Optional fields (have defaults):
 - year: 2020 (defaults to current year)
