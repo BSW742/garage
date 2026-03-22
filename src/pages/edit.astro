@@ -107,9 +107,6 @@ import Layout from '../components/Layout.astro';
   </section>
 </Layout>
 
-<!-- HEIC to JPEG conversion library -->
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-
 <script>
   // Check if file is HEIC
   function isHeic(file: File): boolean {
@@ -119,20 +116,37 @@ import Layout from '../components/Layout.astro';
            file.name.toLowerCase().endsWith('.heif');
   }
 
+  // Load heic2any dynamically when needed
+  let heic2anyLoaded = false;
+  async function loadHeic2any(): Promise<void> {
+    if (heic2anyLoaded) return;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      script.onload = () => {
+        heic2anyLoaded = true;
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load image converter'));
+      document.head.appendChild(script);
+    });
+  }
+
   // Convert HEIC to JPEG
   async function convertHeicToJpeg(file: File): Promise<File> {
-    try {
-      const blob = await (window as any).heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.9
-      });
-      const resultBlob = Array.isArray(blob) ? blob[0] : blob;
-      return new File([resultBlob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
-    } catch (err) {
-      console.error('HEIC conversion failed:', err);
-      throw new Error('Could not convert iPhone photo. Please try a different image.');
+    await loadHeic2any();
+
+    if (typeof (window as any).heic2any !== 'function') {
+      throw new Error('Image converter not available. Please use JPG or PNG.');
     }
+
+    const blob = await (window as any).heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.85
+    });
+    const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+    return new File([resultBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
   }
 
   const pinForm = document.getElementById('pin-form');
@@ -277,12 +291,13 @@ import Layout from '../components/Layout.astro';
 
       // Convert HEIC to JPEG if needed
       if (isHeic(photoFile)) {
-        statusEl.textContent = 'Converting photo...';
+        statusEl.textContent = 'Converting iPhone photo...';
         statusEl.className = 'status';
         try {
           photoFile = await convertHeicToJpeg(photoFile);
         } catch (err: any) {
-          statusEl.textContent = err.message || 'Photo conversion failed';
+          console.error('HEIC conversion error:', err);
+          statusEl.textContent = 'Could not convert photo. Try taking a screenshot and uploading that instead.';
           statusEl.className = 'status error';
           saveBtn.removeAttribute('disabled');
           saveBtn.textContent = 'Save Changes';

@@ -103,14 +103,10 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
   </div>
 </Layout>
 
-<!-- HEIC to JPEG conversion library -->
-<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-
 <script define:vars={{ id, pinValid }}>
   const form = document.getElementById('complete-form');
   const statusEl = document.getElementById('status');
   const submitBtn = document.getElementById('submit-btn');
-  const photoInput = document.getElementById('photo');
 
   // Check if file is HEIC
   function isHeic(file) {
@@ -120,21 +116,37 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
            file.name.toLowerCase().endsWith('.heif');
   }
 
+  // Load heic2any dynamically when needed
+  let heic2anyLoaded = false;
+  async function loadHeic2any() {
+    if (heic2anyLoaded) return;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+      script.onload = () => {
+        heic2anyLoaded = true;
+        resolve();
+      };
+      script.onerror = () => reject(new Error('Failed to load image converter'));
+      document.head.appendChild(script);
+    });
+  }
+
   // Convert HEIC to JPEG
   async function convertHeicToJpeg(file) {
-    try {
-      const blob = await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: 0.9
-      });
-      // heic2any can return array or single blob
-      const resultBlob = Array.isArray(blob) ? blob[0] : blob;
-      return new File([resultBlob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
-    } catch (err) {
-      console.error('HEIC conversion failed:', err);
-      throw new Error('Could not convert iPhone photo. Please try a different image.');
+    await loadHeic2any();
+
+    if (typeof window.heic2any !== 'function') {
+      throw new Error('Image converter not available. Please use JPG or PNG.');
     }
+
+    const blob = await window.heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.85
+    });
+    const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+    return new File([resultBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
   }
 
   form?.addEventListener('submit', async (e) => {
@@ -157,9 +169,14 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
     try {
       // Convert HEIC to JPEG if needed
       if (photo && isHeic(photo)) {
-        statusEl.textContent = 'Converting photo...';
+        statusEl.textContent = 'Converting iPhone photo...';
         statusEl.style.color = '#666';
-        photo = await convertHeicToJpeg(photo);
+        try {
+          photo = await convertHeicToJpeg(photo);
+        } catch (convErr) {
+          console.error('HEIC conversion error:', convErr);
+          throw new Error('Could not convert photo. Try taking a screenshot of your photo and uploading that instead.');
+        }
       }
 
       // Upload the photo
