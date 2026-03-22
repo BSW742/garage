@@ -1,6 +1,14 @@
 ---
 import Layout from '../../components/Layout.astro';
 
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + 'garage-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const { id } = Astro.params;
 const pin = Astro.url.searchParams.get('pin');
 
@@ -15,8 +23,8 @@ if (!listing) {
   return Astro.redirect('/sell?error=not-found');
 }
 
-// Verify PIN if provided in URL
-const pinValid = pin && listing.pin === pin;
+// Verify PIN if provided in URL (hash it first to compare with stored hash)
+const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
 ---
 
 <Layout title="Complete Your Listing" description="Add price and photo to finish listing your car">

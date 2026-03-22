@@ -1,5 +1,13 @@
 import type { APIRoute } from 'astro';
 
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + 'garage-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const { id, pin, price, location, photoUrl } = await request.json();
@@ -25,7 +33,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    if (listing.pin !== pin) {
+    // Hash the incoming PIN and compare to stored hash
+    const hashedPin = await hashPin(pin);
+    if (listing.pin !== hashedPin) {
       return new Response(JSON.stringify({ error: 'Invalid PIN' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' }
