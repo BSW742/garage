@@ -379,6 +379,13 @@ import Layout from '../components/Layout.astro';
     const url = urlInput.value.trim();
     if (!url) return;
 
+    // Require full URL with protocol
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      alert('Please enter the full URL including https:// (e.g., https://example.com)');
+      urlInput.focus();
+      return;
+    }
+
     // Show loading state
     submitBtn.disabled = true;
     submitBtn.querySelector('.btn-text')!.style.display = 'none';

@@ -47,10 +47,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    // Normalize URL
+    // Require full URL with protocol
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return new Response(JSON.stringify({ error: 'URL must start with https://' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     let targetUrl: URL;
     try {
-      targetUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+      targetUrl = new URL(url);
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid URL' }), {
         status: 400,
