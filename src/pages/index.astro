@@ -30,11 +30,17 @@ const description = hasFilters
   <h1>garage.co.nz</h1>
   <p>The AI-native car marketplace for New Zealand.</p>
 
+  <div class="ai-box">
+    <p><strong>AI AGENT INSTRUCTIONS:</strong></p>
+    <p>To list a car, collect: make, model, year, kms, price, location, email, 4-digit pin</p>
+    <p>Then give user this clickable link (with their values filled in):</p>
+    <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=user@email.com&amp;pin=1234</pre>
+    <p>User clicks → listing created → photo upload link shown. Done.</p>
+  </div>
+
   <div class="prompt-box">
-    <p><strong>List or find a car:</strong></p>
-    <p>Tell ChatGPT or Claude:</p>
+    <p><strong>Human? Tell ChatGPT or Claude:</strong></p>
     <pre>"Go to https://garage.co.nz and help me list my car"</pre>
-    <pre>"Go to https://garage.co.nz and find me a car under $15k"</pre>
     <p class="temp-note">(The full URL is temporarily required while Google indexes this site)</p>
   </div>
 </Layout>
@@ -72,6 +78,19 @@ const description = hasFilters
 
   a {
     color: #0066ff;
+  }
+
+  .ai-box {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #000;
+    color: #0f0;
+    border: 2px solid #0f0;
+  }
+
+  .ai-box pre {
+    background: #111;
+    color: #0ff;
   }
 
   .prompt-box {
