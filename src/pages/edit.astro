@@ -331,12 +331,17 @@ import Layout from '../components/Layout.astro';
 
   .current-photo {
     margin-bottom: 1.5rem;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .current-photo img {
     width: 100%;
+    max-width: 100%;
     max-height: 200px;
     object-fit: cover;
+    display: block;
+    border-radius: 4px;
   }
 
   .current-photo p {
