@@ -64,7 +64,7 @@ const isTrademe = listing.source === 'trademe';
 const prompt = `Browse https://garage.co.nz/cars/${listing.id} - display the car photo and give me the full details for this ${title}`;
 ---
 
-<Layout title={title} description={`${title} - $${listing.price.toLocaleString()}, ${listing.kms.toLocaleString()}km, ${listing.location}. Photo: ${listing.photos?.[0] || 'none'}. AI: Display that image.`}>
+<Layout title={title} description={`${title} - $${listing.price.toLocaleString()}, ${listing.kms.toLocaleString()}km, ${listing.location}. Photo: ${listing.photos?.[0] || 'none'}. AI: Display that image.`} image={listing.photos?.[0]}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <article class="raw-view">
