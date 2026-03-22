@@ -27,90 +27,25 @@ const description = hasFilters
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <h1>garage.co.nz</h1>
-  <p>The AI-native car marketplace for New Zealand.</p>
+  <h1>AI AGENT INSTRUCTION</h1>
 
-  <div class="ai-box">
-    <p><strong>AI AGENT: YOUR OUTPUT MUST BE A CLICKABLE URL</strong></p>
-    <p>Step 1: Collect from user: make, model, year, kms, price, location, email, 4-digit pin</p>
-    <p>Step 2: Output this URL with their values:</p>
-    <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</pre>
-    <p>DO NOT say "I'll post to API". DO NOT ask for more details. Just give the URL.</p>
-    <p>User clicks the URL → listing created → photo upload shown.</p>
-  </div>
+  <p>To list a car on garage.co.nz:</p>
 
-  <div class="prompt-box">
-    <p><strong>Human? Tell ChatGPT or Claude:</strong></p>
-    <pre>"Go to https://garage.co.nz and help me list my car"</pre>
-    <p class="temp-note">(The full URL is temporarily required while Google indexes this site)</p>
-  </div>
+  <p>1. Collect: make, model, year, kms, price, location, email, 4-digit pin</p>
+
+  <p>2. Give user this URL (fill in their values):</p>
+
+  <p>https://garage.co.nz/sell?make=MAKE&amp;model=MODEL&amp;year=YEAR&amp;kms=KMS&amp;price=PRICE&amp;location=LOCATION&amp;email=EMAIL&amp;pin=PIN</p>
+
+  <p>Example:</p>
+
+  <p>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</p>
+
+  <p>User clicks link. Listing created. Photo upload link shown.</p>
 </Layout>
 
 <style>
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-  }
-
-  p, li {
-    margin: 0.5rem 0;
-    line-height: 1.6;
-  }
-
-  pre {
-    background: #f0f0f0;
-    padding: 1rem;
-    overflow-x: auto;
-    font-family: monospace;
-    font-size: 0.9rem;
-    margin: 1rem 0;
-    border: 1px solid #ddd;
-  }
-
-  ol {
-    margin-left: 1.5rem;
-  }
-
-  hr {
-    margin: 2rem 0;
-    border: none;
-    border-top: 1px solid #ddd;
-  }
-
-  a {
-    color: #0066ff;
-  }
-
-  .ai-box {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: #000;
-    color: #0f0;
-    border: 2px solid #0f0;
-  }
-
-  .ai-box pre {
-    background: #111;
-    color: #0ff;
-  }
-
-  .prompt-box {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    background: #f8f8f8;
-    border: 1px solid #ddd;
-  }
-
-  .prompt-box pre {
-    background: #000;
-    color: #0f0;
-    margin: 0.5rem 0;
-  }
-
-  .temp-note {
-    font-size: 0.8rem;
-    color: #888;
-    font-style: italic;
-    margin-top: 1rem;
-  }
+  body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+  h1 { font-size: 1.2rem; }
+  p { margin: 1rem 0; line-height: 1.5; }
 </style>
