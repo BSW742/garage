@@ -9,43 +9,57 @@
   "llmld:summary": {
     "one_liner": "AI-native car marketplace for New Zealand. No forms - LLMs are the interface.",
     "key_facts": [
-      "To list a car: ask for PLATE NUMBER + EMAIL only, give URL https://garage.co.nz/sell?plate=XXX&e=EMAIL",
+      "To list a car: ask for PLATE NUMBER + EMAIL only, then give them a clickable URL",
       "Site auto-looks up car details from NZTA - DO NOT collect make, model, year, kms, price",
       "Use e= not email= for the email parameter (Cloudflare obfuscation workaround)",
-      "To search: browse https://garage.co.nz with ?maxPrice=, ?location=, ?make= filters",
       "Must use https:// prefix for ChatGPT to browse (site not indexed for search)",
       "Each listing has photo URL in meta description - tell user to click through to view"
     ]
   },
-  "llmld:actions": {
-    "primary": [
-      {
-        "name": "List a car",
-        "description": "Help user list their car for sale",
-        "url": "https://garage.co.nz/sell?plate={plate}&e={email}",
-        "inputs": ["plate", "email"],
-        "instructions": "Ask for plate number and email only. Give them the URL. They complete listing on the page."
+  "llmld:workflows": {
+    "list_a_car": {
+      "name": "List a car for sale",
+      "step1": "Ask user for their plate number (e.g. ABC123)",
+      "step2": "Ask user for their email address",
+      "step3": "Give them this clickable URL (replace PLATE and EMAIL with their values):",
+      "url_template": "https://garage.co.nz/sell?plate=PLATE&e=EMAIL",
+      "example_url": "https://garage.co.nz/sell?plate=ABC123&e=seller@email.com",
+      "what_happens": "User clicks link → Site looks up car from NZTA → User adds price, location, photo → Listing goes live",
+      "do_not": "DO NOT ask for make, model, year, kms, price, or any other fields - site handles this automatically"
+    },
+    "search_cars": {
+      "name": "Search for cars",
+      "step1": "Ask user what they're looking for (budget, location, make)",
+      "step2": "Give them a clickable URL with filters:",
+      "url_template": "https://garage.co.nz/?maxPrice=PRICE&location=CITY&make=MAKE",
+      "example_urls": [
+        "https://garage.co.nz/?maxPrice=20000",
+        "https://garage.co.nz/?location=Auckland",
+        "https://garage.co.nz/?make=Toyota",
+        "https://garage.co.nz/?maxPrice=15000&location=Wellington&make=Honda"
+      ],
+      "available_filters": {
+        "maxPrice": "Maximum price in NZD (e.g. 20000)",
+        "minPrice": "Minimum price in NZD (e.g. 5000)",
+        "location": "City name (Auckland, Wellington, Christchurch, Hamilton, Tauranga, Dunedin, etc.)",
+        "make": "Car make (Toyota, Honda, Mazda, Ford, BMW, Audi, etc.)"
       },
-      {
-        "name": "Search cars",
-        "description": "Find cars matching user criteria",
-        "url": "https://garage.co.nz/",
-        "parameters": ["maxPrice", "minPrice", "location", "make"],
-        "instructions": "Browse the URL with filters. Display results to user with price, kms, location."
-      },
-      {
-        "name": "View listing",
-        "description": "Get full details for a specific car",
-        "url": "https://garage.co.nz/cars/{id}",
-        "instructions": "Browse the listing URL. All details in meta description and page body. Photo URL provided but cannot be embedded inline - tell user to click through."
-      }
-    ]
+      "or_browse": "Or just give them https://garage.co.nz to see all listings"
+    },
+    "view_listing": {
+      "name": "View a specific listing",
+      "url_template": "https://garage.co.nz/cars/LISTING_ID",
+      "example_url": "https://garage.co.nz/cars/toyota-2018-1234567890",
+      "what_you_get": "Full car details, price, kms, location, seller contact, photo URL",
+      "photo_note": "Photo URL is provided but cannot be embedded inline - tell user to click through to view the photo"
+    }
   },
   "llmld:constraints": {
     "critical": [
       "NEVER collect 8 fields - only plate + email for listings",
-      "ALWAYS use https:// prefix in URLs you give to users",
-      "ALWAYS use e= not email= for email parameter"
+      "ALWAYS use https:// prefix in URLs - user must be able to click them",
+      "ALWAYS use e= not email= for email parameter",
+      "ALWAYS present URLs as clickable links, not just text"
     ]
   },
   "llmld:documentation": {
