@@ -755,19 +755,7 @@ import Layout from '../components/Layout.astro';
     });
   }
 
-  // Handle iframe load/error for fallback
-  siteIframe.addEventListener('load', () => {
-    try {
-      // Try to access - if blocked, this throws
-      const doc = siteIframe.contentDocument;
-      if (!doc || !doc.body || doc.body.innerHTML.length < 100) {
-        throw new Error('Empty');
-      }
-    } catch {
-      iframeFallback.classList.add('show');
-    }
-  });
-
+  // Only show fallback on actual iframe errors (rare)
   siteIframe.addEventListener('error', () => {
     iframeFallback.classList.add('show');
   });
@@ -798,6 +786,19 @@ import Layout from '../components/Layout.astro';
     // Show scan overlay
     scanOverlay.style.display = 'block';
     document.body.style.overflow = 'hidden';
+
+    // Check for X-Frame-Options block after iframe has time to load
+    setTimeout(() => {
+      try {
+        const doc = siteIframe.contentDocument;
+        // If we CAN access it and it's empty/error, show fallback
+        if (doc && doc.body && doc.body.innerHTML.length < 50) {
+          iframeFallback.classList.add('show');
+        }
+      } catch {
+        // Cross-origin = iframe loaded the site, keep showing it
+      }
+    }, 3000);
 
     try {
       auditData = await runScan(url);
