@@ -4,7 +4,10 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Home">
   <section class="hero" id="hero">
-    <h1 id="headline">Can AI find your business?</h1>
+    <div class="headline-row">
+      <h1 id="headline">Can AI find your business?</h1>
+      <button class="rotate-btn" id="rotate-btn" title="Next">›</button>
+    </div>
     <p class="subtitle" id="subline">ChatGPT is the new Google. See if you show up.</p>
 
     <form id="audit-form" class="audit-form">
@@ -37,9 +40,21 @@ import Layout from '../components/Layout.astro';
       { h: "Does ChatGPT know you exist?", s: "Free 20-second scan." },
       { h: "Is your site AI-ready?", s: "Most aren't. Check yours." },
     ];
-    const pick = headlines[Math.floor(Math.random() * headlines.length)];
-    document.getElementById('headline')!.textContent = pick.h;
-    document.getElementById('subline')!.textContent = pick.s;
+    let idx = Math.floor(Math.random() * headlines.length);
+    const h1 = document.getElementById('headline')!;
+    const sub = document.getElementById('subline')!;
+
+    function showHeadline() {
+      h1.textContent = headlines[idx].h;
+      sub.textContent = headlines[idx].s;
+    }
+
+    showHeadline();
+
+    document.getElementById('rotate-btn')!.addEventListener('click', () => {
+      idx = (idx + 1) % headlines.length;
+      showHeadline();
+    });
   </script>
 </Layout>
 
@@ -559,11 +574,34 @@ import Layout from '../components/Layout.astro';
     padding: 4rem 1rem 3rem;
   }
 
+  .headline-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
   .hero h1 {
     font-size: 2.25rem;
     font-weight: 700;
     margin: 0 0 1rem 0;
     line-height: 1.2;
+  }
+
+  .rotate-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
+
+  .rotate-btn:hover {
+    opacity: 0.8;
   }
 
   .hero .subtitle {
