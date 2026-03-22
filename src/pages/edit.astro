@@ -4,66 +4,105 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Edit Your Listing" description="Edit your car listing using your PIN">
   <section class="edit-page">
-    <div id="pin-form" class="pin-form">
-      <h1>Edit your listing</h1>
-      <p class="subtitle">Enter your 4-digit PIN and email</p>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="your@email.com" required />
+    <div id="pin-form" class="card">
+      <div class="card-header">
+        <h1>Edit your listing</h1>
+        <p class="subtitle">Enter your email and 4-digit PIN</p>
       </div>
 
-      <div class="form-group">
-        <label for="pin">PIN</label>
-        <div class="pin-input">
-          <input type="text" id="pin-1" maxlength="1" pattern="[0-9]" inputmode="numeric" />
-          <input type="text" id="pin-2" maxlength="1" pattern="[0-9]" inputmode="numeric" />
-          <input type="text" id="pin-3" maxlength="1" pattern="[0-9]" inputmode="numeric" />
-          <input type="text" id="pin-4" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+      <div class="card-body">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="your@email.com" required />
         </div>
-      </div>
 
-      <button id="find-btn" class="find-btn">FIND LISTING</button>
-      <p id="error" class="error"></p>
+        <div class="form-group">
+          <label for="pin">PIN</label>
+          <div class="pin-input">
+            <input type="text" id="pin-1" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+            <input type="text" id="pin-2" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+            <input type="text" id="pin-3" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+            <input type="text" id="pin-4" maxlength="1" pattern="[0-9]" inputmode="numeric" />
+          </div>
+        </div>
+
+        <button id="find-btn" class="btn btn-primary">Find My Listing</button>
+        <p id="error" class="error"></p>
+      </div>
     </div>
 
-    <div id="edit-form" class="edit-form" hidden>
-      <h1 id="car-title"></h1>
-
-      <div id="current-photo" class="current-photo"></div>
-
-      <div class="form-group">
-        <label for="change-photo">Change photo</label>
-        <input type="file" id="change-photo" accept="image/*" />
+    <div id="edit-form" class="card" hidden>
+      <div class="card-header">
+        <h1 id="car-title"></h1>
+        <a id="view-listing-link" href="#" class="view-link" target="_blank">View listing →</a>
       </div>
 
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="edit-price">Price (NZD)</label>
-          <input type="number" id="edit-price" min="0" />
+      <div class="card-body">
+        <div id="photo-section" class="photo-section">
+          <div id="current-photo" class="photo-container">
+            <div class="photo-placeholder">No photo</div>
+          </div>
+          <div class="photo-controls">
+            <label for="change-photo" class="btn btn-secondary btn-small">
+              Change Photo
+            </label>
+            <input type="file" id="change-photo" accept="image/jpeg,image/png,image/webp" hidden />
+            <span class="photo-hint">JPG, PNG or WebP only</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="edit-kms">Kilometers</label>
-          <input type="number" id="edit-kms" min="0" />
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-price">Price (NZD)</label>
+            <div class="input-prefix">
+              <span>$</span>
+              <input type="number" id="edit-price" min="0" placeholder="15000" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-kms">Odometer (km)</label>
+            <input type="number" id="edit-kms" min="0" placeholder="85000" />
+          </div>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="edit-location">Location</label>
-        <input type="text" id="edit-location" />
-      </div>
+        <div class="form-group">
+          <label for="edit-location">Location</label>
+          <select id="edit-location">
+            <option value="">Select city...</option>
+            <option value="Auckland">Auckland</option>
+            <option value="Wellington">Wellington</option>
+            <option value="Christchurch">Christchurch</option>
+            <option value="Hamilton">Hamilton</option>
+            <option value="Tauranga">Tauranga</option>
+            <option value="Dunedin">Dunedin</option>
+            <option value="Palmerston North">Palmerston North</option>
+            <option value="Napier">Napier</option>
+            <option value="Rotorua">Rotorua</option>
+            <option value="New Plymouth">New Plymouth</option>
+            <option value="Whangarei">Whangarei</option>
+            <option value="Invercargill">Invercargill</option>
+            <option value="Nelson">Nelson</option>
+            <option value="Queenstown">Queenstown</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="edit-email">Contact email</label>
-        <input type="email" id="edit-email" />
-      </div>
+        <div class="form-group">
+          <label for="edit-description">Description (optional)</label>
+          <textarea id="edit-description" rows="3" placeholder="Any details about the car..."></textarea>
+        </div>
 
-      <div class="button-row">
-        <button id="save-btn" class="save-btn">SAVE CHANGES</button>
-        <button id="delete-btn" class="delete-btn">DELETE LISTING</button>
-      </div>
+        <div class="form-group">
+          <label for="edit-email">Contact Email</label>
+          <input type="email" id="edit-email" />
+        </div>
 
-      <p id="save-status" class="status"></p>
+        <div class="button-row">
+          <button id="save-btn" class="btn btn-primary">Save Changes</button>
+          <button id="delete-btn" class="btn btn-danger">Delete</button>
+        </div>
+
+        <p id="save-status" class="status"></p>
+      </div>
     </div>
   </section>
 </Layout>
@@ -73,40 +112,52 @@ import Layout from '../components/Layout.astro';
   const editForm = document.getElementById('edit-form');
   const findBtn = document.getElementById('find-btn');
   const errorEl = document.getElementById('error');
-  const emailInput = document.getElementById('email');
-  const pinInputs = [1, 2, 3, 4].map(i => document.getElementById(`pin-${i}`));
+  const emailInput = document.getElementById('email') as HTMLInputElement;
+  const pinInputs = [1, 2, 3, 4].map(i => document.getElementById(`pin-${i}`) as HTMLInputElement);
 
-  let currentListing = null;
+  let currentListing: any = null;
   let currentPin = '';
 
   // Auto-advance PIN inputs
   pinInputs.forEach((input, i) => {
     input.addEventListener('input', (e) => {
-      const val = e.target.value.replace(/[^0-9]/g, '');
-      e.target.value = val;
+      const target = e.target as HTMLInputElement;
+      const val = target.value.replace(/[^0-9]/g, '');
+      target.value = val;
       if (val && i < 3) {
         pinInputs[i + 1].focus();
       }
     });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !e.target.value && i > 0) {
+      const target = e.target as HTMLInputElement;
+      if (e.key === 'Backspace' && !target.value && i > 0) {
         pinInputs[i - 1].focus();
       }
     });
+    // Allow paste of full PIN
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const paste = (e.clipboardData || (window as any).clipboardData).getData('text');
+      const digits = paste.replace(/[^0-9]/g, '').slice(0, 4);
+      digits.split('').forEach((d: string, idx: number) => {
+        if (pinInputs[idx]) pinInputs[idx].value = d;
+      });
+      if (digits.length === 4) pinInputs[3].focus();
+    });
   });
 
-  findBtn.addEventListener('click', async () => {
+  findBtn?.addEventListener('click', async () => {
     const email = emailInput.value.trim();
     const pin = pinInputs.map(i => i.value).join('');
 
     if (!email || pin.length !== 4) {
-      errorEl.textContent = 'Please enter email and 4-digit PIN';
+      errorEl!.textContent = 'Please enter email and 4-digit PIN';
       return;
     }
 
-    findBtn.disabled = true;
-    findBtn.textContent = 'FINDING...';
-    errorEl.textContent = '';
+    findBtn.setAttribute('disabled', 'true');
+    findBtn.textContent = 'Finding...';
+    errorEl!.textContent = '';
 
     try {
       const res = await fetch('/api/listings/by-pin', {
@@ -118,74 +169,121 @@ import Layout from '../components/Layout.astro';
       const data = await res.json();
 
       if (!res.ok) {
-        errorEl.textContent = data.error || 'Not found';
-        findBtn.disabled = false;
-        findBtn.textContent = 'FIND LISTING';
+        errorEl!.textContent = data.error || 'Not found';
+        findBtn.removeAttribute('disabled');
+        findBtn.textContent = 'Find My Listing';
         return;
       }
 
-      // Use first listing (most common case)
       currentListing = data.listings[0];
       currentPin = pin;
       showEditForm(currentListing);
 
     } catch (err) {
-      errorEl.textContent = 'Something went wrong';
-      findBtn.disabled = false;
-      findBtn.textContent = 'FIND LISTING';
+      errorEl!.textContent = 'Something went wrong';
+      findBtn.removeAttribute('disabled');
+      findBtn.textContent = 'Find My Listing';
     }
   });
 
-  function showEditForm(listing) {
-    pinForm.hidden = true;
-    editForm.hidden = false;
+  function showEditForm(listing: any) {
+    pinForm!.hidden = true;
+    editForm!.hidden = false;
 
-    document.getElementById('car-title').textContent = `${listing.year} ${listing.make} ${listing.model}`;
-    document.getElementById('edit-price').value = listing.price || '';
-    document.getElementById('edit-kms').value = listing.kms || '';
-    document.getElementById('edit-location').value = listing.location || '';
-    document.getElementById('edit-email').value = emailInput.value;
+    document.getElementById('car-title')!.textContent = `${listing.year} ${listing.make} ${listing.model}`;
+    (document.getElementById('view-listing-link') as HTMLAnchorElement).href = `/cars/${listing.id}`;
+    (document.getElementById('edit-price') as HTMLInputElement).value = listing.price || '';
+    (document.getElementById('edit-kms') as HTMLInputElement).value = listing.kms || '';
+    (document.getElementById('edit-description') as HTMLTextAreaElement).value = listing.description || '';
+    (document.getElementById('edit-email') as HTMLInputElement).value = emailInput.value;
 
-    const photoContainer = document.getElementById('current-photo');
+    // Set location dropdown
+    const locationSelect = document.getElementById('edit-location') as HTMLSelectElement;
+    if (listing.location) {
+      locationSelect.value = listing.location;
+    }
+
+    const photoContainer = document.getElementById('current-photo')!;
     if (listing.photos && listing.photos.length > 0) {
-      photoContainer.innerHTML = `<img src="${listing.photos[0]}" alt="Current photo" />`;
+      const img = document.createElement('img');
+      img.src = listing.photos[0];
+      img.alt = `${listing.year} ${listing.make} ${listing.model}`;
+      img.onerror = () => {
+        photoContainer.innerHTML = '<div class="photo-placeholder photo-error">Photo unavailable<br><small>Try uploading a new one (JPG/PNG)</small></div>';
+      };
+      photoContainer.innerHTML = '';
+      photoContainer.appendChild(img);
     } else {
-      photoContainer.innerHTML = '<p>No photo uploaded</p>';
+      photoContainer.innerHTML = '<div class="photo-placeholder">No photo uploaded</div>';
     }
   }
 
-  // Save changes
-  document.getElementById('save-btn').addEventListener('click', async () => {
-    const saveBtn = document.getElementById('save-btn');
-    const statusEl = document.getElementById('save-status');
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'SAVING...';
-    statusEl.textContent = '';
-
-    const updates = {
-      pin: currentPin,
-      price: parseInt(document.getElementById('edit-price').value) || 0,
-      kms: parseInt(document.getElementById('edit-kms').value) || 0,
-      location: document.getElementById('edit-location').value,
-      sellerContact: { email: document.getElementById('edit-email').value }
-    };
-
-    // Handle photo change
-    const photoInput = document.getElementById('change-photo');
-    if (photoInput.files[0]) {
+  // Preview selected photo
+  document.getElementById('change-photo')?.addEventListener('change', (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        updates.photos = [e.target.result];
-        await saveChanges(updates, saveBtn, statusEl);
+      reader.onload = (ev) => {
+        const photoContainer = document.getElementById('current-photo')!;
+        photoContainer.innerHTML = `<img src="${ev.target?.result}" alt="New photo preview" />`;
       };
-      reader.readAsDataURL(photoInput.files[0]);
-    } else {
-      await saveChanges(updates, saveBtn, statusEl);
+      reader.readAsDataURL(file);
     }
   });
 
-  async function saveChanges(updates, saveBtn, statusEl) {
+  // Save changes
+  document.getElementById('save-btn')?.addEventListener('click', async () => {
+    const saveBtn = document.getElementById('save-btn')!;
+    const statusEl = document.getElementById('save-status')!;
+
+    saveBtn.setAttribute('disabled', 'true');
+    saveBtn.textContent = 'Saving...';
+    statusEl.textContent = '';
+    statusEl.className = 'status';
+
+    // Check if there's a new photo to upload
+    const photoInput = document.getElementById('change-photo') as HTMLInputElement;
+    let photoUrl = null;
+
+    if (photoInput.files?.[0]) {
+      // Upload photo first
+      const formData = new FormData();
+      formData.append('photo', photoInput.files[0]);
+      formData.append('listingId', currentListing.id);
+
+      try {
+        const uploadRes = await fetch('/api/upload-photo', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.success) {
+          photoUrl = uploadData.url;
+        } else {
+          throw new Error(uploadData.error || 'Photo upload failed');
+        }
+      } catch (err: any) {
+        statusEl.textContent = err.message || 'Photo upload failed';
+        statusEl.className = 'status error';
+        saveBtn.removeAttribute('disabled');
+        saveBtn.textContent = 'Save Changes';
+        return;
+      }
+    }
+
+    const updates: any = {
+      pin: currentPin,
+      price: parseInt((document.getElementById('edit-price') as HTMLInputElement).value) || 0,
+      kms: parseInt((document.getElementById('edit-kms') as HTMLInputElement).value) || 0,
+      location: (document.getElementById('edit-location') as HTMLSelectElement).value,
+      description: (document.getElementById('edit-description') as HTMLTextAreaElement).value,
+      sellerContact: { email: (document.getElementById('edit-email') as HTMLInputElement).value }
+    };
+
+    if (photoUrl) {
+      updates.photos = [photoUrl];
+    }
+
     try {
       const res = await fetch(`/api/listings/${currentListing.id}`, {
         method: 'PATCH',
@@ -194,29 +292,29 @@ import Layout from '../components/Layout.astro';
       });
 
       if (res.ok) {
-        statusEl.textContent = 'Saved!';
-        statusEl.style.color = 'var(--color-primary)';
+        statusEl.textContent = '✓ Changes saved';
+        statusEl.className = 'status success';
       } else {
         const data = await res.json();
         statusEl.textContent = data.error || 'Save failed';
-        statusEl.style.color = '#e53935';
+        statusEl.className = 'status error';
       }
     } catch (err) {
       statusEl.textContent = 'Save failed';
-      statusEl.style.color = '#e53935';
+      statusEl.className = 'status error';
     }
 
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'SAVE CHANGES';
-  }
+    saveBtn.removeAttribute('disabled');
+    saveBtn.textContent = 'Save Changes';
+  });
 
   // Delete listing
-  document.getElementById('delete-btn').addEventListener('click', async () => {
-    if (!confirm('Delete this listing? This cannot be undone.')) return;
+  document.getElementById('delete-btn')?.addEventListener('click', async () => {
+    if (!confirm('Delete this listing permanently? This cannot be undone.')) return;
 
-    const deleteBtn = document.getElementById('delete-btn');
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = 'DELETING...';
+    const deleteBtn = document.getElementById('delete-btn')!;
+    deleteBtn.setAttribute('disabled', 'true');
+    deleteBtn.textContent = 'Deleting...';
 
     try {
       const res = await fetch(`/api/listings/${currentListing.id}`, {
@@ -226,157 +324,323 @@ import Layout from '../components/Layout.astro';
       });
 
       if (res.ok) {
-        alert('Listing deleted');
+        alert('Listing deleted successfully');
         window.location.href = '/';
       } else {
-        alert('Delete failed');
-        deleteBtn.disabled = false;
-        deleteBtn.textContent = 'DELETE LISTING';
+        alert('Delete failed - please try again');
+        deleteBtn.removeAttribute('disabled');
+        deleteBtn.textContent = 'Delete';
       }
     } catch (err) {
-      alert('Delete failed');
-      deleteBtn.disabled = false;
-      deleteBtn.textContent = 'DELETE LISTING';
+      alert('Delete failed - please try again');
+      deleteBtn.removeAttribute('disabled');
+      deleteBtn.textContent = 'Delete';
     }
   });
 </script>
 
 <style>
   .edit-page {
-    max-width: 400px;
+    max-width: 480px;
     margin: 2rem auto;
     padding: 0 1rem;
   }
 
-  .pin-form, .edit-form {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    padding: 2rem;
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
   }
 
-  h1 {
+  .card-header {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .card-header h1 {
     font-size: 1.25rem;
-    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    margin: 0;
+    color: #1a1a1a;
   }
 
   .subtitle {
-    color: var(--color-text-muted);
-    margin: 0 0 2rem 0;
-    font-size: 0.875rem;
+    color: #666;
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  .view-link {
+    font-size: 0.85rem;
+    color: #0066ff;
+    text-decoration: none;
+  }
+
+  .view-link:hover {
+    text-decoration: underline;
+  }
+
+  .card-body {
+    padding: 1.5rem;
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
   }
 
   .form-group label {
     display: block;
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 0.4rem;
   }
 
-  .form-group input {
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.7rem 0.9rem;
     font-family: inherit;
     font-size: 1rem;
-    border: 1px solid var(--color-border);
-    background: var(--color-bg);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    transition: border-color 0.15s, background 0.15s;
   }
 
-  .pin-input {
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #0066ff;
+    background: white;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .input-prefix {
     display: flex;
-    gap: 0.5rem;
-    justify-content: center;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    overflow: hidden;
   }
 
-  .pin-input input {
-    width: 3rem;
-    height: 3rem;
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: 600;
+  .input-prefix span {
+    padding: 0.7rem 0 0.7rem 0.9rem;
+    color: #666;
+    font-weight: 500;
   }
 
-  .find-btn, .save-btn {
-    width: 100%;
-    padding: 1rem;
-    background: var(--color-primary);
-    color: white;
+  .input-prefix input {
     border: none;
-    font-family: inherit;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
+    background: transparent;
+    padding-left: 0.3rem;
   }
 
-  .find-btn:disabled, .save-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .input-prefix input:focus {
+    outline: none;
   }
 
-  .error {
-    color: #e53935;
-    text-align: center;
-    margin-top: 1rem;
-    font-size: 0.875rem;
+  .input-prefix:focus-within {
+    border-color: #0066ff;
+    background: white;
   }
 
-  .form-grid {
+  .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
   }
 
-  .current-photo {
-    margin-bottom: 1.5rem;
-    max-width: 100%;
-    overflow: hidden;
+  .pin-input {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
   }
 
-  .current-photo img {
-    width: 100%;
-    max-width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    display: block;
-    border-radius: 4px;
-  }
-
-  .current-photo p {
-    color: var(--color-text-muted);
+  .pin-input input {
+    width: 3.2rem;
+    height: 3.2rem;
     text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border-radius: 10px;
+    background: #f5f5f5;
+  }
+
+  .pin-input input:focus {
+    background: white;
+    border-color: #0066ff;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.5rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: #0066ff;
+    color: white;
+    width: 100%;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #0052cc;
+  }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #e5e5e5;
+  }
+
+  .btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: #fecaca;
+  }
+
+  .btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
   }
 
   .button-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
   }
 
-  .delete-btn {
-    flex: 1;
-    padding: 1rem;
-    background: #fee2e2;
-    color: #dc2626;
-    border: none;
-    font-family: inherit;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .save-btn {
+  .button-row .btn-primary {
     flex: 2;
+  }
+
+  .button-row .btn-danger {
+    flex: 1;
+  }
+
+  /* Photo section */
+  .photo-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .photo-container {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #f5f5f5;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-placeholder {
+    color: #999;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .photo-error {
+    color: #dc2626;
+    background: #fee2e2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo-error small {
+    color: #666;
+    margin-top: 0.25rem;
+  }
+
+  .photo-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .photo-hint {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  /* Status messages */
+  .error {
+    color: #dc2626;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.85rem;
   }
 
   .status {
     text-align: center;
     margin-top: 1rem;
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
-  input[type="file"] {
-    font-size: 0.875rem;
+  .status.success {
+    color: #059669;
+  }
+
+  .status.error {
+    color: #dc2626;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .pin-input input {
+      width: 2.8rem;
+      height: 2.8rem;
+      font-size: 1.25rem;
+    }
   }
 </style>
