@@ -30,7 +30,10 @@ const stats = {
 
 <Layout title="Leads Admin">
   <div class="admin">
-    <h1>Audit Leads</h1>
+    <div class="admin-header">
+      <h1>Audit Leads</h1>
+      <a href="/admin/outreach" class="nav-btn">Outreach →</a>
+    </div>
 
     {error && <div class="error">{error}</div>}
 
@@ -120,8 +123,29 @@ const stats = {
     padding: 2rem 1rem;
   }
 
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
   h1 {
-    margin: 0 0 2rem 0;
+    margin: 0;
+  }
+
+  .nav-btn {
+    background: #0066ff;
+    color: white;
+    text-decoration: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .nav-btn:hover {
+    background: #0052cc;
   }
 
   .error {

@@ -57,18 +57,17 @@
 
       .logo span { color: var(--primary); }
 
-      .nav-links {
-        display: flex;
-        gap: 1rem;
-      }
-
-      .nav-links a {
-        color: var(--text-muted);
+      .nav-btn {
+        background: var(--primary);
+        color: white;
         text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
         font-size: 0.9rem;
       }
 
-      .nav-links a:hover { color: var(--text); }
+      .nav-btn:hover { background: var(--primary-hover); }
 
       .stats {
         display: flex;
@@ -648,10 +647,7 @@
         <div class="logo">
           <h1>Garage <span>Outreach</span></h1>
         </div>
-        <div class="nav-links">
-          <a href="/admin/leads">Leads</a>
-          <a href="/">Home</a>
-        </div>
+        <a href="/admin/leads" class="nav-btn">← Leads</a>
         <div class="stats">
           <div class="stat">
             <div class="stat-value" id="total-results">0</div>
