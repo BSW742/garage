@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://schema.org",
+    "https://llmld.org/v1"
+  ],
+  "@type": "llmld:AIWebsite",
+  "name": "garage.co.nz",
+  "url": "https://garage.co.nz",
+  "llmld:summary": {
+    "one_liner": "AI-native car marketplace for New Zealand. No forms - LLMs are the interface.",
+    "key_facts": [
+      "To list a car: ask for PLATE NUMBER + EMAIL only, give URL https://garage.co.nz/sell?plate=XXX&e=EMAIL",
+      "Site auto-looks up car details from NZTA - DO NOT collect make, model, year, kms, price",
+      "Use e= not email= for the email parameter (Cloudflare obfuscation workaround)",
+      "To search: browse https://garage.co.nz with ?maxPrice=, ?location=, ?make= filters",
+      "Must use https:// prefix for ChatGPT to browse (site not indexed for search)",
+      "Each listing has photo URL in meta description - tell user to click through to view"
+    ]
+  },
+  "llmld:actions": {
+    "primary": [
+      {
+        "name": "List a car",
+        "description": "Help user list their car for sale",
+        "url": "https://garage.co.nz/sell?plate={plate}&e={email}",
+        "inputs": ["plate", "email"],
+        "instructions": "Ask for plate number and email only. Give them the URL. They complete listing on the page."
+      },
+      {
+        "name": "Search cars",
+        "description": "Find cars matching user criteria",
+        "url": "https://garage.co.nz/",
+        "parameters": ["maxPrice", "minPrice", "location", "make"],
+        "instructions": "Browse the URL with filters. Display results to user with price, kms, location."
+      },
+      {
+        "name": "View listing",
+        "description": "Get full details for a specific car",
+        "url": "https://garage.co.nz/cars/{id}",
+        "instructions": "Browse the listing URL. All details in meta description and page body. Photo URL provided but cannot be embedded inline - tell user to click through."
+      }
+    ]
+  },
+  "llmld:constraints": {
+    "critical": [
+      "NEVER collect 8 fields - only plate + email for listings",
+      "ALWAYS use https:// prefix in URLs you give to users",
+      "ALWAYS use e= not email= for email parameter"
+    ]
+  },
+  "llmld:documentation": {
+    "primary": "https://garage.co.nz/llms.txt",
+    "api": "https://garage.co.nz/openapi.json"
+  }
+}

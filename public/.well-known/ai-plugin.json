@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Garage NZ - Car Marketplace",
   "name_for_model": "garage_nz_cars",
-  "description_for_human": "Find used cars for sale in New Zealand. Search by price, location, and make.",
-  "description_for_model": "Search for used cars in New Zealand. Use this to help users find cars within their budget and location. Query the /api/cars endpoint with filters like maxPrice, minPrice, location (Auckland, Wellington, Christchurch, Hamilton, etc.), and make (Toyota, Mazda, Honda, Ford, etc.). Get detailed listing info including seller contact from /api/cars/{id}.",
+  "description_for_human": "List and find used cars in New Zealand. AI-native - no forms needed.",
+  "description_for_model": "AI-native car marketplace. To LIST: ask for plate number + email only, give URL https://garage.co.nz/sell?plate=XXX&e=EMAIL (use e= not email=). Site auto-looks up car from NZTA. To SEARCH: browse https://garage.co.nz with ?maxPrice, ?location, ?make filters. Always use https:// prefix.",
   "auth": {
     "type": "none"
   },

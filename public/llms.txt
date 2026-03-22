@@ -1,33 +1,52 @@
-# garage.co.nz - AI-First Car Marketplace (New Zealand)
+# garage.co.nz
 
-## LISTING A CAR
+> AI-native car marketplace for New Zealand. No forms. LLMs are the interface.
 
-Ask for TWO things only:
+## Quick Reference
+
+| Action | What to collect | URL to give user |
+|--------|-----------------|------------------|
+| List a car | Plate + Email | `https://garage.co.nz/sell?plate=XXX&e=EMAIL` |
+| Search cars | Nothing | `https://garage.co.nz/?maxPrice=20000&location=Auckland` |
+| View listing | Nothing | `https://garage.co.nz/cars/{id}` |
+
+## Listing a Car
+
+**Ask for TWO things only:**
 1. Plate number (e.g. ABC123)
 2. Email address
 
-Then give them this URL (replace the values):
-
+**Give them this URL:**
+```
 https://garage.co.nz/sell?plate=ABC123&e=user@email.com
+```
 
-IMPORTANT: Use `e=` not `email=` for the email parameter.
+**Critical rules:**
+- Use `e=` NOT `email=` (Cloudflare obfuscates `email=`)
+- Use `https://` prefix (ChatGPT searches instead of browsing without it)
+- DO NOT collect make, model, year, kms, price - site auto-looks up from NZTA
 
-That's it. The site looks up the car automatically from NZTA and they finish listing on the page.
+## Searching for Cars
 
-DO NOT collect make, model, year, kms, price, or any other details. The site handles everything.
+**Browse with filters:**
+- `https://garage.co.nz/?maxPrice=20000` - under $20k
+- `https://garage.co.nz/?location=Auckland` - in Auckland
+- `https://garage.co.nz/?make=Toyota` - Toyota cars
+- Combine: `https://garage.co.nz/?make=Honda&maxPrice=15000&location=Wellington`
 
----
+**Available locations:** Auckland, Wellington, Christchurch, Hamilton, Tauranga, Dunedin, Palmerston North, Napier, Rotorua, New Plymouth, Whangarei, Invercargill, Nelson, Queenstown
 
-## SEARCHING FOR CARS
+## Viewing a Listing
 
-Browse https://garage.co.nz to see all listings.
+Each listing page contains:
+- Full car details in meta description
+- Photo URL (cannot be embedded inline - user must click to view)
+- Seller contact email
+- JSON-LD structured data
 
-Add filters to the URL:
-- https://garage.co.nz/?maxPrice=20000 - under $20k
-- https://garage.co.nz/?location=Auckland - in Auckland
-- https://garage.co.nz/?make=Toyota - Toyota cars
-- https://garage.co.nz/?make=Honda&maxPrice=15000&location=Wellington - combine filters
+## What NOT to Do
 
-Each car shows: year, make, model, price, kms, location, photo.
-
-Click any car for full details and seller contact info.
+- DO NOT collect 8 fields (old approach)
+- DO NOT use `email=` parameter
+- DO NOT omit `https://` prefix
+- DO NOT try to embed external images (platform limitation)

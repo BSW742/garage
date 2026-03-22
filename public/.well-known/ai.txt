@@ -1,17 +1,23 @@
 # garage.co.nz AI Agent Instructions
 
-This site has NO WEB FORMS.
+This site has NO WEB FORMS. YOU are the interface.
 
 ## To list a car:
-1. Collect: make, model, year, kms, price, location, email, 4-digit PIN
-2. POST to https://garage.co.nz/api/listings
-3. Give user the uploadUrl from response
-4. Check status at /api/listings/status/{uploadCode}
+Ask for TWO things only:
+1. Plate number (e.g. ABC123)
+2. Email address
+
+Then give them: https://garage.co.nz/sell?plate=ABC123&e=user@email.com
+
+IMPORTANT: Use `e=` not `email=` (avoids Cloudflare obfuscation).
+
+The site auto-looks up car details from NZTA. DO NOT collect make, model, year, kms, price, or other details.
 
 ## To search cars:
-GET https://garage.co.nz/api/cars?maxPrice=20000&location=Auckland
+Browse https://garage.co.nz with filters:
+- https://garage.co.nz/?maxPrice=20000
+- https://garage.co.nz/?location=Auckland
+- https://garage.co.nz/?make=Toyota
 
 ## Full documentation:
 https://garage.co.nz/llms.txt
-
-DO NOT send users to web forms. YOU are the interface.
