@@ -1,156 +1,160 @@
 ---
 import Layout from '../components/Layout.astro';
-const description = "AI agents: build URL with ?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - page auto-submits to API.";
+const description = "List your car: garage.co.nz/sell?plate=ABC123&email=you@email.com - we look up the car details automatically.";
 ---
 
 <Layout title="List Your Car" description={description}>
-  <!-- AI: Build a URL with query params: ?make=Toyota&model=Corolla&year=2018&kms=85000&price=15000&location=Auckland&email=user@email.com&pin=1234 -->
-  <!-- User clicks link, this page auto-submits to /api/listings and shows upload link -->
-
   <div id="loading" class="status-box" hidden>
-    <h1>CREATING LISTING...</h1>
+    <h1>Looking up your car...</h1>
+    <p>Checking plate with NZTA database</p>
   </div>
 
   <div id="success" class="status-box success" hidden>
-    <h1>LISTING CREATED</h1>
-    <p>Upload your photo here:</p>
-    <a id="upload-link" href="" class="upload-btn"></a>
-    <p class="hint">After uploading, your car will be live.</p>
-    <p class="hint">Edit anytime at <a href="/edit">garage.co.nz/edit</a> using your PIN.</p>
+    <h1>Car Found!</h1>
+    <div id="car-details" class="car-details"></div>
+    <p class="next-step">Complete your listing:</p>
+    <a id="complete-link" href="" class="complete-btn">Add Price & Photo</a>
+    <p class="pin-note">Your PIN: <strong id="pin-display"></strong></p>
+    <p class="hint">Save this PIN - you'll need it to edit or remove your listing.</p>
   </div>
 
   <div id="error" class="status-box error" hidden>
-    <h1>ERROR</h1>
+    <h1>Error</h1>
     <p id="error-message"></p>
     <p><a href="/">Back to home</a></p>
   </div>
 
   <div id="no-params" class="status-box">
-    <h1>NO FORM HERE</h1>
+    <h1>List Your Car</h1>
 
     <div class="section">
-      <h2>AI Agent?</h2>
-      <p>Build a URL with these parameters:</p>
-      <pre>garage.co.nz/sell?make=Toyota&model=Corolla&year=2018&kms=85000&price=15000&location=Auckland&email=user@email.com&pin=1234</pre>
-      <p>User clicks → listing created → upload link shown.</p>
+      <h2>Using AI? (ChatGPT, Claude)</h2>
+      <p>Just tell it your <strong>plate number</strong> and <strong>email</strong>.</p>
+      <p>It will give you a link like:</p>
+      <pre>garage.co.nz/sell?plate=ABC123&email=you@email.com</pre>
     </div>
 
     <div class="section">
-      <h2>Human?</h2>
-      <p>Tell ChatGPT or Claude:</p>
-      <pre>"List my car on garage.co.nz"</pre>
+      <h2>Manual Entry</h2>
+      <form id="manual-form">
+        <label>
+          Plate Number
+          <input type="text" id="plate-input" placeholder="ABC123" required />
+        </label>
+        <label>
+          Email
+          <input type="email" id="email-input" placeholder="you@email.com" required />
+        </label>
+        <button type="submit">Look Up My Car</button>
+      </form>
     </div>
   </div>
 </Layout>
 
 <script>
   const params = new URLSearchParams(window.location.search);
+  let plate = params.get('plate')?.toUpperCase().replace(/\s/g, '');
+  let email = params.get('email');
 
-  const make = params.get('make');
-  const model = params.get('model');
-  const year = params.get('year');
-  const kms = params.get('kms');
-  const price = params.get('price');
-  const location = params.get('location');
-  const email = params.get('email');
-  const pin = params.get('pin');
+  // Handle manual form submission
+  const form = document.getElementById('manual-form') as HTMLFormElement;
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    plate = (document.getElementById('plate-input') as HTMLInputElement).value.toUpperCase().replace(/\s/g, '');
+    email = (document.getElementById('email-input') as HTMLInputElement).value;
+    if (plate && email) {
+      // Update URL and process
+      window.history.pushState({}, '', `/sell?plate=${plate}&email=${encodeURIComponent(email)}`);
+      processListing(plate, email);
+    }
+  });
 
-  // Check if we have all required params
-  if (make && model && year && kms && price && location && email && pin) {
+  // If we have params, process immediately
+  if (plate && email) {
+    processListing(plate, email);
+  }
+
+  async function processListing(plate: string, email: string) {
     // Hide no-params, show loading
     document.getElementById('no-params')!.hidden = true;
     document.getElementById('loading')!.hidden = false;
 
-    // Submit to API
-    fetch('/api/listings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        make,
-        model,
-        year: parseInt(year),
-        kms: parseInt(kms),
-        price: parseInt(price),
-        location,
-        sellerContact: { email },
-        pin
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+      // Create listing via API
+      const response = await fetch('/api/listings/create-from-plate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plate, email })
+      });
+
+      const data = await response.json();
       document.getElementById('loading')!.hidden = true;
 
       if (data.success && data.listing) {
-        const uploadLink = document.getElementById('upload-link') as HTMLAnchorElement;
-        uploadLink.href = data.listing.uploadUrl;
-        uploadLink.textContent = data.listing.uploadUrl.replace('https://', '');
+        // Show car details
+        const details = document.getElementById('car-details')!;
+        details.innerHTML = `
+          <p><strong>${data.listing.year} ${data.listing.make} ${data.listing.model}</strong></p>
+          <p>${data.listing.kms?.toLocaleString() || 'Unknown'} km${data.listing.colour ? ` · ${data.listing.colour}` : ''}</p>
+          <p>Plate: ${data.listing.plate}</p>
+        `;
+
+        // Set complete link and PIN
+        const completeLink = document.getElementById('complete-link') as HTMLAnchorElement;
+        completeLink.href = `/complete/${data.listing.id}?pin=${data.pin}`;
+
+        document.getElementById('pin-display')!.textContent = data.pin;
         document.getElementById('success')!.hidden = false;
       } else {
-        document.getElementById('error-message')!.textContent = data.error || 'Failed to create listing';
+        document.getElementById('error-message')!.textContent = data.error || 'Failed to look up vehicle';
         document.getElementById('error')!.hidden = false;
       }
-    })
-    .catch(err => {
+    } catch (err) {
       document.getElementById('loading')!.hidden = true;
-      document.getElementById('error-message')!.textContent = 'Network error. Try again.';
+      document.getElementById('error-message')!.textContent = 'Network error. Please try again.';
       document.getElementById('error')!.hidden = false;
-    });
+    }
   }
 </script>
 
 <style>
   .status-box {
-    max-width: 600px;
-    margin: 3rem auto;
+    max-width: 500px;
+    margin: 2rem auto;
     padding: 2rem;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-    background: #000;
-    color: #0f0;
-    border: 2px solid #0f0;
-    text-align: center;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
   .status-box.success {
-    border-color: #0f0;
+    border: 2px solid #10b981;
   }
 
   .status-box.error {
-    border-color: #f00;
-    color: #f00;
+    border: 2px solid #ef4444;
   }
 
   h1 {
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 1rem 0;
     font-size: 1.5rem;
   }
 
   h2 {
-    margin: 0 0 0.5rem 0;
     font-size: 1rem;
-    color: #0ff;
+    color: #666;
+    margin: 0 0 0.5rem 0;
   }
 
   p {
     margin: 0.5rem 0;
-    color: #ccc;
-  }
-
-  pre {
-    background: #111;
-    padding: 1rem;
-    color: #0ff;
-    font-size: 0.8rem;
-    margin: 1rem 0;
-    text-align: left;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-all;
+    color: #444;
   }
 
   .section {
-    margin: 2rem 0;
+    margin: 1.5rem 0;
     padding-top: 1.5rem;
-    border-top: 1px solid #333;
+    border-top: 1px solid #eee;
   }
 
   .section:first-of-type {
@@ -159,31 +163,106 @@ const description = "AI agents: build URL with ?make=X&model=X&year=X&kms=X&pric
     border-top: none;
   }
 
-  .upload-btn {
-    display: inline-block;
-    background: #0f0;
-    color: #000;
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    font-weight: bold;
-    text-decoration: none;
-    margin: 1rem 0;
+  pre {
+    background: #f5f5f5;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    color: #0066ff;
   }
 
-  .upload-btn:hover {
-    background: #0c0;
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  .hint {
-    font-size: 0.75rem;
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
     color: #666;
   }
 
-  .hint a {
-    color: #0ff;
+  input {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #0066ff;
+  }
+
+  button {
+    padding: 0.75rem 1.5rem;
+    background: #0066ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #0052cc;
+  }
+
+  .car-details {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+  }
+
+  .car-details p {
+    margin: 0.25rem 0;
+  }
+
+  .next-step {
+    font-weight: 600;
+    margin-top: 1.5rem !important;
+  }
+
+  .complete-btn {
+    display: inline-block;
+    background: #10b981;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin: 0.5rem 0;
+  }
+
+  .complete-btn:hover {
+    background: #059669;
+  }
+
+  .pin-note {
+    margin-top: 1.5rem !important;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+
+  .pin-note strong {
+    font-family: monospace;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: #888;
   }
 
   a {
-    color: #0f0;
+    color: #0066ff;
   }
 </style>

@@ -1,0 +1,267 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const { id } = Astro.params;
+const pin = Astro.url.searchParams.get('pin');
+
+const { DB, R2 } = (Astro.locals as any).runtime.env;
+
+// Get the listing
+const listing = await DB.prepare(
+  'SELECT * FROM listings WHERE id = ?'
+).bind(id).first();
+
+if (!listing) {
+  return Astro.redirect('/sell?error=not-found');
+}
+
+// Verify PIN if provided in URL
+const pinValid = pin && listing.pin === pin;
+---
+
+<Layout title="Complete Your Listing" description="Add price and photo to finish listing your car">
+  <div class="complete-page">
+    <div class="car-summary">
+      <h1>{listing.year} {listing.make} {listing.model}</h1>
+      <p class="meta">
+        {listing.kms?.toLocaleString() || 'Unknown'} km
+        {listing.colour && ` · ${listing.colour}`}
+        {listing.plate && ` · ${listing.plate}`}
+      </p>
+    </div>
+
+    {listing.status === 'active' && listing.price > 0 ? (
+      <div class="already-complete">
+        <h2>This listing is already live!</h2>
+        <p><a href={`/cars/${listing.id}`}>View your listing</a></p>
+        <p class="hint">Need to edit? Go to <a href="/edit">garage.co.nz/edit</a></p>
+      </div>
+    ) : (
+      <form id="complete-form" class="complete-form">
+        <input type="hidden" name="id" value={id} />
+        <input type="hidden" id="pin-input" name="pin" value={pin || ''} />
+
+        {!pinValid && (
+          <label>
+            PIN (from your confirmation)
+            <input type="text" name="pin-entry" id="pin-entry" placeholder="1234" maxlength="4" required />
+          </label>
+        )}
+
+        <label>
+          Asking Price (NZD)
+          <input type="number" name="price" id="price" placeholder="15000" min="1" required />
+        </label>
+
+        <label>
+          Location
+          <select name="location" id="location" required>
+            <option value="">Select city...</option>
+            <option value="Auckland">Auckland</option>
+            <option value="Wellington">Wellington</option>
+            <option value="Christchurch">Christchurch</option>
+            <option value="Hamilton">Hamilton</option>
+            <option value="Tauranga">Tauranga</option>
+            <option value="Dunedin">Dunedin</option>
+            <option value="Palmerston North">Palmerston North</option>
+            <option value="Napier">Napier</option>
+            <option value="Rotorua">Rotorua</option>
+            <option value="New Plymouth">New Plymouth</option>
+            <option value="Whangarei">Whangarei</option>
+            <option value="Invercargill">Invercargill</option>
+            <option value="Nelson">Nelson</option>
+            <option value="Queenstown">Queenstown</option>
+          </select>
+        </label>
+
+        <label>
+          Photo
+          <input type="file" name="photo" id="photo" accept="image/*" required />
+          <span class="hint">Take a photo of the front/side of your car</span>
+        </label>
+
+        <button type="submit" id="submit-btn">Publish Listing</button>
+        <p id="status" class="status"></p>
+      </form>
+    )}
+  </div>
+</Layout>
+
+<script define:vars={{ id, pinValid }}>
+  const form = document.getElementById('complete-form');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Publishing...';
+    statusEl.textContent = '';
+
+    const formData = new FormData(form);
+
+    // Use PIN from URL if valid, otherwise from form
+    let pin = formData.get('pin');
+    if (!pin || pin === '') {
+      pin = formData.get('pin-entry');
+    }
+
+    const photo = formData.get('photo');
+
+    try {
+      // First, upload the photo
+      const photoFormData = new FormData();
+      photoFormData.append('photo', photo);
+      photoFormData.append('listingId', id);
+
+      const uploadResponse = await fetch('/api/upload-photo', {
+        method: 'POST',
+        body: photoFormData
+      });
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Photo upload failed');
+      }
+
+      // Then update the listing with price, location, and photo URL
+      const updateResponse = await fetch('/api/listings/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          pin,
+          price: parseInt(formData.get('price')),
+          location: formData.get('location'),
+          photoUrl: uploadResult.url
+        })
+      });
+
+      const updateResult = await updateResponse.json();
+
+      if (updateResult.success) {
+        window.location.href = `/cars/${id}?new=true`;
+      } else {
+        throw new Error(updateResult.error || 'Failed to update listing');
+      }
+
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.style.color = '#ef4444';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Publish Listing';
+    }
+  });
+</script>
+
+<style>
+  .complete-page {
+    max-width: 500px;
+    margin: 2rem auto;
+  }
+
+  .car-summary {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .car-summary h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+  }
+
+  .car-summary .meta {
+    margin: 0;
+    color: #666;
+  }
+
+  .complete-form {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+  }
+
+  input, select {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: #0066ff;
+  }
+
+  input[type="file"] {
+    padding: 0.5rem;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: normal;
+  }
+
+  button {
+    padding: 1rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+
+  button:hover:not(:disabled) {
+    background: #059669;
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .status {
+    text-align: center;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .already-complete {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+
+  .already-complete h2 {
+    color: #10b981;
+    margin: 0 0 1rem 0;
+  }
+
+  .already-complete a {
+    color: #0066ff;
+  }
+</style>

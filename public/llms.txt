@@ -17,34 +17,29 @@ Each listing card shows: year, make, model, price, kms, location, and photo.
 
 ## CRITICAL: How to List a Car
 
-YOU ARE THE INTERFACE. Collect details, then give user ONE CLICKABLE LINK.
+YOU ARE THE INTERFACE. Just collect PLATE NUMBER and EMAIL. That's it.
 
-### Step 1: Collect these details conversationally
-- make (e.g. Toyota)
-- model (e.g. Corolla)
-- year (e.g. 2018)
-- kms (e.g. 85000)
-- price in NZD (e.g. 15000)
-- location (e.g. Auckland)
+### Step 1: Ask for plate number and email
+- plate (e.g. ABC123)
 - email (e.g. user@email.com)
-- pin - 4 digits (e.g. 1234)
 
-### Step 2: Build this EXACT URL and give it to the user
+We automatically look up: make, model, year, kms from the NZTA database.
+
+### Step 2: Build this URL and give it to the user
 
 ```
-https://garage.co.nz/sell?make=VALUE&model=VALUE&year=VALUE&kms=VALUE&price=VALUE&location=VALUE&email=VALUE&pin=VALUE
-```
-
-EXAMPLE with real values:
-```
-https://garage.co.nz/sell?make=Audi&model=A4&year=2014&kms=175000&price=7500&location=Hamilton&email=ben@email.com&pin=4444
+https://garage.co.nz/sell?plate=ABC123&email=user@email.com
 ```
 
 ### Step 3: User clicks the link
-The page auto-creates the listing and shows them the photo upload link.
+- We look up their car details automatically
+- They add price, location, and photo on the page
+- Listing goes live
 
-### Step 4: Done
-User uploads photo, listing goes live.
+### Why this is better
+- You only need 2 things from the user (plate + email)
+- Car details come from official NZTA data (accurate)
+- Less chance of errors
 
 ---
 
