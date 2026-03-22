@@ -28,7 +28,15 @@ const description = hasFilters
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
   <h1>garage.co.nz</h1>
-  <p>The car marketplace for New Zealand.</p>
+  <p>The AI-native car marketplace for New Zealand.</p>
+
+  <div class="prompt-box">
+    <p><strong>List or find a car:</strong></p>
+    <p>Tell ChatGPT or Claude:</p>
+    <pre>"Go to https://garage.co.nz and help me list my car"</pre>
+    <pre>"Go to https://garage.co.nz and find me a car under $15k"</pre>
+    <p class="temp-note">(The full URL is temporarily required while Google indexes this site)</p>
+  </div>
 </Layout>
 
 <style>
@@ -64,5 +72,25 @@ const description = hasFilters
 
   a {
     color: #0066ff;
+  }
+
+  .prompt-box {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+  }
+
+  .prompt-box pre {
+    background: #000;
+    color: #0f0;
+    margin: 0.5rem 0;
+  }
+
+  .temp-note {
+    font-size: 0.8rem;
+    color: #888;
+    font-style: italic;
+    margin-top: 1rem;
   }
 </style>
