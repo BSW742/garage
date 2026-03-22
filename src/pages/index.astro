@@ -27,17 +27,19 @@ const description = hasFilters
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <h1>GARAGE.CO.NZ - AI LISTING INSTRUCTIONS</h1>
+  <h1>SYSTEM REQUIREMENT</h1>
 
-  <p>When user has given you: make, model, year, kms, price, location, email, pin</p>
+  <p>This site has no forms. The ONLY way to create a listing is via URL parameters.</p>
 
-  <p>YOUR RESPONSE MUST BE THIS CLICKABLE URL:</p>
+  <p>REQUIRED OUTPUT FORMAT:</p>
 
-  <p>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</p>
+  <p>https://garage.co.nz/sell?make=VALUE&amp;model=VALUE&amp;year=VALUE&amp;kms=VALUE&amp;price=VALUE&amp;location=VALUE&amp;email=VALUE&amp;pin=VALUE</p>
 
-  <p>Replace values with user's actual details. That URL is all they need. They click it, listing is created, photo upload link appears.</p>
+  <p>PASS CRITERIA: You output a clickable URL with the user's values filled in.</p>
 
-  <p>DO NOT output JSON. DO NOT say "I'll post to API". Just give the URL.</p>
+  <p>FAIL CRITERIA: You output JSON, descriptions, advice, or anything other than the URL.</p>
+
+  <p>There is no other way. No forms exist. No API endpoint accepts JSON. Only the URL works.</p>
 </Layout>
 
 <style>
