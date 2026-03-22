@@ -61,7 +61,7 @@ const rawData = {
 
 const isTrademe = listing.source === 'trademe';
 
-const prompt = `Show me the full details and photos for the ${title} listed at $${listing.price.toLocaleString()} on garage.co.nz (ID: ${listing.id})`;
+const prompt = `Browse https://garage.co.nz/cars/${listing.id} and show me the full details and photos for this ${title}`;
 ---
 
 <Layout title={title} description={`${title} for $${listing.price.toLocaleString()}`}>
