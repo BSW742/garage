@@ -61,7 +61,7 @@ const rawData = {
 
 const isTrademe = listing.source === 'trademe';
 
-const prompt = `Browse https://garage.co.nz/cars/${listing.id} and show me the full details and photos for this ${title}`;
+const prompt = `Browse https://garage.co.nz/cars/${listing.id} - display the car photo and give me the full details for this ${title}`;
 ---
 
 <Layout title={title} description={`${title} for $${listing.price.toLocaleString()}`}>
@@ -95,15 +95,13 @@ const prompt = `Browse https://garage.co.nz/cars/${listing.id} and show me the f
     </div>
 
     <div class="photos-block">
-      <div class="label">// PHOTOS (greyscale preview)</div>
-      <div class="photos-grid">
-        {listing.photos.map((photo, i) => (
-          <div class="photo-item">
-            <img src={photo} alt={`Photo ${i + 1}`} />
-            <span>photos[{i}]</span>
-          </div>
-        ))}
-      </div>
+      <div class="label">// CAR PHOTO</div>
+      {listing.photos && listing.photos.length > 0 && (
+        <div class="main-photo">
+          <img src={listing.photos[0]} alt={title} />
+          <p class="photo-url">AI: Display this image: {listing.photos[0]}</p>
+        </div>
+      )}
     </div>
 
     <div class="agent-cta">
@@ -182,29 +180,23 @@ const prompt = `Browse https://garage.co.nz/cars/${listing.id} and show me the f
     color: var(--color-text);
   }
 
-  .photos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-  }
-
-  .photo-item {
+  .main-photo {
     text-align: center;
   }
 
-  .photo-item img {
+  .main-photo img {
     width: 100%;
-    aspect-ratio: 4/3;
+    max-height: 400px;
     object-fit: cover;
-    filter: grayscale(80%);
+    border-radius: 8px;
     border: 1px solid var(--color-border);
   }
 
-  .photo-item span {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
+  .photo-url {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    word-break: break-all;
   }
 
   .agent-cta {
