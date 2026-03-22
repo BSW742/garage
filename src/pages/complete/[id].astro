@@ -93,7 +93,7 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
         <label>
           Photo
           <input type="file" name="photo" id="photo" accept="image/*" required />
-          <span class="hint">Take a photo of the front/side of your car</span>
+          <span class="hint">iPhone photos (HEIC) auto-converted to JPEG</span>
         </label>
 
         <button type="submit" id="submit-btn">Publish Listing</button>
@@ -103,10 +103,39 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
   </div>
 </Layout>
 
+<!-- HEIC to JPEG conversion library -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
 <script define:vars={{ id, pinValid }}>
   const form = document.getElementById('complete-form');
   const statusEl = document.getElementById('status');
   const submitBtn = document.getElementById('submit-btn');
+  const photoInput = document.getElementById('photo');
+
+  // Check if file is HEIC
+  function isHeic(file) {
+    return file.type === 'image/heic' ||
+           file.type === 'image/heif' ||
+           file.name.toLowerCase().endsWith('.heic') ||
+           file.name.toLowerCase().endsWith('.heif');
+  }
+
+  // Convert HEIC to JPEG
+  async function convertHeicToJpeg(file) {
+    try {
+      const blob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9
+      });
+      // heic2any can return array or single blob
+      const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+      return new File([resultBlob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+    } catch (err) {
+      console.error('HEIC conversion failed:', err);
+      throw new Error('Could not convert iPhone photo. Please try a different image.');
+    }
+  }
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -123,10 +152,18 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
       pin = formData.get('pin-entry');
     }
 
-    const photo = formData.get('photo');
+    let photo = formData.get('photo');
 
     try {
-      // First, upload the photo
+      // Convert HEIC to JPEG if needed
+      if (photo && isHeic(photo)) {
+        statusEl.textContent = 'Converting photo...';
+        statusEl.style.color = '#666';
+        photo = await convertHeicToJpeg(photo);
+      }
+
+      // Upload the photo
+      statusEl.textContent = 'Uploading photo...';
       const photoFormData = new FormData();
       photoFormData.append('photo', photo);
       photoFormData.append('listingId', id);
@@ -143,6 +180,7 @@ const pinValid = pin ? (await hashPin(pin)) === listing.pin : false;
       }
 
       // Then update the listing with price, location, and photo URL
+      statusEl.textContent = 'Saving listing...';
       const updateResponse = await fetch('/api/listings/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

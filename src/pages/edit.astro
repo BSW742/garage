@@ -46,8 +46,8 @@ import Layout from '../components/Layout.astro';
             <label for="change-photo" class="btn btn-secondary btn-small">
               Change Photo
             </label>
-            <input type="file" id="change-photo" accept="image/jpeg,image/png,image/webp" hidden />
-            <span class="photo-hint">JPG, PNG or WebP only</span>
+            <input type="file" id="change-photo" accept="image/*" hidden />
+            <span class="photo-hint">iPhone photos (HEIC) auto-converted</span>
           </div>
         </div>
 
@@ -107,7 +107,34 @@ import Layout from '../components/Layout.astro';
   </section>
 </Layout>
 
+<!-- HEIC to JPEG conversion library -->
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
 <script>
+  // Check if file is HEIC
+  function isHeic(file: File): boolean {
+    return file.type === 'image/heic' ||
+           file.type === 'image/heif' ||
+           file.name.toLowerCase().endsWith('.heic') ||
+           file.name.toLowerCase().endsWith('.heif');
+  }
+
+  // Convert HEIC to JPEG
+  async function convertHeicToJpeg(file: File): Promise<File> {
+    try {
+      const blob = await (window as any).heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.9
+      });
+      const resultBlob = Array.isArray(blob) ? blob[0] : blob;
+      return new File([resultBlob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+    } catch (err) {
+      console.error('HEIC conversion failed:', err);
+      throw new Error('Could not convert iPhone photo. Please try a different image.');
+    }
+  }
+
   const pinForm = document.getElementById('pin-form');
   const editForm = document.getElementById('edit-form');
   const findBtn = document.getElementById('find-btn');
@@ -246,9 +273,27 @@ import Layout from '../components/Layout.astro';
     let photoUrl = null;
 
     if (photoInput.files?.[0]) {
-      // Upload photo first
+      let photoFile: File = photoInput.files[0];
+
+      // Convert HEIC to JPEG if needed
+      if (isHeic(photoFile)) {
+        statusEl.textContent = 'Converting photo...';
+        statusEl.className = 'status';
+        try {
+          photoFile = await convertHeicToJpeg(photoFile);
+        } catch (err: any) {
+          statusEl.textContent = err.message || 'Photo conversion failed';
+          statusEl.className = 'status error';
+          saveBtn.removeAttribute('disabled');
+          saveBtn.textContent = 'Save Changes';
+          return;
+        }
+      }
+
+      // Upload photo
+      statusEl.textContent = 'Uploading photo...';
       const formData = new FormData();
-      formData.append('photo', photoInput.files[0]);
+      formData.append('photo', photoFile);
       formData.append('listingId', currentListing.id);
 
       try {
