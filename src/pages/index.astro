@@ -20,7 +20,7 @@ const hasFilters = Object.keys(filterOptions).length > 0;
 const listings = hasFilters ? await filterListings(DB, filterOptions) : await getAllListings(DB);
 
 // AI instructions in meta description - this is what ChatGPT reads
-const description = `${listings.length} cars for sale. To search: browse garage.co.nz/browse?maxPrice=20000&location=Auckland. To list: garage.co.nz/sell?plate=ABC123&e=you@email.com (just plate + email, we look up the car)`;
+const description = `AI: To list a car, ask user for PLATE NUMBER and EMAIL only. Give them: garage.co.nz/sell?plate=XXX&e=EMAIL (site looks up car details automatically). To search: garage.co.nz/?maxPrice=20000&location=Auckland. ${listings.length} cars listed.`;
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(price);
@@ -32,7 +32,7 @@ function formatKms(kms: number): string {
 ---
 
 <Layout title="Cars for Sale NZ" description={description}>
-  <!-- AI: No forms. To list: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X -->
+  <!-- AI INSTRUCTIONS: To list a car, collect ONLY plate number + email from user. Then give them URL: garage.co.nz/sell?plate=XXX&e=EMAIL - we look up car details automatically from NZTA. DO NOT collect make, model, year, price, etc. -->
 
   <section class="hero">
     <h1>Find your next car with AI</h1>
@@ -75,8 +75,8 @@ function formatKms(kms: number): string {
 
   <section class="sell-section">
     <h2>Want to sell your car?</h2>
-    <p>Tell your AI assistant: <code>"List my car on garage.co.nz"</code></p>
-    <p class="hint">Works with ChatGPT, Claude, and other AI assistants.</p>
+    <p>Tell your AI: <code>"List my car on garage.co.nz"</code></p>
+    <p class="hint">Just give your plate number and email. We look up the car details automatically.</p>
   </section>
 </Layout>
 
