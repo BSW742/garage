@@ -1,0 +1,283 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const db = Astro.locals.runtime?.env?.DB;
+let leads: any[] = [];
+let error = '';
+
+if (db) {
+  try {
+    const result = await db.prepare(`
+      SELECT * FROM leads
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).all();
+    leads = result.results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+
+const stats = {
+  total: leads.length,
+  converted: leads.filter(l => l.converted).length,
+  avgScore: leads.length ? Math.round(leads.reduce((s, l) => s + l.score, 0) / leads.length) : 0,
+  red: leads.filter(l => l.score < 40).length,
+  amber: leads.filter(l => l.score >= 40 && l.score < 70).length,
+  green: leads.filter(l => l.score >= 70).length,
+};
+---
+
+<Layout title="Leads Admin">
+  <div class="admin">
+    <h1>Audit Leads</h1>
+
+    {error && <div class="error">{error}</div>}
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">{stats.total}</span>
+        <span class="stat-label">Total Scans</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{stats.converted}</span>
+        <span class="stat-label">Converted</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{stats.avgScore}</span>
+        <span class="stat-label">Avg Score</span>
+      </div>
+      <div class="stat red">
+        <span class="stat-num">{stats.red}</span>
+        <span class="stat-label">Red (0-39)</span>
+      </div>
+      <div class="stat amber">
+        <span class="stat-num">{stats.amber}</span>
+        <span class="stat-label">Amber (40-69)</span>
+      </div>
+      <div class="stat green">
+        <span class="stat-num">{stats.green}</span>
+        <span class="stat-label">Green (70+)</span>
+      </div>
+    </div>
+
+    <div class="filters">
+      <button class="filter active" data-filter="all">All</button>
+      <button class="filter" data-filter="converted">Converted Only</button>
+      <button class="filter" data-filter="red">Red Only</button>
+      <button class="filter" data-filter="amber">Amber Only</button>
+    </div>
+
+    <table class="leads-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Domain</th>
+          <th>Score</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Variant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {leads.map(lead => (
+          <tr
+            class={`lead-row ${lead.converted ? 'converted' : ''}`}
+            data-score={lead.score}
+            data-converted={lead.converted}
+          >
+            <td class="date">{new Date(lead.created_at).toLocaleDateString()}</td>
+            <td class="domain">
+              <a href={lead.url} target="_blank">{lead.domain}</a>
+            </td>
+            <td>
+              <span class={`score ${lead.score < 40 ? 'red' : lead.score < 70 ? 'amber' : 'green'}`}>
+                {lead.score}
+              </span>
+            </td>
+            <td>{lead.name || '-'}</td>
+            <td>
+              {lead.email ? (
+                <a href={`mailto:${lead.email}`}>{lead.email}</a>
+              ) : '-'}
+            </td>
+            <td class="variant">{lead.ab_variant}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    {leads.length === 0 && !error && (
+      <p class="empty">No leads yet. Go scan some sites!</p>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .admin {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    margin: 0 0 2rem 0;
+  }
+
+  .error {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .stat-num {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .stat.red .stat-num { color: #dc2626; }
+  .stat.amber .stat-num { color: #d97706; }
+  .stat.green .stat-num { color: #16a34a; }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .filter {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .filter:hover {
+    background: #f9fafb;
+  }
+
+  .filter.active {
+    background: #0066ff;
+    color: white;
+    border-color: #0066ff;
+  }
+
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .leads-table th,
+  .leads-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .leads-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .leads-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .lead-row.converted {
+    background: #f0fdf4;
+  }
+
+  .domain a {
+    color: #0066ff;
+    text-decoration: none;
+  }
+
+  .domain a:hover {
+    text-decoration: underline;
+  }
+
+  .score {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .score.red { background: #fee2e2; color: #dc2626; }
+  .score.amber { background: #fef3c7; color: #d97706; }
+  .score.green { background: #d1fae5; color: #16a34a; }
+
+  .date, .variant {
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  .empty {
+    text-align: center;
+    color: #888;
+    padding: 3rem;
+  }
+
+  .lead-row.hidden {
+    display: none;
+  }
+</style>
+
+<script>
+  const filters = document.querySelectorAll('.filter');
+  const rows = document.querySelectorAll('.lead-row');
+
+  filters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filters.forEach(f => f.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.dataset.filter;
+
+      rows.forEach(row => {
+        const score = parseInt(row.dataset.score || '0');
+        const converted = row.dataset.converted === '1';
+
+        let show = true;
+        if (filter === 'converted') show = converted;
+        if (filter === 'red') show = score < 40;
+        if (filter === 'amber') show = score >= 40 && score < 70;
+
+        row.classList.toggle('hidden', !show);
+      });
+    });
+  });
+</script>

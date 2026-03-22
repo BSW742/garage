@@ -1,0 +1,1149 @@
+---
+// Outreach - Lead Generation (ported from Clearmark)
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outreach | Garage Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:global>
+      :root {
+        --bg: #0f172a;
+        --bg-card: #1e293b;
+        --bg-input: #334155;
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --border: #475569;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .app {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .logo h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .logo span { color: var(--primary); }
+
+      .nav-links {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .nav-links a {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      .nav-links a:hover { color: var(--text); }
+
+      .stats {
+        display: flex;
+        gap: 2rem;
+      }
+
+      .stat { text-align: center; }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      .search-section {
+        background: var(--bg-card);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border);
+      }
+
+      .search-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 1rem;
+        align-items: end;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-group label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+
+      .form-group input {
+        padding: 0.75rem 1rem;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 1rem;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .form-group input::placeholder { color: var(--text-muted); }
+
+      .search-btn {
+        padding: 0.75rem 2rem;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .search-btn:hover { background: var(--primary-hover); }
+      .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+      .results-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+      }
+
+      .results-count {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .export-btn {
+        padding: 0.5rem 1rem;
+        background: var(--success);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .export-btn:hover { filter: brightness(1.1); }
+
+      .results-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .lead-card {
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: all 0.15s;
+      }
+
+      .lead-card:hover {
+        background: #253348;
+        border-color: var(--primary);
+      }
+
+      .lead-card.saved { border-left: 3px solid var(--success); }
+
+      .lead-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        background: var(--bg-input);
+      }
+
+      .lead-content {
+        padding: 0.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+      }
+
+      .lead-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .lead-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .lead-rating {
+        background: var(--warning);
+        color: #000;
+        padding: 0.15rem 0.4rem;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .lead-type {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+      }
+
+      .lead-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .lead-detail {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .lead-detail a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+
+      .lead-detail a:hover { text-decoration: underline; }
+
+      .lead-hours {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 3px;
+        font-weight: 600;
+      }
+
+      .lead-hours.open { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+      .lead-hours.closed { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+      .lead-actions {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+      }
+
+      .lead-btn {
+        padding: 0.3rem 0.6rem;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        text-decoration: none;
+      }
+
+      .lead-btn:hover {
+        background: var(--bg-input);
+        border-color: var(--primary);
+        color: var(--text);
+      }
+
+      .lead-btn.save-btn.saved {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+      }
+
+      .lead-btn.find-btn {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+      }
+
+      .lead-btn.find-btn:hover { background: var(--primary-hover); }
+
+      .lead-btn.find-btn.loading {
+        pointer-events: none;
+        background: var(--bg-input);
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .lead-delete {
+        display: flex;
+        align-items: center;
+        padding: 0 0.75rem;
+        border-left: 1px solid var(--border);
+      }
+
+      .lead-delete button {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.15s;
+      }
+
+      .lead-delete button:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+      }
+
+      .contact-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.4rem;
+        padding: 0.4rem 0.6rem;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 4px;
+        font-size: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .contact-info .contact-name { font-weight: 600; color: var(--text); }
+      .contact-info .contact-role { color: var(--text-muted); }
+      .contact-info .contact-email { color: var(--primary); margin-left: auto; }
+      .contact-info .contact-email a { color: var(--primary); text-decoration: none; }
+      .contact-info .contact-email a:hover { text-decoration: underline; }
+
+      .email-candidates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+      }
+
+      .email-candidate {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .email-candidate:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+
+      .email-candidate .pattern { color: var(--text-muted); font-size: 0.6rem; }
+      .email-candidate:hover .pattern { color: rgba(255,255,255,0.7); }
+
+      .selected-email {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .selected-email a { color: var(--success); text-decoration: none; font-weight: 500; }
+      .selected-email a:hover { text-decoration: underline; }
+      .selected-email .label { color: var(--text-muted); font-size: 0.65rem; }
+
+      .find-email-btn {
+        background: var(--warning);
+        color: #000;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .find-email-btn:hover { filter: brightness(1.1); }
+
+      .email-compose-btn {
+        background: #22c55e !important;
+        color: white !important;
+        font-weight: 600;
+        margin-left: auto;
+      }
+
+      .email-compose-btn:hover { background: #16a34a !important; }
+      .email-compose-btn.emailed { background: #6366f1 !important; }
+
+      .audit-btn {
+        background: #6366f1 !important;
+        color: white !important;
+      }
+
+      .audit-btn:hover { background: #4f46e5 !important; }
+
+      .audit-popup {
+        position: absolute;
+        z-index: 1000;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        width: 320px;
+        font-size: 0.85rem;
+        overflow: hidden;
+      }
+
+      .audit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .audit-header button {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        cursor: pointer;
+      }
+
+      .audit-body { padding: 0.75rem 1rem; }
+
+      .audit-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .audit-row:last-child { border-bottom: none; }
+      .audit-row.audit-warn { color: #f59e0b; }
+      .audit-row.audit-ok { color: #22c55e; }
+
+      .email-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+      }
+
+      .email-modal {
+        background: var(--bg-card);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+      }
+
+      .email-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .email-modal-header h3 { margin: 0; font-size: 1.1rem; }
+
+      .email-modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+
+      .email-modal-body { padding: 1.25rem; }
+
+      .email-modal-to {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: var(--bg-input);
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .email-modal-to label { color: var(--text-muted); font-weight: 500; }
+
+      .email-modal-field { margin-bottom: 1rem; }
+
+      .email-modal-field label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      .email-modal-field input,
+      .email-modal-field textarea {
+        width: 100%;
+        padding: 0.75rem;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 0.95rem;
+        font-family: inherit;
+        resize: vertical;
+      }
+
+      .email-modal-field input:focus,
+      .email-modal-field textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+      }
+
+      .email-modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--border);
+        background: var(--bg-input);
+      }
+
+      .email-modal-emailed {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .email-modal-emailed input {
+        width: 18px;
+        height: 18px;
+        accent-color: #22c55e;
+        cursor: pointer;
+      }
+
+      .email-modal-buttons { display: flex; gap: 0.75rem; }
+
+      .email-modal-cancel {
+        padding: 0.6rem 1.25rem;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      .email-modal-ready {
+        padding: 0.6rem 1.5rem;
+        background: #22c55e;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+
+      .email-modal-ready:hover { background: #16a34a; }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+      }
+
+      .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; }
+      .empty-state h3 { font-size: 1.25rem; color: var(--text); margin-bottom: 0.5rem; }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      @media (max-width: 768px) {
+        .search-form { grid-template-columns: 1fr; }
+        .lead-card { grid-template-columns: 80px 1fr; }
+        .lead-image { width: 80px; height: 80px; }
+        .header { flex-direction: column; gap: 1rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="logo">
+          <h1>Garage <span>Outreach</span></h1>
+        </div>
+        <div class="nav-links">
+          <a href="/admin/leads">Leads</a>
+          <a href="/">Home</a>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="total-results">0</div>
+            <div class="stat-label">Results</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="saved-count">0</div>
+            <div class="stat-label">Saved</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="emailed-count">0</div>
+            <div class="stat-label">Emailed</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="search-section">
+        <form class="search-form" id="search-form">
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="location" placeholder="e.g. Matamata, New Zealand" required />
+          </div>
+          <div class="form-group">
+            <label>Industry / Keywords</label>
+            <input type="text" id="keywords" placeholder="e.g. plumbers, restaurants, mechanics" required />
+          </div>
+          <button type="submit" class="search-btn" id="search-btn">
+            Search
+          </button>
+        </form>
+      </section>
+
+      <div id="results-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">🎯</div>
+          <h3>Find Businesses</h3>
+          <p>Enter a location and industry to discover leads</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const WORKER_API = 'https://loom-upload.ben-6a6.workers.dev';
+      const GOOGLE_API_KEY = 'AIzaSyDFnmXV9jmgHEOAx0U_CSu4D1KSJJWpPWI';
+      const N8N_WEBHOOK = 'https://n8n.tui.bridgepoint.cloud/webhook/7203731c-bba3-4879-98c3-32cdf91e9997';
+      const STORAGE_KEY = 'garage-outreach-saved';
+      const CONTACTS_KEY = 'garage-outreach-contacts';
+      const EMAILED_KEY = 'garage-outreach-emailed';
+
+      interface Place {
+        place_id: string;
+        name: string;
+        formatted_address: string;
+        formatted_phone_number?: string;
+        international_phone_number?: string;
+        website?: string;
+        rating?: number;
+        user_ratings_total?: number;
+        types?: string[];
+        opening_hours?: { open_now?: boolean };
+        photos?: { photo_reference: string }[];
+        geometry?: { location: { lat: number; lng: number } };
+      }
+
+      interface ContactInfo {
+        name: string;
+        role: string;
+        email: string;
+        selectedEmail?: string;
+        emailCandidates?: { email: string; pattern: string }[];
+      }
+
+      let results: Place[] = [];
+      let savedLeads: Place[] = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      let contactData: Record<string, ContactInfo> = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '{}');
+      let emailedLeads: string[] = JSON.parse(localStorage.getItem(EMAILED_KEY) || '[]');
+
+      function updateStats() {
+        document.getElementById('total-results')!.textContent = results.length.toString();
+        document.getElementById('saved-count')!.textContent = savedLeads.length.toString();
+        document.getElementById('emailed-count')!.textContent = emailedLeads.length.toString();
+      }
+
+      function getPhotoUrl(photoRef: string): string {
+        return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${GOOGLE_API_KEY}`;
+      }
+
+      function isSaved(placeId: string): boolean {
+        return savedLeads.some(l => l.place_id === placeId);
+      }
+
+      (window as any).handleDelete = function(placeId: string) {
+        results = results.filter(p => p.place_id !== placeId);
+        delete contactData[placeId];
+        localStorage.setItem(CONTACTS_KEY, JSON.stringify(contactData));
+        renderResults();
+        updateStats();
+      };
+
+      (window as any).handleFind = async function(placeId: string, btn: HTMLButtonElement) {
+        btn.textContent = '...';
+        btn.classList.add('loading');
+        const place = results.find(p => p.place_id === placeId);
+        if (!place) { btn.textContent = 'Err'; return; }
+
+        try {
+          const domain = place.website ? new URL(place.website).hostname.replace(/^www\./, '') : null;
+          const types = place.types?.slice(0, 2).map(t => t.replace(/_/g, ' ')).join(', ') || '';
+
+          const response = await fetch(N8N_WEBHOOK, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic bjhuOkVfUlRGckZKISpqZS1Bd1paYk5FMlo0ckh3dVY='
+            },
+            body: JSON.stringify({
+              company_name: place.name,
+              website: domain || place.name.toLowerCase().replace(/\s+/g, ''),
+              industry: types,
+              email_address: ''
+            })
+          });
+
+          const rawData = await response.json();
+          const data = rawData.output || rawData;
+
+          if (data['Contact Name'] || data.email) {
+            contactData[placeId] = {
+              name: data['Contact Name'] || '',
+              role: data['Contact Role'] || '',
+              email: data.email || ''
+            };
+            localStorage.setItem(CONTACTS_KEY, JSON.stringify(contactData));
+            renderResults();
+          } else {
+            btn.textContent = 'None';
+            setTimeout(() => { btn.textContent = 'Find'; btn.classList.remove('loading'); }, 2000);
+          }
+        } catch (err) {
+          console.error(err);
+          btn.textContent = 'Err';
+          setTimeout(() => { btn.textContent = 'Find'; btn.classList.remove('loading'); }, 2000);
+        }
+      };
+
+      (window as any).handleFindEmail = async function(placeId: string, btn: HTMLButtonElement) {
+        btn.textContent = '...';
+        const place = results.find(p => p.place_id === placeId);
+        const contact = contactData[placeId];
+        if (!place?.website || !contact?.name) {
+          btn.textContent = 'N/A';
+          setTimeout(() => { btn.textContent = 'Find'; }, 2000);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('type', 'scrape-emails');
+          formData.append('url', place.website);
+          formData.append('contact_name', contact.name);
+
+          const response = await fetch(WORKER_API, { method: 'POST', body: formData });
+          const data = await response.json();
+
+          if (data.candidates?.length > 0) {
+            contactData[placeId] = { ...contact, emailCandidates: data.candidates };
+            localStorage.setItem(CONTACTS_KEY, JSON.stringify(contactData));
+            renderResults();
+          } else {
+            btn.textContent = 'None';
+            setTimeout(() => { btn.textContent = 'Find'; }, 2000);
+          }
+        } catch (err) {
+          btn.textContent = 'Err';
+          setTimeout(() => { btn.textContent = 'Find'; }, 2000);
+        }
+      };
+
+      (window as any).handleSelectEmail = function(placeId: string, email: string) {
+        const contact = contactData[placeId];
+        if (contact) {
+          contactData[placeId] = { ...contact, selectedEmail: email, emailCandidates: undefined };
+          localStorage.setItem(CONTACTS_KEY, JSON.stringify(contactData));
+          renderResults();
+        }
+      };
+
+      (window as any).handleAudit = async function(placeId: string, btn: HTMLButtonElement) {
+        btn.textContent = '...';
+        const place = results.find(p => p.place_id === placeId);
+        if (!place?.website) {
+          btn.textContent = 'N/A';
+          setTimeout(() => { btn.textContent = 'Audit'; }, 2000);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('type', 'site-audit');
+          formData.append('url', place.website);
+
+          const response = await fetch(WORKER_API, { method: 'POST', body: formData });
+          const data = await response.json();
+
+          if (data.error) {
+            btn.textContent = 'Err';
+            setTimeout(() => { btn.textContent = 'Audit'; }, 2000);
+            return;
+          }
+
+          const popup = document.createElement('div');
+          popup.className = 'audit-popup';
+          popup.innerHTML = `
+            <div class="audit-header">
+              <strong>Site Audit: ${data.domain}</strong>
+              <button onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+            <div class="audit-body">
+              <div class="audit-row"><span>Content:</span><span>${data.contentLevel?.toUpperCase()}</span></div>
+              <div class="audit-row"><span>Pages:</span><span>${data.pageCount ?? '~' + data.internalLinks}</span></div>
+              <div class="audit-row"><span>Images:</span><span>${data.imageCount}</span></div>
+              <div class="audit-row"><span>Load Time:</span><span>${data.loadTime}ms</span></div>
+              <div class="audit-row ${data.brokenLinks?.length ? 'audit-warn' : 'audit-ok'}">
+                <span>Broken Links:</span><span>${data.brokenLinks?.length || 0}</span>
+              </div>
+              <div class="audit-row"><span>Sitemap:</span><span>${data.hasSitemap ? 'Yes' : 'No'}</span></div>
+            </div>
+          `;
+          const rect = btn.getBoundingClientRect();
+          popup.style.top = (rect.bottom + window.scrollY + 5) + 'px';
+          popup.style.left = Math.max(10, rect.left - 150) + 'px';
+          document.body.appendChild(popup);
+          btn.textContent = 'Audit';
+          setTimeout(() => popup.remove(), 15000);
+        } catch (err) {
+          btn.textContent = 'Err';
+          setTimeout(() => { btn.textContent = 'Audit'; }, 2000);
+        }
+      };
+
+      (window as any).handleComposeEmail = function(placeId: string) {
+        const place = results.find(p => p.place_id === placeId);
+        const contact = contactData[placeId];
+        if (!place || !contact) return;
+
+        const email = contact.selectedEmail || contact.email || '';
+        const name = contact.name || place.name;
+        const isEmailed = emailedLeads.includes(placeId);
+
+        const modal = document.createElement('div');
+        modal.className = 'email-modal-overlay';
+        modal.innerHTML = `
+          <div class="email-modal">
+            <div class="email-modal-header">
+              <h3>Compose Email</h3>
+              <button class="email-modal-close" onclick="this.closest('.email-modal-overlay').remove()">×</button>
+            </div>
+            <div class="email-modal-body">
+              <div class="email-modal-to">
+                <label>To:</label>
+                <span>${name} &lt;${email}&gt;</span>
+              </div>
+              <div class="email-modal-field">
+                <label>Subject:</label>
+                <input type="text" id="email-subject" placeholder="Enter subject...">
+              </div>
+              <div class="email-modal-field">
+                <label>Message:</label>
+                <textarea id="email-body" rows="8" placeholder="Write your message..."></textarea>
+              </div>
+            </div>
+            <div class="email-modal-footer">
+              <label class="email-modal-emailed">
+                <input type="checkbox" id="email-mark-sent" ${isEmailed ? 'checked' : ''}>
+                <span>Mark as emailed</span>
+              </label>
+              <div class="email-modal-buttons">
+                <button class="email-modal-cancel" onclick="this.closest('.email-modal-overlay').remove()">Cancel</button>
+                <button class="email-modal-ready" onclick="window.handleEmailReady('${placeId}', '${email}')">Ready</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      };
+
+      (window as any).handleEmailReady = function(placeId: string, email: string) {
+        const subject = (document.getElementById('email-subject') as HTMLInputElement)?.value || '';
+        const body = (document.getElementById('email-body') as HTMLTextAreaElement)?.value || '';
+        const markAsSent = (document.getElementById('email-mark-sent') as HTMLInputElement)?.checked;
+
+        if (markAsSent && !emailedLeads.includes(placeId)) {
+          emailedLeads.push(placeId);
+        } else if (!markAsSent) {
+          emailedLeads = emailedLeads.filter(id => id !== placeId);
+        }
+        localStorage.setItem(EMAILED_KEY, JSON.stringify(emailedLeads));
+        updateStats();
+        renderResults();
+
+        window.open(`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+        document.querySelector('.email-modal-overlay')?.remove();
+      };
+
+      function toggleSave(place: Place) {
+        if (isSaved(place.place_id)) {
+          savedLeads = savedLeads.filter(l => l.place_id !== place.place_id);
+        } else {
+          savedLeads.push(place);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedLeads));
+        updateStats();
+        renderResults();
+      }
+
+      function renderResults() {
+        const container = document.getElementById('results-container')!;
+
+        if (results.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">🎯</div>
+              <h3>Find Businesses</h3>
+              <p>Enter a location and industry to discover leads</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="results-header">
+            <span class="results-count">${results.length} businesses found</span>
+            <button class="export-btn" id="export-all">Export CSV</button>
+          </div>
+          <div class="results-grid">
+            ${results.map(place => {
+              const saved = isSaved(place.place_id);
+              const contact = contactData[place.place_id];
+              const lat = place.geometry?.location?.lat;
+              const lng = place.geometry?.location?.lng;
+              const mapUrl = lat && lng
+                ? `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=120x120&maptype=satellite&markers=color:red%7C${lat},${lng}&key=${GOOGLE_API_KEY}`
+                : null;
+              const photoUrl = place.photos?.[0]?.photo_reference
+                ? getPhotoUrl(place.photos[0].photo_reference)
+                : mapUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect fill="%231e293b" width="120" height="120"/></svg>';
+              const types = place.types?.slice(0, 2).map(t => t.replace(/_/g, ' ')).join(' · ') || 'Business';
+              const isOpen = place.opening_hours?.open_now;
+
+              return `
+                <div class="lead-card ${saved ? 'saved' : ''}">
+                  <img class="lead-image" src="${photoUrl}" alt="${place.name}" />
+                  <div class="lead-content">
+                    <div class="lead-header">
+                      <span class="lead-name">${place.name}</span>
+                      ${place.rating ? `<span class="lead-rating">★ ${place.rating}</span>` : ''}
+                      ${place.opening_hours !== undefined ? `<span class="lead-hours ${isOpen ? 'open' : 'closed'}">${isOpen ? 'Open' : 'Closed'}</span>` : ''}
+                    </div>
+                    <div class="lead-type">${types}</div>
+                    <div class="lead-details">
+                      <span class="lead-detail">📍 ${place.formatted_address.split(',').slice(0,2).join(',')}</span>
+                      ${place.formatted_phone_number ? `<span class="lead-detail">📞 <a href="tel:${place.formatted_phone_number}">${place.formatted_phone_number}</a></span>` : ''}
+                      ${place.website ? `<span class="lead-detail">🌐 <a href="${place.website}" target="_blank">${new URL(place.website).hostname}</a></span>` : ''}
+                    </div>
+                    ${contact ? `
+                      <div class="contact-info">
+                        <span class="contact-name">👤 ${contact.name}</span>
+                        ${contact.role ? `<span class="contact-role">${contact.role}</span>` : ''}
+                        ${contact.email ? `<span class="contact-email"><a href="mailto:${contact.email}">${contact.email}</a></span>` : ''}
+                        ${contact.selectedEmail ? `<span class="selected-email"><span class="label">Personal:</span> <a href="mailto:${contact.selectedEmail}">${contact.selectedEmail}</a></span>` : ''}
+                        ${!contact.selectedEmail && !contact.emailCandidates && contact.name && place.website ? `<button class="find-email-btn" onclick="window.handleFindEmail('${place.place_id}', this)">Find Email</button>` : ''}
+                      </div>
+                      ${contact.emailCandidates?.length ? `
+                        <div class="email-candidates">
+                          ${contact.emailCandidates.map(c => `<span class="email-candidate" onclick="window.handleSelectEmail('${place.place_id}', '${c.email}')">${c.email} <span class="pattern">${c.pattern}</span></span>`).join('')}
+                        </div>
+                      ` : ''}
+                    ` : ''}
+                    <div class="lead-actions">
+                      <button class="lead-btn save-btn ${saved ? 'saved' : ''}" onclick="window.toggleSave('${place.place_id}')">${saved ? '✓' : '+'}</button>
+                      ${!contact ? `<button class="lead-btn find-btn" onclick="window.handleFind('${place.place_id}', this)">Find Contact</button>` : ''}
+                      ${place.formatted_phone_number ? `<a href="tel:${place.formatted_phone_number}" class="lead-btn">Call</a>` : ''}
+                      ${place.website ? `<a href="${place.website}" target="_blank" class="lead-btn">Web</a>` : ''}
+                      ${place.website ? `<button class="lead-btn audit-btn" onclick="window.handleAudit('${place.place_id}', this)">Audit</button>` : ''}
+                      ${(contact?.selectedEmail || contact?.email) ? `<button class="lead-btn email-compose-btn ${emailedLeads.includes(place.place_id) ? 'emailed' : ''}" onclick="window.handleComposeEmail('${place.place_id}')">${emailedLeads.includes(place.place_id) ? '✓ Emailed' : 'Email'}</button>` : ''}
+                    </div>
+                  </div>
+                  <div class="lead-delete">
+                    <button onclick="window.handleDelete('${place.place_id}')">×</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        document.getElementById('export-all')?.addEventListener('click', () => exportToCsv(results));
+      }
+
+      (window as any).toggleSave = function(placeId: string) {
+        const place = results.find(p => p.place_id === placeId);
+        if (place) toggleSave(place);
+      };
+
+      function exportToCsv(data: Place[]) {
+        const headers = ['Name', 'Address', 'Phone', 'Website', 'Rating', 'Contact', 'Email'];
+        const rows = data.map(p => {
+          const contact = contactData[p.place_id];
+          return [
+            p.name,
+            p.formatted_address,
+            p.formatted_phone_number || '',
+            p.website || '',
+            p.rating?.toString() || '',
+            contact?.name || '',
+            contact?.selectedEmail || contact?.email || ''
+          ];
+        });
+
+        const csv = [headers, ...rows].map(row =>
+          row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')
+        ).join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `garage-outreach-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+      }
+
+      async function searchPlaces(location: string, keywords: string) {
+        const btn = document.getElementById('search-btn')!;
+        btn.innerHTML = '<span class="loading-spinner"></span> Searching...';
+
+        try {
+          const geoForm = new FormData();
+          geoForm.append('type', 'places-geocode');
+          geoForm.append('address', location);
+          const geoRes = await fetch(WORKER_API, { method: 'POST', body: geoForm });
+          const geoData = await geoRes.json();
+
+          if (!geoData.results?.[0]) {
+            alert('Location not found');
+            return;
+          }
+
+          const { lat, lng } = geoData.results[0].geometry.location;
+
+          const searchForm = new FormData();
+          searchForm.append('type', 'places-search');
+          searchForm.append('query', keywords);
+          searchForm.append('lat', lat.toString());
+          searchForm.append('lng', lng.toString());
+          const searchRes = await fetch(WORKER_API, { method: 'POST', body: searchForm });
+          const searchData = await searchRes.json();
+
+          if (!searchData.results?.length) {
+            results = [];
+            renderResults();
+            return;
+          }
+
+          const detailPromises = searchData.results.slice(0, 15).map(async (place: any) => {
+            const detailForm = new FormData();
+            detailForm.append('type', 'places-details');
+            detailForm.append('place_id', place.place_id);
+            const detailRes = await fetch(WORKER_API, { method: 'POST', body: detailForm });
+            const detailData = await detailRes.json();
+            return detailData.result;
+          });
+
+          results = (await Promise.all(detailPromises)).filter(Boolean);
+          renderResults();
+          updateStats();
+
+        } catch (err) {
+          console.error('Search error:', err);
+          alert('Search failed');
+        } finally {
+          btn.innerHTML = 'Search';
+        }
+      }
+
+      document.getElementById('search-form')!.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const location = (document.getElementById('location') as HTMLInputElement).value;
+        const keywords = (document.getElementById('keywords') as HTMLInputElement).value;
+        searchPlaces(location, keywords);
+      });
+
+      updateStats();
+    </script>
+  </body>
+</html>
