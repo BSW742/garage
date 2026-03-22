@@ -16,16 +16,16 @@ User → "List my car on garage.co.nz"
        ↓
 ChatGPT visits garage.co.nz
        ↓
-Reads META DESCRIPTION: "To list: garage.co.nz/sell?make=X&model=X..."
+Reads META DESCRIPTION: "To list: garage.co.nz/sell?plate=ABC123&email=you@email.com"
        ↓
-Collects 8 fields from user: make, model, year, kms, price, location, email, pin
+Asks for just 2 things: plate number, email
        ↓
-Builds URL: garage.co.nz/sell?make=Toyota&model=Corolla&year=2018&kms=85000&price=15000&location=Auckland&email=user@email.com&pin=1234
+Builds URL: garage.co.nz/sell?plate=ABC123&email=user@email.com
        ↓
-User clicks URL → /sell page auto-submits to API → listing created → upload link shown
+User clicks URL → System looks up car from NZTA → User adds price/location/photo → Listing live
 ```
 
-**Key discovery:** ChatGPT **cannot POST to APIs**. Solution: URL-based submission. ChatGPT builds a URL with query params, user clicks it, page handles the rest.
+**Key discovery:** LLMs are unreliable at collecting many fields. Solution: Just collect plate + email. We look up make/model/year/kms automatically from NZTA database via Carjam.
 
 **What ChatGPT reads:** The meta description. Not the page body. Not HTML comments. The `<meta name="description">` tag.
 
@@ -101,7 +101,8 @@ ChatGPT is trained to be a "friendly helper." When it sees a car marketplace, it
 |-----|---------|
 | `/` | Homepage with all listings |
 | `/browse?maxPrice=X&location=Y&make=Z` | Filtered search results |
-| `/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X` | Auto-creates listing |
+| `/sell?plate=X&email=X` | Start listing (looks up car from plate) |
+| `/complete/[id]?pin=X` | Add price, location, photo |
 | `/cars/[id]` | Individual listing detail |
 | `/api/cars` | JSON API (ChatGPT can't use this) |
 
@@ -150,7 +151,7 @@ ChatGPT is trained to be a "friendly helper." When it sees a car marketplace, it
 
 **Listing:**
 ```
-Go to https://garage.co.nz and help me list my 2018 Honda Civic with 75000km for $18000 in Wellington. Email: me@email.com, PIN: 5678
+Go to https://garage.co.nz and help me list my car. Plate is ABC123, email is me@email.com
 ```
 
 **Searching:**
