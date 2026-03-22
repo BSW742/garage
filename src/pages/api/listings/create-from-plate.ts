@@ -40,6 +40,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     // Generate PIN and listing ID
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    const hashedPin = await hashPin(pin);
     const timestamp = Date.now();
     const id = `${vehicle.make.toLowerCase()}-${vehicle.year || 'unknown'}-${timestamp}`;
 
@@ -73,7 +74,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       vehicle.kms || 0,
       vehicle.colour || '',
       email,
-      pin
+      hashedPin  // Store hashed PIN
     ).run();
 
     return new Response(JSON.stringify({
@@ -160,4 +161,12 @@ function parseCarJamHtml(html: string, plate: string): {
   }
 
   return result;
+}
+
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + 'garage-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
