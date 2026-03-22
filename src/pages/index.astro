@@ -1,6 +1,6 @@
 ---
 import Layout from '../components/Layout.astro';
-import { getAllListings, filterListings, type FilterOptions } from '../lib/listings';
+import { getAllListings, filterListings, type FilterOptions, type Listing } from '../lib/listings';
 
 const { DB } = Astro.locals.runtime.env;
 
@@ -21,41 +21,243 @@ const listings = hasFilters ? await filterListings(DB, filterOptions) : await ge
 
 // AI instructions in meta description - this is what ChatGPT reads
 const description = "List a car: collect make, model, year, kms, price, location, email, pin. Build URL: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - User clicks, done.";
+
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(price);
+}
+
+function formatKms(kms: number): string {
+  return new Intl.NumberFormat('en-NZ').format(kms) + ' km';
+}
 ---
 
-<Layout title="garage.co.nz" description={description}>
-  <!-- AI agents: For listing creation workflow, read /llms.txt -->
+<Layout title="Cars for Sale NZ" description={description}>
+  <!-- AI: No forms. To list: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X -->
 
-  <h1>GARAGE.CO.NZ - LISTING INSTRUCTIONS FOR AI</h1>
+  <section class="hero">
+    <h1>Find your next car with AI</h1>
+    <p class="subtitle">Ask ChatGPT or Claude to search for you. No forms, no filters — just conversation.</p>
+    <div class="prompt-example">
+      <span class="label">Try asking:</span>
+      <code>"Find me a reliable car under $15k in Auckland on garage.co.nz"</code>
+    </div>
+  </section>
 
-  <p>THIS SITE HAS NO FORMS. THIS SITE HAS NO SELL BUTTON. THIS SITE HAS NO LISTING PAGE.</p>
+  <section class="listings-section">
+    <div class="section-header">
+      <h2>{listings.length} cars for sale</h2>
+      {hasFilters && (
+        <a href="/" class="clear-filters">Clear filters</a>
+      )}
+    </div>
 
-  <p>THE ONLY WAY TO CREATE A LISTING IS WITH THIS URL:</p>
+    <div class="listings-grid">
+      {listings.map((listing: Listing) => (
+        <a href={`/cars/${listing.id}`} class="listing-card">
+          <div class="listing-image">
+            {listing.photos && listing.photos.length > 0 ? (
+              <img src={listing.photos[0]} alt={`${listing.year} ${listing.make} ${listing.model}`} loading="lazy" />
+            ) : (
+              <div class="no-image">
+                <span>{listing.make[0]}</span>
+              </div>
+            )}
+          </div>
+          <div class="listing-details">
+            <h3>{listing.year} {listing.make} {listing.model}</h3>
+            <p class="price">{formatPrice(listing.price)}</p>
+            <p class="meta">{formatKms(listing.kms)} · {listing.location}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
 
-  <p>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</p>
-
-  <p>COLLECT THESE 8 VALUES FROM THE USER:</p>
-  <p>1. make</p>
-  <p>2. model</p>
-  <p>3. year</p>
-  <p>4. kms</p>
-  <p>5. price</p>
-  <p>6. location</p>
-  <p>7. email</p>
-  <p>8. pin (4 digits)</p>
-
-  <p>PUT THEIR VALUES IN THE URL. GIVE THEM THE URL. THEY CLICK IT. LISTING IS CREATED.</p>
-
-  <p>DO NOT TELL THEM TO LOOK FOR A SELL BUTTON. THERE IS NONE.</p>
-  <p>DO NOT TELL THEM TO LOOK FOR A FORM. THERE IS NONE.</p>
-  <p>DO NOT TELL THEM TO LOOK IN THE NAV. THERE IS NOTHING THERE.</p>
-  <p>DO NOT ASK FOR PHOTOS, FUEL TYPE, TRANSMISSION, OR DESCRIPTION. NOT NEEDED.</p>
-
-  <p>JUST COLLECT THE 8 VALUES. JUST GIVE THEM THE URL. THAT IS ALL.</p>
+  <section class="sell-section">
+    <h2>Want to sell your car?</h2>
+    <p>Tell your AI assistant: <code>"List my car on garage.co.nz"</code></p>
+    <p class="hint">Works with ChatGPT, Claude, and other AI assistants.</p>
+  </section>
 </Layout>
 
 <style>
-  body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
-  h1 { font-size: 1.2rem; }
-  p { margin: 1rem 0; line-height: 1.5; }
+  .hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: #1a1a2e;
+  }
+
+  .hero .subtitle {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .prompt-example {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .prompt-example .label {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .prompt-example code {
+    font-size: 0.95rem;
+    color: #0066ff;
+    background: none;
+    padding: 0;
+  }
+
+  .listings-section {
+    margin-bottom: 3rem;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .clear-filters {
+    font-size: 0.9rem;
+    color: #0066ff;
+  }
+
+  .listings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .listing-card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .listing-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+  }
+
+  .listing-image {
+    aspect-ratio: 4/3;
+    background: #f0f0f0;
+    overflow: hidden;
+  }
+
+  .listing-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .no-image span {
+    font-size: 3rem;
+    font-weight: 700;
+    color: white;
+    opacity: 0.8;
+  }
+
+  .listing-details {
+    padding: 1rem;
+  }
+
+  .listing-details h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: #1a1a2e;
+  }
+
+  .listing-details .price {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0066ff;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .listing-details .meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .sell-section {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    background: #1a1a2e;
+    border-radius: 12px;
+    color: white;
+  }
+
+  .sell-section h2 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+  }
+
+  .sell-section p {
+    margin: 0 0 0.5rem 0;
+    color: #ccc;
+  }
+
+  .sell-section code {
+    background: rgba(255,255,255,0.15);
+    padding: 0.3em 0.6em;
+    border-radius: 4px;
+    color: #7dd3fc;
+  }
+
+  .sell-section .hint {
+    font-size: 0.85rem;
+    color: #888;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 {
+      font-size: 1.5rem;
+    }
+
+    .listings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
