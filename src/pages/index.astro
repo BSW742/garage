@@ -171,7 +171,7 @@ import Layout from '../components/Layout.astro';
       0 0 20px #00f0ff,
       0 0 60px #00f0ff,
       0 0 100px rgba(0,240,255,0.5);
-    animation: scanDown 3s ease-in-out infinite;
+    animation: scanDown 10s ease-in-out infinite;
   }
 
   @keyframes scanDown {
@@ -186,7 +186,7 @@ import Layout from '../components/Layout.astro';
       linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
     background-size: 50px 50px;
-    animation: gridPulse 2s ease-in-out infinite;
+    animation: gridPulse 4s ease-in-out infinite;
   }
 
   @keyframes gridPulse {
@@ -206,7 +206,7 @@ import Layout from '../components/Layout.astro';
     background: #00f0ff;
     border-radius: 50%;
     box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
-    animation: pointFlash 0.8s ease-out forwards;
+    animation: pointFlash 1.5s ease-out forwards;
   }
 
   @keyframes pointFlash {
@@ -685,13 +685,14 @@ import Layout from '../components/Layout.astro';
     point.style.left = Math.random() * 90 + 5 + '%';
     point.style.top = Math.random() * 90 + 5 + '%';
     scanPoints.appendChild(point);
-    setTimeout(() => point.remove(), 800);
+    setTimeout(() => point.remove(), 1500);
   }
 
   async function runScan(url: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      const stepDuration = 400;
+      const stepDuration = 3500; // ~21 seconds total for 6 steps
       let stepIndex = 0;
+      const scanStartTime = Date.now();
 
       // Start API call immediately
       const apiPromise = fetch('/api/audit', {
@@ -715,8 +716,8 @@ import Layout from '../components/Layout.astro';
             if (i === stepIndex) el.classList.add('active');
           });
 
-          // Add some scan points
-          for (let i = 0; i < 3; i++) {
+          // Add scan points throughout this step
+          for (let i = 0; i < 8; i++) {
             setTimeout(() => addScanPoint(), Math.random() * stepDuration);
           }
 
@@ -727,8 +728,10 @@ import Layout from '../components/Layout.astro';
       try {
         const response = await apiPromise;
 
-        // Wait for animation to finish
-        await new Promise(r => setTimeout(r, Math.max(0, scanSteps.length * stepDuration - 1000)));
+        // Wait for full animation to finish (all steps complete)
+        const elapsed = Date.now() - scanStartTime;
+        const totalDuration = scanSteps.length * stepDuration;
+        await new Promise(r => setTimeout(r, Math.max(0, totalDuration - elapsed)));
 
         clearInterval(interval);
 
@@ -742,7 +745,7 @@ import Layout from '../components/Layout.astro';
         progressFill.style.width = '100%';
         progressSteps.querySelectorAll('span').forEach(el => el.classList.add('done'));
 
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 1500));
         resolve(data);
 
       } catch (err) {
