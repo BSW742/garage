@@ -4,6 +4,7 @@ import { getListingById } from '../../lib/listings';
 
 const { DB } = Astro.locals.runtime.env;
 const { id } = Astro.params;
+const isNew = Astro.url.searchParams.get('new') === 'true';
 const listing = await getListingById(DB, id!);
 
 if (!listing) {
@@ -71,6 +72,14 @@ const prompt = `Show me the full details and photos for the ${title} listed at $
       <a href="/" class="back">← listings</a>
       <code class="endpoint">GET /cars/{id}</code>
     </header>
+
+    {isNew && (
+      <div class="success-banner">
+        <h2>Your listing is live!</h2>
+        <p>Share this page or let AI find it for buyers.</p>
+        <p class="edit-hint">To edit or remove: go to <a href="/edit">garage.co.nz/edit</a> with your email and PIN.</p>
+      </div>
+    )}
 
     {isTrademe && (
       <div class="trademe-banner">
@@ -282,5 +291,35 @@ const prompt = `Show me the full details and photos for the ${title} listed at $
 
   .trademe-banner a:hover {
     text-decoration: underline;
+  }
+
+  .success-banner {
+    background: #dcfce7;
+    border: 2px solid #22c55e;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .success-banner h2 {
+    color: #16a34a;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+  }
+
+  .success-banner p {
+    margin: 0.25rem 0;
+    color: #166534;
+  }
+
+  .success-banner .edit-hint {
+    font-size: 0.875rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #bbf7d0;
+  }
+
+  .success-banner a {
+    color: #0066ff;
   }
 </style>

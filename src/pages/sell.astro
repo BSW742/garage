@@ -12,10 +12,15 @@ const description = "List your car: garage.co.nz/sell?plate=ABC123&e=you@email.c
   <div id="success" class="status-box success" hidden>
     <h1>Car Found!</h1>
     <div id="car-details" class="car-details"></div>
-    <p class="next-step">Complete your listing:</p>
+
+    <div class="pin-box">
+      <p class="pin-label">YOUR PIN (save this!)</p>
+      <p class="pin-value" id="pin-display"></p>
+      <p class="pin-hint">Use this PIN at <strong>garage.co.nz/edit</strong> to edit or remove your listing anytime.</p>
+    </div>
+
+    <p class="next-step">Next step:</p>
     <a id="complete-link" href="" class="complete-btn">Add Price & Photo</a>
-    <p class="pin-note">Your PIN: <strong id="pin-display"></strong></p>
-    <p class="hint">Save this PIN - you'll need it to edit or remove your listing.</p>
   </div>
 
   <div id="error" class="status-box error" hidden>
@@ -243,18 +248,41 @@ const description = "List your car: garage.co.nz/sell?plate=ABC123&e=you@email.c
     background: #059669;
   }
 
-  .pin-note {
-    margin-top: 1.5rem !important;
-    padding: 0.75rem;
+  .pin-box {
     background: #fef3c7;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
   }
 
-  .pin-note strong {
+  .pin-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .pin-value {
     font-family: monospace;
-    font-size: 1.1rem;
-    letter-spacing: 2px;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #000;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .pin-hint {
+    font-size: 0.8rem;
+    color: #78350f;
+    margin: 0;
+  }
+
+  .pin-hint strong {
+    color: #000;
   }
 
   .hint {

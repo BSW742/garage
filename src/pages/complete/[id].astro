@@ -30,6 +30,14 @@ const pinValid = pin && listing.pin === pin;
       </p>
     </div>
 
+    {pin && (
+      <div class="pin-reminder">
+        <p class="pin-label">Your PIN</p>
+        <p class="pin-value">{pin}</p>
+        <p class="pin-hint">Save this! Use at <a href="/edit">garage.co.nz/edit</a> to manage your listing.</p>
+      </div>
+    )}
+
     {listing.status === 'active' && listing.price > 0 ? (
       <div class="already-complete">
         <h2>This listing is already live!</h2>
@@ -262,6 +270,42 @@ const pinValid = pin && listing.pin === pin;
   }
 
   .already-complete a {
+    color: #0066ff;
+  }
+
+  .pin-reminder {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .pin-reminder .pin-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0 0 0.25rem 0;
+    text-transform: uppercase;
+  }
+
+  .pin-reminder .pin-value {
+    font-family: monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: #000;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .pin-reminder .pin-hint {
+    font-size: 0.8rem;
+    color: #78350f;
+    margin: 0;
+  }
+
+  .pin-reminder a {
     color: #0066ff;
   }
 </style>
