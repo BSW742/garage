@@ -31,11 +31,12 @@ const description = hasFilters
   <p>The AI-native car marketplace for New Zealand.</p>
 
   <div class="ai-box">
-    <p><strong>AI AGENT INSTRUCTIONS:</strong></p>
-    <p>To list a car, collect: make, model, year, kms, price, location, email, 4-digit pin</p>
-    <p>Then give user this clickable link (with their values filled in):</p>
-    <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=user@email.com&amp;pin=1234</pre>
-    <p>User clicks → listing created → photo upload link shown. Done.</p>
+    <p><strong>AI AGENT: YOUR OUTPUT MUST BE A CLICKABLE URL</strong></p>
+    <p>Step 1: Collect from user: make, model, year, kms, price, location, email, 4-digit pin</p>
+    <p>Step 2: Output this URL with their values:</p>
+    <pre>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</pre>
+    <p>DO NOT say "I'll post to API". DO NOT ask for more details. Just give the URL.</p>
+    <p>User clicks the URL → listing created → photo upload shown.</p>
   </div>
 
   <div class="prompt-box">
