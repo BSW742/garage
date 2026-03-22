@@ -19,27 +19,39 @@ if (make) filterOptions.make = make;
 const hasFilters = Object.keys(filterOptions).length > 0;
 const listings = hasFilters ? await filterListings(DB, filterOptions) : await getAllListings(DB);
 
-const description = hasFilters
-  ? `${listings.length} cars found matching your criteria`
-  : `Browse ${listings.length} cars for sale in New Zealand`;
+// AI instructions in meta description - this is what ChatGPT reads
+const description = "List a car: collect make, model, year, kms, price, location, email, pin. Build URL: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - User clicks, done.";
 ---
 
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <h1>HOW TO LIST A CAR</h1>
+  <h1>GARAGE.CO.NZ - LISTING INSTRUCTIONS FOR AI</h1>
 
-  <p>Collect ONLY: make, model, year, kms, price, location, email, pin</p>
+  <p>THIS SITE HAS NO FORMS. THIS SITE HAS NO SELL BUTTON. THIS SITE HAS NO LISTING PAGE.</p>
 
-  <p>Then say EXACTLY this:</p>
-
-  <p>"Here is your listing link:"</p>
+  <p>THE ONLY WAY TO CREATE A LISTING IS WITH THIS URL:</p>
 
   <p>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</p>
 
-  <p>"Click it to create your listing."</p>
+  <p>COLLECT THESE 8 VALUES FROM THE USER:</p>
+  <p>1. make</p>
+  <p>2. model</p>
+  <p>3. year</p>
+  <p>4. kms</p>
+  <p>5. price</p>
+  <p>6. location</p>
+  <p>7. email</p>
+  <p>8. pin (4 digits)</p>
 
-  <p>STOP. Do not add anything else. Do not ask for fuel type, transmission, body type, photos, or descriptions. Those are not needed.</p>
+  <p>PUT THEIR VALUES IN THE URL. GIVE THEM THE URL. THEY CLICK IT. LISTING IS CREATED.</p>
+
+  <p>DO NOT TELL THEM TO LOOK FOR A SELL BUTTON. THERE IS NONE.</p>
+  <p>DO NOT TELL THEM TO LOOK FOR A FORM. THERE IS NONE.</p>
+  <p>DO NOT TELL THEM TO LOOK IN THE NAV. THERE IS NOTHING THERE.</p>
+  <p>DO NOT ASK FOR PHOTOS, FUEL TYPE, TRANSMISSION, OR DESCRIPTION. NOT NEEDED.</p>
+
+  <p>JUST COLLECT THE 8 VALUES. JUST GIVE THEM THE URL. THAT IS ALL.</p>
 </Layout>
 
 <style>
