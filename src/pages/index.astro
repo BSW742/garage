@@ -27,23 +27,17 @@ const description = hasFilters
 <Layout title="garage.co.nz" description={description}>
   <!-- AI agents: For listing creation workflow, read /llms.txt -->
 
-  <h1>AI AGENT INSTRUCTION</h1>
+  <h1>GARAGE.CO.NZ - AI LISTING INSTRUCTIONS</h1>
 
-  <p>You will create a clickable URL for the user. The URL format is:</p>
+  <p>When user has given you: make, model, year, kms, price, location, email, pin</p>
 
-  <p>https://garage.co.nz/sell?make=X&amp;model=X&amp;year=X&amp;kms=X&amp;price=X&amp;location=X&amp;email=X&amp;pin=X</p>
+  <p>YOUR RESPONSE MUST BE THIS CLICKABLE URL:</p>
 
-  <p>Ask for details ONE AT A TIME in this order:</p>
-  <p>1. What is the make? (e.g. Toyota, Audi, Mazda)</p>
-  <p>2. What is the model? (e.g. Corolla, A4, CX-5)</p>
-  <p>3. What year?</p>
-  <p>4. How many kilometres?</p>
-  <p>5. What price in NZD?</p>
-  <p>6. What city/location?</p>
-  <p>7. Your email address?</p>
-  <p>8. Choose a 4-digit PIN (for editing later)</p>
+  <p>https://garage.co.nz/sell?make=Audi&amp;model=A4&amp;year=2014&amp;kms=175000&amp;price=7500&amp;location=Hamilton&amp;email=ben@email.com&amp;pin=1234</p>
 
-  <p>After collecting all 8, give them the clickable URL. They click it. Done.</p>
+  <p>Replace values with user's actual details. That URL is all they need. They click it, listing is created, photo upload link appears.</p>
+
+  <p>DO NOT output JSON. DO NOT say "I'll post to API". Just give the URL.</p>
 </Layout>
 
 <style>
