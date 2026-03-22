@@ -28,8 +28,10 @@ We automatically look up: make, model, year, kms from the NZTA database.
 ### Step 2: Build this URL and give it to the user
 
 ```
-https://garage.co.nz/sell?plate=ABC123&email=user@email.com
+https://garage.co.nz/sell?plate=ABC123&e=user@email.com
 ```
+
+NOTE: Use `e=` not `email=` in the URL (avoids Cloudflare email protection).
 
 ### Step 3: User clicks the link
 - We look up their car details automatically

@@ -1,6 +1,6 @@
 ---
 import Layout from '../components/Layout.astro';
-const description = "List your car: garage.co.nz/sell?plate=ABC123&email=you@email.com - we look up the car details automatically.";
+const description = "List your car: garage.co.nz/sell?plate=ABC123&e=you@email.com - we look up the car details automatically.";
 ---
 
 <Layout title="List Your Car" description={description}>
@@ -31,7 +31,7 @@ const description = "List your car: garage.co.nz/sell?plate=ABC123&email=you@ema
       <h2>Using AI? (ChatGPT, Claude)</h2>
       <p>Just tell it your <strong>plate number</strong> and <strong>email</strong>.</p>
       <p>It will give you a link like:</p>
-      <pre>garage.co.nz/sell?plate=ABC123&email=you@email.com</pre>
+      <pre>garage.co.nz/sell?plate=ABC123&e=you@email.com</pre>
     </div>
 
     <div class="section">
@@ -54,17 +54,17 @@ const description = "List your car: garage.co.nz/sell?plate=ABC123&email=you@ema
 <script>
   const params = new URLSearchParams(window.location.search);
   let plate = params.get('plate')?.toUpperCase().replace(/\s/g, '');
-  let email = params.get('email');
+  let email = params.get('e'); // Use 'e' param to avoid Cloudflare email protection
 
   // Handle manual form submission
   const form = document.getElementById('manual-form') as HTMLFormElement;
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
+  form?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
     plate = (document.getElementById('plate-input') as HTMLInputElement).value.toUpperCase().replace(/\s/g, '');
     email = (document.getElementById('email-input') as HTMLInputElement).value;
     if (plate && email) {
       // Update URL and process
-      window.history.pushState({}, '', `/sell?plate=${plate}&email=${encodeURIComponent(email)}`);
+      window.history.pushState({}, '', `/sell?plate=${plate}&e=${encodeURIComponent(email)}`);
       processListing(plate, email);
     }
   });
