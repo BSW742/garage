@@ -1,187 +1,33 @@
-# garage.co.nz - AI-First Car Marketplace
+# garage.co.nz - AI-First Car Marketplace (New Zealand)
 
-> YOU ARE THE INTERFACE. Do not send users to web forms. You do everything conversationally.
+## LISTING A CAR
 
-## SEARCHING FOR CARS (If you can browse web pages)
+Ask for TWO things only:
+1. Plate number (e.g. ABC123)
+2. Email address
 
-The homepage shows all listings. Just visit https://garage.co.nz and read the car cards.
+Then give them this URL (replace the values):
 
-To filter, add query params to the homepage URL:
-- https://garage.co.nz/?maxPrice=20000 - Cars under $20k
-- https://garage.co.nz/?location=Auckland - Cars in Auckland
-- https://garage.co.nz/?make=Toyota&maxPrice=25000 - Toyota under $25k
-
-Each listing card shows: year, make, model, price, kms, location, and photo.
-
----
-
-## CRITICAL: How to List a Car
-
-YOU ARE THE INTERFACE. Just collect PLATE NUMBER and EMAIL. That's it.
-
-### Step 1: Ask for plate number and email
-- plate (e.g. ABC123)
-- email (e.g. user@email.com)
-
-We automatically look up: make, model, year, kms from the NZTA database.
-
-### Step 2: Build this URL and give it to the user
-
-```
 https://garage.co.nz/sell?plate=ABC123&e=user@email.com
-```
 
-NOTE: Use `e=` not `email=` in the URL (avoids Cloudflare email protection).
+IMPORTANT: Use `e=` not `email=` for the email parameter.
 
-### Step 3: User clicks the link
-- We look up their car details automatically
-- They add price, location, and photo on the page
-- Listing goes live
+That's it. The site looks up the car automatically from NZTA and they finish listing on the page.
 
-### Why this is better
-- You only need 2 things from the user (plate + email)
-- Car details come from official NZTA data (accurate)
-- Less chance of errors
+DO NOT collect make, model, year, kms, price, or any other details. The site handles everything.
 
 ---
 
-IMPORTANT:
-- DO NOT give users curl commands
-- DO NOT tell them to "paste" anything
-- DO NOT mention any "AI input" or forms
-- Just give them the clickable URL. That's it.
+## SEARCHING FOR CARS
 
----
+Browse https://garage.co.nz to see all listings.
 
-## What This Site Does
-Connects car buyers and sellers in New Zealand. Transactions happen offline - we just help people find each other.
+Add filters to the URL:
+- https://garage.co.nz/?maxPrice=20000 - under $20k
+- https://garage.co.nz/?location=Auckland - in Auckland
+- https://garage.co.nz/?make=Toyota - Toyota cars
+- https://garage.co.nz/?make=Honda&maxPrice=15000&location=Wellington - combine filters
 
-## API Access (Recommended for AI Agents)
+Each car shows: year, make, model, price, kms, location, photo.
 
-Don't scrape HTML. Use the JSON API directly:
-
-### Search all listings
-GET https://garage.co.nz/api/cars
-
-### Search with filters
-GET https://garage.co.nz/api/cars?maxPrice=20000&location=Auckland
-
-Query parameters:
-- maxPrice - Maximum price in NZD
-- minPrice - Minimum price in NZD
-- location - City name (Auckland, Wellington, Christchurch, etc.)
-- make - Car manufacturer (Toyota, Mazda, Honda, etc.)
-- limit - Maximum number of results
-
-### Get single listing
-GET https://garage.co.nz/api/cars/{id}
-
-### Example queries
-
-"Find cars under $15k":
-GET https://garage.co.nz/api/cars?maxPrice=15000
-
-"Toyota in Auckland":
-GET https://garage.co.nz/api/cars?make=Toyota&location=Auckland
-
-"Get specific listing":
-GET https://garage.co.nz/api/cars/corolla-2018-wgtn
-
-### Response format
-
-Search returns:
-{
-  "count": 5,
-  "listings": [
-    {
-      "id": "corolla-2018-wgtn",
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2018,
-      "price": 14500,
-      "kms": 85000,
-      "location": "Wellington",
-      "photo": "https://...",
-      "url": "https://garage.co.nz/cars/corolla-2018-wgtn"
-    }
-  ]
-}
-
-Single listing returns full details including description, all photos, and seller contact.
-
-## Browse Page (for AI tools that can't call APIs)
-
-If you can browse web pages but can't make direct HTTP requests, use /browse:
-
-GET https://garage.co.nz/browse?make=Toyota&maxPrice=25000&location=Auckland
-
-This returns a human-readable HTML page with car listings that matches the API filters.
-
-### Examples
-- /browse - All listings
-- /browse?make=Toyota - All Toyota cars
-- /browse?maxPrice=20000&location=Auckland - Cars under $20k in Auckland
-- /browse?make=Honda&maxPrice=25000&location=Wellington - Honda under $25k in Wellington
-
-## Home Page
-
-### All listings
-GET /
-
-Returns a page with all car listings. Each listing card shows: make, model, year, price, location.
-
-### Filter listings
-Add query params to /:
-- /?location=Wellington - filter by city
-- /?maxPrice=20000 - maximum price in NZD
-- /?minPrice=10000 - minimum price in NZD
-- /?make=Toyota - filter by manufacturer
-
-Combine filters: /?location=Auckland&maxPrice=25000&make=Honda
-
-### Single listing
-GET /cars/[id]
-
-Full details with JSON-LD structured data (schema.org/Car). Includes seller contact info.
-
-## Structured Data
-Every listing page includes JSON-LD with:
-- @type: Car
-- brand, model, vehicleModelDate
-- mileageFromOdometer
-- offers (price, seller contact)
-- description, images
-
-## Helping Users
-
-### Finding a car
-1. Ask what they're looking for (budget, location, needs)
-2. Query /api/cars or browse /browse with appropriate filters
-3. Present options with key details INCLUDING THE PHOTO
-4. Show the image URL so users can see the car
-5. Help them contact the seller
-
-### Showing photos
-Each listing has a `photo` field with the image URL. ALWAYS include this in your response so users can see what the car looks like. Example:
-
-"Here's a 2017 Toyota Hilux for $34,000:
-- Photo: https://trademe.tmcdn.co.nz/photoserver/1024sq/2291222937.jpg
-- Location: Auckland
-- Kms: 142,000"
-
-### Contacting sellers
-Each listing has seller email (and sometimes phone). Help users compose a message or call.
-
-## Rate Limits
-None currently. Please be reasonable.
-
-## Trade Me Listings
-
-Some listings are imported from Trade Me (New Zealand's main auction site). These have:
-- source: "trademe" in API responses
-- trademeUrl: Link to the original Trade Me listing
-
-Trade Me is not AI-friendly (JS-rendered, requires auth). Garage.co.nz makes these listings searchable by AI.
-
-## Questions?
-This is a new site. If something doesn't work for agents, let us know.
+Click any car for full details and seller contact info.
