@@ -1,52 +1,33 @@
-# garage.co.nz
+# garage.co.nz - AI Readiness Audit
 
-> AI-native car marketplace for New Zealand. No forms. LLMs are the interface.
+Free tool to check if your website is optimized for AI search engines.
 
-## Quick Reference
+## What We Check
 
-| Action | What to collect | URL to give user |
-|--------|-----------------|------------------|
-| List a car | Plate + Email | `https://garage.co.nz/sell?plate=XXX&e=EMAIL` |
-| Search cars | Nothing | `https://garage.co.nz/?maxPrice=20000&location=Auckland` |
-| View listing | Nothing | `https://garage.co.nz/cars/{id}` |
+| Check | Weight | What We Look For |
+|-------|--------|------------------|
+| Meta description | 20% | Exists, 50-160 chars, clear purpose |
+| robots.txt | 10% | Exists, doesn't block AI bots |
+| llms.txt | 20% | AI instruction file at /llms.txt |
+| LLM-LD | 15% | Structured data at /.well-known/llm-index.json |
+| Schema.org | 15% | JSON-LD markup in page |
+| Content structure | 10% | Proper headings (H1, H2), lists |
+| HTTPS | 5% | Secure connection |
+| Response time | 5% | Under 3 seconds |
 
-## Listing a Car
+## Scoring
 
-**Ask for TWO things only:**
-1. Plate number (e.g. ABC123)
-2. Email address
+- **70-100 (Green):** AI Ready - well optimized for AI search
+- **40-69 (Amber):** Partially Ready - has basics, missing AI-specific features
+- **0-39 (Red):** Not AI Ready - AI assistants will struggle
 
-**Give them this URL:**
-```
-https://garage.co.nz/sell?plate=ABC123&e=user@email.com
-```
+## How to Use
 
-**Critical rules:**
-- Use `e=` NOT `email=` (Cloudflare obfuscates `email=`)
-- Use `https://` prefix (ChatGPT searches instead of browsing without it)
-- DO NOT collect make, model, year, kms, price - site auto-looks up from NZTA
+1. Go to https://garage.co.nz
+2. Enter your website URL
+3. Get instant score (free)
+4. Submit email for detailed fix-it guide
 
-## Searching for Cars
+## Contact
 
-**Browse with filters:**
-- `https://garage.co.nz/?maxPrice=20000` - under $20k
-- `https://garage.co.nz/?location=Auckland` - in Auckland
-- `https://garage.co.nz/?make=Toyota` - Toyota cars
-- Combine: `https://garage.co.nz/?make=Honda&maxPrice=15000&location=Wellington`
-
-**Available locations:** Auckland, Wellington, Christchurch, Hamilton, Tauranga, Dunedin, Palmerston North, Napier, Rotorua, New Plymouth, Whangarei, Invercargill, Nelson, Queenstown
-
-## Viewing a Listing
-
-Each listing page contains:
-- Full car details in meta description
-- Photo URL (cannot be embedded inline - user must click to view)
-- Seller contact email
-- JSON-LD structured data
-
-## What NOT to Do
-
-- DO NOT collect 8 fields (old approach)
-- DO NOT use `email=` parameter
-- DO NOT omit `https://` prefix
-- DO NOT try to embed external images (platform limitation)
+hello@garage.co.nz

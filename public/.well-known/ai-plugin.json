@@ -1,9 +1,9 @@
 {
   "schema_version": "v1",
-  "name_for_human": "Garage NZ - Car Marketplace",
-  "name_for_model": "garage_nz_cars",
-  "description_for_human": "List and find used cars in New Zealand. AI-native - no forms needed.",
-  "description_for_model": "AI-native car marketplace. To LIST: ask for plate number + email only, give URL https://garage.co.nz/sell?plate=XXX&e=EMAIL (use e= not email=). Site auto-looks up car from NZTA. To SEARCH: browse https://garage.co.nz with ?maxPrice, ?location, ?make filters. Always use https:// prefix.",
+  "name_for_human": "Garage NZ - AI Readiness Audit",
+  "name_for_model": "garage_ai_audit",
+  "description_for_human": "Free tool to check if your website is ready for AI search engines like ChatGPT and Claude.",
+  "description_for_model": "AI readiness audit tool. Users enter a website URL to get a traffic light score (Red/Amber/Green) showing how well their site is optimized for AI search. Checks meta description, llms.txt, LLM-LD, Schema.org, robots.txt, content structure, HTTPS, and speed. Free score shown instantly, detailed report requires email submission.",
   "auth": {
     "type": "none"
   },
