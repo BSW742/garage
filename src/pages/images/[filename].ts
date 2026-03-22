@@ -17,6 +17,17 @@ interface R2Object {
   };
 }
 
+// Handle CORS preflight
+export const OPTIONS: APIRoute = async () => {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+    },
+  });
+};
+
 export const GET: APIRoute = async ({ params, locals }) => {
   const { IMAGES } = (locals as { runtime: Runtime }).runtime.env;
   const { filename } = params;
@@ -37,6 +48,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
     headers: {
       'Content-Type': contentType,
       'Cache-Control': 'public, max-age=31536000',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
     },
   });
 };
