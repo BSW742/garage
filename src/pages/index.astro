@@ -4,11 +4,8 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Home">
   <section class="hero" id="hero">
-    <h1>Is your website ready for AI search?</h1>
-    <p class="subtitle">
-      ChatGPT, Claude, and Perplexity are becoming the new search engines.
-      Find out if they can understand your business.
-    </p>
+    <h1 id="headline">Can AI find your business?</h1>
+    <p class="subtitle" id="subline">ChatGPT is the new Google. See if you show up.</p>
 
     <form id="audit-form" class="audit-form">
       <div class="input-group">
@@ -29,9 +26,21 @@ import Layout from '../components/Layout.astro';
           </span>
         </button>
       </div>
-      <p class="hint">Free instant audit · No signup required</p>
+      <p class="hint">Free · 20 seconds</p>
     </form>
   </section>
+
+  <script>
+    const headlines = [
+      { h: "Can AI find your business?", s: "ChatGPT is the new Google. See if you show up." },
+      { h: "AI is recommending your competitors.", s: "Are you even visible?" },
+      { h: "Does ChatGPT know you exist?", s: "Free 20-second scan." },
+      { h: "Is your site AI-ready?", s: "Most aren't. Check yours." },
+    ];
+    const pick = headlines[Math.floor(Math.random() * headlines.length)];
+    document.getElementById('headline')!.textContent = pick.h;
+    document.getElementById('subline')!.textContent = pick.s;
+  </script>
 </Layout>
 
 <!-- FULLSCREEN SCAN OVERLAY - outside Layout for true fullscreen -->
