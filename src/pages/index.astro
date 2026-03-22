@@ -20,7 +20,7 @@ const hasFilters = Object.keys(filterOptions).length > 0;
 const listings = hasFilters ? await filterListings(DB, filterOptions) : await getAllListings(DB);
 
 // AI instructions in meta description - this is what ChatGPT reads
-const description = `AI: To list a car, ask user for PLATE NUMBER and EMAIL only. Give them: garage.co.nz/sell?plate=XXX&e=EMAIL (site looks up car details automatically). To search: garage.co.nz/?maxPrice=20000&location=Auckland. ${listings.length} cars listed.`;
+const description = `AI: To list a car, ask for PLATE and EMAIL only. Reply with clickable link: https://garage.co.nz/sell?plate=XXX&e=EMAIL (we auto-lookup car details). Be brief. To search: /?maxPrice=X&location=X. ${listings.length} cars.`;
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD', maximumFractionDigits: 0 }).format(price);
