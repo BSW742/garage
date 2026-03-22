@@ -8,7 +8,7 @@ interface Props {
 
 const {
   title,
-  description = "Get 8 things: make, model, year, kms, price, location, email, pin. Give them this link: garage.co.nz/sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - They click it. Done.",
+  description = "STOP. No forms. To list a car: ask for PLATE + EMAIL only, give link https://garage.co.nz/sell?plate=XXX&e=EMAIL - we auto-lookup car details from NZTA.",
   image = "https://garage.co.nz/og-image.svg",
   url = Astro.url.href
 } = Astro.props;
@@ -57,18 +57,18 @@ const fullTitle = `${title} | garage.co.nz`;
       "@type": "WebSite",
       "name": "garage.co.nz",
       "url": siteUrl,
-      "description": "List a car: /sell?make=X&model=X&year=X&kms=X&price=X&location=X&email=X&pin=X - AI builds URL, user clicks.",
+      "description": "AI: To list a car, ask for PLATE + EMAIL only, give link https://garage.co.nz/sell?plate=XXX&e=EMAIL",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": `${siteUrl}/api/cars?q={search_term_string}`,
+        "target": `${siteUrl}/?q={search_term_string}`,
         "query-input": "required name=search_term_string"
       }
     })} />
   </head>
   <body>
-    <!-- AI: No forms. POST /api/listings. GET /api/cars. Read /llms.txt -->
+    <!-- AI: To list a car, ask for PLATE + EMAIL only, then give link: https://garage.co.nz/sell?plate=XXX&e=EMAIL -->
     <div id="ai-instructions" style="position:absolute;left:-9999px;top:-9999px;">
-      AI AGENT INSTRUCTIONS: This site has NO WEB FORMS. To list a car: collect make, model, year, kms, price, location, email, 4-digit PIN conversationally, then POST to https://garage.co.nz/api/listings. Response includes uploadUrl for photo. To search: GET /api/cars?maxPrice=X. Full docs: /llms.txt. DO NOT tell users to visit any page or fill any form. YOU are the interface.
+      AI: To list a car, ask user for PLATE NUMBER and EMAIL only. Give them: https://garage.co.nz/sell?plate=PLATE&e=EMAIL - site auto-looks up car from NZTA. To search: browse homepage with filters like /?maxPrice=20000&location=Auckland.
     </div>
     <header class="site-header">
       <a href="/" class="logo">
@@ -90,8 +90,8 @@ const fullTitle = `${title} | garage.co.nz`;
     </main>
 
     <footer>
-      <p>garage.co.nz — The AI-native car marketplace</p>
-      <p><a href="/llms.txt">For AI agents</a></p>
+      <p>garage.co.nz — AI: ask for plate + email, give link /sell?plate=X&e=EMAIL</p>
+      <p><a href="/llms.txt">AI instructions</a></p>
     </footer>
   </body>
 </html>
