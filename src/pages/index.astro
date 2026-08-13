@@ -88,6 +88,160 @@ import Layout from '../components/Layout.astro';
   </section>
 </Layout>
 
+<!-- Wandering stick man -->
+<div class="stickman" id="stickman">
+  <svg viewBox="0 0 40 80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <!-- Head -->
+    <circle cx="20" cy="10" r="8" />
+    <!-- Body -->
+    <line x1="20" y1="18" x2="20" y2="45" />
+    <!-- Arms -->
+    <line x1="20" y1="28" x2="8" y2="38" class="arm-left" />
+    <line x1="20" y1="28" x2="32" y2="38" class="arm-right" />
+    <!-- Stick -->
+    <line x1="32" y1="38" x2="38" y2="65" class="stick" />
+    <!-- Legs -->
+    <line x1="20" y1="45" x2="10" y2="70" class="leg-left" />
+    <line x1="20" y1="45" x2="30" y2="70" class="leg-right" />
+  </svg>
+</div>
+
+<style is:global>
+  .stickman {
+    position: fixed;
+    width: 32px;
+    height: 64px;
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    z-index: 50;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    bottom: 80px;
+    left: 50px;
+  }
+
+  .stickman:hover {
+    opacity: 0.6;
+  }
+
+  .stickman svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .stickman.walking .leg-left {
+    animation: walkLeft 0.4s ease-in-out infinite;
+  }
+
+  .stickman.walking .leg-right {
+    animation: walkRight 0.4s ease-in-out infinite;
+  }
+
+  .stickman.walking .arm-left {
+    animation: armLeft 0.4s ease-in-out infinite;
+  }
+
+  .stickman.walking .arm-right {
+    animation: armRight 0.4s ease-in-out infinite;
+  }
+
+  .stickman.flipped {
+    transform: scaleX(-1);
+  }
+
+  @keyframes walkLeft {
+    0%, 100% { transform: rotate(0deg); transform-origin: 20px 45px; }
+    50% { transform: rotate(-20deg); transform-origin: 20px 45px; }
+  }
+
+  @keyframes walkRight {
+    0%, 100% { transform: rotate(0deg); transform-origin: 20px 45px; }
+    50% { transform: rotate(20deg); transform-origin: 20px 45px; }
+  }
+
+  @keyframes armLeft {
+    0%, 100% { transform: rotate(0deg); transform-origin: 20px 28px; }
+    50% { transform: rotate(10deg); transform-origin: 20px 28px; }
+  }
+
+  @keyframes armRight {
+    0%, 100% { transform: rotate(0deg); transform-origin: 20px 28px; }
+    50% { transform: rotate(-10deg); transform-origin: 20px 28px; }
+  }
+</style>
+
+<script>
+  const stickman = document.getElementById('stickman')!;
+  let x = 50;
+  let y = window.innerHeight - 150;
+  let targetX = x;
+  let targetY = y;
+  let isWalking = false;
+  let direction = 1; // 1 = right, -1 = left
+
+  function pickNewTarget() {
+    const margin = 60;
+    targetX = margin + Math.random() * (window.innerWidth - margin * 2);
+    targetY = window.innerHeight - 150 + (Math.random() - 0.5) * 100;
+  }
+
+  function update() {
+    const dx = targetX - x;
+    const dy = targetY - y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 5) {
+      // Walking
+      const speed = 1.2;
+      x += (dx / dist) * speed;
+      y += (dy / dist) * speed;
+
+      if (!isWalking) {
+        isWalking = true;
+        stickman.classList.add('walking');
+      }
+
+      // Face direction of movement
+      if (dx < -1 && direction !== -1) {
+        direction = -1;
+        stickman.classList.add('flipped');
+      } else if (dx > 1 && direction !== 1) {
+        direction = 1;
+        stickman.classList.remove('flipped');
+      }
+    } else {
+      // Arrived, stop and wait
+      if (isWalking) {
+        isWalking = false;
+        stickman.classList.remove('walking');
+      }
+
+      // Random chance to pick new target
+      if (Math.random() < 0.01) {
+        pickNewTarget();
+      }
+    }
+
+    stickman.style.left = x + 'px';
+    stickman.style.bottom = (window.innerHeight - y) + 'px';
+
+    requestAnimationFrame(update);
+  }
+
+  // Start wandering after a moment
+  setTimeout(() => {
+    pickNewTarget();
+    update();
+  }, 2000);
+
+  // Occasionally pick a new target
+  setInterval(() => {
+    if (!isWalking && Math.random() < 0.3) {
+      pickNewTarget();
+    }
+  }, 3000);
+</script>
+
 <style>
   /* Hero */
   .hero {
