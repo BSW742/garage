@@ -6,10 +6,10 @@ interface Props {
 
 const {
   title,
-  description = "Free AI-readiness audit for your website. Check if ChatGPT, Claude, and other AI assistants can understand your business.",
+  description = "Free beautiful websites for New Zealand charities and community projects. No cost, no catch — just good people helping good causes.",
 } = Astro.props;
 const siteUrl = "https://garage.co.nz";
-const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${title} | garage.co.nz`;
+const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Charities" : `${title} | garage.co.nz`;
 ---
 
 <!doctype html>
@@ -21,6 +21,9 @@ const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${ti
     <title>{fullTitle}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={Astro.url.href} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- OpenGraph -->
     <meta property="og:type" content="website" />
@@ -36,28 +39,25 @@ const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${ti
 
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "garage.co.nz AI Readiness Audit",
+      "@type": "Organization",
+      "name": "garage.co.nz",
       "url": siteUrl,
-      "description": "Free tool to check if your website is optimized for AI search engines like ChatGPT and Claude.",
-      "applicationCategory": "BusinessApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "NZD"
+      "description": "Free websites for New Zealand charities and community projects.",
+      "areaServed": {
+        "@type": "Country",
+        "name": "New Zealand"
       }
     })} />
   </head>
   <body>
     <header class="site-header">
       <a href="/" class="logo">
-        <div class="logo-icon">
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-        </div>
         <span class="logo-text">garage</span>
       </a>
+      <nav class="nav">
+        <a href="#work" class="nav-link">Our Work</a>
+        <a href="/apply" class="nav-link nav-cta">Apply</a>
+      </nav>
     </header>
 
     <main>
@@ -65,23 +65,32 @@ const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${ti
     </main>
 
     <footer>
-      <p>garage.co.nz — AI readiness for New Zealand businesses</p>
+      <div class="footer-content">
+        <p class="footer-mission">Good websites for good people.</p>
+        <p class="footer-copy">garage.co.nz — Aotearoa</p>
+      </div>
     </footer>
   </body>
 </html>
 
 <style is:global>
   :root {
-    --color-primary: #0066ff;
-    --color-primary-dark: #0052cc;
-    --color-bg: #f8f9fa;
+    --color-bg: #fafafa;
     --color-surface: #ffffff;
-    --color-text: #1a1a1a;
-    --color-text-muted: #666666;
-    --color-border: #e0e0e0;
-    --color-green: #22c55e;
-    --color-amber: #f59e0b;
-    --color-red: #ef4444;
+    --color-text: #18181b;
+    --color-text-soft: #52525b;
+    --color-text-muted: #a1a1aa;
+    --color-border: #e4e4e7;
+    --color-accent: #7c3aed;
+    --color-accent-soft: #ede9fe;
+    --color-warm: #f97316;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
   }
 
   * {
@@ -91,9 +100,13 @@ const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${ti
   }
 
   html {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     background: var(--color-bg);
     color: var(--color-text);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
@@ -106,57 +119,84 @@ const fullTitle = title === "Home" ? "garage.co.nz - AI Readiness Audit" : `${ti
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem;
     background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.9);
   }
 
   .logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     text-decoration: none;
-  }
-
-  .logo-icon {
-    width: 32px;
-    height: 32px;
-    background: var(--color-primary);
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-  }
-
-  .logo-icon .bar {
-    width: 20px;
-    height: 4px;
-    background: white;
-    border-radius: 1px;
   }
 
   .logo-text {
     font-weight: 600;
     font-size: 1.25rem;
     color: var(--color-text);
+    letter-spacing: -0.02em;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: var(--color-text-soft);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-link:hover {
+    color: var(--color-text);
+  }
+
+  .nav-cta {
+    background: var(--color-text);
+    color: white !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 100px;
+  }
+
+  .nav-cta:hover {
+    background: #27272a;
   }
 
   main {
     flex: 1;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
-    width: 100%;
   }
 
   footer {
     border-top: 1px solid var(--color-border);
-    padding: 2rem;
+    padding: 3rem 2rem;
     text-align: center;
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
     background: var(--color-surface);
+  }
+
+  .footer-mission {
+    font-size: 1rem;
+    color: var(--color-text-soft);
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-copy {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 640px) {
+    .site-header {
+      padding: 1rem;
+    }
+
+    .nav {
+      gap: 1rem;
+    }
   }
 </style>

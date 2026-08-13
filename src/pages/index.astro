@@ -3,978 +3,318 @@ import Layout from '../components/Layout.astro';
 ---
 
 <Layout title="Home">
-  <section class="hero" id="hero">
-    <div class="headline-row">
-      <h1 id="headline">Can AI find your business?</h1>
-      <button class="rotate-btn" id="rotate-btn" title="Next">›</button>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-eyebrow">For NZ charities & community projects</p>
+      <h1>Free websites.<br/>Beautiful ones.</h1>
+      <p class="hero-sub">We build professional websites for organisations doing good in Aotearoa. No cost, no catch.</p>
+      <a href="/apply" class="hero-cta">Tell us about your project</a>
     </div>
-    <p class="subtitle" id="subline">ChatGPT is the new Google. See if you show up.</p>
-
-    <form id="audit-form" class="audit-form">
-      <div class="input-group">
-        <input
-          type="text"
-          id="url-input"
-          name="url"
-          placeholder="example.com"
-          required
-          autocomplete="url"
-        />
-        <button type="submit" id="submit-btn">
-          <span class="btn-text">Scan</span>
-          <span class="btn-loading" style="display: none;">
-            <svg class="spinner" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" />
-            </svg>
-          </span>
-        </button>
-      </div>
-      <p class="hint">Free · 20 seconds</p>
-    </form>
   </section>
 
-  <script>
-    const headlines = [
-      { h: "Can AI find your business?", s: "ChatGPT is the new Google. See if you show up." },
-      { h: "AI is recommending your competitors.", s: "Are you even visible?" },
-      { h: "Does ChatGPT know you exist?", s: "Free 20-second scan." },
-      { h: "Is your site AI-ready?", s: "Most aren't. Check yours." },
-    ];
-    let idx = Math.floor(Math.random() * headlines.length);
-    const h1 = document.getElementById('headline')!;
-    const sub = document.getElementById('subline')!;
+  <!-- How it works -->
+  <section class="how">
+    <div class="how-content">
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Share your story</h3>
+          <p>Tell us about your organisation and what you're trying to achieve. Takes about 5 minutes.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>We design & build</h3>
+          <p>Our team creates a custom website that captures your mission and connects with your community.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>You go live</h3>
+          <p>Review, refine, and launch. We handle hosting forever. You focus on your mission.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    function showHeadline() {
-      h1.textContent = headlines[idx].h;
-      sub.textContent = headlines[idx].s;
-    }
+  <!-- Work / Case Studies -->
+  <section class="work" id="work">
+    <div class="work-content">
+      <h2>Recent work</h2>
+      <div class="projects">
+        <article class="project">
+          <div class="project-image">
+            <div class="project-placeholder">
+              <span>Coming soon</span>
+            </div>
+          </div>
+          <div class="project-info">
+            <h3>Your project here</h3>
+            <p>We're just getting started. Be one of our first partners and help shape how we support community organisations.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
 
-    showHeadline();
-
-    document.getElementById('rotate-btn')!.addEventListener('click', () => {
-      idx = (idx + 1) % headlines.length;
-      showHeadline();
-    });
-  </script>
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-content">
+      <h2>Doing good in your community?</h2>
+      <p>If you're a registered charity, community group, or working on a project that helps others — we'd love to hear from you.</p>
+      <a href="/apply" class="cta-btn">Apply for a free website</a>
+    </div>
+  </section>
 </Layout>
 
-<!-- FULLSCREEN SCAN OVERLAY - outside Layout for true fullscreen -->
-<div id="scan-overlay" class="scan-overlay">
-  <div class="scan-backdrop" id="scan-backdrop">
-    <iframe id="site-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
-    <div class="iframe-fallback" id="iframe-fallback">
-      <div class="fallback-domain" id="fallback-domain">example.com</div>
-    </div>
-  </div>
-
-  <div class="scan-effects">
-    <div class="scan-line"></div>
-    <div class="scan-grid"></div>
-    <div class="scan-points" id="scan-points"></div>
-  </div>
-
-  <div class="scan-hud">
-    <div class="hud-top">
-      <div class="hud-label">TARGET</div>
-      <div class="hud-domain" id="hud-domain">https://example.com</div>
-    </div>
-    <div class="hud-center">
-      <div class="hud-status" id="hud-status">CONNECTING</div>
-      <div class="hud-detail" id="hud-detail">Establishing connection...</div>
-    </div>
-    <div class="hud-bottom">
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
-      <div class="progress-steps" id="progress-steps"></div>
-    </div>
-  </div>
-</div>
-
-<!-- FULLSCREEN RESULTS - outside Layout for true fullscreen -->
-<div id="results-overlay" class="results-overlay">
-  <div class="results-backdrop" id="results-backdrop">
-    <iframe id="results-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
-  </div>
-  <div class="results-fade"></div>
-
-  <div class="results-content">
-    <button class="back-btn" id="back-btn">← Scan another</button>
-
-    <div class="score-card">
-      <div class="score-domain" id="score-domain">example.com</div>
-      <div class="score-circle" id="score-circle">
-        <span class="score-num" id="score-num">0</span>
-      </div>
-      <div class="score-label" id="score-label">AI Ready</div>
-      <div class="score-summary" id="score-summary">Your site is optimized for AI search.</div>
-    </div>
-
-    <div class="checks-grid" id="checks-grid"></div>
-
-    <div class="cta-card" id="cta-card">
-      <h3>Get your fix-it guide</h3>
-      <p>Specific steps to improve your AI readiness score.</p>
-      <form id="lead-form" class="lead-form">
-        <input type="hidden" id="audit-id" name="audit_id" />
-        <input type="text" name="name" placeholder="Your name" required />
-        <input type="email" name="email" placeholder="Your email" required />
-        <button type="submit" id="lead-btn">
-          <span class="btn-text">Send My Report</span>
-          <span class="btn-loading" style="display: none;">Sending...</span>
-        </button>
-      </form>
-    </div>
-
-    <div class="report-detail" id="report-detail" style="display: none;"></div>
-  </div>
-</div>
-
-<style is:global>
-  /* Reset for fullscreen overlays */
-  .scan-overlay,
-  .results-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: none;
-  }
-
-  /* ========== SCAN OVERLAY ========== */
-  .scan-overlay {
-    background: #0a0a0f;
-  }
-
-  .scan-backdrop {
-    position: absolute;
-    inset: 0;
-  }
-
-  .scan-backdrop iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    opacity: 0.4;
-    filter: saturate(0.5);
-  }
-
-  .iframe-fallback {
-    position: absolute;
-    inset: 0;
-    display: none;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+<style>
+  /* Hero */
+  .hero {
+    min-height: 70vh;
+    display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
   }
 
-  .iframe-fallback.show {
-    display: flex;
+  .hero-content {
+    max-width: 640px;
   }
 
-  .fallback-domain {
-    font-size: clamp(2rem, 8vw, 6rem);
-    font-weight: 700;
-    color: rgba(255,255,255,0.08);
+  .hero-eyebrow {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-accent);
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-  }
-
-  .scan-effects {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .scan-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, #00f0ff 20%, #00f0ff 80%, transparent 100%);
-    box-shadow:
-      0 0 20px #00f0ff,
-      0 0 60px #00f0ff,
-      0 0 100px rgba(0,240,255,0.5);
-    animation: scanDown 10s ease-in-out infinite;
-  }
-
-  @keyframes scanDown {
-    0%, 100% { top: 0; }
-    50% { top: 100%; }
-  }
-
-  .scan-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
-    animation: gridPulse 4s ease-in-out infinite;
-  }
-
-  @keyframes gridPulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
-  }
-
-  .scan-points {
-    position: absolute;
-    inset: 0;
-  }
-
-  .scan-point {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    background: #00f0ff;
-    border-radius: 50%;
-    box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
-    animation: pointFlash 1.5s ease-out forwards;
-  }
-
-  @keyframes pointFlash {
-    0% { transform: scale(0); opacity: 1; }
-    50% { transform: scale(3); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 0; }
-  }
-
-  /* HUD */
-  .scan-hud {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 2rem;
-    pointer-events: none;
-  }
-
-  .hud-top {
-    text-align: center;
-  }
-
-  .hud-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: #00f0ff;
-    opacity: 0.7;
-    margin-bottom: 0.5rem;
-  }
-
-  .hud-domain {
-    font-size: clamp(1rem, 3vw, 1.5rem);
-    font-family: monospace;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    padding: 0.5rem 1.5rem;
-    border-radius: 4px;
-    display: inline-block;
-    border: 1px solid rgba(0,240,255,0.3);
-  }
-
-  .hud-center {
-    text-align: center;
-  }
-
-  .hud-status {
-    font-size: clamp(2rem, 6vw, 4rem);
-    font-weight: 700;
-    color: #00f0ff;
-    text-shadow: 0 0 30px rgba(0,240,255,0.5);
-    letter-spacing: 0.2em;
-    animation: statusPulse 1s ease-in-out infinite;
-  }
-
-  @keyframes statusPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  .hud-detail {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.6);
-    margin-top: 1rem;
-  }
-
-  .hud-bottom {
-    max-width: 600px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .progress-track {
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-bottom: 1rem;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #00f0ff, #00ff88);
-    width: 0%;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 10px #00f0ff;
-  }
-
-  .progress-steps {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.4);
-    font-family: monospace;
-  }
-
-  .progress-steps span {
-    transition: color 0.3s;
-  }
-
-  .progress-steps span.active {
-    color: #00f0ff;
-  }
-
-  .progress-steps span.done {
-    color: #00ff88;
-  }
-
-  /* ========== RESULTS OVERLAY ========== */
-  .results-overlay {
-    background: #f8f9fa;
-  }
-
-  .results-backdrop {
-    position: absolute;
-    inset: 0;
-  }
-
-  .results-backdrop iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    transform: scale(1.1);
-    filter: blur(8px) saturate(0.5);
-    opacity: 0.15;
-  }
-
-  .results-fade {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom,
-      rgba(248,249,250,0.7) 0%,
-      rgba(248,249,250,0.95) 30%,
-      rgba(248,249,250,1) 100%
-    );
-  }
-
-  .results-content {
-    position: relative;
-    z-index: 1;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 1.5rem;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .back-btn {
-    background: none;
-    border: none;
-    color: #666;
-    font-size: 0.9rem;
-    cursor: pointer;
-    padding: 0.5rem 0;
-    align-self: flex-start;
-  }
-
-  .back-btn:hover {
-    color: #333;
-  }
-
-  .score-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  }
-
-  .score-domain {
-    font-size: 0.9rem;
-    color: #666;
+    letter-spacing: 0.05em;
     margin-bottom: 1.5rem;
-    font-family: monospace;
   }
 
-  .score-circle {
-    width: 120px;
-    height: 120px;
+  .hero h1 {
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+  }
+
+  .hero-sub {
+    font-size: 1.25rem;
+    color: var(--color-text-soft);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+  }
+
+  .hero-cta {
+    display: inline-block;
+    background: var(--color-text);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-md);
+  }
+
+  .hero-cta:hover {
+    background: #27272a;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* How */
+  .how {
+    padding: 6rem 2rem;
+    background: var(--color-surface);
+  }
+
+  .how-content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .how h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 3rem;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step-num {
+    width: 48px;
+    height: 48px;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
-  }
-
-  .score-circle.red { background: linear-gradient(135deg, #fee2e2, #fecaca); }
-  .score-circle.amber { background: linear-gradient(135deg, #fef3c7, #fde68a); }
-  .score-circle.green { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
-
-  .score-num {
-    font-size: 3rem;
     font-weight: 700;
-    color: #1a1a1a;
-  }
-
-  .score-label {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-
-  .score-label.red { color: #dc2626; }
-  .score-label.amber { color: #d97706; }
-  .score-label.green { color: #16a34a; }
-
-  .score-summary {
-    color: #666;
-    font-size: 0.95rem;
-  }
-
-  .checks-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  .check-item {
-    background: white;
-    padding: 1rem;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-
-  .check-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-  }
-
-  .check-icon.pass { background: #d1fae5; color: #16a34a; }
-  .check-icon.fail { background: #fee2e2; color: #dc2626; }
-
-  .check-label {
-    font-size: 0.85rem;
-    color: #333;
-  }
-
-  .cta-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  }
-
-  .cta-card h3 {
     font-size: 1.25rem;
-    margin: 0 0 0.5rem 0;
+    margin-bottom: 1.5rem;
   }
 
-  .cta-card > p {
-    color: #666;
-    margin: 0 0 1.5rem 0;
-    font-size: 0.9rem;
-  }
-
-  .lead-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .lead-form input {
-    padding: 0.875rem 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 1rem;
-  }
-
-  .lead-form button {
-    background: #0066ff;
-    color: white;
-    border: none;
-    padding: 1rem;
-    border-radius: 8px;
-    font-size: 1rem;
+  .step h3 {
+    font-size: 1.25rem;
     font-weight: 600;
-    cursor: pointer;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
   }
 
-  .lead-form button:hover {
-    background: #0052cc;
+  .step p {
+    color: var(--color-text-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
 
-  .report-detail {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+  /* Work */
+  .work {
+    padding: 6rem 2rem;
+    background: var(--color-bg);
   }
 
-  .report-item {
-    background: white;
-    padding: 1.25rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  }
-
-  .report-item h4 {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
-  }
-
-  .report-item.pass h4 { color: #16a34a; }
-  .report-item.fail h4 { color: #dc2626; }
-
-  .report-item p {
-    color: #666;
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.5;
-  }
-
-  @media (max-width: 500px) {
-    .checks-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .results-content {
-      padding: 1rem;
-    }
-  }
-</style>
-
-<style>
-  .hero {
-    text-align: center;
-    padding: 4rem 1rem 3rem;
-  }
-
-  .headline-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .hero h1 {
-    font-size: 2.25rem;
-    font-weight: 700;
-    margin: 0 0 1rem 0;
-    line-height: 1.2;
-  }
-
-  .rotate-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0 0.25rem;
-    margin-bottom: 1rem;
-    opacity: 0.4;
-    transition: opacity 0.2s;
-  }
-
-  .rotate-btn:hover {
-    opacity: 0.8;
-  }
-
-  .hero .subtitle {
-    font-size: 1.1rem;
-    color: #666;
-    margin: 0 0 2.5rem 0;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .audit-form {
-    max-width: 500px;
+  .work-content {
+    max-width: 1000px;
     margin: 0 auto;
   }
 
-  .input-group {
-    display: flex;
-    gap: 0.5rem;
-    background: white;
-    padding: 0.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  }
-
-  .input-group input {
-    flex: 1;
-    border: none;
-    padding: 1rem;
-    font-size: 1rem;
-    background: transparent;
-    outline: none;
-  }
-
-  .input-group button {
-    background: #0066ff;
-    color: white;
-    border: none;
-    padding: 1rem 2rem;
+  .work h2 {
     font-size: 1rem;
     font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    min-width: 100px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 3rem;
+    text-align: center;
   }
 
-  .input-group button:hover {
-    background: #0052cc;
+  .projects {
+    display: grid;
+    gap: 2rem;
   }
 
-  .hint {
-    font-size: 0.875rem;
-    color: #888;
-    margin-top: 1rem;
+  .project {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 300px;
   }
 
-  .spinner {
-    width: 20px;
-    height: 20px;
-    animation: spin 1s linear infinite;
+  .project-image {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  .project-placeholder {
+    padding: 2rem;
+    text-align: center;
   }
 
-  @media (max-width: 500px) {
-    .hero h1 { font-size: 1.75rem; }
-    .input-group { flex-direction: column; }
-    .input-group button { width: 100%; }
+  .project-placeholder span {
+    color: var(--color-accent);
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .project-info {
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .project-info h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+  }
+
+  .project-info p {
+    color: var(--color-text-soft);
+    line-height: 1.7;
+  }
+
+  /* CTA */
+  .cta {
+    padding: 6rem 2rem;
+    background: var(--color-text);
+    text-align: center;
+  }
+
+  .cta-content {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .cta h2 {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .cta p {
+    color: rgba(255,255,255,0.7);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    background: white;
+    color: var(--color-text);
+    padding: 1rem 2rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  @media (max-width: 768px) {
+    .project {
+      grid-template-columns: 1fr;
+    }
+
+    .project-image {
+      min-height: 200px;
+    }
+
+    .project-info {
+      padding: 2rem;
+    }
   }
 </style>
-
-<script>
-  const variant = localStorage.getItem('ab_variant') || (Math.random() < 0.5 ? 'A' : 'B');
-  localStorage.setItem('ab_variant', variant);
-
-  let auditData: any = null;
-  let currentUrl = '';
-
-  // Elements
-  const heroSection = document.getElementById('hero')!;
-  const scanOverlay = document.getElementById('scan-overlay')!;
-  const resultsOverlay = document.getElementById('results-overlay')!;
-  const auditForm = document.getElementById('audit-form') as HTMLFormElement;
-  const urlInput = document.getElementById('url-input') as HTMLInputElement;
-
-  // Scan elements
-  const siteIframe = document.getElementById('site-iframe') as HTMLIFrameElement;
-  const iframeFallback = document.getElementById('iframe-fallback')!;
-  const fallbackDomain = document.getElementById('fallback-domain')!;
-  const hudDomain = document.getElementById('hud-domain')!;
-  const hudStatus = document.getElementById('hud-status')!;
-  const hudDetail = document.getElementById('hud-detail')!;
-  const progressFill = document.getElementById('progress-fill')!;
-  const progressSteps = document.getElementById('progress-steps')!;
-  const scanPoints = document.getElementById('scan-points')!;
-
-  // Results elements
-  const resultsIframe = document.getElementById('results-iframe') as HTMLIFrameElement;
-  const scoreDomain = document.getElementById('score-domain')!;
-  const scoreCircle = document.getElementById('score-circle')!;
-  const scoreNum = document.getElementById('score-num')!;
-  const scoreLabel = document.getElementById('score-label')!;
-  const scoreSummary = document.getElementById('score-summary')!;
-  const checksGrid = document.getElementById('checks-grid')!;
-  const ctaCard = document.getElementById('cta-card')!;
-  const reportDetail = document.getElementById('report-detail')!;
-  const backBtn = document.getElementById('back-btn')!;
-  const leadForm = document.getElementById('lead-form') as HTMLFormElement;
-  const auditIdInput = document.getElementById('audit-id') as HTMLInputElement;
-
-  const scanSteps = [
-    { id: 'connect', label: 'CONNECT', status: 'CONNECTING', detail: 'Establishing connection...' },
-    { id: 'meta', label: 'META', status: 'ANALYZING', detail: 'Reading meta description...' },
-    { id: 'llms', label: 'LLMS.TXT', status: 'SCANNING', detail: 'Looking for AI instructions...' },
-    { id: 'schema', label: 'SCHEMA', status: 'PARSING', detail: 'Checking structured data...' },
-    { id: 'structure', label: 'STRUCTURE', status: 'EVALUATING', detail: 'Analyzing content structure...' },
-    { id: 'score', label: 'SCORE', status: 'CALCULATING', detail: 'Computing AI readiness...' },
-  ];
-
-  // Build progress steps
-  progressSteps.innerHTML = scanSteps.map(s => `<span data-step="${s.id}">${s.label}</span>`).join('');
-
-  function addScanPoint() {
-    const point = document.createElement('div');
-    point.className = 'scan-point';
-    point.style.left = Math.random() * 90 + 5 + '%';
-    point.style.top = Math.random() * 90 + 5 + '%';
-    scanPoints.appendChild(point);
-    setTimeout(() => point.remove(), 1500);
-  }
-
-  async function runScan(url: string): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      const stepDuration = 3500; // ~21 seconds total for 6 steps
-      let stepIndex = 0;
-      const scanStartTime = Date.now();
-
-      // Start API call immediately
-      const apiPromise = fetch('/api/audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, variant })
-      });
-
-      // Animate through steps
-      const interval = setInterval(() => {
-        if (stepIndex < scanSteps.length) {
-          const step = scanSteps[stepIndex];
-          hudStatus.textContent = step.status;
-          hudDetail.textContent = step.detail;
-          progressFill.style.width = ((stepIndex + 1) / scanSteps.length * 100) + '%';
-
-          // Update step indicators
-          progressSteps.querySelectorAll('span').forEach((el, i) => {
-            el.classList.remove('active', 'done');
-            if (i < stepIndex) el.classList.add('done');
-            if (i === stepIndex) el.classList.add('active');
-          });
-
-          // Add scan points throughout this step
-          for (let i = 0; i < 8; i++) {
-            setTimeout(() => addScanPoint(), Math.random() * stepDuration);
-          }
-
-          stepIndex++;
-        }
-      }, stepDuration);
-
-      try {
-        const response = await apiPromise;
-
-        // Wait for full animation to finish (all steps complete)
-        const elapsed = Date.now() - scanStartTime;
-        const totalDuration = scanSteps.length * stepDuration;
-        await new Promise(r => setTimeout(r, Math.max(0, totalDuration - elapsed)));
-
-        clearInterval(interval);
-
-        if (!response.ok) throw new Error('Audit failed');
-
-        const data = await response.json();
-
-        // Final step
-        hudStatus.textContent = 'COMPLETE';
-        hudDetail.textContent = 'Analysis finished';
-        progressFill.style.width = '100%';
-        progressSteps.querySelectorAll('span').forEach(el => el.classList.add('done'));
-
-        await new Promise(r => setTimeout(r, 1500));
-        resolve(data);
-
-      } catch (err) {
-        clearInterval(interval);
-        reject(err);
-      }
-    });
-  }
-
-  // Only show fallback on actual iframe errors (rare)
-  siteIframe.addEventListener('error', () => {
-    iframeFallback.classList.add('show');
-  });
-
-  auditForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    let url = urlInput.value.trim();
-    if (!url) return;
-
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
-    }
-    currentUrl = url;
-
-    const domain = new URL(url).hostname;
-
-    // Setup scan overlay
-    hudDomain.textContent = url;
-    fallbackDomain.textContent = domain;
-    iframeFallback.classList.remove('show');
-    siteIframe.src = url;
-    progressFill.style.width = '0%';
-    hudStatus.textContent = 'CONNECTING';
-    hudDetail.textContent = 'Establishing connection...';
-    progressSteps.querySelectorAll('span').forEach(el => el.classList.remove('active', 'done'));
-
-    // Show scan overlay
-    scanOverlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-
-    // Check for X-Frame-Options block after iframe has time to load
-    setTimeout(() => {
-      try {
-        const doc = siteIframe.contentDocument;
-        // If we CAN access it and it's empty/error, show fallback
-        if (doc && doc.body && doc.body.innerHTML.length < 50) {
-          iframeFallback.classList.add('show');
-        }
-      } catch {
-        // Cross-origin = iframe loaded the site, keep showing it
-      }
-    }, 3000);
-
-    try {
-      auditData = await runScan(url);
-
-      // Setup results
-      scoreDomain.textContent = domain;
-      resultsIframe.src = url;
-      displayResults(auditData);
-
-      // Transition to results
-      scanOverlay.style.display = 'none';
-      resultsOverlay.style.display = 'block';
-
-    } catch (err) {
-      alert('Failed to scan website. Please check the URL and try again.');
-      scanOverlay.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  });
-
-  function displayResults(data: any) {
-    scoreNum.textContent = data.score;
-    auditIdInput.value = data.id;
-
-    scoreCircle.className = 'score-circle';
-    scoreLabel.className = 'score-label';
-
-    if (data.score >= 70) {
-      scoreCircle.classList.add('green');
-      scoreLabel.classList.add('green');
-      scoreLabel.textContent = 'AI Ready';
-      scoreSummary.textContent = 'Your website is well-optimized for AI search engines.';
-    } else if (data.score >= 40) {
-      scoreCircle.classList.add('amber');
-      scoreLabel.classList.add('amber');
-      scoreLabel.textContent = 'Needs Work';
-      scoreSummary.textContent = 'Your site has basics but is missing AI-specific optimizations.';
-    } else {
-      scoreCircle.classList.add('red');
-      scoreLabel.classList.add('red');
-      scoreLabel.textContent = 'Not Ready';
-      scoreSummary.textContent = 'AI assistants will struggle to understand your business.';
-    }
-
-    const checks = [
-      { key: 'meta', label: 'Meta Description' },
-      { key: 'robots', label: 'robots.txt' },
-      { key: 'llms_txt', label: 'llms.txt' },
-      { key: 'llm_ld', label: 'LLM-LD' },
-      { key: 'schema', label: 'Schema.org' },
-      { key: 'https', label: 'HTTPS' },
-    ];
-
-    checksGrid.innerHTML = checks.map(check => {
-      const score = data.checks[check.key]?.score || 0;
-      const pass = score > 50;
-      return `
-        <div class="check-item">
-          <div class="check-icon ${pass ? 'pass' : 'fail'}">${pass ? '✓' : '✗'}</div>
-          <div class="check-label">${check.label}</div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  backBtn.addEventListener('click', () => {
-    resultsOverlay.style.display = 'none';
-    document.body.style.overflow = '';
-    urlInput.value = '';
-    ctaCard.style.display = 'block';
-    reportDetail.style.display = 'none';
-  });
-
-  leadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(leadForm);
-    const leadBtn = document.getElementById('lead-btn') as HTMLButtonElement;
-
-    leadBtn.disabled = true;
-    leadBtn.querySelector('.btn-text')!.style.display = 'none';
-    leadBtn.querySelector('.btn-loading')!.style.display = 'block';
-
-    try {
-      const response = await fetch('/api/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audit_id: formData.get('audit_id'),
-          name: formData.get('name'),
-          email: formData.get('email')
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed');
-
-      ctaCard.style.display = 'none';
-      showDetailedReport(auditData);
-
-    } catch {
-      alert('Something went wrong. Please try again.');
-    } finally {
-      leadBtn.disabled = false;
-      leadBtn.querySelector('.btn-text')!.style.display = 'block';
-      leadBtn.querySelector('.btn-loading')!.style.display = 'none';
-    }
-  });
-
-  function showDetailedReport(data: any) {
-    const details = [
-      { key: 'meta', label: 'Meta Description', pass: 'Well-crafted meta description that helps AI understand your page.', fail: 'Add a meta description (50-160 chars) explaining what your business does.' },
-      { key: 'robots', label: 'robots.txt', pass: 'Properly configured robots.txt file.', fail: 'Create a robots.txt file. Ensure AI bots are not blocked.' },
-      { key: 'llms_txt', label: 'llms.txt', pass: 'AI instruction file found.', fail: 'Add /llms.txt with instructions for AI assistants. 844K+ sites use this.' },
-      { key: 'llm_ld', label: 'LLM-LD', pass: 'Machine-readable AI structured data found.', fail: 'Add /.well-known/llm-index.json for AI agents.' },
-      { key: 'schema', label: 'Schema.org', pass: 'JSON-LD structured data found.', fail: 'Add Schema.org JSON-LD markup to your pages.' },
-      { key: 'https', label: 'HTTPS', pass: 'Secure connection enabled.', fail: 'Switch to HTTPS. AI assistants may warn users about insecure sites.' },
-    ];
-
-    reportDetail.innerHTML = details.map(d => {
-      const score = data.checks[d.key]?.score || 0;
-      const pass = score > 50;
-      return `
-        <div class="report-item ${pass ? 'pass' : 'fail'}">
-          <h4>${pass ? '✓' : '✗'} ${d.label}</h4>
-          <p>${pass ? d.pass : d.fail}</p>
-        </div>
-      `;
-    }).join('');
-
-    reportDetail.style.display = 'flex';
-  }
-</script>

@@ -1,0 +1,498 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Apply" description="Apply for a free website for your charity or community project in New Zealand.">
+  <div class="apply-page">
+    <div class="apply-container">
+
+      <!-- Intro -->
+      <div class="step active" data-step="intro">
+        <h1>Let's build something<br/>for your community.</h1>
+        <p class="intro-sub">We just need to learn a little about what you do. This takes about 5 minutes.</p>
+        <button class="btn-primary" data-next="name">Let's go</button>
+      </div>
+
+      <!-- Name -->
+      <div class="step" data-step="name">
+        <label class="question">What's the name of your organisation?</label>
+        <input type="text" id="org-name" placeholder="e.g. Kaipatiki Community Garden" autofocus />
+        <div class="step-nav">
+          <button class="btn-back" data-prev="intro">Back</button>
+          <button class="btn-primary" data-next="mission" data-requires="org-name">Continue</button>
+        </div>
+      </div>
+
+      <!-- Mission -->
+      <div class="step" data-step="mission">
+        <label class="question">In a sentence or two, what do you do?</label>
+        <p class="hint">Don't overthink it — just tell us like you'd tell a friend.</p>
+        <textarea id="org-mission" rows="3" placeholder="e.g. We run a community garden where locals can grow their own vegetables and connect with their neighbours."></textarea>
+        <div class="step-nav">
+          <button class="btn-back" data-prev="name">Back</button>
+          <button class="btn-primary" data-next="website" data-requires="org-mission">Continue</button>
+        </div>
+      </div>
+
+      <!-- Current website -->
+      <div class="step" data-step="website">
+        <label class="question">Do you have a website currently?</label>
+        <div class="options">
+          <button class="option" data-value="none" data-next="need">No, we don't have one yet</button>
+          <button class="option" data-value="old" data-next="current-url">Yes, but it needs work</button>
+          <button class="option" data-value="social" data-next="need">Just Facebook / Instagram</button>
+        </div>
+        <div class="step-nav">
+          <button class="btn-back" data-prev="mission">Back</button>
+        </div>
+      </div>
+
+      <!-- Current URL (conditional) -->
+      <div class="step" data-step="current-url">
+        <label class="question">What's your current website?</label>
+        <input type="url" id="current-url" placeholder="https://..." />
+        <div class="step-nav">
+          <button class="btn-back" data-prev="website">Back</button>
+          <button class="btn-primary" data-next="need">Continue</button>
+        </div>
+      </div>
+
+      <!-- What they need -->
+      <div class="step" data-step="need">
+        <label class="question">What do you most need from a website?</label>
+        <p class="hint">Pick the most important one — we'll figure out the rest together.</p>
+        <div class="options">
+          <button class="option" data-value="awareness" data-next="contact">Tell people we exist</button>
+          <button class="option" data-value="donations" data-next="contact">Collect donations</button>
+          <button class="option" data-value="volunteers" data-next="contact">Find volunteers</button>
+          <button class="option" data-value="info" data-next="contact">Share information / resources</button>
+          <button class="option" data-value="events" data-next="contact">Promote events</button>
+        </div>
+        <div class="step-nav">
+          <button class="btn-back" data-prev="website">Back</button>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="step" data-step="contact">
+        <label class="question">How can we reach you?</label>
+        <p class="hint">We'll only use this to talk about your project.</p>
+        <input type="text" id="contact-name" placeholder="Your name" />
+        <input type="email" id="contact-email" placeholder="Your email" />
+        <div class="step-nav">
+          <button class="btn-back" data-prev="need">Back</button>
+          <button class="btn-primary" data-next="submit" data-requires="contact-name,contact-email">Submit</button>
+        </div>
+      </div>
+
+      <!-- Success -->
+      <div class="step" data-step="success">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>You're in.</h2>
+        <p class="success-text">We've received your application and will be in touch within a few days. In the meantime, feel free to reach out if you think of anything else.</p>
+        <a href="/" class="btn-secondary">Back to home</a>
+      </div>
+
+    </div>
+
+    <!-- Progress -->
+    <div class="progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .apply-page {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+  }
+
+  .apply-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    width: 100%;
+  }
+
+  .step {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .step.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Intro */
+  .step[data-step="intro"] h1 {
+    font-size: clamp(2rem, 6vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  .intro-sub {
+    font-size: 1.15rem;
+    color: var(--color-text-soft);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+  }
+
+  /* Questions */
+  .question {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .hint {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  textarea {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-family: inherit;
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+
+  input:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* Options */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .option {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    text-align: left;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    color: var(--color-text);
+  }
+
+  .option:hover {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+  }
+
+  .option.selected {
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--color-text);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .btn-primary:hover {
+    background: #27272a;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-back {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    font-family: inherit;
+  }
+
+  .btn-back:hover {
+    color: var(--color-text);
+  }
+
+  .btn-secondary {
+    display: inline-block;
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: none;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 100px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-border);
+  }
+
+  .step-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+  }
+
+  /* Success */
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    background: #d1fae5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .success-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #16a34a;
+  }
+
+  .step[data-step="success"] h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .success-text {
+    color: var(--color-text-soft);
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  /* Progress */
+  .progress {
+    padding: 1.5rem 2rem;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--color-border);
+    border-radius: 2px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+</style>
+
+<script>
+  interface FormData {
+    orgName: string;
+    mission: string;
+    hasWebsite: string;
+    currentUrl: string;
+    need: string;
+    contactName: string;
+    contactEmail: string;
+  }
+
+  const formData: FormData = {
+    orgName: '',
+    mission: '',
+    hasWebsite: '',
+    currentUrl: '',
+    need: '',
+    contactName: '',
+    contactEmail: ''
+  };
+
+  const steps = ['intro', 'name', 'mission', 'website', 'need', 'contact', 'success'];
+  const container = document.querySelector('.apply-container')!;
+  const progressFill = document.getElementById('progress-fill')!;
+
+  function showStep(stepName: string) {
+    container.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    const step = container.querySelector(`[data-step="${stepName}"]`);
+    if (step) {
+      step.classList.add('active');
+      const input = step.querySelector('input, textarea') as HTMLElement;
+      if (input) setTimeout(() => input.focus(), 100);
+    }
+
+    // Update progress
+    const mainSteps = ['intro', 'name', 'mission', 'website', 'need', 'contact', 'success'];
+    const currentIndex = mainSteps.indexOf(stepName);
+    const progress = currentIndex >= 0 ? (currentIndex / (mainSteps.length - 1)) * 100 : 0;
+    progressFill.style.width = progress + '%';
+  }
+
+  // Handle navigation buttons
+  container.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    // Next/Continue buttons
+    if (target.dataset.next) {
+      const requires = target.dataset.requires?.split(',') || [];
+      let valid = true;
+
+      for (const id of requires) {
+        const input = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
+        if (input && !input.value.trim()) {
+          input.focus();
+          valid = false;
+          break;
+        }
+      }
+
+      if (!valid) return;
+
+      // Save data before moving
+      saveCurrentStep();
+
+      // Handle submission
+      if (target.dataset.next === 'submit') {
+        await submitForm();
+        showStep('success');
+      } else {
+        showStep(target.dataset.next);
+      }
+    }
+
+    // Back buttons
+    if (target.dataset.prev) {
+      showStep(target.dataset.prev);
+    }
+
+    // Option buttons
+    if (target.classList.contains('option')) {
+      const value = target.dataset.value || '';
+      const currentStep = target.closest('.step')?.dataset.step;
+
+      if (currentStep === 'website') {
+        formData.hasWebsite = value;
+      } else if (currentStep === 'need') {
+        formData.need = value;
+      }
+
+      // Visual selection
+      target.closest('.options')?.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+      target.classList.add('selected');
+
+      // Navigate
+      if (target.dataset.next) {
+        setTimeout(() => showStep(target.dataset.next!), 150);
+      }
+    }
+  });
+
+  function saveCurrentStep() {
+    const orgName = document.getElementById('org-name') as HTMLInputElement;
+    const mission = document.getElementById('org-mission') as HTMLTextAreaElement;
+    const currentUrl = document.getElementById('current-url') as HTMLInputElement;
+    const contactName = document.getElementById('contact-name') as HTMLInputElement;
+    const contactEmail = document.getElementById('contact-email') as HTMLInputElement;
+
+    if (orgName) formData.orgName = orgName.value;
+    if (mission) formData.mission = mission.value;
+    if (currentUrl) formData.currentUrl = currentUrl.value;
+    if (contactName) formData.contactName = contactName.value;
+    if (contactEmail) formData.contactEmail = contactEmail.value;
+  }
+
+  async function submitForm() {
+    try {
+      await fetch('/api/charity-apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+    } catch (err) {
+      console.error('Submit error:', err);
+    }
+  }
+
+  // Enable/disable continue buttons based on input
+  container.querySelectorAll('input, textarea').forEach(input => {
+    input.addEventListener('input', () => {
+      const step = input.closest('.step');
+      const btn = step?.querySelector('[data-requires]') as HTMLButtonElement;
+      if (!btn) return;
+
+      const requires = btn.dataset.requires?.split(',') || [];
+      const allFilled = requires.every(id => {
+        const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
+        return el && el.value.trim();
+      });
+
+      btn.disabled = !allFilled;
+    });
+  });
+
+  // Initial setup: disable buttons that require input
+  container.querySelectorAll('[data-requires]').forEach(btn => {
+    (btn as HTMLButtonElement).disabled = true;
+  });
+</script>
