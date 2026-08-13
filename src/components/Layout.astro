@@ -77,8 +77,10 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         <circle cx="20" cy="10" r="8" />
         <line x1="20" y1="18" x2="20" y2="45" />
         <line x1="20" y1="28" x2="8" y2="38" class="arm-left" />
-        <line x1="20" y1="28" x2="32" y2="38" class="arm-right" />
-        <line x1="32" y1="38" x2="38" y2="65" class="stick" />
+        <g class="arm-stick">
+          <line x1="20" y1="28" x2="32" y2="38" class="arm-right" />
+          <line x1="32" y1="38" x2="38" y2="65" class="stick" />
+        </g>
         <line x1="20" y1="45" x2="10" y2="70" class="leg-left" />
         <line x1="20" y1="45" x2="30" y2="70" class="leg-right" />
       </svg>
@@ -93,7 +95,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         opacity: 0.7;
         z-index: 9999;
         pointer-events: none;
-        bottom: 100px;
+        top: 50%;
         left: 50px;
       }
       .stickman svg {
@@ -112,12 +114,16 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         animation: armSwing 0.7s ease-in-out infinite;
         transform-origin: 20px 28px;
       }
-      .stickman.walking .arm-right {
+      .stickman.walking .arm-stick {
         animation: armSwing 0.7s ease-in-out infinite reverse;
         transform-origin: 20px 28px;
       }
       .stickman.flipped {
         transform: scaleX(-1);
+      }
+      .stickman.tapping .arm-stick {
+        animation: tapStick 0.4s ease-in-out;
+        transform-origin: 20px 28px;
       }
       @keyframes walkLeft {
         0%, 100% { transform: rotate(0deg); }
@@ -131,21 +137,59 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         0%, 100% { transform: rotate(0deg); }
         50% { transform: rotate(15deg); }
       }
+      @keyframes tapStick {
+        0% { transform: rotate(0deg); }
+        30% { transform: rotate(-60deg); }
+        50% { transform: rotate(-45deg); }
+        70% { transform: rotate(-55deg); }
+        100% { transform: rotate(0deg); }
+      }
     </style>
 
     <script>
       const stickman = document.getElementById('stickman');
       if (stickman) {
-        let x = 50;
-        let y = window.innerHeight - 150;
+        let x = 100;
+        let y = 300;
         let targetX = x;
         let targetY = y;
         let isWalking = false;
+        let isTapping = false;
         let direction = 1;
 
+        function getHeroArea() {
+          const hero = document.querySelector('.hero-content, .hero, main');
+          if (hero) {
+            const rect = hero.getBoundingClientRect();
+            return {
+              left: rect.left + 40,
+              right: rect.right - 40,
+              top: rect.top + 80,
+              bottom: rect.bottom - 20
+            };
+          }
+          return {
+            left: 100,
+            right: window.innerWidth - 100,
+            top: 150,
+            bottom: 500
+          };
+        }
+
         function pickNewTarget() {
-          targetX = 60 + Math.random() * (window.innerWidth - 120);
-          targetY = window.innerHeight - 150 + (Math.random() - 0.5) * 80;
+          const area = getHeroArea();
+          targetX = area.left + Math.random() * (area.right - area.left);
+          targetY = area.top + Math.random() * (area.bottom - area.top);
+        }
+
+        function doTap() {
+          if (isTapping || isWalking) return;
+          isTapping = true;
+          stickman.classList.add('tapping');
+          setTimeout(() => {
+            stickman.classList.remove('tapping');
+            isTapping = false;
+          }, 400);
         }
 
         function update() {
@@ -153,7 +197,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           const dy = targetY - y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist > 5) {
+          if (dist > 5 && !isTapping) {
             x += (dx / dist) * 0.6;
             y += (dy / dist) * 0.6;
 
@@ -174,16 +218,18 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
               isWalking = false;
               stickman.classList.remove('walking');
             }
-            if (Math.random() < 0.008) pickNewTarget();
+            if (Math.random() < 0.006) pickNewTarget();
+            if (Math.random() < 0.008) doTap();
           }
 
           stickman.style.left = x + 'px';
-          stickman.style.bottom = (window.innerHeight - y) + 'px';
+          stickman.style.top = y + 'px';
           requestAnimationFrame(update);
         }
 
         setTimeout(() => { pickNewTarget(); update(); }, 2000);
-        setInterval(() => { if (!isWalking && Math.random() < 0.3) pickNewTarget(); }, 4000);
+        setInterval(() => { if (!isWalking && Math.random() < 0.25) pickNewTarget(); }, 5000);
+        setInterval(() => { if (!isWalking && !isTapping && Math.random() < 0.4) doTap(); }, 3000);
       }
     </script>
   </body>
