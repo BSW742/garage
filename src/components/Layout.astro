@@ -87,10 +87,10 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     <style is:global>
       .stickman {
         position: fixed;
-        width: 32px;
-        height: 64px;
-        color: #a1a1aa;
-        opacity: 0.4;
+        width: 48px;
+        height: 96px;
+        color: #404040;
+        opacity: 0.7;
         z-index: 9999;
         pointer-events: none;
         bottom: 100px;
@@ -101,19 +101,19 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         height: 100%;
       }
       .stickman.walking .leg-left {
-        animation: walkLeft 0.4s ease-in-out infinite;
+        animation: walkLeft 0.7s ease-in-out infinite;
         transform-origin: 20px 45px;
       }
       .stickman.walking .leg-right {
-        animation: walkRight 0.4s ease-in-out infinite;
+        animation: walkRight 0.7s ease-in-out infinite;
         transform-origin: 20px 45px;
       }
       .stickman.walking .arm-left {
-        animation: armSwing 0.4s ease-in-out infinite;
+        animation: armSwing 0.7s ease-in-out infinite;
         transform-origin: 20px 28px;
       }
       .stickman.walking .arm-right {
-        animation: armSwing 0.4s ease-in-out infinite reverse;
+        animation: armSwing 0.7s ease-in-out infinite reverse;
         transform-origin: 20px 28px;
       }
       .stickman.flipped {
@@ -154,8 +154,8 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist > 5) {
-            x += (dx / dist) * 1.2;
-            y += (dy / dist) * 1.2;
+            x += (dx / dist) * 0.6;
+            y += (dy / dist) * 0.6;
 
             if (!isWalking) {
               isWalking = true;
