@@ -71,59 +71,113 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       </div>
     </footer>
 
-    <!-- Wandering stick man -->
-    <div class="stickman" id="stickman">
-      <svg viewBox="0 0 40 80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <circle cx="20" cy="10" r="8" />
-        <line x1="20" y1="18" x2="20" y2="45" />
-        <line x1="20" y1="28" x2="8" y2="38" class="arm-left" />
-        <g class="arm-stick">
-          <line x1="20" y1="28" x2="32" y2="38" class="arm-right" />
-          <line x1="32" y1="38" x2="38" y2="65" class="stick" />
+    <!-- Warning sign with escaping stick man -->
+    <div class="warning-sign" id="warning-sign">
+      <svg viewBox="0 0 100 90" fill="none">
+        <!-- Triangle -->
+        <path d="M50 5 L95 82 L5 82 Z" fill="#ff3b30" stroke="#fff" stroke-width="2"/>
+        <path d="M50 15 L85 75 L15 75 Z" fill="#fff"/>
+        <!-- Figure inside (will fade out) -->
+        <g class="sign-figure" fill="#333">
+          <circle cx="50" cy="38" r="5"/>
+          <path d="M50 43 L50 58 M50 48 L42 55 M50 48 L58 52 M50 58 L43 72 M50 58 L55 72"
+                stroke="#333" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <line x1="58" y1="52" x2="62" y2="68" stroke="#333" stroke-width="2" stroke-linecap="round"/>
         </g>
-        <line x1="20" y1="45" x2="10" y2="70" class="leg-left" />
-        <line x1="20" y1="45" x2="30" y2="70" class="leg-right" />
+      </svg>
+    </div>
+
+    <!-- The escaped stick man -->
+    <div class="stickman" id="stickman">
+      <svg viewBox="0 0 40 80" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <circle cx="20" cy="10" r="7" fill="currentColor" stroke="none"/>
+        <line x1="20" y1="17" x2="20" y2="42" />
+        <line x1="20" y1="26" x2="10" y2="36" class="arm-left" />
+        <g class="arm-stick">
+          <line x1="20" y1="26" x2="30" y2="34" class="arm-right" />
+          <line x1="30" y1="34" x2="35" y2="58" class="stick" />
+        </g>
+        <line x1="20" y1="42" x2="12" y2="65" class="leg-left" />
+        <line x1="20" y1="42" x2="28" y2="65" class="leg-right" />
       </svg>
     </div>
 
     <style is:global>
+      .warning-sign {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 63px;
+        z-index: 9998;
+        opacity: 0.85;
+        transition: opacity 0.3s;
+        cursor: default;
+      }
+      .warning-sign:hover {
+        opacity: 1;
+      }
+      .warning-sign svg {
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
+      }
+      .warning-sign .sign-figure {
+        opacity: 1;
+        transition: opacity 0.5s;
+      }
+      .warning-sign.escaped .sign-figure {
+        opacity: 0.15;
+      }
+
       .stickman {
         position: fixed;
         width: 48px;
         height: 96px;
-        color: #404040;
-        opacity: 0.7;
+        color: #1a1a1a;
         z-index: 9999;
         pointer-events: none;
-        top: 50%;
-        left: 50px;
+        opacity: 0;
+        bottom: 45px;
+        right: 40px;
+      }
+      .stickman.visible {
+        opacity: 1;
       }
       .stickman svg {
         width: 100%;
         height: 100%;
       }
+      .stickman.jumping {
+        animation: jumpOut 0.6s ease-out forwards;
+      }
       .stickman.walking .leg-left {
         animation: walkLeft 0.7s ease-in-out infinite;
-        transform-origin: 20px 45px;
+        transform-origin: 20px 42px;
       }
       .stickman.walking .leg-right {
         animation: walkRight 0.7s ease-in-out infinite;
-        transform-origin: 20px 45px;
+        transform-origin: 20px 42px;
       }
       .stickman.walking .arm-left {
         animation: armSwing 0.7s ease-in-out infinite;
-        transform-origin: 20px 28px;
+        transform-origin: 20px 26px;
       }
       .stickman.walking .arm-stick {
         animation: armSwing 0.7s ease-in-out infinite reverse;
-        transform-origin: 20px 28px;
+        transform-origin: 20px 26px;
       }
       .stickman.flipped {
         transform: scaleX(-1);
       }
       .stickman.tapping .arm-stick {
         animation: tapStick 0.4s ease-in-out;
-        transform-origin: 20px 28px;
+        transform-origin: 20px 26px;
+      }
+      @keyframes jumpOut {
+        0% { transform: scale(0.5) translateY(20px); opacity: 0; }
+        50% { transform: scale(1.1) translateY(-30px); opacity: 1; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
       }
       @keyframes walkLeft {
         0%, 100% { transform: rotate(0deg); }
@@ -144,35 +198,55 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         70% { transform: rotate(-55deg); }
         100% { transform: rotate(0deg); }
       }
+
+      @media (max-width: 640px) {
+        .warning-sign {
+          width: 50px;
+          height: 45px;
+          bottom: 20px;
+          right: 20px;
+        }
+        .stickman {
+          width: 36px;
+          height: 72px;
+        }
+      }
     </style>
 
     <script>
       const stickman = document.getElementById('stickman');
-      if (stickman) {
-        let x = 100;
-        let y = 300;
-        let targetX = x;
-        let targetY = y;
+      const sign = document.getElementById('warning-sign');
+
+      if (stickman && sign) {
+        let x, y;
+        let targetX, targetY;
         let isWalking = false;
         let isTapping = false;
+        let hasEscaped = false;
         let direction = 1;
+
+        // Get sign position for starting point
+        function getSignPos() {
+          const rect = sign.getBoundingClientRect();
+          return { x: rect.left, y: rect.top };
+        }
 
         function getHeroArea() {
           const hero = document.querySelector('.hero-content, .hero, main');
           if (hero) {
             const rect = hero.getBoundingClientRect();
             return {
-              left: rect.left + 40,
-              right: rect.right - 40,
-              top: rect.top + 80,
-              bottom: rect.bottom - 20
+              left: Math.max(60, rect.left + 40),
+              right: Math.min(window.innerWidth - 60, rect.right - 40),
+              top: rect.top + 100,
+              bottom: Math.min(rect.bottom - 20, window.innerHeight - 150)
             };
           }
           return {
             left: 100,
             right: window.innerWidth - 100,
-            top: 150,
-            bottom: 500
+            top: 200,
+            bottom: window.innerHeight - 200
           };
         }
 
@@ -192,14 +266,34 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           }, 400);
         }
 
+        function escape() {
+          const signPos = getSignPos();
+          x = signPos.x;
+          y = signPos.y;
+
+          sign.classList.add('escaped');
+          stickman.style.left = x + 'px';
+          stickman.style.top = y + 'px';
+          stickman.classList.add('visible', 'jumping');
+
+          setTimeout(() => {
+            stickman.classList.remove('jumping');
+            hasEscaped = true;
+            pickNewTarget();
+            update();
+          }, 600);
+        }
+
         function update() {
+          if (!hasEscaped) return;
+
           const dx = targetX - x;
           const dy = targetY - y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist > 5 && !isTapping) {
-            x += (dx / dist) * 0.6;
-            y += (dy / dist) * 0.6;
+            x += (dx / dist) * 0.7;
+            y += (dy / dist) * 0.7;
 
             if (!isWalking) {
               isWalking = true;
@@ -218,7 +312,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
               isWalking = false;
               stickman.classList.remove('walking');
             }
-            if (Math.random() < 0.006) pickNewTarget();
+            if (Math.random() < 0.005) pickNewTarget();
             if (Math.random() < 0.008) doTap();
           }
 
@@ -227,9 +321,12 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           requestAnimationFrame(update);
         }
 
-        setTimeout(() => { pickNewTarget(); update(); }, 2000);
-        setInterval(() => { if (!isWalking && Math.random() < 0.25) pickNewTarget(); }, 5000);
-        setInterval(() => { if (!isWalking && !isTapping && Math.random() < 0.4) doTap(); }, 3000);
+        // Escape after a delay
+        setTimeout(escape, 2500);
+
+        // Occasionally wander to new spots
+        setInterval(() => { if (hasEscaped && !isWalking && Math.random() < 0.3) pickNewTarget(); }, 5000);
+        setInterval(() => { if (hasEscaped && !isWalking && !isTapping && Math.random() < 0.4) doTap(); }, 3500);
       }
     </script>
   </body>
