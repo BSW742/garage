@@ -8,7 +8,7 @@ import Layout from '../components/Layout.astro';
     <div class="hero-bg"></div>
     <div class="hero-content">
       <p class="hero-eyebrow">For NZ charities & community projects</p>
-      <h1>Free websites.<br/><span class="hero-accent">Beautiful</span> ones.</h1>
+      <h1><span class="hit-letter hit-free" data-letter="0">F</span><span class="hit-letter hit-free" data-letter="1">r</span><span class="hit-letter hit-free" data-letter="2">e</span><span class="hit-letter hit-free" data-letter="3">e</span> <span class="hit-letter">w</span><span class="hit-letter">e</span><span class="hit-letter">b</span><span class="hit-letter">s</span><span class="hit-letter">i</span><span class="hit-letter">t</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.<br/><span class="hero-accent"><span class="hit-letter">B</span><span class="hit-letter">e</span><span class="hit-letter">a</span><span class="hit-letter">u</span><span class="hit-letter">t</span><span class="hit-letter">i</span><span class="hit-letter">f</span><span class="hit-letter">u</span><span class="hit-letter">l</span></span> <span class="hit-letter">o</span><span class="hit-letter">n</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.</h1>
       <p class="hero-sub">We build professional websites for organisations doing good in Aotearoa. No cost, no catch — just people helping people.</p>
       <a href="/apply" class="hero-cta">
         <span>Tell us about your project</span>
@@ -116,6 +116,24 @@ import Layout from '../components/Layout.astro';
     z-index: 1;
   }
 
+  /* Hit letters that swing when stick hits */
+  .hit-letter {
+    display: inline-block;
+    transform-origin: bottom center;
+    transition: transform 0.1s;
+  }
+  .hit-letter.hit {
+    animation: swingDown 2s ease-out forwards;
+  }
+  @keyframes swingDown {
+    0% { transform: rotate(0deg); }
+    15% { transform: rotate(85deg); }
+    30% { transform: rotate(70deg); }
+    45% { transform: rotate(80deg); }
+    60% { transform: rotate(75deg); }
+    100% { transform: rotate(90deg); }
+  }
+
   .hero-eyebrow {
     font-size: 0.875rem;
     font-weight: 600;
@@ -136,6 +154,13 @@ import Layout from '../components/Layout.astro';
   }
 
   .hero-accent {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-accent .hit-letter {
     background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
