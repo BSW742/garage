@@ -109,6 +109,29 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       </svg>
     </div>
 
+    <!-- Throwable stick -->
+    <div class="throw-stick" id="throw-stick">
+      <svg viewBox="0 0 50 60" fill="none">
+        <!-- Movement lines -->
+        <path d="M8 20 Q4 22 6 26" stroke="#999" stroke-width="1.5" stroke-linecap="round" class="motion-line"/>
+        <path d="M5 30 Q1 32 3 36" stroke="#999" stroke-width="1.5" stroke-linecap="round" class="motion-line"/>
+        <path d="M10 38 Q6 40 8 44" stroke="#999" stroke-width="1.5" stroke-linecap="round" class="motion-line"/>
+        <!-- Stick -->
+        <g class="stick-body">
+          <line x1="18" y1="8" x2="40" y2="52" stroke="#8B4513" stroke-width="5" stroke-linecap="round"/>
+          <line x1="18" y1="8" x2="40" y2="52" stroke="#A0522D" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Flying stick (for animation) -->
+    <div class="flying-stick" id="flying-stick">
+      <svg viewBox="0 0 60 12" fill="none">
+        <line x1="5" y1="6" x2="55" y2="6" stroke="#8B4513" stroke-width="5" stroke-linecap="round"/>
+        <line x1="5" y1="6" x2="55" y2="6" stroke="#A0522D" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
+
     <!-- Warning sign with escaping stick man -->
     <div class="warning-sign" id="warning-sign">
       <svg viewBox="0 0 100 90" fill="none">
@@ -235,6 +258,79 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         50% { transform: rotate(-45deg); }
         70% { transform: rotate(-55deg); }
         100% { transform: rotate(0deg); }
+      }
+
+      /* Throwable stick */
+      .throw-stick {
+        position: fixed;
+        bottom: 35px;
+        right: 105px;
+        width: 35px;
+        height: 50px;
+        z-index: 9998;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: transform 0.1s;
+      }
+      .throw-stick:hover {
+        transform: scale(1.1);
+      }
+      .throw-stick:hover .stick-body {
+        animation: wiggleStick 0.15s ease-in-out infinite;
+      }
+      .throw-stick .stick-body {
+        animation: gentleWiggle 2s ease-in-out infinite;
+        transform-origin: 29px 30px;
+      }
+      .throw-stick .motion-line {
+        animation: motionPulse 1s ease-in-out infinite;
+        opacity: 0.5;
+      }
+      .throw-stick .motion-line:nth-child(2) {
+        animation-delay: 0.3s;
+      }
+      .throw-stick .motion-line:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+      .throw-stick.thrown {
+        opacity: 0;
+        pointer-events: none;
+      }
+      @keyframes gentleWiggle {
+        0%, 100% { transform: rotate(-3deg); }
+        50% { transform: rotate(3deg); }
+      }
+      @keyframes wiggleStick {
+        0%, 100% { transform: rotate(-8deg); }
+        50% { transform: rotate(8deg); }
+      }
+      @keyframes motionPulse {
+        0%, 100% { opacity: 0.3; transform: translateX(0); }
+        50% { opacity: 0.7; transform: translateX(-3px); }
+      }
+
+      /* Flying stick */
+      .flying-stick {
+        position: fixed;
+        width: 60px;
+        height: 12px;
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+        display: none;
+      }
+      .flying-stick.flying {
+        display: block;
+        opacity: 1;
+        animation: spinStick 0.3s linear infinite;
+      }
+      .flying-stick.landed {
+        animation: none;
+        transform: rotate(15deg);
+      }
+      @keyframes spinStick {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
 
       /* Sheepdog */
@@ -446,7 +542,10 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
       // Sheepdog logic
       const dog = document.getElementById('sheepdog');
-      if (dog) {
+      const throwStick = document.getElementById('throw-stick');
+      const flyingStick = document.getElementById('flying-stick');
+
+      if (dog && throwStick && flyingStick) {
         let dogX = -100;
         let dogY = window.innerHeight * 0.6;
         let dogTargetX = dogX;
@@ -454,8 +553,13 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         let dogRunning = false;
         let dogDirection = 1;
         let dogVisible = false;
+        let isFetching = false;
+        let stickLandX = 0;
+        let stickLandY = 0;
+        let hasStick = false;
 
         function pickDogTarget() {
+          if (isFetching) return;
           const margin = 100;
           dogTargetX = margin + Math.random() * (window.innerWidth - margin * 2);
           dogTargetY = 150 + Math.random() * (window.innerHeight - 350);
@@ -467,7 +571,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist > 10) {
-            const speed = 2.5;
+            const speed = isFetching ? 4 : 2.5;
             dogX += (dx / dist) * speed;
             dogY += (dy / dist) * speed;
 
@@ -488,12 +592,82 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
               dogRunning = false;
               dog.classList.remove('running');
             }
+
+            // Check if fetching and reached stick
+            if (isFetching && !hasStick) {
+              hasStick = true;
+              flyingStick.style.display = 'none';
+              // Return to throw area
+              const stickRect = throwStick.getBoundingClientRect();
+              dogTargetX = stickRect.left - 60;
+              dogTargetY = stickRect.top;
+            }
+
+            // Check if returned with stick
+            if (hasStick && Math.abs(dogX - dogTargetX) < 20) {
+              setTimeout(() => {
+                isFetching = false;
+                hasStick = false;
+                throwStick.classList.remove('thrown');
+              }, 500);
+            }
           }
 
           dog.style.left = dogX + 'px';
           dog.style.top = dogY + 'px';
           requestAnimationFrame(updateDog);
         }
+
+        // Throw stick on click
+        throwStick.addEventListener('click', () => {
+          if (isFetching || !dogVisible) return;
+
+          isFetching = true;
+          throwStick.classList.add('thrown');
+
+          // Calculate throw trajectory
+          const stickRect = throwStick.getBoundingClientRect();
+          const startX = stickRect.left;
+          const startY = stickRect.top;
+          stickLandX = 100 + Math.random() * (window.innerWidth - 300);
+          stickLandY = 150 + Math.random() * (window.innerHeight - 400);
+
+          // Animate flying stick
+          flyingStick.style.left = startX + 'px';
+          flyingStick.style.top = startY + 'px';
+          flyingStick.classList.add('flying');
+          flyingStick.classList.remove('landed');
+
+          let progress = 0;
+          const flyDuration = 800;
+          const startTime = Date.now();
+
+          function animateThrow() {
+            progress = (Date.now() - startTime) / flyDuration;
+
+            if (progress < 1) {
+              const x = startX + (stickLandX - startX) * progress;
+              const arcHeight = -200 * Math.sin(progress * Math.PI);
+              const y = startY + (stickLandY - startY) * progress + arcHeight;
+
+              flyingStick.style.left = x + 'px';
+              flyingStick.style.top = y + 'px';
+              requestAnimationFrame(animateThrow);
+            } else {
+              // Stick landed
+              flyingStick.style.left = stickLandX + 'px';
+              flyingStick.style.top = stickLandY + 'px';
+              flyingStick.classList.remove('flying');
+              flyingStick.classList.add('landed');
+
+              // Send Barney to fetch
+              dogTargetX = stickLandX;
+              dogTargetY = stickLandY;
+            }
+          }
+
+          animateThrow();
+        });
 
         // Dog enters after a delay
         setTimeout(() => {
@@ -503,9 +677,9 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           updateDog();
         }, 4000);
 
-        // Dog runs to new spots frequently
+        // Dog runs to new spots frequently (but not while fetching)
         setInterval(() => {
-          if (dogVisible && Math.random() < 0.5) {
+          if (dogVisible && !isFetching && Math.random() < 0.5) {
             pickDogTarget();
           }
         }, 3000);
