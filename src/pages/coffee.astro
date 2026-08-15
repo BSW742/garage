@@ -1,0 +1,374 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Coffee" description="A personal homage to Raglan Roast - the best coffee in Aotearoa.">
+  <div class="coffee-page">
+    <!-- Hero -->
+    <section class="coffee-hero">
+      <div class="hero-content">
+        <img src="/beany.png" alt="Coffee bean" class="hero-bean" />
+        <h1>Raglan Roast</h1>
+        <p class="tagline">Roasted by Animals. Tested on Humans.</p>
+        <p class="subtitle">A personal homage to my favourite coffee.</p>
+      </div>
+      <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
+    </section>
+
+    <!-- Story -->
+    <section class="story-section">
+      <div class="story-content">
+        <h2>The Origin Story</h2>
+        <p>It started when a couple of barefoot surfers went seeking a strong brew to power them through their day. Armed with an old roaster, a blowtorch, and pure kiwi ingenuity, they created <strong>Brown Lightning</strong> — serving it from a hole-in-the-wall surf shop in Raglan.</p>
+        <p>That learn-by-doing philosophy has since expanded into 11 locations across Aotearoa, from Raglan to Wellington to Nelson. Each cafe has its own vibe, but they all share one thing: bloody good coffee.</p>
+      </div>
+    </section>
+
+    <!-- Photo Gallery -->
+    <section class="gallery-section">
+      <h2>My Coffee Moments</h2>
+      <p class="gallery-intro">Snapshots from my caffeine-fuelled adventures.</p>
+
+      <div class="photo-grid">
+        <!-- Large feature photo -->
+        <div class="photo-placeholder large" data-slot="1">
+          <span>Photo 1</span>
+          <small>800 x 600</small>
+        </div>
+
+        <!-- Two medium side by side -->
+        <div class="photo-placeholder medium" data-slot="2">
+          <span>Photo 2</span>
+          <small>400 x 400</small>
+        </div>
+        <div class="photo-placeholder medium" data-slot="3">
+          <span>Photo 3</span>
+          <small>400 x 400</small>
+        </div>
+
+        <!-- Three small in a row -->
+        <div class="photo-placeholder small" data-slot="4">
+          <span>Photo 4</span>
+          <small>250 x 250</small>
+        </div>
+        <div class="photo-placeholder small" data-slot="5">
+          <span>Photo 5</span>
+          <small>250 x 250</small>
+        </div>
+        <div class="photo-placeholder small" data-slot="6">
+          <span>Photo 6</span>
+          <small>250 x 250</small>
+        </div>
+
+        <!-- Wide panoramic -->
+        <div class="photo-placeholder wide" data-slot="7">
+          <span>Photo 7</span>
+          <small>1200 x 400</small>
+        </div>
+
+        <!-- Two tall vertical -->
+        <div class="photo-placeholder tall" data-slot="8">
+          <span>Photo 8</span>
+          <small>300 x 500</small>
+        </div>
+        <div class="photo-placeholder tall" data-slot="9">
+          <span>Photo 9</span>
+          <small>300 x 500</small>
+        </div>
+
+        <!-- Medium feature -->
+        <div class="photo-placeholder medium-wide" data-slot="10">
+          <span>Photo 10</span>
+          <small>600 x 400</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quote -->
+    <section class="quote-section">
+      <blockquote>
+        "Building humming communities of loyal locals, one cup at a time."
+      </blockquote>
+      <p class="quote-credit">— The Raglan Roast Way</p>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <h2>Get Some Yourself</h2>
+      <p>Daily hand-roasted in the Waikato. Next-day delivery on online orders.</p>
+      <a href="https://raglanroast.co.nz" target="_blank" rel="noopener" class="cta-btn">Visit Raglan Roast</a>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .coffee-page {
+    background: #faf7f2;
+    min-height: 100vh;
+  }
+
+  /* Hero */
+  .coffee-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    padding: 4rem 2rem 3rem;
+    background: linear-gradient(135deg, #3d2314 0%, #5d3a1a 50%, #8b4513 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    text-align: center;
+  }
+
+  .hero-bean {
+    width: 100px;
+    height: auto;
+    margin-bottom: 1.5rem;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+  }
+
+  .hero-ben {
+    width: 320px;
+    height: auto;
+    filter: drop-shadow(0 15px 30px rgba(0,0,0,0.4));
+  }
+
+  @media (max-width: 768px) {
+    .coffee-hero {
+      flex-direction: column;
+    }
+    .hero-ben {
+      width: 250px;
+      order: -1;
+    }
+  }
+
+  .coffee-hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
+  }
+
+  .tagline {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #d4a574;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+
+  /* Story */
+  .story-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  .story-content h2 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: #3d2314;
+    margin-bottom: 1.5rem;
+  }
+
+  .story-content p {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: #5d4e37;
+    margin-bottom: 1.5rem;
+  }
+
+  .story-content strong {
+    color: #8b4513;
+  }
+
+  /* Gallery */
+  .gallery-section {
+    padding: 3rem 2rem 4rem;
+    background: #3d2314;
+    color: white;
+  }
+
+  .gallery-section h2 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .gallery-intro {
+    text-align: center;
+    color: #d4a574;
+    margin-bottom: 2rem;
+  }
+
+  .photo-grid {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+
+  .photo-placeholder {
+    background: linear-gradient(135deg, #5d3a1a 0%, #8b4513 100%);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #d4a574;
+    border: 2px dashed #8b4513;
+    transition: all 0.3s;
+  }
+
+  .photo-placeholder:hover {
+    border-color: #d4a574;
+    transform: scale(1.02);
+  }
+
+  .photo-placeholder span {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .photo-placeholder small {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+  }
+
+  .photo-placeholder.large {
+    grid-column: span 4;
+    aspect-ratio: 4/3;
+  }
+
+  .photo-placeholder.medium {
+    grid-column: span 2;
+    aspect-ratio: 1;
+  }
+
+  .photo-placeholder.small {
+    grid-column: span 2;
+    aspect-ratio: 1;
+  }
+
+  .photo-placeholder.wide {
+    grid-column: span 6;
+    aspect-ratio: 3/1;
+  }
+
+  .photo-placeholder.tall {
+    grid-column: span 2;
+    aspect-ratio: 3/5;
+  }
+
+  .photo-placeholder.medium-wide {
+    grid-column: span 2;
+    aspect-ratio: 3/2;
+  }
+
+  /* Quote */
+  .quote-section {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #f5e6d3;
+  }
+
+  .quote-section blockquote {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    color: #3d2314;
+    font-weight: 600;
+    font-style: italic;
+    max-width: 700px;
+    margin: 0 auto 1rem;
+    line-height: 1.4;
+  }
+
+  .quote-credit {
+    color: #8b4513;
+    font-size: 1rem;
+  }
+
+  /* CTA */
+  .cta-section {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #3d2314;
+    color: white;
+  }
+
+  .cta-section h2 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .cta-section p {
+    color: #d4a574;
+    margin-bottom: 1.5rem;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    background: #d4a574;
+    color: #3d2314;
+    padding: 1rem 2.5rem;
+    border-radius: 100px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+  }
+
+  .cta-btn:hover {
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .photo-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .photo-placeholder.large,
+    .photo-placeholder.wide {
+      grid-column: span 2;
+    }
+
+    .photo-placeholder.medium,
+    .photo-placeholder.small,
+    .photo-placeholder.tall,
+    .photo-placeholder.medium-wide {
+      grid-column: span 1;
+    }
+
+    .photo-placeholder.tall {
+      aspect-ratio: 3/4;
+    }
+
+    .photo-placeholder.wide {
+      aspect-ratio: 2/1;
+    }
+  }
+</style>
