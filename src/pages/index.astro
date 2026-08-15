@@ -23,13 +23,9 @@ import Layout from '../components/Layout.astro';
           <span class="tile-domain">waltonboxing.pages.dev</span>
         </div>
       </a>
-      <a href="https://raglan.pages.dev/website" target="_blank" class="project-tile size-b pos-4">
-        <div class="tile-preview" style="background-image: url('/projects/raglan-hero.jpg')"></div>
-        <div class="tile-info">
-          <span class="tile-domain">raglan.pages.dev</span>
-        </div>
-      </a>
     </div>
+
+    <img src="/lean.png" alt="Garage mascot" class="hero-mascot" />
 
     <div class="hero-content">
       <p class="hero-eyebrow">For NZ charities & community projects</p>
@@ -110,6 +106,30 @@ import Layout from '../components/Layout.astro';
     max-width: 800px;
     position: relative;
     z-index: 1;
+  }
+
+  .hero-mascot {
+    position: absolute;
+    right: calc(50% + 180px);
+    top: 50%;
+    transform: translateY(-45%);
+    height: 380px;
+    width: auto;
+    z-index: 3;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.15));
+    cursor: grab;
+    user-select: none;
+  }
+
+  .hero-mascot.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 20px 50px rgba(0,0,0,0.25));
+  }
+
+  @media (max-width: 1200px) {
+    .hero-mascot {
+      display: none;
+    }
   }
 
   /* Hit letters that swing when stick hits */
@@ -262,6 +282,7 @@ import Layout from '../components/Layout.astro';
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: top center;
   }
 
   .tile-info {
@@ -323,9 +344,9 @@ import Layout from '../components/Layout.astro';
 
   /* Positions with subtle rotations */
   .pos-1 { top: 6%; left: 2%; transform: rotate(-2deg); }
-  .pos-2 { top: 4%; right: 2%; transform: rotate(1.5deg); }
-  .pos-3 { top: 35%; right: 18%; transform: rotate(-3deg); }
-  .pos-4 { bottom: 18%; right: 3%; transform: rotate(2deg); }
+  .pos-2 { top: 20%; right: 2%; transform: rotate(1.5deg); }
+  .pos-3 { top: 20%; left: 2%; transform: rotate(-3deg); }
+  .pos-4 { top: 8%; right: 2%; transform: rotate(3deg); }
   .pos-5 { bottom: 5%; left: 30%; transform: rotate(1deg); }
 
   @media (max-width: 1200px) {
@@ -506,4 +527,87 @@ import Layout from '../components/Layout.astro';
       toggleOverlay();
     }
   });
+
+  // Draggable mascot easter egg
+  const mascot = document.querySelector('.hero-mascot') as HTMLElement;
+  if (mascot) {
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialX = 0, initialY = 0;
+
+    // Get initial position from CSS
+    const rect = mascot.getBoundingClientRect();
+    const heroRect = mascot.parentElement?.getBoundingClientRect();
+    if (heroRect) {
+      initialX = rect.left - heroRect.left;
+      initialY = rect.top - heroRect.top;
+    }
+
+    // Check for saved position
+    const saved = localStorage.getItem('mascot-pos');
+    if (saved) {
+      const pos = JSON.parse(saved);
+      mascot.style.right = 'auto';
+      mascot.style.top = 'auto';
+      mascot.style.transform = 'none';
+      mascot.style.left = pos.x + 'px';
+      mascot.style.top = pos.y + 'px';
+    }
+
+    function startDrag(e: MouseEvent | TouchEvent) {
+      isDragging = true;
+      mascot.classList.add('dragging');
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const rect = mascot.getBoundingClientRect();
+      startX = clientX - rect.left;
+      startY = clientY - rect.top;
+    }
+
+    function doDrag(e: MouseEvent | TouchEvent) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const heroRect = mascot.parentElement?.getBoundingClientRect();
+      if (!heroRect) return;
+
+      const x = clientX - heroRect.left - startX;
+      const y = clientY - heroRect.top - startY;
+
+      mascot.style.right = 'auto';
+      mascot.style.top = 'auto';
+      mascot.style.transform = 'none';
+      mascot.style.left = x + 'px';
+      mascot.style.top = y + 'px';
+    }
+
+    function endDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+      mascot.classList.remove('dragging');
+
+      // Save position
+      const heroRect = mascot.parentElement?.getBoundingClientRect();
+      const rect = mascot.getBoundingClientRect();
+      if (heroRect) {
+        localStorage.setItem('mascot-pos', JSON.stringify({
+          x: rect.left - heroRect.left,
+          y: rect.top - heroRect.top
+        }));
+      }
+    }
+
+    mascot.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    mascot.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', doDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+  }
 </script>

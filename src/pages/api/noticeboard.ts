@@ -119,15 +119,43 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 };
 
+// PUT - Update a noticeboard item
+export const PUT: APIRoute = async ({ request, locals }) => {
+  try {
+    const { DB } = (locals as { runtime: Runtime }).runtime.env;
+    const { id, content } = await request.json();
+
+    if (!id || !content) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    await DB.prepare(
+      'UPDATE noticeboard SET content = ? WHERE id = ?'
+    ).bind(JSON.stringify(content), id).run();
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to update item' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+};
+
 // DELETE - Remove a noticeboard item
 export const DELETE: APIRoute = async ({ request, locals }) => {
   try {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
-    const { slot_id } = await request.json();
+    const { id } = await request.json();
 
     await DB.prepare(
-      'DELETE FROM noticeboard WHERE slot_id = ?'
-    ).bind(slot_id).run();
+      'DELETE FROM noticeboard WHERE id = ?'
+    ).bind(id).run();
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { 'Content-Type': 'application/json' }

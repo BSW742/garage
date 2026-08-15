@@ -13,6 +13,7 @@ import Layout from '../components/Layout.astro';
         <button class="filter-btn" data-filter="services">Services</button>
         <button class="filter-btn" data-filter="events">Events</button>
         <button class="filter-btn" data-filter="lost-found">Lost & Found</button>
+        <button class="filter-btn" data-filter="video">Videos</button>
       </div>
     </header>
 
@@ -50,6 +51,7 @@ import Layout from '../components/Layout.astro';
           <button type="button" class="cat-btn" data-cat="services">🔧 Services</button>
           <button type="button" class="cat-btn" data-cat="events">📅 Events</button>
           <button type="button" class="cat-btn" data-cat="lost-found">🐾 Lost & Found</button>
+          <button type="button" class="cat-btn" data-cat="video">🎬 Video/Channel</button>
           <button type="button" class="cat-btn" data-cat="announcement">📢 Announcement</button>
         </div>
       </div>
@@ -57,6 +59,12 @@ import Layout from '../components/Layout.astro';
       <div class="form-group">
         <label for="post-title">Title *</label>
         <input type="text" id="post-title" placeholder="What are you posting?" maxlength="60" />
+      </div>
+
+      <div class="form-group video-field" id="video-url-group" style="display: none;">
+        <label for="post-video-url">YouTube/Video URL *</label>
+        <input type="url" id="post-video-url" placeholder="https://youtube.com/watch?v=... or channel URL" />
+        <small class="field-hint">Paste a YouTube video or channel link</small>
       </div>
 
       <div class="form-group">
@@ -103,6 +111,7 @@ import Layout from '../components/Layout.astro';
       <button class="modal-close">&times;</button>
       <div id="view-badge" class="card-badge"></div>
       <h2 id="view-title"></h2>
+      <iframe id="view-video" class="view-video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       <img id="view-photo" class="view-photo" />
       <p id="view-desc"></p>
       <div id="view-contact" class="view-contact"></div>
@@ -165,6 +174,7 @@ import Layout from '../components/Layout.astro';
     .filter-btn[data-filter="services"].active { background: #dbeafe; color: #1e40af; }
     .filter-btn[data-filter="events"].active { background: #fae8ff; color: #86198f; }
     .filter-btn[data-filter="lost-found"].active { background: #fee2e2; color: #991b1b; }
+    .filter-btn[data-filter="video"].active { background: #fce7f3; color: #be185d; }
 
     .post-btn {
       background: #3d2314;
@@ -289,7 +299,15 @@ import Layout from '../components/Layout.astro';
     .card-badge.services { background: #dbeafe; color: #1e40af; }
     .card-badge.events { background: #fae8ff; color: #86198f; }
     .card-badge.lost-found { background: #fee2e2; color: #991b1b; }
+    .card-badge.video { background: #fce7f3; color: #be185d; }
     .card-badge.announcement { background: #f97316; color: white; }
+
+    .field-hint {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 0.25rem;
+    }
 
     .card h3 {
       font-size: 1.1rem;
@@ -586,6 +604,53 @@ import Layout from '../components/Layout.astro';
       display: block;
     }
 
+    /* Video embed */
+    .card-video-thumb {
+      width: 100%;
+      height: 120px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-video-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-video-thumb::after {
+      content: '▶';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+      padding-left: 4px;
+    }
+
+    .view-video {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .view-video.visible {
+      display: block;
+    }
+
     .view-content p {
       font-size: 1rem;
       line-height: 1.6;
@@ -627,10 +692,39 @@ import Layout from '../components/Layout.astro';
         title: string;
         desc?: string;
         photoData?: string;
+        videoUrl?: string;
         contact?: string;
         cardColor?: string;
       };
       created_at: string;
+    }
+
+    // Extract YouTube video ID from various URL formats
+    function getYouTubeId(url: string): string | null {
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\?\/]+)/,
+        /youtube\.com\/shorts\/([^&\?\/]+)/
+      ];
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+      }
+      return null;
+    }
+
+    // Get YouTube thumbnail URL
+    function getYouTubeThumbnail(videoId: string): string {
+      return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    }
+
+    // Get YouTube embed URL
+    function getYouTubeEmbedUrl(videoId: string): string {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    // Check if URL is a YouTube channel
+    function isYouTubeChannel(url: string): boolean {
+      return /youtube\.com\/(c\/|channel\/|@)/.test(url);
     }
 
     const postModal = document.getElementById('post-modal')!;
@@ -649,6 +743,7 @@ import Layout from '../components/Layout.astro';
       'services': 'Services',
       'events': 'Events',
       'lost-found': 'Lost & Found',
+      'video': 'Video',
       'announcement': 'Announcement'
     };
 
@@ -686,14 +781,34 @@ import Layout from '../components/Layout.astro';
           day: 'numeric', month: 'short'
         });
 
+        // Video thumbnail
+        let videoThumbHtml = '';
+        if (content.videoUrl) {
+          const videoId = getYouTubeId(content.videoUrl);
+          if (videoId) {
+            videoThumbHtml = `
+              <div class="card-video-thumb">
+                <img src="${getYouTubeThumbnail(videoId)}" alt="Video thumbnail" />
+              </div>
+            `;
+          } else if (isYouTubeChannel(content.videoUrl)) {
+            videoThumbHtml = `
+              <div class="card-video-thumb" style="display: flex; align-items: center; justify-content: center; background: #ff0000;">
+                <span style="color: white; font-size: 2rem;">📺</span>
+              </div>
+            `;
+          }
+        }
+
         card.innerHTML = `
           <div class="pin"></div>
           <div class="card-badge ${content.category}">${categoryLabels[content.category] || content.category}</div>
           <h3>${escapeHtml(content.title)}</h3>
+          ${videoThumbHtml}
           ${content.desc ? `<p>${escapeHtml(content.desc)}</p>` : ''}
           <div class="card-footer">
             <span class="card-date">${date}</span>
-            <span class="card-action">${content.photoData ? '📷 ' : ''}View →</span>
+            <span class="card-action">${content.photoData ? '📷 ' : ''}${content.videoUrl ? '🎬 ' : ''}View →</span>
           </div>
         `;
 
@@ -731,6 +846,26 @@ import Layout from '../components/Layout.astro';
 
       document.getElementById('view-title')!.textContent = content.title;
 
+      // Video embed
+      const videoFrame = document.getElementById('view-video') as HTMLIFrameElement;
+      if (content.videoUrl) {
+        const videoId = getYouTubeId(content.videoUrl);
+        if (videoId) {
+          videoFrame.src = getYouTubeEmbedUrl(videoId);
+          videoFrame.classList.add('visible');
+        } else if (isYouTubeChannel(content.videoUrl)) {
+          // For channels, show a link instead
+          videoFrame.classList.remove('visible');
+          const descEl = document.getElementById('view-desc')!;
+          descEl.innerHTML = `<a href="${content.videoUrl}" target="_blank" style="color: #be185d; font-weight: 600;">📺 Visit YouTube Channel →</a><br><br>${escapeHtml(content.desc || '')}`;
+        } else {
+          videoFrame.classList.remove('visible');
+        }
+      } else {
+        videoFrame.src = '';
+        videoFrame.classList.remove('visible');
+      }
+
       const photo = document.getElementById('view-photo') as HTMLImageElement;
       if (content.photoData) {
         photo.src = content.photoData;
@@ -739,7 +874,9 @@ import Layout from '../components/Layout.astro';
         photo.classList.remove('visible');
       }
 
-      document.getElementById('view-desc')!.textContent = content.desc || '';
+      if (!content.videoUrl || getYouTubeId(content.videoUrl)) {
+        document.getElementById('view-desc')!.textContent = content.desc || '';
+      }
 
       const contact = document.getElementById('view-contact')!;
       contact.textContent = content.contact ? `📧 ${content.contact}` : '';
@@ -758,6 +895,12 @@ import Layout from '../components/Layout.astro';
         document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedCategory = (btn as HTMLElement).dataset.cat || 'for-sale';
+
+        // Show/hide video URL field
+        const videoGroup = document.getElementById('video-url-group');
+        if (videoGroup) {
+          videoGroup.style.display = selectedCategory === 'video' ? 'block' : 'none';
+        }
       });
     });
 
@@ -794,6 +937,8 @@ import Layout from '../components/Layout.astro';
       (document.getElementById('post-desc') as HTMLTextAreaElement).value = '';
       (document.getElementById('post-contact') as HTMLInputElement).value = '';
       (document.getElementById('post-photo') as HTMLInputElement).value = '';
+      (document.getElementById('post-video-url') as HTMLInputElement).value = '';
+      document.getElementById('video-url-group')!.style.display = 'none';
       document.getElementById('photo-label')!.textContent = 'Click or drag to add photo';
       document.getElementById('photo-preview')!.classList.remove('visible');
       photoData = null;
@@ -810,17 +955,24 @@ import Layout from '../components/Layout.astro';
       postModal.classList.remove('visible');
     });
 
+    function closeViewModal() {
+      viewModal.classList.remove('visible');
+      // Stop video playback
+      const videoFrame = document.getElementById('view-video') as HTMLIFrameElement;
+      videoFrame.src = '';
+    }
+
     document.querySelectorAll('.modal-close').forEach(btn => {
       btn.addEventListener('click', () => {
         postModal.classList.remove('visible');
-        viewModal.classList.remove('visible');
+        closeViewModal();
       });
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         postModal.classList.remove('visible');
-        viewModal.classList.remove('visible');
+        closeViewModal();
       }
     });
 
@@ -829,6 +981,12 @@ import Layout from '../components/Layout.astro';
       const title = (document.getElementById('post-title') as HTMLInputElement).value.trim();
       if (!title) {
         alert('Please enter a title');
+        return;
+      }
+
+      const videoUrl = (document.getElementById('post-video-url') as HTMLInputElement).value.trim();
+      if (selectedCategory === 'video' && !videoUrl) {
+        alert('Please enter a video or channel URL');
         return;
       }
 
@@ -854,6 +1012,7 @@ import Layout from '../components/Layout.astro';
               title,
               desc,
               photoData,
+              videoUrl: selectedCategory === 'video' ? videoUrl : undefined,
               contact,
               cardColor: selectedColor
             }

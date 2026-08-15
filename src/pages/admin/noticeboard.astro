@@ -1,0 +1,385 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const db = Astro.locals.runtime?.env?.DB;
+let notices: any[] = [];
+let error = '';
+
+if (db) {
+  try {
+    const result = await db.prepare(`
+      SELECT id, slot_id, type, content, created_at
+      FROM noticeboard
+      ORDER BY created_at DESC
+    `).all();
+    notices = result.results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+
+// Parse content JSON for each notice
+notices = notices.map(n => ({
+  ...n,
+  parsedContent: typeof n.content === 'string' ? JSON.parse(n.content) : n.content
+}));
+
+const categoryColors: Record<string, string> = {
+  'for-sale': '#dcfce7',
+  'wanted': '#dbeafe',
+  'services': '#fef3c7',
+  'events': '#f3e8ff',
+  'lost-found': '#fee2e2',
+  'general': '#f3f4f6'
+};
+---
+
+<Layout title="Noticeboard Admin">
+  <div class="admin">
+    <div class="admin-header">
+      <h1>Noticeboard Admin</h1>
+      <a href="/admin/leads" class="nav-btn">Leads →</a>
+    </div>
+
+    {error && <div class="error">{error}</div>}
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">{notices.length}</span>
+        <span class="stat-label">Total Notices</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{notices.filter(n => n.type === 'for-sale').length}</span>
+        <span class="stat-label">For Sale</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{notices.filter(n => n.type === 'wanted').length}</span>
+        <span class="stat-label">Wanted</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">{notices.filter(n => n.type === 'services').length}</span>
+        <span class="stat-label">Services</span>
+      </div>
+    </div>
+
+    <div class="notices-list">
+      {notices.map(notice => (
+        <div class="notice-card" data-id={notice.id} style={`border-left: 4px solid ${categoryColors[notice.type] || '#e5e7eb'}`}>
+          <div class="notice-header">
+            <span class="notice-type">{notice.type}</span>
+            <span class="notice-date">{new Date(notice.created_at).toLocaleDateString()}</span>
+          </div>
+
+          <div class="notice-content">
+            <div class="field">
+              <label>Title</label>
+              <input type="text" class="edit-title" value={notice.parsedContent.title || ''} />
+            </div>
+            <div class="field">
+              <label>Description</label>
+              <textarea class="edit-description" rows="3">{notice.parsedContent.description || ''}</textarea>
+            </div>
+            {notice.parsedContent.price && (
+              <div class="field">
+                <label>Price</label>
+                <input type="text" class="edit-price" value={notice.parsedContent.price || ''} />
+              </div>
+            )}
+            {notice.parsedContent.contact && (
+              <div class="field">
+                <label>Contact</label>
+                <input type="text" class="edit-contact" value={notice.parsedContent.contact || ''} />
+              </div>
+            )}
+            {notice.parsedContent.photoData && (
+              <div class="field">
+                <label>Photo</label>
+                <img src={notice.parsedContent.photoData} alt="Notice photo" class="notice-photo" />
+              </div>
+            )}
+          </div>
+
+          <div class="notice-actions">
+            <button class="btn-save" onclick={`saveNotice('${notice.id}')`}>Save Changes</button>
+            <button class="btn-delete" onclick={`deleteNotice('${notice.id}')`}>Delete</button>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {notices.length === 0 && !error && (
+      <p class="empty">No notices yet.</p>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .admin {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  .nav-btn {
+    background: #0066ff;
+    color: white;
+    text-decoration: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .error {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .stat-num {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .notices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .notice-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .notice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .notice-type {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 0.05em;
+  }
+
+  .notice-date {
+    font-size: 0.85rem;
+    color: #888;
+  }
+
+  .notice-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+  }
+
+  .field input,
+  .field textarea {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: #0066ff;
+    box-shadow: 0 0 0 3px rgba(0,102,255,0.1);
+  }
+
+  .notice-photo {
+    max-width: 200px;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .notice-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .btn-save {
+    background: #16a34a;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-save:hover {
+    background: #15803d;
+  }
+
+  .btn-delete {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .btn-delete:hover {
+    background: #b91c1c;
+  }
+
+  .empty {
+    text-align: center;
+    color: #888;
+    padding: 3rem;
+  }
+
+  .notice-card.saving {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .notice-card.deleted {
+    animation: fadeOut 0.3s ease forwards;
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      transform: translateX(-20px);
+      height: 0;
+      padding: 0;
+      margin: 0;
+    }
+  }
+</style>
+
+<script is:inline>
+  async function saveNotice(id) {
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (!card) return;
+
+    card.classList.add('saving');
+
+    const title = card.querySelector('.edit-title')?.value || '';
+    const description = card.querySelector('.edit-description')?.value || '';
+    const price = card.querySelector('.edit-price')?.value || '';
+    const contact = card.querySelector('.edit-contact')?.value || '';
+
+    const content = { title, description };
+    if (price) content.price = price;
+    if (contact) content.contact = contact;
+
+    // Preserve photo if exists
+    const photoImg = card.querySelector('.notice-photo');
+    if (photoImg) {
+      content.photoData = photoImg.src;
+    }
+
+    try {
+      const res = await fetch('/api/noticeboard', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, content })
+      });
+
+      if (res.ok) {
+        card.classList.remove('saving');
+        // Flash green briefly
+        card.style.background = '#f0fdf4';
+        setTimeout(() => card.style.background = '', 500);
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (e) {
+      card.classList.remove('saving');
+      alert('Failed to save changes');
+    }
+  }
+
+  async function deleteNotice(id) {
+    if (!confirm('Delete this notice?')) return;
+
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (!card) return;
+
+    try {
+      const res = await fetch('/api/noticeboard', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      if (res.ok) {
+        card.classList.add('deleted');
+        setTimeout(() => card.remove(), 300);
+      } else {
+        throw new Error('Failed to delete');
+      }
+    } catch (e) {
+      alert('Failed to delete notice');
+    }
+  }
+</script>

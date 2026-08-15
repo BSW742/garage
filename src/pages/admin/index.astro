@@ -1,0 +1,347 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const db = (Astro.locals.runtime?.env as any)?.DB;
+let throws: any[] = [];
+let applications: any[] = [];
+let throwStats = { total: 0, uniqueIPs: 0 };
+let error = '';
+
+if (db) {
+  try {
+    // Create tables if they don't exist
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS throw_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip_address TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS charity_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        org_name TEXT NOT NULL,
+        mission TEXT NOT NULL,
+        has_website TEXT,
+        current_url TEXT,
+        need TEXT,
+        contact_name TEXT NOT NULL,
+        contact_email TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
+
+    // Get throw stats
+    const throwResult = await db.prepare(`
+      SELECT ip_address, COUNT(*) as count, MAX(created_at) as last_throw
+      FROM throw_logs
+      GROUP BY ip_address
+      ORDER BY count DESC
+      LIMIT 50
+    `).all();
+    throws = throwResult.results || [];
+
+    const totalResult = await db.prepare(`SELECT COUNT(*) as total FROM throw_logs`).first();
+    const uniqueResult = await db.prepare(`SELECT COUNT(DISTINCT ip_address) as unique_ips FROM throw_logs`).first();
+    throwStats = {
+      total: totalResult?.total || 0,
+      uniqueIPs: uniqueResult?.unique_ips || 0
+    };
+
+    // Get charity applications
+    const appResult = await db.prepare(`
+      SELECT * FROM charity_applications
+      ORDER BY created_at DESC
+      LIMIT 50
+    `).all();
+    applications = appResult.results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+---
+
+<Layout title="Admin Dashboard">
+  <div class="admin">
+    <div class="admin-header">
+      <h1>Admin Dashboard</h1>
+      <div class="nav-links">
+        <a href="/admin/leads" class="nav-btn">Leads</a>
+        <a href="/admin/outreach" class="nav-btn">Outreach</a>
+      </div>
+    </div>
+
+    {error && <div class="error">{error}</div>}
+
+    <!-- Throw Stats -->
+    <section class="section">
+      <h2>Bone Throws</h2>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num">{throwStats.total}</span>
+          <span class="stat-label">Total Throws</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">{throwStats.uniqueIPs}</span>
+          <span class="stat-label">Unique Visitors</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">{throwStats.uniqueIPs > 0 ? (throwStats.total / throwStats.uniqueIPs).toFixed(1) : 0}</span>
+          <span class="stat-label">Avg per Visitor</span>
+        </div>
+      </div>
+
+      {throws.length > 0 && (
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>IP Address</th>
+              <th>Throws</th>
+              <th>Last Throw</th>
+            </tr>
+          </thead>
+          <tbody>
+            {throws.map(t => (
+              <tr>
+                <td class="ip">{t.ip_address}</td>
+                <td><span class="count">{t.count}</span></td>
+                <td class="date">{new Date(t.last_throw).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+
+    <!-- Applications -->
+    <section class="section">
+      <h2>Charity Applications</h2>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num">{applications.length}</span>
+          <span class="stat-label">Total Applications</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">{applications.filter(a => a.status === 'pending').length}</span>
+          <span class="stat-label">Pending</span>
+        </div>
+      </div>
+
+      {applications.length > 0 ? (
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Organisation</th>
+              <th>Contact</th>
+              <th>Need</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {applications.map(app => (
+              <tr>
+                <td class="date">{new Date(app.created_at).toLocaleDateString()}</td>
+                <td>
+                  <strong>{app.org_name}</strong>
+                  <p class="mission">{app.mission}</p>
+                </td>
+                <td>
+                  <div>{app.contact_name}</div>
+                  <a href={`mailto:${app.contact_email}`}>{app.contact_email}</a>
+                </td>
+                <td><span class="tag">{app.need || '-'}</span></td>
+                <td><span class={`status ${app.status}`}>{app.status}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p class="empty">No applications yet.</p>
+      )}
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .admin {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .nav-btn {
+    background: #0066ff;
+    color: white;
+    text-decoration: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .nav-btn:hover {
+    background: #0052cc;
+  }
+
+  .error {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .section {
+    margin-bottom: 3rem;
+  }
+
+  .section h2 {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .stat-num {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .data-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ip {
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+
+  .count {
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .date {
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  .mission {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: #666;
+    max-width: 300px;
+  }
+
+  .data-table a {
+    color: #0066ff;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .data-table a:hover {
+    text-decoration: underline;
+  }
+
+  .tag {
+    background: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .status.pending {
+    background: #fef3c7;
+    color: #d97706;
+  }
+
+  .status.approved {
+    background: #d1fae5;
+    color: #16a34a;
+  }
+
+  .status.rejected {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .empty {
+    text-align: center;
+    color: #888;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+  }
+</style>
