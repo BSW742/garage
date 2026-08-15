@@ -1,0 +1,354 @@
+---
+import Layout from '../components/Layout.astro';
+
+const projects = [
+  {
+    id: 'bridgepoint',
+    title: 'Bridgepoint',
+    url: 'https://bridgepoint.co.nz',
+    image: '/projects/bridgepoint.jpg',
+    description: 'Professional services website'
+  },
+  {
+    id: 'waltonboxing',
+    title: 'Walton Boxing',
+    url: 'https://waltonboxing.pages.dev',
+    video: '/waltonboxing.mp4',
+    description: 'Boxing gym website'
+  },
+  {
+    id: 'raglan',
+    title: 'Raglan Community',
+    url: '#',
+    image: '/projects/raglan-hero.jpg',
+    description: 'Community project'
+  }
+];
+---
+
+<Layout title="Projects">
+  <section class="projects-page">
+    <div class="projects-header">
+      <img src="/nav/projects.png" alt="" class="projects-icon" />
+      <h1>Our Projects</h1>
+      <p>Websites we've built for organisations doing good in Aotearoa</p>
+    </div>
+
+    <div class="carousel-container">
+      <button class="carousel-nav prev" aria-label="Previous project">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="carousel-track-wrapper">
+        <div class="carousel-track">
+          {projects.map((project, index) => (
+            <a
+              href={project.url}
+              target="_blank"
+              class={`carousel-slide ${index === 0 ? 'active' : ''}`}
+              data-index={index}
+            >
+              <div class="slide-media">
+                {project.video ? (
+                  <video autoplay muted loop playsinline>
+                    <source src={project.video} type="video/mp4" />
+                  </video>
+                ) : (
+                  <img src={project.image} alt={project.title} />
+                )}
+              </div>
+              <div class="slide-info">
+                <h2>{project.title}</h2>
+                <p>{project.description}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <button class="carousel-nav next" aria-label="Next project">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="carousel-dots">
+      {projects.map((_, index) => (
+        <button
+          class={`dot ${index === 0 ? 'active' : ''}`}
+          data-index={index}
+          aria-label={`Go to slide ${index + 1}`}
+        />
+      ))}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .projects-page {
+    min-height: 100vh;
+    padding: 6rem 2rem 4rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  .projects-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .projects-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1.5rem;
+  }
+
+  .projects-header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 800;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+  }
+
+  .projects-header p {
+    color: var(--color-text-soft);
+    font-size: 1.1rem;
+  }
+
+  .carousel-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .carousel-nav {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .carousel-nav:hover {
+    background: var(--color-text);
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .carousel-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .carousel-track-wrapper {
+    flex: 1;
+    overflow: hidden;
+    max-width: 1000px;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .carousel-slide {
+    flex: 0 0 60%;
+    margin: 0 2%;
+    border-radius: 16px;
+    overflow: hidden;
+    text-decoration: none;
+    background: #000;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.4;
+    transform: scale(0.85);
+    filter: blur(2px);
+  }
+
+  .carousel-slide.active {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+    z-index: 5;
+  }
+
+  .carousel-slide:hover {
+    box-shadow: 0 16px 60px rgba(0,0,0,0.25);
+  }
+
+  .slide-media {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+  }
+
+  .slide-media img,
+  .slide-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .carousel-slide:hover .slide-media img,
+  .carousel-slide:hover .slide-media video {
+    transform: scale(1.05);
+  }
+
+  .slide-info {
+    padding: 1.5rem;
+    background: white;
+  }
+
+  .slide-info h2 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+
+  .slide-info p {
+    color: var(--color-text-soft);
+    font-size: 0.9rem;
+  }
+
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-text-muted);
+    opacity: 0.3;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .dot:hover {
+    opacity: 0.6;
+  }
+
+  .dot.active {
+    opacity: 1;
+    background: var(--color-accent);
+    transform: scale(1.2);
+  }
+
+  @media (max-width: 768px) {
+    .projects-page {
+      padding: 5rem 1rem 3rem;
+    }
+
+    .carousel-nav {
+      width: 44px;
+      height: 44px;
+    }
+
+    .carousel-slide {
+      flex: 0 0 80%;
+      margin: 0 2%;
+    }
+
+    .slide-info {
+      padding: 1rem;
+    }
+
+    .slide-info h2 {
+      font-size: 1.1rem;
+    }
+  }
+</style>
+
+<script>
+  const track = document.querySelector('.carousel-track') as HTMLElement;
+  const slides = document.querySelectorAll('.carousel-slide');
+  const prevBtn = document.querySelector('.carousel-nav.prev') as HTMLButtonElement;
+  const nextBtn = document.querySelector('.carousel-nav.next') as HTMLButtonElement;
+  const dots = document.querySelectorAll('.dot');
+
+  let currentIndex = 0;
+  const totalSlides = slides.length;
+
+  function updateCarousel() {
+    // Calculate offset - center the active slide
+    const slideWidth = 64; // 60% + 4% margins
+    const offset = currentIndex * slideWidth;
+
+    // Offset to center (start with 20% padding on each side for the partial views)
+    track.style.transform = `translateX(calc(20% - ${offset}%))`;
+
+    // Update active states
+    slides.forEach((slide, index) => {
+      slide.classList.toggle('active', index === currentIndex);
+    });
+
+    dots.forEach((dot, index) => {
+      dot.classList.toggle('active', index === currentIndex);
+    });
+
+    // Update button states
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === totalSlides - 1;
+  }
+
+  function goToSlide(index: number) {
+    currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
+    updateCarousel();
+  }
+
+  prevBtn?.addEventListener('click', () => goToSlide(currentIndex - 1));
+  nextBtn?.addEventListener('click', () => goToSlide(currentIndex + 1));
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => goToSlide(index));
+  });
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') goToSlide(currentIndex - 1);
+    if (e.key === 'ArrowRight') goToSlide(currentIndex + 1);
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  track?.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+  }, { passive: true });
+
+  track?.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goToSlide(currentIndex + 1);
+      else goToSlide(currentIndex - 1);
+    }
+  });
+
+  // Initialize
+  updateCarousel();
+</script>

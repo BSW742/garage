@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ locals }) => {
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
 
     const result = await DB.prepare(
-      'SELECT id, slot_id, type, content, created_at FROM noticeboard ORDER BY created_at DESC'
+      'SELECT id, slot_id, type, content, created_at, views, hearts FROM noticeboard ORDER BY created_at DESC'
     ).all();
 
     return new Response(JSON.stringify({ items: result.results }), {
@@ -162,6 +162,42 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Failed to delete item' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+};
+
+// PATCH - Increment views or toggle hearts
+export const PATCH: APIRoute = async ({ request, locals }) => {
+  try {
+    const { DB } = (locals as { runtime: Runtime }).runtime.env;
+    const { id, action, delta } = await request.json();
+
+    if (!id || !action) {
+      return new Response(JSON.stringify({ error: 'Missing id or action' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (action === 'view') {
+      await DB.prepare(
+        'UPDATE noticeboard SET views = COALESCE(views, 0) + 1 WHERE id = ?'
+      ).bind(id).run();
+    } else if (action === 'heart') {
+      // delta: 1 to add heart, -1 to remove
+      const change = delta === -1 ? -1 : 1;
+      await DB.prepare(
+        'UPDATE noticeboard SET hearts = MAX(0, COALESCE(hearts, 0) + ?) WHERE id = ?'
+      ).bind(change, id).run();
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Failed to update stats' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

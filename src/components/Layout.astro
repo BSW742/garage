@@ -55,8 +55,8 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         <span class="logo-text">garage<span class="dot-orange">.</span>co<span class="dot">.</span>nz</span>
       </a>
       <nav class="nav">
-        <a href="/?projects" class="nav-link nav-icon" id="projects-toggle" title="Our Projects">
-          <img src="/nav/community-v3.png" alt="Our Projects" />
+        <a href="/projects" class="nav-link nav-icon" title="Our Projects">
+          <img src="/nav/projects.png" alt="Our Projects" />
         </a>
         <a href="/merch" class="nav-link nav-icon" title="Merch">
           <img src="/nav/merch-v2.png" alt="Merch" />
@@ -632,14 +632,14 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           const startX = stickRect.left;
           const startY = stickRect.top;
 
-          // First throw targets FREE, subsequent throws target other letters
+          // First throw targets BEAUTIFUL, subsequent throws target other letters
           let unhitLetters: NodeListOf<Element>;
           if (throwCount === 0) {
-            // First throw: only FREE letters
-            unhitLetters = document.querySelectorAll('.hit-letter.hit-free:not(.hit)');
+            // First throw: only BEAUTIFUL letters
+            unhitLetters = document.querySelectorAll('.hit-letter.hit-first:not(.hit)');
           } else {
-            // Subsequent throws: other letters (not FREE)
-            unhitLetters = document.querySelectorAll('.hit-letter:not(.hit-free):not(.hit)');
+            // Subsequent throws: other letters (not BEAUTIFUL)
+            unhitLetters = document.querySelectorAll('.hit-letter:not(.hit-first):not(.hit)');
           }
 
           let targetLetter: Element | null = null;

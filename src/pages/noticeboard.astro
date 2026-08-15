@@ -361,6 +361,52 @@ import Layout from '../components/Layout.astro';
       font-size: 0.75rem;
     }
 
+    .card-stats {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .heart-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.2rem;
+      font-size: 1rem;
+      transition: transform 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      color: #888;
+    }
+
+    .heart-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .heart-btn.hearted {
+      color: #e11d48;
+    }
+
+    .heart-btn.hearted .heart-icon::before {
+      content: '\2665';
+    }
+
+    .heart-icon::before {
+      content: '\2661';
+    }
+
     /* Empty state */
     .empty-state {
       grid-column: 1 / -1;
@@ -697,6 +743,21 @@ import Layout from '../components/Layout.astro';
         cardColor?: string;
       };
       created_at: string;
+      views: number;
+      hearts: number;
+    }
+
+    // Track which notices user has hearted (localStorage)
+    function getHeartedIds(): Set<string> {
+      try {
+        return new Set(JSON.parse(localStorage.getItem('hearted-notices') || '[]'));
+      } catch {
+        return new Set();
+      }
+    }
+
+    function setHeartedIds(ids: Set<string>) {
+      localStorage.setItem('hearted-notices', JSON.stringify([...ids]));
     }
 
     // Extract YouTube video ID from various URL formats
@@ -800,8 +861,20 @@ import Layout from '../components/Layout.astro';
           }
         }
 
+        const heartedIds = getHeartedIds();
+        const isHearted = heartedIds.has(item.id);
+        const views = item.views || 0;
+        const hearts = item.hearts || 0;
+
         card.innerHTML = `
           <div class="pin"></div>
+          <div class="card-stats">
+            <span class="stat-item" title="Views">👁 ${views}</span>
+            <button class="heart-btn ${isHearted ? 'hearted' : ''}" data-id="${item.id}" title="Heart this">
+              <span class="heart-icon"></span>
+              <span class="heart-count">${hearts}</span>
+            </button>
+          </div>
           <div class="card-badge ${content.category}">${categoryLabels[content.category] || content.category}</div>
           <h3>${escapeHtml(content.title)}</h3>
           ${videoThumbHtml}
@@ -811,6 +884,13 @@ import Layout from '../components/Layout.astro';
             <span class="card-action">${content.photoData ? '📷 ' : ''}${content.videoUrl ? '🎬 ' : ''}View →</span>
           </div>
         `;
+
+        // Heart button click
+        const heartBtn = card.querySelector('.heart-btn') as HTMLButtonElement;
+        heartBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleHeart(item.id, heartBtn);
+        });
 
         card.addEventListener('click', () => openViewModal(item));
         // Insert before empty state (keeps newest first)
@@ -836,8 +916,57 @@ import Layout from '../components/Layout.astro';
       return div.innerHTML;
     }
 
+    // Toggle heart on a notice
+    async function toggleHeart(id: string, btn: HTMLButtonElement) {
+      const heartedIds = getHeartedIds();
+      const wasHearted = heartedIds.has(id);
+      const delta = wasHearted ? -1 : 1;
+
+      // Optimistic UI update
+      if (wasHearted) {
+        heartedIds.delete(id);
+        btn.classList.remove('hearted');
+      } else {
+        heartedIds.add(id);
+        btn.classList.add('hearted');
+      }
+      setHeartedIds(heartedIds);
+
+      const countEl = btn.querySelector('.heart-count');
+      if (countEl) {
+        const current = parseInt(countEl.textContent || '0');
+        countEl.textContent = String(Math.max(0, current + delta));
+      }
+
+      // Send to server
+      try {
+        await fetch('/api/noticeboard', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'heart', delta })
+        });
+      } catch (e) {
+        console.error('Failed to update heart:', e);
+      }
+    }
+
+    // Track a view
+    async function trackView(id: string) {
+      try {
+        await fetch('/api/noticeboard', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'view' })
+        });
+      } catch (e) {
+        console.error('Failed to track view:', e);
+      }
+    }
+
     // Open view modal
     function openViewModal(item: NoticeItem) {
+      // Track the view
+      trackView(item.id);
       const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
 
       const badge = document.getElementById('view-badge')!;
