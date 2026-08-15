@@ -1,0 +1,883 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Noticeboard" description="Community noticeboard - post classifieds, events, and announcements">
+  <div class="noticeboard">
+    <header class="board-header">
+      <button id="post-btn" class="post-btn">+ Post</button>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="for-sale">For Sale</button>
+        <button class="filter-btn" data-filter="wanted">Wanted</button>
+        <button class="filter-btn" data-filter="services">Services</button>
+        <button class="filter-btn" data-filter="events">Events</button>
+        <button class="filter-btn" data-filter="lost-found">Lost & Found</button>
+      </div>
+    </header>
+
+    <div class="board-content">
+      <!-- Pinned flyer -->
+      <article class="card pinned" data-id="flyer">
+        <div class="pin"></div>
+        <div class="card-badge announcement">Announcement</div>
+        <h3>Free Website for Your Charity</h3>
+        <p>We build free websites for charities and community projects in Aotearoa.</p>
+        <div class="card-footer">
+          <span class="card-link">garage.co.nz</span>
+          <a href="/flyer.pdf" target="_blank" class="card-action">View Flyer →</a>
+        </div>
+      </article>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state">
+        <p>Be the first to post something!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post Modal -->
+  <div id="post-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <h2>Post to Noticeboard</h2>
+
+      <div class="form-group">
+        <label>Category</label>
+        <div class="category-grid">
+          <button type="button" class="cat-btn active" data-cat="for-sale">🏷️ For Sale</button>
+          <button type="button" class="cat-btn" data-cat="wanted">🔍 Wanted</button>
+          <button type="button" class="cat-btn" data-cat="services">🔧 Services</button>
+          <button type="button" class="cat-btn" data-cat="events">📅 Events</button>
+          <button type="button" class="cat-btn" data-cat="lost-found">🐾 Lost & Found</button>
+          <button type="button" class="cat-btn" data-cat="announcement">📢 Announcement</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="post-title">Title *</label>
+        <input type="text" id="post-title" placeholder="What are you posting?" maxlength="60" />
+      </div>
+
+      <div class="form-group">
+        <label for="post-desc">Description</label>
+        <textarea id="post-desc" placeholder="Add more details..." rows="3"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="post-photo">Photo (optional)</label>
+        <div class="photo-upload" id="photo-drop">
+          <input type="file" id="post-photo" accept="image/*" />
+          <span id="photo-label">Click or drag to add photo</span>
+        </div>
+        <img id="photo-preview" class="photo-preview" />
+      </div>
+
+      <div class="form-group">
+        <label for="post-contact">Contact (optional)</label>
+        <input type="text" id="post-contact" placeholder="Email or phone" />
+      </div>
+
+      <div class="form-group">
+        <label>Card Colour</label>
+        <div class="color-picker">
+          <button type="button" class="color-btn active" data-color="white" style="background: white;"></button>
+          <button type="button" class="color-btn" data-color="yellow" style="background: #fff9c4;"></button>
+          <button type="button" class="color-btn" data-color="pink" style="background: #f8bbd9;"></button>
+          <button type="button" class="color-btn" data-color="blue" style="background: #bbdefb;"></button>
+          <button type="button" class="color-btn" data-color="green" style="background: #c8e6c9;"></button>
+          <button type="button" class="color-btn" data-color="orange" style="background: #ffe0b2;"></button>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" id="cancel-post">Cancel</button>
+        <button type="button" id="submit-post" class="primary">Post It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Modal -->
+  <div id="view-modal" class="modal">
+    <div class="modal-content view-content">
+      <button class="modal-close">&times;</button>
+      <div id="view-badge" class="card-badge"></div>
+      <h2 id="view-title"></h2>
+      <img id="view-photo" class="view-photo" />
+      <p id="view-desc"></p>
+      <div id="view-contact" class="view-contact"></div>
+      <div id="view-date" class="view-date"></div>
+    </div>
+  </div>
+
+  <style is:global>
+    .noticeboard {
+      min-height: 100vh;
+      background-color: #c4a77d;
+      background-image:
+        radial-gradient(circle, #8b7355 4px, transparent 4px);
+      background-size: 24px 24px;
+      padding: 1rem 2rem 2rem;
+      position: relative;
+    }
+
+    .board-header {
+      position: absolute;
+      top: 1rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      align-items: flex-end;
+    }
+
+    .filter-btn {
+      background: rgba(255,255,255,0.7);
+      border: none;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #5d3a1a;
+    }
+
+    .filter-btn:hover {
+      background: rgba(255,255,255,0.9);
+    }
+
+    .filter-btn.active {
+      background: #3d2314;
+      color: white;
+    }
+
+    .filter-btn[data-filter="for-sale"].active { background: #dcfce7; color: #166534; }
+    .filter-btn[data-filter="wanted"].active { background: #fef3c7; color: #92400e; }
+    .filter-btn[data-filter="services"].active { background: #dbeafe; color: #1e40af; }
+    .filter-btn[data-filter="events"].active { background: #fae8ff; color: #86198f; }
+    .filter-btn[data-filter="lost-found"].active { background: #fee2e2; color: #991b1b; }
+
+    .post-btn {
+      background: #3d2314;
+      color: white;
+      border: none;
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .post-btn:hover {
+      background: #5d3a1a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
+
+    .board-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border-radius: 4px;
+      padding: 1.25rem;
+      padding-top: 1.5rem;
+      box-shadow: 2px 4px 12px rgba(0,0,0,0.15);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s;
+      transform: rotate(var(--rotation, 0deg));
+    }
+
+    .card:nth-child(odd) { --rotation: -0.5deg; }
+    .card:nth-child(even) { --rotation: 0.5deg; }
+    .card:nth-child(3n) { --rotation: -1deg; }
+
+    .card:hover {
+      transform: rotate(0deg) translateY(-4px);
+      box-shadow: 4px 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .card.pinned {
+      background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+      color: white;
+    }
+
+    .card.pinned h3 { color: white; }
+    .card.pinned p { color: rgba(255,255,255,0.8); }
+
+    .pin {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%) rotate(var(--pin-rotate, -8deg));
+      z-index: 2;
+    }
+
+    .card:nth-child(odd) .pin { --pin-rotate: -12deg; }
+    .card:nth-child(even) .pin { --pin-rotate: 10deg; }
+    .card:nth-child(3n) .pin { --pin-rotate: -6deg; }
+    .card:nth-child(4n) .pin { --pin-rotate: 15deg; }
+    .card:nth-child(5n) .pin { --pin-rotate: -10deg; }
+    .card:nth-child(6n) .pin { --pin-rotate: 8deg; }
+
+    .pin::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 20px;
+      background: var(--pin-color, radial-gradient(circle at 35% 35%, #ff8a80, #c0392b 60%, #8b1a1a));
+      border-radius: 50%;
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.3),
+        inset 0 -2px 4px rgba(0,0,0,0.2),
+        inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+
+    /* Pin colours */
+    .card:nth-child(6n+1) .pin::before { background: radial-gradient(circle at 35% 35%, #ff8a80, #c0392b 60%, #8b1a1a); } /* red */
+    .card:nth-child(6n+2) .pin::before { background: radial-gradient(circle at 35% 35%, #90caf9, #1976d2 60%, #0d47a1); } /* blue */
+    .card:nth-child(6n+3) .pin::before { background: radial-gradient(circle at 35% 35%, #a5d6a7, #388e3c 60%, #1b5e20); } /* green */
+    .card:nth-child(6n+4) .pin::before { background: radial-gradient(circle at 35% 35%, #fff59d, #fbc02d 60%, #f57f17); } /* yellow */
+    .card:nth-child(6n+5) .pin::before { background: radial-gradient(circle at 35% 35%, #ce93d8, #8e24aa 60%, #4a148c); } /* purple */
+    .card:nth-child(6n+6) .pin::before { background: radial-gradient(circle at 35% 35%, #ffab91, #e64a19 60%, #bf360c); } /* orange */
+
+    .pin::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 18px;
+      background: linear-gradient(90deg, #888 0%, #ccc 40%, #888 100%);
+      border-radius: 0 0 2px 2px;
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .card-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-badge.for-sale { background: #dcfce7; color: #166534; }
+    .card-badge.wanted { background: #fef3c7; color: #92400e; }
+    .card-badge.services { background: #dbeafe; color: #1e40af; }
+    .card-badge.events { background: #fae8ff; color: #86198f; }
+    .card-badge.lost-found { background: #fee2e2; color: #991b1b; }
+    .card-badge.announcement { background: #f97316; color: white; }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .card.pinned .card-footer {
+      border-top-color: rgba(255,255,255,0.2);
+    }
+
+    .card-link {
+      color: #f97316;
+      font-weight: 600;
+    }
+
+    .card-action {
+      color: inherit;
+      text-decoration: none;
+      opacity: 0.7;
+    }
+
+    .card-action:hover {
+      opacity: 1;
+    }
+
+    .card-date {
+      color: #999;
+      font-size: 0.75rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem;
+      color: #5d3a1a;
+      font-size: 1.1rem;
+    }
+
+    .empty-state.hidden { display: none; }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal.visible { display: flex; }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-content h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-right: 2rem;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.75rem;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+      padding: 0.25rem;
+    }
+
+    .modal-close:hover { color: #333; }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #f97316;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+
+    .cat-btn {
+      padding: 0.6rem 0.75rem;
+      border: 2px solid #eee;
+      border-radius: 8px;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+
+    .cat-btn:hover {
+      border-color: #ccc;
+    }
+
+    .cat-btn.active {
+      border-color: #f97316;
+      background: #fff7ed;
+    }
+
+    .color-picker {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .color-btn {
+      width: 36px;
+      height: 36px;
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .color-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .color-btn.active {
+      border-color: #333;
+      box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+    }
+
+    /* Card colours */
+    .card.color-white { background: white; }
+    .card.color-yellow { background: #fff9c4; }
+    .card.color-pink { background: #f8bbd9; }
+    .card.color-blue { background: #bbdefb; }
+    .card.color-green { background: #c8e6c9; }
+    .card.color-orange { background: #ffe0b2; }
+
+    .photo-upload {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .photo-upload:hover {
+      border-color: #f97316;
+      background: #fffbf5;
+    }
+
+    .photo-upload input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .photo-upload span {
+      color: #888;
+    }
+
+    .photo-preview {
+      display: none;
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-top: 0.75rem;
+    }
+
+    .photo-preview.visible {
+      display: block;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .form-actions button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .form-actions button:not(.primary) {
+      background: #f1f1f1;
+    }
+
+    .form-actions button.primary {
+      background: #f97316;
+      color: white;
+    }
+
+    .form-actions button.primary:hover {
+      background: #ea580c;
+    }
+
+    .form-actions button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* View modal */
+    .view-content {
+      max-width: 560px;
+    }
+
+    .view-content .card-badge {
+      margin-bottom: 1rem;
+    }
+
+    .view-photo {
+      display: none;
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      background: #f5f5f5;
+    }
+
+    .view-photo.visible {
+      display: block;
+    }
+
+    .view-content p {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #444;
+      white-space: pre-wrap;
+    }
+
+    .view-contact {
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .view-contact:empty {
+      display: none;
+    }
+
+    .view-date {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    @media (max-width: 600px) {
+      .category-grid { grid-template-columns: 1fr; }
+      .board-content { gap: 1rem; }
+    }
+  </style>
+
+  <script>
+    interface NoticeItem {
+      id: string;
+      slot_id: number;
+      type: string;
+      content: {
+        category: string;
+        title: string;
+        desc?: string;
+        photoData?: string;
+        contact?: string;
+        cardColor?: string;
+      };
+      created_at: string;
+    }
+
+    const postModal = document.getElementById('post-modal')!;
+    const viewModal = document.getElementById('view-modal')!;
+    const emptyState = document.getElementById('empty-state')!;
+
+    let selectedCategory = 'for-sale';
+    let selectedColor = 'white';
+    let photoData: string | null = null;
+    let items: NoticeItem[] = [];
+    let activeFilter = 'all';
+
+    const categoryLabels: Record<string, string> = {
+      'for-sale': 'For Sale',
+      'wanted': 'Wanted',
+      'services': 'Services',
+      'events': 'Events',
+      'lost-found': 'Lost & Found',
+      'announcement': 'Announcement'
+    };
+
+    // Load items
+    async function loadItems() {
+      try {
+        const res = await fetch('/api/noticeboard');
+        const data = await res.json();
+        items = data.items || [];
+        renderItems();
+      } catch (e) {
+        console.error('Failed to load:', e);
+      }
+    }
+
+    // Render items
+    function renderItems() {
+      // Remove existing dynamic cards (keep pinned and empty state)
+      document.querySelectorAll('.card.dynamic').forEach(c => c.remove());
+
+      const filteredItems = activeFilter === 'all'
+        ? items
+        : items.filter(item => {
+            const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+            return content.category === activeFilter;
+          });
+
+      for (const item of filteredItems) {
+        const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+        const card = document.createElement('article');
+        card.className = `card dynamic color-${content.cardColor || 'white'}`;
+        card.dataset.id = item.id;
+
+        const date = new Date(item.created_at).toLocaleDateString('en-NZ', {
+          day: 'numeric', month: 'short'
+        });
+
+        card.innerHTML = `
+          <div class="pin"></div>
+          <div class="card-badge ${content.category}">${categoryLabels[content.category] || content.category}</div>
+          <h3>${escapeHtml(content.title)}</h3>
+          ${content.desc ? `<p>${escapeHtml(content.desc)}</p>` : ''}
+          <div class="card-footer">
+            <span class="card-date">${date}</span>
+            <span class="card-action">${content.photoData ? '📷 ' : ''}View →</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => openViewModal(item));
+        // Insert before empty state (keeps newest first)
+        emptyState.insertAdjacentElement('beforebegin', card);
+      }
+
+      emptyState.classList.toggle('hidden', filteredItems.length > 0);
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = (btn as HTMLElement).dataset.filter || 'all';
+        renderItems();
+      });
+    });
+
+    function escapeHtml(str: string): string {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Open view modal
+    function openViewModal(item: NoticeItem) {
+      const content = typeof item.content === 'string' ? JSON.parse(item.content) : item.content;
+
+      const badge = document.getElementById('view-badge')!;
+      badge.className = `card-badge ${content.category}`;
+      badge.textContent = categoryLabels[content.category] || content.category;
+
+      document.getElementById('view-title')!.textContent = content.title;
+
+      const photo = document.getElementById('view-photo') as HTMLImageElement;
+      if (content.photoData) {
+        photo.src = content.photoData;
+        photo.classList.add('visible');
+      } else {
+        photo.classList.remove('visible');
+      }
+
+      document.getElementById('view-desc')!.textContent = content.desc || '';
+
+      const contact = document.getElementById('view-contact')!;
+      contact.textContent = content.contact ? `📧 ${content.contact}` : '';
+
+      const date = new Date(item.created_at).toLocaleDateString('en-NZ', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+      document.getElementById('view-date')!.textContent = `Posted ${date}`;
+
+      viewModal.classList.add('visible');
+    }
+
+    // Category selection
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCategory = (btn as HTMLElement).dataset.cat || 'for-sale';
+      });
+    });
+
+    // Color selection
+    document.querySelectorAll('.color-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedColor = (btn as HTMLElement).dataset.color || 'white';
+      });
+    });
+
+    // Photo upload
+    document.getElementById('post-photo')?.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          photoData = ev.target?.result as string;
+          document.getElementById('photo-label')!.textContent = '✓ Photo added';
+          const preview = document.getElementById('photo-preview') as HTMLImageElement;
+          preview.src = photoData;
+          preview.classList.add('visible');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Open post modal
+    document.getElementById('post-btn')?.addEventListener('click', () => {
+      postModal.classList.add('visible');
+      // Reset form
+      (document.getElementById('post-title') as HTMLInputElement).value = '';
+      (document.getElementById('post-desc') as HTMLTextAreaElement).value = '';
+      (document.getElementById('post-contact') as HTMLInputElement).value = '';
+      (document.getElementById('post-photo') as HTMLInputElement).value = '';
+      document.getElementById('photo-label')!.textContent = 'Click or drag to add photo';
+      document.getElementById('photo-preview')!.classList.remove('visible');
+      photoData = null;
+      selectedCategory = 'for-sale';
+      selectedColor = 'white';
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.cat-btn[data-cat="for-sale"]')?.classList.add('active');
+      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.color-btn[data-color="white"]')?.classList.add('active');
+    });
+
+    // Close modals
+    document.getElementById('cancel-post')?.addEventListener('click', () => {
+      postModal.classList.remove('visible');
+    });
+
+    document.querySelectorAll('.modal-close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        postModal.classList.remove('visible');
+        viewModal.classList.remove('visible');
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        postModal.classList.remove('visible');
+        viewModal.classList.remove('visible');
+      }
+    });
+
+    // Submit post
+    document.getElementById('submit-post')?.addEventListener('click', async () => {
+      const title = (document.getElementById('post-title') as HTMLInputElement).value.trim();
+      if (!title) {
+        alert('Please enter a title');
+        return;
+      }
+
+      const desc = (document.getElementById('post-desc') as HTMLTextAreaElement).value.trim();
+      const contact = (document.getElementById('post-contact') as HTMLInputElement).value.trim();
+
+      const submitBtn = document.getElementById('submit-post') as HTMLButtonElement;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Posting...';
+
+      try {
+        // Generate unique slot_id
+        const slotId = Date.now();
+
+        const res = await fetch('/api/noticeboard', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slot_id: slotId,
+            type: 'classified',
+            content: {
+              category: selectedCategory,
+              title,
+              desc,
+              photoData,
+              contact,
+              cardColor: selectedColor
+            }
+          })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          postModal.classList.remove('visible');
+          loadItems(); // Refresh
+        } else {
+          alert('Failed to post. Please try again.');
+        }
+      } catch (e) {
+        console.error('Post failed:', e);
+        alert('Failed to post. Please try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Post It';
+      }
+    });
+
+    // Initial load
+    loadItems();
+  </script>
+</Layout>
