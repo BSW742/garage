@@ -4,6 +4,7 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Apply" description="Apply for a free website for your charity or community project in New Zealand.">
   <div class="apply-page">
+    <img src="/boxben.png" alt="Boxer mascot" class="apply-mascot" id="mascot-boxer" />
     <div class="apply-container">
 
       <!-- Intro -->
@@ -355,6 +356,33 @@ import Layout from '../components/Layout.astro';
     width: 0%;
     transition: width 0.4s ease;
   }
+
+  .apply-mascot {
+    position: fixed;
+    height: 280px;
+    width: auto;
+    z-index: 10;
+    cursor: grab;
+    user-select: none;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.15));
+  }
+
+  #mascot-boxer {
+    right: 5%;
+    bottom: 10%;
+  }
+
+  .apply-mascot.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 20px 50px rgba(0,0,0,0.25));
+    z-index: 11;
+  }
+
+  @media (max-width: 1100px) {
+    .apply-mascot {
+      display: none;
+    }
+  }
 </style>
 
 <script>
@@ -504,4 +532,72 @@ import Layout from '../components/Layout.astro';
   container.querySelectorAll('[data-requires]').forEach(btn => {
     (btn as HTMLButtonElement).disabled = true;
   });
+
+  // Draggable mascots easter egg
+  function makeDraggable(mascot: HTMLElement, storageKey: string) {
+    let isDragging = false;
+    let startX = 0, startY = 0;
+
+    // Check for saved position
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const pos = JSON.parse(saved);
+      mascot.style.left = pos.x + 'px';
+      mascot.style.top = pos.y + 'px';
+      mascot.style.right = 'auto';
+      mascot.style.bottom = 'auto';
+    }
+
+    function startDrag(e: MouseEvent | TouchEvent) {
+      isDragging = true;
+      mascot.classList.add('dragging');
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const rect = mascot.getBoundingClientRect();
+      startX = clientX - rect.left;
+      startY = clientY - rect.top;
+    }
+
+    function doDrag(e: MouseEvent | TouchEvent) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const x = clientX - startX;
+      const y = clientY - startY;
+
+      mascot.style.right = 'auto';
+      mascot.style.bottom = 'auto';
+      mascot.style.left = x + 'px';
+      mascot.style.top = y + 'px';
+    }
+
+    function endDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+      mascot.classList.remove('dragging');
+
+      // Save position
+      const rect = mascot.getBoundingClientRect();
+      localStorage.setItem(storageKey, JSON.stringify({
+        x: rect.left,
+        y: rect.top
+      }));
+    }
+
+    mascot.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    mascot.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', doDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+  }
+
+  const boxer = document.getElementById('mascot-boxer') as HTMLElement;
+  if (boxer) makeDraggable(boxer, 'mascot-boxer-pos');
 </script>
