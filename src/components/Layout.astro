@@ -52,10 +52,21 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   <body>
     <header class="site-header">
       <a href="/" class="logo">
-        <span class="logo-text">garage</span>
+        <span class="logo-text">garage<span class="dot-orange">.</span>co<span class="dot">.</span>nz</span>
       </a>
       <nav class="nav">
-        <a href="#work" class="nav-link">Our Work</a>
+        <a href="/?projects" class="nav-link nav-icon" id="projects-toggle" title="Our Projects">
+          <img src="/nav/community-v3.png" alt="Our Projects" />
+        </a>
+        <a href="/merch" class="nav-link nav-icon" title="Merch">
+          <img src="/nav/merch-v2.png" alt="Merch" />
+        </a>
+        <a href="/noticeboard" class="nav-link nav-icon" title="Community noticeboard">
+          <img src="/nav/megaphone-v2.png" alt="Noticeboard" />
+        </a>
+        <a href="/coffee" class="nav-link nav-icon nav-coffee" title="My favourite coffee">
+          <img src="/nav/coffee-v2.png" alt="Coffee" />
+        </a>
         <a href="/apply" class="nav-link nav-cta">Apply</a>
       </nav>
     </header>
@@ -111,35 +122,63 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       </svg>
     </div>
 
-    <!-- Throwable stick -->
-    <div class="throw-stick" id="throw-stick">
-      <svg viewBox="0 0 50 70" fill="none">
-        <!-- Branch -->
-        <g class="stick-body">
-          <!-- Main branch -->
-          <path d="M20 8 Q22 20 26 35 Q28 50 32 62" stroke="#5D4037" stroke-width="6" stroke-linecap="round" fill="none"/>
-          <path d="M20 8 Q22 20 26 35 Q28 50 32 62" stroke="#795548" stroke-width="4" stroke-linecap="round" fill="none"/>
-          <!-- Small twig top -->
-          <path d="M21 12 Q17 8 14 6" stroke="#5D4037" stroke-width="3" stroke-linecap="round" fill="none"/>
-          <path d="M21 12 Q17 8 14 6" stroke="#795548" stroke-width="2" stroke-linecap="round" fill="none"/>
-          <!-- Small twig middle -->
-          <path d="M25 28 Q30 24 34 22" stroke="#5D4037" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-          <path d="M25 28 Q30 24 34 22" stroke="#795548" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <!-- Knot -->
-          <ellipse cx="26" cy="38" rx="3" ry="2" fill="#4E342E"/>
+    <!-- Dog kennel -->
+    <div class="kennel" id="kennel">
+      <svg viewBox="0 0 50 45" fill="none">
+        <!-- Main house body -->
+        <rect x="5" y="18" width="40" height="25" rx="3" fill="#D2691E" stroke="#8B4513" stroke-width="2"/>
+        <!-- Roof -->
+        <path d="M2 20 L25 4 L48 20 Z" fill="#B22222" stroke="#8B0000" stroke-width="2"/>
+        <!-- Door opening -->
+        <ellipse cx="25" cy="33" rx="10" ry="9" fill="#3D2314"/>
+        <!-- Roof ridge highlight -->
+        <path d="M25 6 L25 4" stroke="#CD5C5C" stroke-width="3" stroke-linecap="round"/>
+        <!-- Sleeping dog face (hidden until occupied) -->
+        <g class="kennel-sleeper">
+          <!-- Face -->
+          <ellipse cx="25" cy="34" rx="7" ry="6" fill="#f5f5f5"/>
+          <!-- Black patch over eye area -->
+          <ellipse cx="27" cy="32" rx="4" ry="3" fill="#1a1a1a"/>
+          <!-- Closed eyes - happy sleeping -->
+          <path d="M22 33 Q24 31 26 33" stroke="#333" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+          <path d="M26 32 Q28 30 30 32" stroke="#fff" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+          <!-- Nose -->
+          <ellipse cx="25" cy="36" rx="2" ry="1.5" fill="#1a1a1a"/>
         </g>
       </svg>
     </div>
 
-    <!-- Flying stick (for animation) -->
+    <!-- Throwable bone -->
+    <div class="throw-stick" id="throw-stick">
+      <svg viewBox="0 0 50 70" fill="none" class="bone-svg">
+        <g class="stick-body">
+          <!-- Bone shaft -->
+          <rect x="20" y="18" width="10" height="34" rx="3" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1.5"/>
+          <!-- Top knuckle left -->
+          <ellipse cx="18" cy="14" rx="7" ry="6" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1.5"/>
+          <!-- Top knuckle right -->
+          <ellipse cx="32" cy="14" rx="7" ry="6" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1.5"/>
+          <!-- Bottom knuckle left -->
+          <ellipse cx="18" cy="56" rx="7" ry="6" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1.5"/>
+          <!-- Bottom knuckle right -->
+          <ellipse cx="32" cy="56" rx="7" ry="6" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1.5"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Flying bone (for animation) -->
     <div class="flying-stick" id="flying-stick">
-      <svg viewBox="0 0 70 16" fill="none">
-        <!-- Main branch -->
-        <path d="M5 8 Q20 6 35 8 Q50 10 65 8" stroke="#5D4037" stroke-width="6" stroke-linecap="round" fill="none"/>
-        <path d="M5 8 Q20 6 35 8 Q50 10 65 8" stroke="#795548" stroke-width="4" stroke-linecap="round" fill="none"/>
-        <!-- Small twig -->
-        <path d="M15 7 Q12 3 10 2" stroke="#5D4037" stroke-width="2" stroke-linecap="round" fill="none"/>
-        <path d="M50 9 Q53 13 56 14" stroke="#5D4037" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <svg viewBox="0 0 70 20" fill="none">
+        <!-- Bone shaft -->
+        <rect x="18" y="7" width="34" height="6" rx="2" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1"/>
+        <!-- Left knuckle top -->
+        <ellipse cx="14" cy="6" rx="6" ry="5" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1"/>
+        <!-- Left knuckle bottom -->
+        <ellipse cx="14" cy="14" rx="6" ry="5" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1"/>
+        <!-- Right knuckle top -->
+        <ellipse cx="56" cy="6" rx="6" ry="5" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1"/>
+        <!-- Right knuckle bottom -->
+        <ellipse cx="56" cy="14" rx="6" ry="5" fill="#F5F5DC" stroke="#D4C5A9" stroke-width="1"/>
       </svg>
     </div>
 
@@ -149,11 +188,46 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
 
     <style is:global>
+      /* Kennel */
+      .kennel {
+        position: fixed;
+        bottom: 40px;
+        right: 20px;
+        width: 50px;
+        height: 45px;
+        z-index: 9996;
+        cursor: pointer;
+        transition: transform 0.2s;
+        filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.2));
+      }
+      .kennel:hover {
+        transform: scale(1.1);
+      }
+      .kennel .kennel-sleeper {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .kennel.occupied .kennel-sleeper {
+        opacity: 1;
+      }
+      .kennel.occupied::after {
+        content: '💤';
+        position: absolute;
+        top: -5px;
+        right: 0px;
+        font-size: 16px;
+        animation: sleepBob 2s ease-in-out infinite;
+      }
+      @keyframes sleepBob {
+        0%, 100% { transform: translateY(0); opacity: 0.7; }
+        50% { transform: translateY(-5px); opacity: 1; }
+      }
+
       /* Throwable stick */
       .throw-stick {
         position: fixed;
         bottom: 30px;
-        right: 30px;
+        right: 80px;
         width: 50px;
         height: 70px;
         z-index: 9998;
@@ -166,8 +240,8 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       }
       .throw-stick svg {
         animation: stickJiggle 0.15s ease-in-out infinite;
-        transform-origin: 25px 62px;
-        filter: drop-shadow(1px 0 0 rgba(93, 64, 55, 0.3)) drop-shadow(-1px 0 0 rgba(93, 64, 55, 0.3));
+        transform-origin: 25px 56px;
+        filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.25));
       }
       .throw-stick:hover svg {
         animation: stickJiggleFast 0.08s ease-in-out infinite;
@@ -185,13 +259,14 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         50% { transform: rotate(5deg); }
       }
 
-      /* Flying stick */
+      /* Flying bone */
       .flying-stick {
         position: fixed;
         width: 70px;
-        height: 16px;
+        height: 20px;
         z-index: 10000;
         pointer-events: none;
+        filter: drop-shadow(2px 3px 2px rgba(0, 0, 0, 0.25));
       }
       .flying-stick.spinning {
         animation: spinStick 0.3s linear infinite;
@@ -323,7 +398,11 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       @media (max-width: 640px) {
         .throw-stick {
           bottom: 20px;
-          right: 20px;
+          right: 60px;
+        }
+        .kennel {
+          bottom: 30px;
+          right: 10px;
         }
         .sheepdog {
           width: 60px;
@@ -337,6 +416,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       const dog = document.getElementById('sheepdog');
       const throwStick = document.getElementById('throw-stick');
       const flyingStick = document.getElementById('flying-stick');
+      const kennel = document.getElementById('kennel');
 
       if (dog && throwStick && flyingStick) {
         let dogX = -100;
@@ -353,10 +433,51 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         let throwCount = 0;
         let isPooping = false;
         let isReturning = false;  // Guard for return-home timeout
+        let isInKennel = true;  // Toby starts in the kennel
         const poopContainer = document.getElementById('poop-container');
+        const counterNum = document.getElementById('counter-num');
+        const fizzContainer = document.getElementById('fizz-container');
+        let globalThrowCount = 0;
 
         // Hide flying stick initially
         flyingStick.style.opacity = '0';
+
+        // Load throw count from server
+        fetch('/api/throws')
+          .then(r => r.json())
+          .then(data => {
+            globalThrowCount = data.count || 0;
+            if (counterNum) counterNum.textContent = globalThrowCount.toString();
+          })
+          .catch(() => {});
+
+        // Fizz celebration effect
+        function showFizz() {
+          if (!fizzContainer) return;
+          const emojis = ['✨', '🎉', '⭐', '🌟', '💫'];
+          for (let i = 0; i < 6; i++) {
+            const fizz = document.createElement('div');
+            fizz.className = 'fizz';
+            fizz.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            fizz.style.left = (Math.random() * 40 + 10) + 'px';
+            fizz.style.animationDelay = (Math.random() * 0.2) + 's';
+            fizzContainer.appendChild(fizz);
+            setTimeout(() => fizz.remove(), 1000);
+          }
+        }
+
+        // Increment counter with celebration
+        function incrementCounter() {
+          globalThrowCount++;
+          if (counterNum) {
+            counterNum.textContent = globalThrowCount.toString();
+            counterNum.classList.add('pop');
+            setTimeout(() => counterNum.classList.remove('pop'), 400);
+          }
+          showFizz();
+          // Save to server
+          fetch('/api/throws', { method: 'POST' }).catch(() => {});
+        }
 
         function doPoop() {
           if (isPooping || isFetching || !dogVisible || dogRunning) return;
@@ -433,6 +554,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
               dog.classList.remove('running');
             }
 
+
             // Check if fetching and reached stick
             if (isFetching && !hasStick) {
               hasStick = true;
@@ -473,7 +595,26 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
         // Throw stick on click
         throwStick.addEventListener('click', () => {
-          if (isFetching || !dogVisible) return;
+          if (isFetching) return;
+
+          // Wake dog from kennel if sleeping
+          if (isInKennel && kennel) {
+            isInKennel = false;
+            dogVisible = true;
+            kennel.classList.remove('occupied');
+
+            // Position dog at kennel entrance
+            const kennelRect = kennel.getBoundingClientRect();
+            dogX = kennelRect.left + 10;
+            dogY = kennelRect.top + kennelRect.height - 50;
+            dog.style.left = dogX + 'px';
+            dog.style.top = dogY + 'px';
+
+            dog.classList.add('visible');
+            dog.style.opacity = '1';
+          }
+
+          if (!dogVisible) return;
 
           // Set state first, then bark (in case audio has async issues)
           isFetching = true;
@@ -481,6 +622,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           throwStick.classList.add('thrown');
 
           playBark();
+          incrementCounter();
 
           // Calculate throw trajectory
           const stickRect = throwStick.getBoundingClientRect();
@@ -571,24 +713,42 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
           });
         });
 
-        // Dog enters after a delay
-        setTimeout(() => {
-          dogVisible = true;
-          dog.classList.add('visible');
-          pickDogTarget();
-          updateDog();
-        }, 4000);
+        // Kennel click - dismiss dog instantly
+        if (kennel) {
+          kennel.addEventListener('click', () => {
+            if (!dogVisible || isFetching || isInKennel) return;
 
-        // Dog runs to new spots frequently (but not while fetching)
+            isInKennel = true;
+            kennel.classList.add('occupied');
+            dog.style.opacity = '0';
+
+            // Set position to kennel (in case we need it later)
+            const kennelRect = kennel.getBoundingClientRect();
+            dogX = kennelRect.left - 20;
+            dogY = kennelRect.top + 10;
+            dogTargetX = dogX;
+            dogTargetY = dogY;
+          });
+        }
+
+        // Toby starts in the kennel - mark it as occupied
+        if (kennel) {
+          kennel.classList.add('occupied');
+        }
+
+        // Start the dog update loop (but he stays in kennel until bone is thrown)
+        updateDog();
+
+        // Dog runs to new spots frequently (but not while fetching or in kennel)
         setInterval(() => {
-          if (dogVisible && !isFetching && !isPooping && Math.random() < 0.5) {
+          if (dogVisible && !isFetching && !isPooping && !isInKennel && Math.random() < 0.5) {
             pickDogTarget();
           }
         }, 3000);
 
-        // Occasionally poop when idle
+        // Occasionally poop when idle (not in kennel)
         setInterval(() => {
-          if (dogVisible && !isFetching && !isPooping && !dogRunning && Math.random() < 0.3) {
+          if (dogVisible && !isFetching && !isPooping && !dogRunning && !isInKennel && Math.random() < 0.3) {
             doPoop();
           }
         }, 8000);
@@ -656,13 +816,24 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
   .logo {
     text-decoration: none;
+    display: flex;
+    align-items: center;
   }
 
   .logo-text {
-    font-weight: 600;
-    font-size: 1.25rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.5rem;
     color: var(--color-text);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+  }
+
+  .logo .dot-orange {
+    color: #f97316;
+  }
+
+  .logo .dot {
+    color: var(--color-text-muted);
   }
 
   .nav {
@@ -682,6 +853,41 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   .nav-link:hover {
     color: var(--color-text);
   }
+
+  .nav-icon {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .nav-icon {
+    overflow: visible;
+  }
+
+  .nav-icon img {
+    height: 48px;
+    width: auto;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+    transform-origin: top center;
+    position: relative;
+    z-index: 1;
+    border: 0;
+    outline: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .nav-icon img:hover {
+    transform: scale(1.5) translateZ(0);
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.3));
+    z-index: 200;
+  }
+
 
   .nav-cta {
     background: var(--color-text);
