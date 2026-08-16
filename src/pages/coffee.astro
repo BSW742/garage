@@ -16,8 +16,8 @@ import Layout from '../components/Layout.astro';
         <div class="arrow-annotation">
           <span class="arrow-text">This human</span>
           <svg class="arrow-svg" viewBox="0 0 100 120" fill="none">
-            <path d="M50 15 Q 30 40, 45 70 Q 60 100, 85 110" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
-            <path d="M75 100 L85 110 L72 112" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M50 15 Q 70 40, 55 70 Q 40 100, 15 110" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M25 100 L15 110 L28 112" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
           </svg>
         </div>
         <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
@@ -112,8 +112,7 @@ import Layout from '../components/Layout.astro';
   .arrow-annotation {
     position: absolute;
     top: -50px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: -80px;
     display: flex;
     flex-direction: column;
     align-items: center;
