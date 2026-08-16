@@ -357,6 +357,21 @@
         await navigator.serviceWorker.ready;
 
         const existingSub = await reg.pushManager.getSubscription();
+
+        // If user taps and already subscribed, unsubscribe first
+        if (existingSub && userTriggered) {
+          await existingSub.unsubscribe();
+          await fetch('/api/push-subscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: existingSub.endpoint })
+          });
+          alert('Unsubscribed. Tap again to re-subscribe.');
+          notifyBtn.textContent = '🔕';
+          notifyBtn.style.opacity = '0.5';
+          return;
+        }
+
         if (existingSub) {
           notifyBtn.textContent = '🔔';
           notifyBtn.style.opacity = '1';
@@ -369,7 +384,10 @@
         if (!userTriggered) return;
 
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') {
+          alert('Permission denied');
+          return;
+        }
 
         const key = Uint8Array.from(atob(VAPID_KEY.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         const sub = await reg.pushManager.subscribe({
@@ -385,8 +403,10 @@
 
         notifyBtn.textContent = '🔔';
         notifyBtn.style.opacity = '1';
+        alert('Subscribed! Close the app and test with /api/test-push');
       } catch (e) {
         console.error('Push setup error:', e);
+        alert('Error: ' + e.message);
       }
     }
 
