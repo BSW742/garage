@@ -315,8 +315,10 @@
 
     async function delBooking(key) {
       const fd = new FormData();
-      fd.append('type', 'calendar-delete');
+      fd.append('type', 'calendar-slot');
       fd.append('slot_key', key);
+      fd.append('status', 'available');
+      fd.append('email', '');
       await fetch(WORKER, { method: 'POST', body: fd });
       delete bookingsData[key];
       renderBookings();
