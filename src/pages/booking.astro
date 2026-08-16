@@ -4,7 +4,6 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Book a Chat">
   <div id="app"></div>
-  <img src="/surfben.png" alt="Ben" class="surfben" />
 </Layout>
 
 <style is:global>
@@ -14,29 +13,6 @@ import Layout from '../components/Layout.astro';
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
-  }
-
-  .surfben {
-    position: fixed;
-    bottom: 0;
-    right: 2rem;
-    height: 350px;
-    width: auto;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  @media (max-width: 1200px) {
-    .surfben {
-      height: 280px;
-      right: 1rem;
-    }
-  }
-
-  @media (max-width: 900px) {
-    .surfben {
-      display: none;
-    }
   }
 
   .booking {
