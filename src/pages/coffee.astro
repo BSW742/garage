@@ -47,6 +47,7 @@ import Layout from '../components/Layout.astro';
       <h2>Get Some Yourself</h2>
       <p>Daily hand-roasted in the Waikato. Next-day delivery on online orders.</p>
       <a href="https://raglanroast.co.nz" target="_blank" rel="noopener" class="cta-btn">Visit Raglan Roast</a>
+      <img src="/surfben.png" alt="Surf Ben" class="surfben" />
     </section>
   </div>
 </Layout>
@@ -292,6 +293,14 @@ import Layout from '../components/Layout.astro';
     background: white;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+
+  .surfben {
+    display: block;
+    width: 200px;
+    height: auto;
+    margin: 2rem auto 0;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
   }
 
   /* Responsive */
