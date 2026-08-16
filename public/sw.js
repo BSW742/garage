@@ -1,36 +1,37 @@
-// Service Worker for Garage Admin PWA v2
+// Service Worker for Garage Admin PWA v3
 
 self.addEventListener('install', (event) => {
+  console.log('SW: Installing v3');
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('SW: Activating v3');
   event.waitUntil(clients.claim());
 });
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  let data = { title: 'New Application', body: 'A new charity application was received' };
+  console.log('SW: Push received!', event);
+
+  let data = { title: 'Garage', body: 'New notification' };
 
   if (event.data) {
     try {
       data = event.data.json();
+      console.log('SW: Push data:', data);
     } catch (e) {
+      console.log('SW: Push parse error:', e);
       data.body = event.data.text();
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: '/nav/merch-v2.png',
-    badge: '/nav/merch-v2.png',
-    tag: 'new-application',
-    renotify: true,
-    data: { url: '/app' }
-  };
-
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/nav/merch-v2.png',
+      badge: '/nav/merch-v2.png'
+    })
   );
 });
 
