@@ -341,8 +341,43 @@
     }
 
     // Service worker + push
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+    const VAPID_KEY = 'BBP9B25Ny3m94KXNqwRKBvRBAGnSSDQHpQSjPFSbpua5pTgK0XAIGT7fFjLY6b1lxAWgzj90dGX-gHHOrXfuo-I';
 
+    async function setupPush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+
+        // Request permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        // Check existing subscription
+        let sub = await reg.pushManager.getSubscription();
+
+        if (!sub) {
+          // Subscribe
+          const key = Uint8Array.from(atob(VAPID_KEY.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: key
+          });
+        }
+
+        // Send subscription to server
+        await fetch('/api/push-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub.toJSON())
+        });
+      } catch (e) {
+        console.error('Push setup error:', e);
+      }
+    }
+
+    setupPush();
     loadBookings();
     loadApps();
     setInterval(() => { loadBookings(); loadApps(); }, 30000);
