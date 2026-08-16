@@ -14,14 +14,11 @@ import Layout from '../components/Layout.astro';
       </div>
       <div class="hero-ben-wrapper">
         <div class="arrow-annotation">
-          <div class="arrow-text-wrapper">
-            <span class="arrow-text">This</span>
-            <svg class="arrow-svg" viewBox="0 0 50 80" fill="none">
-              <path d="M25 0 C 25 20, 5 40, 15 70" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
-              <path d="M8 60 L15 70 L22 58" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-            </svg>
-            <span class="arrow-text">human</span>
-          </div>
+          <span class="arrow-text">This human</span>
+          <svg class="arrow-svg" viewBox="0 0 100 120" fill="none">
+            <path d="M50 15 Q 30 40, 45 70 Q 60 100, 85 110" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M75 100 L85 110 L72 112" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
         </div>
         <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
       </div>
@@ -114,15 +111,12 @@ import Layout from '../components/Layout.astro';
 
   .arrow-annotation {
     position: absolute;
-    top: -30px;
-    left: -30px;
-  }
-
-  .arrow-text-wrapper {
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    transform: rotate(-12deg);
   }
 
   .arrow-text {
@@ -130,13 +124,14 @@ import Layout from '../components/Layout.astro';
     font-size: 1.8rem;
     color: white;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    line-height: 1;
+    white-space: nowrap;
+    transform: rotate(-5deg);
   }
 
   .arrow-svg {
-    width: 50px;
-    height: 80px;
-    margin: -8px 0;
+    width: 100px;
+    height: 120px;
+    margin-top: -5px;
   }
 
   @media (max-width: 768px) {
@@ -150,15 +145,14 @@ import Layout from '../components/Layout.astro';
       width: 250px;
     }
     .arrow-annotation {
-      top: -25px;
-      left: -20px;
+      top: -40px;
     }
     .arrow-text {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
     }
     .arrow-svg {
-      width: 40px;
-      height: 60px;
+      width: 80px;
+      height: 100px;
     }
   }
 
