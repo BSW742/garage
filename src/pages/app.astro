@@ -346,7 +346,7 @@
     const notifyBtn = document.getElementById('notifyBtn');
 
     async function setupPush(userTriggered = false) {
-      if (userTriggered) alert('Starting...');
+      if (userTriggered) alert('1. Starting...');
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
         notifyBtn.textContent = '🔕';
         notifyBtn.style.opacity = '0.3';
@@ -354,10 +354,14 @@
       }
 
       try {
+        if (userTriggered) alert('2. Registering SW...');
         const reg = await navigator.serviceWorker.register('/sw.js');
+        if (userTriggered) alert('3. Waiting ready...');
         await navigator.serviceWorker.ready;
 
+        if (userTriggered) alert('4. Getting subscription...');
         const existingSub = await reg.pushManager.getSubscription();
+        if (userTriggered) alert('5. Sub: ' + (existingSub ? 'exists' : 'none'));
 
         // If user taps and already subscribed, unsubscribe first
         if (existingSub && userTriggered) {
