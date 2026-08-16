@@ -399,7 +399,10 @@
       }
     }
 
-    notifyBtn.onclick = () => setupPush(true);
+    notifyBtn.onclick = () => {
+      alert('Bell tapped! PushManager: ' + ('PushManager' in window) + ', SW: ' + ('serviceWorker' in navigator));
+      setupPush(true);
+    };
     setupPush(false);
     loadBookings();
     loadApps();
