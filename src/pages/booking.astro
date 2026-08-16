@@ -381,6 +381,23 @@ import Layout from '../components/Layout.astro';
     padding: 3rem;
   }
 
+  .offline-banner {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .offline-banner::before {
+    content: '⚠️';
+  }
+
   /* Help modal */
   .help-overlay {
     position: fixed;
@@ -611,6 +628,36 @@ import Layout from '../components/Layout.astro';
   let currentDragType: 'coffee' | 'teams' | null = null;
   let ghostEl: HTMLElement | null = null;
   let hasSeenHelp = localStorage.getItem('booking-help-seen') === 'true';
+  let isOffline = false;
+
+  const CACHE_KEY = 'booking-slots-cache';
+
+  function getCachedSlots(): Record<string, string> | null {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        // Cache valid for 24 hours
+        if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+          return data;
+        }
+      }
+    } catch (e) {
+      console.error('Cache read error:', e);
+    }
+    return null;
+  }
+
+  function setCachedSlots(data: Record<string, string>) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.error('Cache write error:', e);
+    }
+  }
 
   async function loadOverrides() {
     try {
@@ -628,9 +675,17 @@ import Layout from '../components/Layout.astro';
 
       if (response.ok) {
         slotOverrides = await response.json();
+        setCachedSlots(slotOverrides);
+        isOffline = false;
       }
     } catch (e) {
       console.error('Failed to load slots:', e);
+      // Try to use cached data
+      const cached = getCachedSlots();
+      if (cached) {
+        slotOverrides = cached;
+        isOffline = true;
+      }
     }
   }
 
@@ -826,6 +881,7 @@ import Layout from '../components/Layout.astro';
 
     app.innerHTML = `
       <div class="booking">
+        ${isOffline ? '<div class="offline-banner">Showing cached data - connect to refresh</div>' : ''}
         <h1>Book a Chat</h1>
 
         <div class="drag-dock">
