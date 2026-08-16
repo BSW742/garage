@@ -388,9 +388,11 @@
 
         if (!userTriggered) return;
 
+        alert('6. Current permission: ' + Notification.permission);
         const permission = await Notification.requestPermission();
+        alert('7. After request: ' + permission);
         if (permission !== 'granted') {
-          alert('Permission denied');
+          alert('Go to Settings > Safari > Advanced > Website Data, search "garage", delete it. Then re-add PWA.');
           return;
         }
 
