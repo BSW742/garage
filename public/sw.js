@@ -1,4 +1,4 @@
-// Service Worker for Garage Admin PWA
+// Service Worker for Garage Admin PWA v2
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
