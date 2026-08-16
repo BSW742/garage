@@ -347,43 +347,46 @@
 
     async function setupPush(userTriggered = false) {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        notifyBtn.style.display = 'none';
+        if (userTriggered) alert('Push not supported');
         return;
       }
 
       try {
+        if (userTriggered) alert('1. Registering SW...');
         const reg = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
 
-        // Check current state
+        if (userTriggered) alert('2. Checking subscription...');
         const existingSub = await reg.pushManager.getSubscription();
         if (existingSub) {
           notifyBtn.textContent = '🔔';
           notifyBtn.style.opacity = '1';
+          if (userTriggered) alert('Already subscribed!');
           return;
         }
 
-        // Show muted bell if not subscribed
         notifyBtn.textContent = '🔕';
         notifyBtn.style.opacity = '0.5';
 
-        // Only request permission if user triggered
         if (!userTriggered) return;
 
+        alert('3. Requesting permission...');
         const permission = await Notification.requestPermission();
+        alert('4. Permission result: ' + permission);
+
         if (permission !== 'granted') {
-          alert('Notifications blocked. Enable in browser settings.');
+          alert('Permission denied or dismissed');
           return;
         }
 
-        // Subscribe
+        alert('5. Subscribing...');
         const key = Uint8Array.from(atob(VAPID_KEY.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
         const sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: key
         });
 
-        // Send subscription to server
+        alert('6. Saving to server...');
         await fetch('/api/push-subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -392,10 +395,10 @@
 
         notifyBtn.textContent = '🔔';
         notifyBtn.style.opacity = '1';
-        alert('Notifications enabled!');
+        alert('7. Done! Notifications enabled!');
       } catch (e) {
         console.error('Push setup error:', e);
-        alert('Error: ' + e.message);
+        alert('Error at step: ' + e.message);
       }
     }
 
