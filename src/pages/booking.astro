@@ -1,0 +1,1107 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Book a Chat">
+  <div id="app"></div>
+</Layout>
+
+<style is:global>
+  #app {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .booking {
+    background: var(--color-surface);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    width: 100%;
+    max-width: 650px;
+    text-align: center;
+  }
+
+  .booking h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  /* Drag dock */
+  .drag-dock {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(59, 130, 246, 0.05));
+    border-radius: 16px;
+    border: 2px dashed var(--color-border);
+  }
+
+  .drag-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: grab;
+    transition: transform 0.2s, filter 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  .drag-item:active {
+    cursor: grabbing;
+  }
+
+  .drag-item:hover {
+    transform: scale(1.08);
+  }
+
+  .drag-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+
+  .drag-item img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    pointer-events: none;
+  }
+
+  .drag-item span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .drag-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .period-toggle {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.25rem;
+  }
+
+  .period-pill {
+    display: flex;
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    border-radius: 24px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .period-pill button {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 20px;
+  }
+
+  .period-pill button.active {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .period-pill button:hover:not(.active) {
+    color: var(--color-text);
+  }
+
+  .slots-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav-btn {
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-text);
+    flex-shrink: 0;
+  }
+
+  .nav-btn:hover {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: white;
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .nav-btn:disabled:hover {
+    background: var(--color-bg);
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .days-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .day-col {
+    text-align: center;
+  }
+
+  .day-header {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    margin-bottom: 0.25rem;
+  }
+
+  .day-date {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .day-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .slot {
+    padding: 0.6rem 0.25rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.15s;
+    border: 2px solid transparent;
+    position: relative;
+  }
+
+  .slot.available {
+    background: rgba(34, 197, 94, 0.08);
+    color: #16a34a;
+    border-color: rgba(34, 197, 94, 0.25);
+  }
+
+  .slot.available.drop-ready {
+    animation: pulse 1s infinite;
+    border-style: dashed;
+  }
+
+  @keyframes pulse {
+    0%, 100% { border-color: rgba(34, 197, 94, 0.25); }
+    50% { border-color: rgba(34, 197, 94, 0.6); }
+  }
+
+  .slot.available.drag-over {
+    background: #22c55e;
+    color: white;
+    transform: scale(1.08);
+    border-color: #16a34a;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+  }
+
+  .slot.booked {
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .slot.booked .slot-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 4px;
+    vertical-align: middle;
+    opacity: 0.7;
+  }
+
+  .slot.past {
+    background: transparent;
+    color: var(--color-text-muted);
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+
+  .confirm-panel {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .confirm-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .confirm-header img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  .confirm-time {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .confirm-type {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .booking-form input {
+    padding: 0.85rem;
+    font-size: 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .booking-form input:focus {
+    border-color: var(--color-accent);
+  }
+
+  .booking-form input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .confirm-btn {
+    background: var(--color-accent);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.85rem;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .confirm-btn:hover {
+    background: var(--color-accent-deep);
+  }
+
+  .confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cancel-btn {
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+
+  .cancel-btn:hover {
+    color: var(--color-text);
+  }
+
+  .success-check {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    border: 4px solid #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: #22c55e;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .success-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1rem;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .hint {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .loading {
+    color: var(--color-text-muted);
+    padding: 3rem;
+  }
+
+  /* Help modal */
+  .help-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+    padding: 1rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .help-modal {
+    background: var(--color-surface);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 320px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .help-demo {
+    position: relative;
+    height: 120px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .help-icons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .help-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .help-icon.highlight {
+    animation: iconPulse 1.5s ease infinite;
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    50% { transform: scale(1.1); box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4); }
+  }
+
+  .help-cursor {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    animation: cursorMove 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes cursorMove {
+    0% {
+      left: 75%;
+      top: 70%;
+      opacity: 1;
+    }
+    30% {
+      left: 25%;
+      top: 30%;
+      opacity: 1;
+    }
+    50% {
+      left: 25%;
+      top: 30%;
+      transform: scale(0.9);
+      opacity: 1;
+    }
+    80% {
+      left: 75%;
+      top: 70%;
+      opacity: 0.8;
+    }
+    100% {
+      left: 75%;
+      top: 70%;
+      opacity: 1;
+    }
+  }
+
+  .help-slot {
+    width: 50px;
+    height: 36px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 2px dashed rgba(34, 197, 94, 0.4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: #16a34a;
+    font-weight: 600;
+    animation: slotPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes slotPulse {
+    0%, 30% { background: rgba(34, 197, 94, 0.1); }
+    50%, 80% { background: rgba(34, 197, 94, 0.25); }
+    100% { background: rgba(34, 197, 94, 0.1); }
+  }
+
+  .help-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .help-text {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+  }
+
+  .help-close {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .help-close:hover {
+    background: var(--color-accent-deep);
+  }
+
+  /* Ghost element for dragging */
+  .drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.1);
+    transition: transform 0.1s;
+  }
+
+  .drag-ghost img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+  }
+
+  @media (max-width: 500px) {
+    .booking {
+      padding: 1.25rem 1rem;
+    }
+
+    .booking h1 {
+      font-size: 1.5rem;
+    }
+
+    .drag-dock {
+      gap: 1.5rem;
+      padding: 1rem;
+    }
+
+    .drag-item img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .slots-container {
+      gap: 0.4rem;
+    }
+
+    .nav-btn {
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+    }
+
+    .days-row {
+      gap: 0.2rem;
+    }
+
+    .slot {
+      font-size: 0.7rem;
+      padding: 0.4rem 0.1rem;
+    }
+
+    .day-header {
+      font-size: 0.75rem;
+    }
+
+    .day-date {
+      font-size: 0.65rem;
+    }
+
+    .period-pill button {
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+    }
+  }
+</style>
+
+<script>
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const WORKER_API = 'https://loom-upload.ben-6a6.workers.dev';
+
+  let slotOverrides: Record<string, string> = {};
+  let currentWeekOffset = 0;
+  let currentPeriod: 'am' | 'pm' = 'am';
+  let selectedSlot: { day: Date; time: string; label: string; meetingType: 'coffee' | 'teams' } | null = null;
+  let isDragging = false;
+  let currentDragType: 'coffee' | 'teams' | null = null;
+  let ghostEl: HTMLElement | null = null;
+  let hasSeenHelp = localStorage.getItem('booking-help-seen') === 'true';
+
+  async function loadOverrides() {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      const formData = new FormData();
+      formData.append('type', 'calendar-load');
+      const response = await fetch(WORKER_API, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (response.ok) {
+        slotOverrides = await response.json();
+      }
+    } catch (e) {
+      console.error('Failed to load slots:', e);
+    }
+  }
+
+  async function saveSlot(slotKey: string, status: string, email: string) {
+    slotOverrides[slotKey] = status;
+    try {
+      const formData = new FormData();
+      formData.append('type', 'calendar-slot');
+      formData.append('slot_key', slotKey);
+      formData.append('status', status);
+      formData.append('email', email);
+      await fetch(WORKER_API, {
+        method: 'POST',
+        body: formData
+      });
+    } catch (e) {
+      console.error('Failed to save slot:', e);
+    }
+  }
+
+  function getWeekDates(offset: number) {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? 1 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset + (offset * 7));
+
+    const dates = [];
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }
+
+  function formatWeekLabel(dates: Date[]) {
+    const start = dates[0];
+    const end = dates[4];
+    const startStr = start.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+    const endStr = end.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+    return `${startStr} – ${endStr}`;
+  }
+
+  function getSlotKey(date: Date, time: string) {
+    const weekOffset = currentWeekOffset === 0 ? 'this' : 'next';
+    const dayIndex = (date.getDay() + 6) % 7;
+    const period = parseInt(time.split(':')[0]) < 12 ? 'am' : 'pm';
+    return `${weekOffset}-${dayIndex}-${period}-${time}`;
+  }
+
+  function isBooked(status: string) {
+    return status && status.startsWith('booked');
+  }
+
+  function getMeetingType(status: string): 'coffee' | 'teams' | null {
+    if (!status) return null;
+    if (status.includes('[coffee]')) return 'coffee';
+    if (status.includes('[teams]')) return 'teams';
+    return null;
+  }
+
+  function isPast(date: Date, time: string) {
+    const [h, m] = time.split(':').map(Number);
+    const slotTime = new Date(date);
+    slotTime.setHours(h, m, 0, 0);
+    return slotTime < new Date();
+  }
+
+  function formatTime12(time24: string) {
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const h12 = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    return `${h12}:${m.toString().padStart(2, '0')}${ampm}`;
+  }
+
+  const AM_SLOTS = ['9:00', '10:00', '11:00'];
+  const PM_SLOTS = ['13:00', '14:00', '15:00', '16:00'];
+
+  function showHelpModal() {
+    // Don't show if already dragging
+    if (isDragging) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'help-overlay';
+    overlay.innerHTML = `
+      <div class="help-modal">
+        <div class="help-demo">
+          <div class="help-icons">
+            <img class="help-icon highlight" src="/booking/coffee.png" alt="Coffee">
+            <img class="help-icon" src="/booking/teams.png" alt="Teams">
+          </div>
+          <div class="help-slot">10am</div>
+          <svg class="help-cursor" viewBox="0 0 24 24" fill="none">
+            <path d="M5 3l14 11-6 1-3 6-5-18z" fill="var(--color-text)" stroke="white" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="help-title">Drag to book</div>
+        <div class="help-text">
+          Pick up the coffee cup for an in-person chat, or Teams for a video call. Then drop it on your preferred time.
+        </div>
+        <button class="help-close">Got it</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Close on button click
+    overlay.querySelector('.help-close')?.addEventListener('click', () => {
+      overlay.remove();
+      localStorage.setItem('booking-help-seen', 'true');
+      hasSeenHelp = true;
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        localStorage.setItem('booking-help-seen', 'true');
+        hasSeenHelp = true;
+      }
+    });
+  }
+
+  function createGhost(type: 'coffee' | 'teams') {
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost';
+    ghost.innerHTML = `<img src="/booking/${type}.png" alt="${type}">`;
+    document.body.appendChild(ghost);
+    return ghost;
+  }
+
+  function moveGhost(x: number, y: number) {
+    if (ghostEl) {
+      ghostEl.style.left = `${x}px`;
+      ghostEl.style.top = `${y}px`;
+    }
+  }
+
+  function removeGhost() {
+    if (ghostEl) {
+      ghostEl.remove();
+      ghostEl = null;
+    }
+  }
+
+  function startDrag(type: 'coffee' | 'teams') {
+    isDragging = true;
+    currentDragType = type;
+    document.querySelectorAll('.slot.available').forEach(el => {
+      el.classList.add('drop-ready');
+    });
+  }
+
+  function endDrag() {
+    isDragging = false;
+    currentDragType = null;
+    removeGhost();
+    document.querySelectorAll('.slot').forEach(el => {
+      el.classList.remove('drop-ready', 'drag-over');
+    });
+    document.querySelectorAll('.drag-item').forEach(el => {
+      el.classList.remove('dragging');
+    });
+  }
+
+  function handleDrop(slotEl: HTMLElement) {
+    if (!currentDragType) return;
+
+    const date = new Date(slotEl.dataset.date!);
+    const time = slotEl.dataset.time!;
+    const dayName = date.toLocaleDateString('en-NZ', { weekday: 'long' });
+    const dateStr = date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' });
+
+    selectedSlot = {
+      day: date,
+      time,
+      label: `${dayName}, ${dateStr} at ${formatTime12(time)}`,
+      meetingType: currentDragType
+    };
+
+    endDrag();
+    showConfirmPanel();
+  }
+
+  function render() {
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    const dates = getWeekDates(currentWeekOffset);
+    const weekLabel = formatWeekLabel(dates);
+    const slots = currentPeriod === 'am' ? AM_SLOTS : PM_SLOTS;
+
+    app.innerHTML = `
+      <div class="booking">
+        <h1>Book a Chat</h1>
+
+        <div class="drag-dock">
+          <div class="drag-item" data-type="coffee">
+            <img src="/booking/coffee.png" alt="Coffee" draggable="false">
+            <span>In person</span>
+          </div>
+          <div class="drag-item" data-type="teams">
+            <img src="/booking/teams.png" alt="Teams" draggable="false">
+            <span>Video call</span>
+          </div>
+        </div>
+
+        <p class="drag-hint">Drag onto a time</p>
+
+        <div class="slots-container">
+          <button class="nav-btn" id="prev-week" ${currentWeekOffset <= 0 ? 'disabled' : ''}>&lt;</button>
+
+          <div class="days-row">
+            ${dates.map((date, i) => `
+              <div class="day-col">
+                <div class="day-header">${DAYS[i]}</div>
+                <div class="day-date">${date.toLocaleDateString('en-NZ', { day: 'numeric' })}</div>
+                <div class="day-slots">
+                  ${slots.map(time => {
+                    const key = getSlotKey(date, time);
+                    const status = slotOverrides[key];
+                    const past = isPast(date, time);
+                    const booked = isBooked(status);
+                    const meetType = getMeetingType(status);
+                    const cls = past ? 'past' : booked ? 'booked' : 'available';
+                    const icon = meetType ? `<img class="slot-icon" src="/booking/${meetType}.png" alt="${meetType}">` : '';
+                    return `<div class="slot ${cls}" data-date="${date.toISOString()}" data-time="${time}">${icon}${formatTime12(time)}</div>`;
+                  }).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <button class="nav-btn" id="next-week" ${currentWeekOffset >= 3 ? 'disabled' : ''}>&gt;</button>
+        </div>
+
+        <div class="period-toggle">
+          <div class="period-pill">
+            <button data-period="am" class="${currentPeriod === 'am' ? 'active' : ''}">Morning</button>
+            <button data-period="pm" class="${currentPeriod === 'pm' ? 'active' : ''}">Afternoon</button>
+          </div>
+        </div>
+
+        <div id="confirm-panel"></div>
+      </div>
+    `;
+
+    // Period toggle
+    document.querySelectorAll('.period-pill button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPeriod = (btn as HTMLElement).dataset.period as 'am' | 'pm';
+        render();
+      });
+    });
+
+    // Week navigation
+    document.getElementById('prev-week')?.addEventListener('click', () => {
+      if (currentWeekOffset > 0) {
+        currentWeekOffset--;
+        render();
+      }
+    });
+
+    document.getElementById('next-week')?.addEventListener('click', () => {
+      if (currentWeekOffset < 3) {
+        currentWeekOffset++;
+        render();
+      }
+    });
+
+    // Drag and drop for mouse
+    document.querySelectorAll('.drag-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const type = (el as HTMLElement).dataset.type as 'coffee' | 'teams';
+        el.classList.add('dragging');
+        ghostEl = createGhost(type);
+        moveGhost((e as MouseEvent).clientX, (e as MouseEvent).clientY);
+        startDrag(type);
+      });
+    });
+
+    // Global mouse move/up for drag
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    // Drag and drop for touch
+    document.querySelectorAll('.drag-item').forEach(el => {
+      el.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const type = (el as HTMLElement).dataset.type as 'coffee' | 'teams';
+        el.classList.add('dragging');
+        ghostEl = createGhost(type);
+        const touch = (e as TouchEvent).touches[0];
+        moveGhost(touch.clientX, touch.clientY);
+        startDrag(type);
+      });
+    });
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    // Click on slot shows help modal
+    document.querySelectorAll('.slot.available').forEach(el => {
+      el.addEventListener('click', (e) => {
+        // Only show if not from a drag release
+        if (!isDragging) {
+          showHelpModal();
+        }
+      });
+    });
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    if (!isDragging) return;
+    moveGhost(e.clientX, e.clientY);
+
+    // Check for hover over slots
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    document.querySelectorAll('.slot.available').forEach(slot => {
+      slot.classList.remove('drag-over');
+    });
+    if (el?.classList.contains('available')) {
+      el.classList.add('drag-over');
+    }
+  }
+
+  function handleMouseUp(e: MouseEvent) {
+    if (!isDragging) return;
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (el?.classList.contains('available')) {
+      handleDrop(el as HTMLElement);
+    } else {
+      endDrag();
+    }
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!isDragging) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    moveGhost(touch.clientX, touch.clientY);
+
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    document.querySelectorAll('.slot.available').forEach(slot => {
+      slot.classList.remove('drag-over');
+    });
+    if (el?.classList.contains('available')) {
+      el.classList.add('drag-over');
+    }
+  }
+
+  function handleTouchEnd(e: TouchEvent) {
+    if (!isDragging) return;
+
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el?.classList.contains('available')) {
+      handleDrop(el as HTMLElement);
+    } else {
+      endDrag();
+    }
+  }
+
+  function showConfirmPanel() {
+    const panel = document.getElementById('confirm-panel');
+    if (!panel || !selectedSlot) return;
+
+    const typeLabel = selectedSlot.meetingType === 'coffee' ? 'Coffee chat (in person)' : 'Video call (Teams)';
+
+    panel.innerHTML = `
+      <div class="confirm-panel">
+        <div class="confirm-header">
+          <img src="/booking/${selectedSlot.meetingType}.png" alt="${selectedSlot.meetingType}">
+          <div class="confirm-time">${selectedSlot.label}</div>
+        </div>
+        <div class="confirm-type">${typeLabel}</div>
+        <form class="booking-form" id="booking-form">
+          <input type="text" id="name-input" placeholder="Your name" required autocomplete="name" />
+          <input type="email" id="email-input" placeholder="your@email.com" required autocomplete="email" />
+          <button type="submit" class="confirm-btn">Book it</button>
+        </form>
+        <button class="cancel-btn" id="cancel-btn">Cancel</button>
+      </div>
+    `;
+
+    document.getElementById('cancel-btn')?.addEventListener('click', () => {
+      selectedSlot = null;
+      panel.innerHTML = '';
+    });
+
+    document.getElementById('booking-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = (document.getElementById('name-input') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('email-input') as HTMLInputElement).value.trim();
+      if (!name || !email || !selectedSlot) return;
+
+      const btn = document.querySelector('.confirm-btn') as HTMLButtonElement;
+      btn.textContent = 'Booking...';
+      btn.disabled = true;
+
+      const key = getSlotKey(selectedSlot.day, selectedSlot.time);
+      const status = `booked [${selectedSlot.meetingType}] (${email})`;
+      await saveSlot(key, status, email);
+
+      // Send push notification
+      try {
+        await fetch('/api/booking-notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            time: selectedSlot.label,
+            meetingType: selectedSlot.meetingType
+          })
+        });
+      } catch (e) {
+        console.error('Notify error:', e);
+      }
+
+      showSuccess();
+    });
+  }
+
+  function showSuccess() {
+    const app = document.getElementById('app');
+    if (!app || !selectedSlot) return;
+
+    const typeLabel = selectedSlot.meetingType === 'coffee' ? 'See you for coffee!' : 'See you on Teams!';
+
+    app.innerHTML = `
+      <div class="booking">
+        <img class="success-icon" src="/booking/${selectedSlot.meetingType}.png" alt="${selectedSlot.meetingType}">
+        <div class="success-check">✓</div>
+        <h1>You're booked!</h1>
+        <div class="confirm-time">${selectedSlot.label}</div>
+        <p class="hint">${typeLabel}</p>
+        <button class="cancel-btn" id="book-another" style="margin-top: 2rem;">Book another time</button>
+      </div>
+    `;
+
+    document.getElementById('book-another')?.addEventListener('click', () => {
+      selectedSlot = null;
+      currentWeekOffset = 0;
+      loadOverrides().then(render);
+    });
+  }
+
+  // Cleanup event listeners on page leave
+  function cleanup() {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+  }
+
+  // Init
+  const app = document.getElementById('app');
+  if (app) {
+    app.innerHTML = '<div class="loading">Loading availability...</div>';
+    loadOverrides()
+      .then(render)
+      .catch((e) => {
+        console.error('Init error:', e);
+        render();
+      });
+  }
+
+  window.addEventListener('beforeunload', cleanup);
+</script>

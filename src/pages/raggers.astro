@@ -1,0 +1,504 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="How Raglan Are You?">
+  <section class="intro-page" id="intro-section">
+    <div class="intro-content">
+      <h1 class="intro-title">How Raglan<br/>are you?</h1>
+      <p class="intro-sub">10 questions to find out if you're a local or just visiting</p>
+      <button class="start-btn" id="start-btn">Let's find out</button>
+    </div>
+  </section>
+
+  <section class="quiz-page hidden" id="quiz-section">
+    <div class="quiz-header">
+      <h1 class="quiz-title">How Raglan are you?</h1>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="question-count" id="question-count">1 / 10</div>
+    </div>
+
+    <div class="quiz-body">
+      <h2 class="question-text" id="question-text"></h2>
+
+      <div class="options-grid" id="options-grid"></div>
+
+      <button class="next-btn" id="next-btn" disabled>Next</button>
+    </div>
+  </section>
+
+  <section class="result-page hidden" id="result-section">
+    <div class="result-content">
+      <div class="result-badge" id="result-badge"></div>
+      <div class="result-score" id="result-score">0%</div>
+      <h1 class="result-title" id="result-title"></h1>
+      <p class="result-desc" id="result-desc"></p>
+      <button class="restart-btn" id="restart-btn">Take it again</button>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Intro */
+  .intro-page {
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(165deg, #0a1a12 0%, #142e1f 40%, #1a3d2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .intro-page.hidden { display: none; }
+
+  .intro-content {
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .intro-title {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 12vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #4ade80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .intro-sub {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 2.5rem;
+    line-height: 1.5;
+  }
+
+  .start-btn {
+    background: #4ade80;
+    color: #0a1a12;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 100px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .start-btn:hover {
+    background: #22c55e;
+    transform: scale(1.05);
+  }
+
+  /* Quiz */
+  .quiz-page {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background: linear-gradient(165deg, #0a1a12 0%, #142e1f 40%, #1a3d2e 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quiz-page.hidden { display: none; }
+
+  .quiz-header {
+    margin-bottom: 2rem;
+  }
+
+  .quiz-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #4ade80;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #4ade80;
+    width: 10%;
+    transition: width 0.3s ease;
+  }
+
+  .question-count {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+  }
+
+  .quiz-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .question-text {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    font-weight: 700;
+    text-align: center;
+    color: white;
+    margin-bottom: 2rem;
+    line-height: 1.2;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .option-card {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 1.25rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .option-card:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .option-card.selected {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: #4ade80;
+  }
+
+  .option-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .option-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .option-card.selected .option-text {
+    color: white;
+  }
+
+  .next-btn {
+    background: #4ade80;
+    color: #0a1a12;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: auto;
+  }
+
+  .next-btn:disabled {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.3);
+    cursor: not-allowed;
+  }
+
+  .next-btn:not(:disabled):hover {
+    background: #22c55e;
+    transform: scale(1.02);
+  }
+
+  /* Results */
+  .result-page {
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(165deg, #0a1a12 0%, #142e1f 40%, #1a3d2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .result-page.hidden { display: none; }
+
+  .result-content {
+    text-align: center;
+    max-width: 400px;
+  }
+
+  .result-badge {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    line-height: 1;
+  }
+
+  .result-score {
+    font-family: var(--font-display);
+    font-size: 4rem;
+    font-weight: 800;
+    color: #4ade80;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .result-desc {
+    color: rgba(255,255,255,0.6);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+  }
+
+  .restart-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7);
+    padding: 0.9rem 2rem;
+    border-radius: 100px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .restart-btn:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+  }
+</style>
+
+<script>
+  const questions = [
+    {
+      q: "What's your drink?",
+      options: [
+        { icon: "🥂", text: "Champagne", points: 0 },
+        { icon: "🍹", text: "Pimms", points: 3 },
+        { icon: "🧃", text: "OJ from dairy", points: 7 },
+        { icon: "☕", text: "Raglan Roast", points: 10 }
+      ]
+    },
+    {
+      q: "What are you wearing?",
+      options: [
+        { icon: "👔", text: "Polo & chinos", points: 0 },
+        { icon: "🧥", text: "Country Road", points: 3 },
+        { icon: "👕", text: "Op shop", points: 7 },
+        { icon: "🌈", text: "Tie-dye", points: 10 }
+      ]
+    },
+    {
+      q: "What's on your feet?",
+      options: [
+        { icon: "👠", text: "Heels", points: 0 },
+        { icon: "👟", text: "Sneakers", points: 3 },
+        { icon: "🩴", text: "Jandals", points: 7 },
+        { icon: "🦶", text: "Barefoot", points: 10 }
+      ]
+    },
+    {
+      q: "How do you feel about saunas?",
+      options: [
+        { icon: "🙅", text: "Hate them", points: 0 },
+        { icon: "🤷", text: "Never tried", points: 3 },
+        { icon: "👍", text: "They're alright", points: 7 },
+        { icon: "🔥", text: "Love em", points: 10 }
+      ]
+    },
+    {
+      q: "How much for a coffee?",
+      options: [
+        { icon: "💎", text: "$7.20 oat", points: 0 },
+        { icon: "💵", text: "$6 fine", points: 3 },
+        { icon: "🪙", text: "$4.50 max", points: 7 },
+        { icon: "🏠", text: "Make it myself", points: 10 }
+      ]
+    },
+    {
+      q: "Farting in yoga class?",
+      options: [
+        { icon: "😱", text: "Mortifying", points: 0 },
+        { icon: "😳", text: "I'd die", points: 3 },
+        { icon: "😌", text: "Happens", points: 7 },
+        { icon: "💨", text: "Natural", points: 10 }
+      ]
+    },
+    {
+      q: "Piercings?",
+      options: [
+        { icon: "✋", text: "None", points: 0 },
+        { icon: "👂", text: "Just ears", points: 3 },
+        { icon: "💎", text: "A few", points: 7 },
+        { icon: "🔥", text: "Everywhere", points: 10 }
+      ]
+    },
+    {
+      q: "What's a manu?",
+      options: [
+        { icon: "❓", text: "A cartoon?", points: 0 },
+        { icon: "🐦", text: "A bird?", points: 3 },
+        { icon: "🤿", text: "Diving thing", points: 7 },
+        { icon: "💦", text: "My lifestyle", points: 10 }
+      ]
+    },
+    {
+      q: "What about weed?",
+      options: [
+        { icon: "🚫", text: "Never", points: 0 },
+        { icon: "🤔", text: "Not my thing", points: 3 },
+        { icon: "🍃", text: "Socially", points: 7 },
+        { icon: "🌿", text: "Got a teenth?", points: 10 }
+      ]
+    },
+    {
+      q: "Where do you surf?",
+      options: [
+        { icon: "🏖️", text: "I don't", points: 0 },
+        { icon: "📚", text: "Had a lesson", points: 3 },
+        { icon: "🌊", text: "Manu Bay", points: 7 },
+        { icon: "🏄", text: "Indicators", points: 10 }
+      ]
+    }
+  ];
+
+  const results = [
+    { min: 0, title: "Auckland CBD", badge: "🏙️", desc: "You're more Ponsonby than Point. But hey, everyone's welcome in Raglan... just don't park on the grass." },
+    { min: 20, title: "Hamilton Day-Tripper", badge: "🚗", desc: "You come down for the fish & chips and leave before sunset. Baby steps." },
+    { min: 35, title: "Weekender", badge: "🏕️", desc: "You've got a spot at Raglan Kopua. You know the coffee spots but still wear shoes." },
+    { min: 50, title: "Part-Timer", badge: "🏠", desc: "Half your wardrobe is tie-dye now and you've developed opinions about waves." },
+    { min: 65, title: "Local-ish", badge: "🤙", desc: "You know which butcher to go to and you've been to at least three house concerts." },
+    { min: 80, title: "Proper Local", badge: "🧘", desc: "You've done sunrise sauna. You know everyone at Aro. Your feet are basically leather now." },
+    { min: 90, title: "Manu Maestro", badge: "💦", desc: "You're on first-name basis with the Harbour Board. You ARE Raglan." },
+    { min: 98, title: "Born in the Barrel", badge: "🌊", desc: "Were you even born? Or did you just emerge from the ocean one day fully formed?" }
+  ];
+
+  let currentQ = 0;
+  let totalPoints = 0;
+  let selectedPoints: number | null = null;
+  const maxPoints = questions.length * 10;
+
+  const introSection = document.getElementById('intro-section');
+  const quizSection = document.getElementById('quiz-section');
+  const resultSection = document.getElementById('result-section');
+  const startBtn = document.getElementById('start-btn');
+  const questionText = document.getElementById('question-text');
+  const optionsGrid = document.getElementById('options-grid');
+  const nextBtn = document.getElementById('next-btn') as HTMLButtonElement;
+  const progressFill = document.getElementById('progress-fill');
+  const questionCount = document.getElementById('question-count');
+  const restartBtn = document.getElementById('restart-btn');
+
+  function showQuestion() {
+    if (currentQ >= questions.length) {
+      showResult();
+      return;
+    }
+
+    const q = questions[currentQ];
+    if (!questionText || !optionsGrid) return;
+
+    questionText.textContent = q.q;
+
+    optionsGrid.innerHTML = q.options.map((opt, i) => `
+      <div class="option-card" data-index="${i}" data-points="${opt.points}">
+        <span class="option-icon">${opt.icon}</span>
+        <span class="option-text">${opt.text}</span>
+      </div>
+    `).join('');
+
+    // Add click handlers
+    document.querySelectorAll('.option-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedPoints = parseInt((card as HTMLElement).dataset.points || '0');
+        if (nextBtn) nextBtn.disabled = false;
+      });
+    });
+
+    selectedPoints = null;
+    if (nextBtn) nextBtn.disabled = true;
+
+    // Update progress
+    if (progressFill) {
+      progressFill.style.width = ((currentQ + 1) / questions.length * 100) + '%';
+    }
+    if (questionCount) {
+      questionCount.textContent = `${currentQ + 1} / ${questions.length}`;
+    }
+  }
+
+  function showResult() {
+    if (!quizSection || !resultSection) return;
+
+    quizSection.classList.add('hidden');
+    resultSection.classList.remove('hidden');
+
+    const pct = Math.round((totalPoints / maxPoints) * 100);
+
+    let result = results[0];
+    for (const r of results) {
+      if (pct >= r.min) result = r;
+    }
+
+    const badge = document.getElementById('result-badge');
+    const score = document.getElementById('result-score');
+    const title = document.getElementById('result-title');
+    const desc = document.getElementById('result-desc');
+
+    if (badge) badge.textContent = result.badge;
+    if (score) score.textContent = pct + '%';
+    if (title) title.textContent = result.title;
+    if (desc) desc.textContent = result.desc;
+  }
+
+  function reset() {
+    currentQ = 0;
+    totalPoints = 0;
+    selectedPoints = null;
+
+    if (resultSection) resultSection.classList.add('hidden');
+    if (introSection) introSection.classList.remove('hidden');
+  }
+
+  // Event listeners
+  startBtn?.addEventListener('click', () => {
+    if (introSection) introSection.classList.add('hidden');
+    if (quizSection) quizSection.classList.remove('hidden');
+    showQuestion();
+  });
+
+  nextBtn?.addEventListener('click', () => {
+    if (selectedPoints !== null) {
+      totalPoints += selectedPoints;
+      currentQ++;
+      showQuestion();
+    }
+  });
+
+  restartBtn?.addEventListener('click', reset);
+</script>

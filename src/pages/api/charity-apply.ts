@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { sendPushToAll } from '../../lib/web-push';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -50,6 +51,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
       INSERT INTO charity_applications (org_name, mission, has_website, current_url, need, contact_name, contact_email)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(orgName, mission, hasWebsite || null, currentUrl || null, need || null, contactName, contactEmail).run();
+
+    // Send push notification to admin
+    try {
+      await sendPushToAll(db, {
+        title: 'New Application',
+        body: `${orgName} just applied`
+      });
+    } catch (pushError) {
+      console.error('Push notification error:', pushError);
+      // Don't fail the request if push fails
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

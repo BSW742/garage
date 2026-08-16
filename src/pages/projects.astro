@@ -3,10 +3,10 @@ import Layout from '../components/Layout.astro';
 
 const projects = [
   {
-    id: 'bridgepoint',
-    title: 'Bridgepoint',
-    url: 'https://bridgepoint.co.nz',
-    image: '/projects/bridgepoint.jpg'
+    id: 'garage',
+    title: 'Garage.co.nz',
+    url: 'https://garage.co.nz',
+    video: '/projects/garage.mp4'
   },
   {
     id: 'waltonboxing',
@@ -15,9 +15,16 @@ const projects = [
     video: '/waltonboxing.mp4'
   },
   {
+    id: 'bridgepoint',
+    title: 'Bridgepoint',
+    url: 'https://bridgepoint.co.nz',
+    image: '/projects/bridgepoint.jpg'
+  },
+  {
     id: 'risksense',
     title: 'RiskSense',
-    url: 'https://risksense.cloud'
+    url: 'https://risksense.cloud',
+    image: '/projects/risksense.jpg'
   },
   {
     id: 'zombie',
@@ -194,13 +201,14 @@ const projects = [
   .slide-media {
     aspect-ratio: 16 / 10;
     overflow: hidden;
+    background: #111;
   }
 
   .slide-media img,
   .slide-media video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.5s ease;
   }
 

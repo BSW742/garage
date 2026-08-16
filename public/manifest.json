@@ -1,0 +1,17 @@
+{
+  "name": "Garage Admin",
+  "short_name": "Garage",
+  "description": "Charity application admin",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/nav/merch-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

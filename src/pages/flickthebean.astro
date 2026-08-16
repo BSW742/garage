@@ -1,0 +1,195 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Flick the Bean">
+  <section class="flick-hero">
+    <div class="flick-bg"></div>
+
+    <div class="flick-content" id="question-screen">
+      <h1>Do you drink coffee?</h1>
+
+      <div class="flick-buttons">
+        <button class="flick-btn no-btn" id="no-btn">No</button>
+        <button class="flick-btn yes-btn" id="yes-btn">Yes</button>
+      </div>
+    </div>
+
+    <div class="flick-content hidden" id="no-screen">
+      <h1>Ok we can't be friends</h1>
+      <p class="flick-sub">But by all means, look around.</p>
+      <a href="/" class="flick-link">Browse the site anyway</a>
+    </div>
+
+    <div class="flick-content hidden" id="yes-screen">
+      <h1>Cool, let me give you some free stuff</h1>
+      <p class="flick-sub">We build websites for good causes. No cost, no catch.</p>
+      <a href="/apply" class="flick-cta">
+        <span>Tell us about your project</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .flick-hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flick-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 69, 19, 0.12) 0%, transparent 50%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    z-index: 0;
+  }
+
+  .flick-content {
+    max-width: 600px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .flick-content.hidden {
+    display: none;
+  }
+
+  .flick-content h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+    color: var(--color-text);
+  }
+
+  .flick-sub {
+    font-size: 1.35rem;
+    color: var(--color-text-soft);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+  }
+
+  .flick-buttons {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .flick-btn {
+    padding: 1.25rem 3rem;
+    border-radius: 100px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+  }
+
+  .no-btn {
+    background: #f1f1f1;
+    color: var(--color-text-soft);
+  }
+
+  .no-btn:hover {
+    background: #e5e5e5;
+    transform: translateY(-3px);
+  }
+
+  .yes-btn {
+    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    color: white;
+    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.3);
+  }
+
+  .yes-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(139, 69, 19, 0.4);
+  }
+
+  .flick-link {
+    display: inline-block;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    border: 1px solid var(--color-border);
+    transition: all 0.3s;
+  }
+
+  .flick-link:hover {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+  }
+
+  .flick-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    color: white;
+    padding: 1.25rem 2.5rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.3);
+  }
+
+  .flick-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(139, 69, 19, 0.4);
+  }
+
+  .flick-cta svg {
+    transition: transform 0.3s;
+  }
+
+  .flick-cta:hover svg {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 480px) {
+    .flick-buttons {
+      flex-direction: column;
+    }
+
+    .flick-btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  const questionScreen = document.getElementById('question-screen');
+  const noScreen = document.getElementById('no-screen');
+  const yesScreen = document.getElementById('yes-screen');
+  const noBtn = document.getElementById('no-btn');
+  const yesBtn = document.getElementById('yes-btn');
+
+  noBtn?.addEventListener('click', () => {
+    questionScreen?.classList.add('hidden');
+    noScreen?.classList.remove('hidden');
+  });
+
+  yesBtn?.addEventListener('click', () => {
+    questionScreen?.classList.add('hidden');
+    yesScreen?.classList.remove('hidden');
+  });
+</script>
