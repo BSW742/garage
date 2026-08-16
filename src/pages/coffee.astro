@@ -14,11 +14,14 @@ import Layout from '../components/Layout.astro';
       </div>
       <div class="hero-ben-wrapper">
         <div class="arrow-annotation">
-          <span class="arrow-text">This human</span>
-          <svg class="arrow-svg" viewBox="0 0 80 60" fill="none">
-            <path d="M5 5 C 20 10, 40 35, 70 50" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
-            <path d="M60 42 L70 50 L58 52" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
+          <div class="arrow-text-wrapper">
+            <span class="arrow-text">This</span>
+            <svg class="arrow-svg" viewBox="0 0 50 80" fill="none">
+              <path d="M25 0 C 25 20, 5 40, 15 70" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <path d="M8 60 L15 70 L22 58" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            <span class="arrow-text">human</span>
+          </div>
         </div>
         <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
       </div>
@@ -111,26 +114,29 @@ import Layout from '../components/Layout.astro';
 
   .arrow-annotation {
     position: absolute;
-    top: -20px;
-    left: -60px;
+    top: -30px;
+    left: -30px;
+  }
+
+  .arrow-text-wrapper {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    transform: rotate(-12deg);
   }
 
   .arrow-text {
     font-family: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
     font-size: 1.8rem;
     color: white;
-    transform: rotate(-8deg);
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    line-height: 1;
   }
 
   .arrow-svg {
-    width: 80px;
-    height: 60px;
-    margin-top: -5px;
-    margin-left: 10px;
+    width: 50px;
+    height: 80px;
+    margin: -8px 0;
   }
 
   @media (max-width: 768px) {
@@ -144,15 +150,15 @@ import Layout from '../components/Layout.astro';
       width: 250px;
     }
     .arrow-annotation {
-      top: -15px;
-      left: -40px;
+      top: -25px;
+      left: -20px;
     }
     .arrow-text {
-      font-size: 1.4rem;
+      font-size: 1.3rem;
     }
     .arrow-svg {
-      width: 60px;
-      height: 45px;
+      width: 40px;
+      height: 60px;
     }
   }
 
