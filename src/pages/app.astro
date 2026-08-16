@@ -346,6 +346,7 @@
     const notifyBtn = document.getElementById('notifyBtn');
 
     async function setupPush(userTriggered = false) {
+      if (userTriggered) alert('Starting...');
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
         notifyBtn.textContent = '🔕';
         notifyBtn.style.opacity = '0.3';
@@ -410,7 +411,13 @@
       }
     }
 
-    notifyBtn.onclick = () => setupPush(true);
+    notifyBtn.onclick = async () => {
+      try {
+        await setupPush(true);
+      } catch(e) {
+        alert('Click error: ' + e.message);
+      }
+    };
     setupPush(false);
     loadBookings();
     loadApps();
