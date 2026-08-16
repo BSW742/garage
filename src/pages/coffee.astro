@@ -15,15 +15,6 @@ import Layout from '../components/Layout.astro';
       <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
     </section>
 
-    <!-- Story -->
-    <section class="story-section">
-      <img src="/surfben.png" alt="Ben the surfer" class="story-ben" />
-      <div class="story-content">
-        <h2>The Origin Story</h2>
-        <p>It started when a couple of barefoot surfers went seeking a strong brew to power them through their day. Armed with an old roaster, a blowtorch, and pure kiwi ingenuity, they created <strong>Brown Lightning</strong> — serving it from a hole-in-the-wall surf shop in Raglan.</p>
-        <p>That learn-by-doing philosophy has since expanded into 11 locations across Aotearoa, from Raglan to Wellington to Nelson. Each cafe has its own vibe, but they all share one thing: bloody good coffee.</p>
-      </div>
-    </section>
 
     <!-- Photo Gallery -->
     <section class="gallery-section">
@@ -31,57 +22,15 @@ import Layout from '../components/Layout.astro';
       <p class="gallery-intro">Snapshots from my caffeine-fuelled adventures.</p>
 
       <div class="photo-grid">
-        <!-- Large feature photo -->
-        <div class="photo-placeholder large" data-slot="1">
-          <span>Photo 1</span>
-          <small>800 x 600</small>
-        </div>
-
-        <!-- Two medium side by side -->
-        <div class="photo-placeholder medium" data-slot="2">
-          <span>Photo 2</span>
-          <small>400 x 400</small>
-        </div>
-        <div class="photo-placeholder medium" data-slot="3">
-          <span>Photo 3</span>
-          <small>400 x 400</small>
-        </div>
-
-        <!-- Three small in a row -->
-        <div class="photo-placeholder small" data-slot="4">
-          <span>Photo 4</span>
-          <small>250 x 250</small>
-        </div>
-        <div class="photo-placeholder small" data-slot="5">
-          <span>Photo 5</span>
-          <small>250 x 250</small>
-        </div>
-        <div class="photo-placeholder small" data-slot="6">
-          <span>Photo 6</span>
-          <small>250 x 250</small>
-        </div>
-
-        <!-- Wide panoramic -->
-        <div class="photo-placeholder wide" data-slot="7">
-          <span>Photo 7</span>
-          <small>1200 x 400</small>
-        </div>
-
-        <!-- Two tall vertical -->
-        <div class="photo-placeholder tall" data-slot="8">
-          <span>Photo 8</span>
-          <small>300 x 500</small>
-        </div>
-        <div class="photo-placeholder tall" data-slot="9">
-          <span>Photo 9</span>
-          <small>300 x 500</small>
-        </div>
-
-        <!-- Medium feature -->
-        <div class="photo-placeholder medium-wide" data-slot="10">
-          <span>Photo 10</span>
-          <small>600 x 400</small>
-        </div>
+        <img src="/coffee/IMG_7059.jpg" alt="Coffee moment" class="photo large" />
+        <img src="/coffee/IMG_7032.jpg" alt="Coffee moment" class="photo medium" />
+        <img src="/coffee/IMG_6806.jpg" alt="Coffee moment" class="photo medium" />
+        <img src="/coffee/IMG_7289.jpg" alt="Coffee moment" class="photo small" />
+        <img src="/coffee/IMG_7280.jpg" alt="Coffee moment" class="photo small" />
+        <img src="/coffee/IMG_7272.jpg" alt="Coffee moment" class="photo small" />
+        <video src="/coffee/IMG_7150.MOV" class="photo wide" autoplay muted loop playsinline></video>
+        <img src="/coffee/IMG_7265.jpg" alt="Coffee moment" class="photo tall" />
+        <video src="/coffee/IMG_7287.MOV" class="photo tall" autoplay muted loop playsinline></video>
       </div>
     </section>
 
@@ -248,62 +197,41 @@ import Layout from '../components/Layout.astro';
     gap: 1rem;
   }
 
-  .photo-placeholder {
-    background: linear-gradient(135deg, #5d3a1a 0%, #8b4513 100%);
+  .photo {
     border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #d4a574;
-    border: 2px dashed #8b4513;
-    transition: all 0.3s;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
   }
 
-  .photo-placeholder:hover {
-    border-color: #d4a574;
+  .photo:hover {
     transform: scale(1.02);
   }
 
-  .photo-placeholder span {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .photo-placeholder small {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    margin-top: 0.25rem;
-  }
-
-  .photo-placeholder.large {
+  .photo.large {
     grid-column: span 4;
     aspect-ratio: 4/3;
   }
 
-  .photo-placeholder.medium {
+  .photo.medium {
     grid-column: span 2;
     aspect-ratio: 1;
   }
 
-  .photo-placeholder.small {
+  .photo.small {
     grid-column: span 2;
     aspect-ratio: 1;
   }
 
-  .photo-placeholder.wide {
+  .photo.wide {
     grid-column: span 6;
     aspect-ratio: 3/1;
   }
 
-  .photo-placeholder.tall {
+  .photo.tall {
     grid-column: span 2;
     aspect-ratio: 3/5;
-  }
-
-  .photo-placeholder.medium-wide {
-    grid-column: span 2;
-    aspect-ratio: 3/2;
   }
 
   /* Quote */
@@ -372,23 +300,22 @@ import Layout from '../components/Layout.astro';
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .photo-placeholder.large,
-    .photo-placeholder.wide {
+    .photo.large,
+    .photo.wide {
       grid-column: span 2;
     }
 
-    .photo-placeholder.medium,
-    .photo-placeholder.small,
-    .photo-placeholder.tall,
-    .photo-placeholder.medium-wide {
+    .photo.medium,
+    .photo.small,
+    .photo.tall {
       grid-column: span 1;
     }
 
-    .photo-placeholder.tall {
+    .photo.tall {
       aspect-ratio: 3/4;
     }
 
-    .photo-placeholder.wide {
+    .photo.wide {
       aspect-ratio: 2/1;
     }
   }
