@@ -1,0 +1,346 @@
+---
+// PWA Admin App
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f5f5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Garage" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/nav/merch-v2.png" />
+  <title>Garage</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f2f2f7;
+      padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 20px);
+    }
+    .header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 34px; font-weight: 700; }
+    .header-right { display: flex; gap: 12px; align-items: center; }
+    .refresh { font-size: 24px; color: #007aff; background: none; border: none; }
+    .count { background: #ff3b30; color: #fff; font-size: 14px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+
+    .tabs {
+      display: flex;
+      margin: 0 16px 16px;
+      background: rgba(118,118,128,0.12);
+      border-radius: 9px;
+      padding: 2px;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 7px 12px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: #000;
+      border-radius: 7px;
+    }
+    .tabs button.active {
+      background: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 1px 1px rgba(0,0,0,0.04);
+    }
+
+    .card-list {
+      margin: 0 16px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card {
+      padding: 12px 16px;
+      border-bottom: 0.5px solid rgba(60,60,67,0.12);
+    }
+    .card:last-child { border-bottom: none; }
+
+    .card-top {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      background: #f2f2f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon img { width: 24px; height: 24px; }
+    .card-icon span { font-size: 16px; font-weight: 600; color: #8e8e93; }
+
+    .card-main { flex: 1; min-width: 0; }
+
+    .card-row1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 400;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-time {
+      font-size: 15px;
+      color: #8e8e93;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    .card-row2 {
+      font-size: 15px;
+      color: #000;
+      margin-top: 2px;
+    }
+    .card-row2 .tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .tag.coffee { background: #ff9500; color: #fff; }
+    .tag.teams { background: #5856d6; color: #fff; }
+    .tag.pending { background: #ff9500; color: #fff; }
+    .tag.approved { background: #34c759; color: #fff; }
+    .tag.rejected { background: #ff3b30; color: #fff; }
+
+    .card-row3 {
+      font-size: 15px;
+      color: #8e8e93;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .card-actions button, .card-actions a {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      border: none;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-blue { background: #007aff; color: #fff; }
+    .btn-green { background: #34c759; color: #fff; }
+    .btn-gray { background: rgba(118,118,128,0.12); color: #000; }
+    .btn-red { background: #ff3b30; color: #fff; }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8e8e93;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Inbox</h1>
+    <div class="header-right">
+      <button class="refresh" id="refresh">↻</button>
+      <span class="count" id="count">0</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-tab="bookings">Bookings</button>
+    <button data-tab="apps">Applications</button>
+  </div>
+
+  <div id="bookings"></div>
+  <div id="apps" class="hidden"></div>
+
+  <script>
+    const WORKER = 'https://loom-upload.ben-6a6.workers.dev';
+    let bookingsData = {};
+    let appsData = [];
+    let tab = 'bookings';
+
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        tab = btn.dataset.tab;
+        document.getElementById('bookings').classList.toggle('hidden', tab !== 'bookings');
+        document.getElementById('apps').classList.toggle('hidden', tab !== 'apps');
+        updateCount();
+      };
+    });
+
+    document.getElementById('refresh').onclick = () => {
+      loadBookings();
+      loadApps();
+    };
+
+    function updateCount() {
+      const el = document.getElementById('count');
+      if (tab === 'bookings') {
+        const n = Object.values(bookingsData).filter(v => v.startsWith('booked')).length;
+        el.textContent = n;
+      } else {
+        el.textContent = appsData.length;
+      }
+    }
+
+    async function loadBookings() {
+      try {
+        const fd = new FormData();
+        fd.append('type', 'calendar-load');
+        const r = await fetch(WORKER, { method: 'POST', body: fd });
+        if (r.ok) bookingsData = await r.json();
+      } catch(e) {}
+      renderBookings();
+      updateCount();
+    }
+
+    async function loadApps() {
+      try {
+        const r = await fetch('/api/applications');
+        const d = await r.json();
+        appsData = d.applications || [];
+      } catch(e) {}
+      renderApps();
+      updateCount();
+    }
+
+    function renderBookings() {
+      const el = document.getElementById('bookings');
+      const list = Object.entries(bookingsData)
+        .filter(([k, v]) => v.startsWith('booked'))
+        .map(([key, status]) => {
+          const p = key.split('-');
+          const week = p[0], dayIdx = +p[1], time = p.slice(3).join(':');
+          const type = status.includes('[teams]') ? 'teams' : 'coffee';
+          const email = (status.match(/\(([^)]+)\)/) || [])[1] || 'Unknown';
+
+          const now = new Date();
+          const mon = new Date(now);
+          mon.setDate(now.getDate() - (now.getDay() || 7) + 1 + (week === 'next' ? 7 : 0) + dayIdx);
+
+          const [h, m] = time.split(':').map(Number);
+          const timeStr = (h > 12 ? h - 12 : h) + ':' + String(m).padStart(2, '0') + (h >= 12 ? 'pm' : 'am');
+          const dateStr = mon.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
+
+          return { key, email, type, timeStr, dateStr, date: mon };
+        })
+        .sort((a, b) => a.date - b.date);
+
+      if (!list.length) {
+        el.innerHTML = '<div class="empty">No bookings</div>';
+        return;
+      }
+
+      el.innerHTML = '<div class="card-list">' + list.map(b => `
+        <div class="card">
+          <div class="card-top">
+            <div class="card-icon"><img src="/booking/${b.type}.png" alt="${b.type}"></div>
+            <div class="card-main">
+              <div class="card-row1">
+                <div class="card-title">${esc(b.email)}</div>
+                <div class="card-time">${b.timeStr}</div>
+              </div>
+              <div class="card-row2">${b.dateStr} <span class="tag ${b.type}">${b.type}</span></div>
+              <div class="card-row3">${b.type === 'coffee' ? 'In-person coffee' : 'Teams video call'}</div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-red" onclick="delBooking('${b.key}')">Delete</button>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    }
+
+    function renderApps() {
+      const el = document.getElementById('apps');
+      if (!appsData.length) {
+        el.innerHTML = '<div class="empty">No applications</div>';
+        return;
+      }
+
+      el.innerHTML = '<div class="card-list">' + appsData.map(a => `
+        <div class="card">
+          <div class="card-top">
+            <div class="card-icon"><span>${esc((a.org_name || '?')[0])}</span></div>
+            <div class="card-main">
+              <div class="card-row1">
+                <div class="card-title">${esc(a.org_name)}</div>
+                <span class="tag ${a.status}">${a.status}</span>
+              </div>
+              <div class="card-row2">${esc(a.contact_name)} · ${esc(a.contact_email)}</div>
+              <div class="card-row3">${esc((a.mission || '').slice(0, 60))}</div>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="mailto:${esc(a.contact_email)}" class="btn-blue">Email</a>
+            <button class="btn-green" onclick="setStatus(${a.id},'approved')">Approve</button>
+            <button class="btn-gray" onclick="setStatus(${a.id},'rejected')">Reject</button>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    }
+
+    async function delBooking(key) {
+      const fd = new FormData();
+      fd.append('type', 'calendar-delete');
+      fd.append('slot_key', key);
+      await fetch(WORKER, { method: 'POST', body: fd });
+      delete bookingsData[key];
+      renderBookings();
+      updateCount();
+    }
+    window.delBooking = delBooking;
+
+    async function setStatus(id, status) {
+      await fetch('/api/applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+      });
+      loadApps();
+    }
+    window.setStatus = setStatus;
+
+    function esc(s) {
+      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // Service worker + push
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+    loadBookings();
+    loadApps();
+    setInterval(() => { loadBookings(); loadApps(); }, 30000);
+  </script>
+</body>
+</html>
