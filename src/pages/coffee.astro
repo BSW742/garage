@@ -12,7 +12,16 @@ import Layout from '../components/Layout.astro';
         <p class="tagline">Roasted by Animals. Tested on Humans.</p>
         <p class="subtitle">A personal homage to my favourite coffee.</p>
       </div>
-      <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
+      <div class="hero-ben-wrapper">
+        <div class="arrow-annotation">
+          <span class="arrow-text">This human</span>
+          <svg class="arrow-svg" viewBox="0 0 80 60" fill="none">
+            <path d="M5 5 C 20 10, 40 35, 70 50" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <path d="M60 42 L70 50 L58 52" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+        <img src="/miniben.png" alt="Ben with coffee" class="hero-ben" />
+      </div>
     </section>
 
 
@@ -53,6 +62,8 @@ import Layout from '../components/Layout.astro';
 </Layout>
 
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap');
+
   .coffee-page {
     background: #faf7f2;
     min-height: 100vh;
@@ -88,19 +99,60 @@ import Layout from '../components/Layout.astro';
     50% { transform: translateY(-10px) rotate(5deg); }
   }
 
+  .hero-ben-wrapper {
+    position: relative;
+  }
+
   .hero-ben {
     width: 320px;
     height: auto;
     filter: drop-shadow(0 15px 30px rgba(0,0,0,0.4));
   }
 
+  .arrow-annotation {
+    position: absolute;
+    top: -20px;
+    left: -60px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arrow-text {
+    font-family: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+    font-size: 1.8rem;
+    color: white;
+    transform: rotate(-8deg);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+
+  .arrow-svg {
+    width: 80px;
+    height: 60px;
+    margin-top: -5px;
+    margin-left: 10px;
+  }
+
   @media (max-width: 768px) {
     .coffee-hero {
       flex-direction: column;
     }
+    .hero-ben-wrapper {
+      order: -1;
+    }
     .hero-ben {
       width: 250px;
-      order: -1;
+    }
+    .arrow-annotation {
+      top: -15px;
+      left: -40px;
+    }
+    .arrow-text {
+      font-size: 1.4rem;
+    }
+    .arrow-svg {
+      width: 60px;
+      height: 45px;
     }
   }
 
