@@ -168,6 +168,7 @@
   <div class="header">
     <h1>Inbox</h1>
     <div class="header-right">
+      <button class="notify-btn" id="notifyBtn" style="font-size:20px;background:none;border:none;padding:4px">🔔</button>
       <button class="refresh" id="refresh">↻</button>
       <span class="count" id="count">0</span>
     </div>
@@ -342,29 +343,45 @@
 
     // Service worker + push
     const VAPID_KEY = 'BBP9B25Ny3m94KXNqwRKBvRBAGnSSDQHpQSjPFSbpua5pTgK0XAIGT7fFjLY6b1lxAWgzj90dGX-gHHOrXfuo-I';
+    const notifyBtn = document.getElementById('notifyBtn');
 
-    async function setupPush() {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    async function setupPush(userTriggered = false) {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        notifyBtn.style.display = 'none';
+        return;
+      }
 
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
 
-        // Request permission
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
-
-        // Check existing subscription
-        let sub = await reg.pushManager.getSubscription();
-
-        if (!sub) {
-          // Subscribe
-          const key = Uint8Array.from(atob(VAPID_KEY.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: key
-          });
+        // Check current state
+        const existingSub = await reg.pushManager.getSubscription();
+        if (existingSub) {
+          notifyBtn.textContent = '🔔';
+          notifyBtn.style.opacity = '1';
+          return;
         }
+
+        // Show muted bell if not subscribed
+        notifyBtn.textContent = '🔕';
+        notifyBtn.style.opacity = '0.5';
+
+        // Only request permission if user triggered
+        if (!userTriggered) return;
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          alert('Notifications blocked. Enable in browser settings.');
+          return;
+        }
+
+        // Subscribe
+        const key = Uint8Array.from(atob(VAPID_KEY.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key
+        });
 
         // Send subscription to server
         await fetch('/api/push-subscribe', {
@@ -372,12 +389,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sub.toJSON())
         });
+
+        notifyBtn.textContent = '🔔';
+        notifyBtn.style.opacity = '1';
+        alert('Notifications enabled!');
       } catch (e) {
         console.error('Push setup error:', e);
+        alert('Error: ' + e.message);
       }
     }
 
-    setupPush();
+    notifyBtn.onclick = () => setupPush(true);
+    setupPush(false);
     loadBookings();
     loadApps();
     setInterval(() => { loadBookings(); loadApps(); }, 30000);
