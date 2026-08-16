@@ -1,13 +1,21 @@
-// Service Worker for Garage Admin PWA v4
+// Service Worker for Garage Admin PWA v5
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
 
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : { title: 'Garage', body: 'New notification' };
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Garage', { body: data.body || 'You have a notification' })
+    self.registration.showNotification('Garage', {
+      body: 'New booking or application received',
+      icon: '/nav/merch-v2.png',
+      badge: '/nav/merch-v2.png'
+    })
   );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow('/app'));
 });
 
 // Handle notification click

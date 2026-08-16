@@ -30,12 +30,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const { DB } = (locals as { runtime: Runtime }).runtime.env;
 
-    const typeLabel = meetingType === 'coffee' ? 'Coffee' : 'Teams';
-
-    const sent = await sendPushToAll(DB, {
-      title: `New Booking: ${typeLabel}`,
-      body: `${name} booked ${time}`
-    });
+    const sent = await sendPushToAll(DB);
 
     return new Response(JSON.stringify({ success: true, notified: sent }), {
       headers: { 'Content-Type': 'application/json' }
