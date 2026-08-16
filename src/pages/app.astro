@@ -176,16 +176,19 @@
 
   <div class="tabs">
     <button class="active" data-tab="bookings">Bookings</button>
-    <button data-tab="apps">Applications</button>
+    <button data-tab="apps">Apps</button>
+    <button data-tab="email">Email</button>
   </div>
 
   <div id="bookings"></div>
   <div id="apps" class="hidden"></div>
+  <div id="email" class="hidden"></div>
 
   <script>
     const WORKER = 'https://loom-upload.ben-6a6.workers.dev';
     let bookingsData = {};
     let appsData = [];
+    let emailsData = [];
     let tab = 'bookings';
 
     document.querySelectorAll('.tabs button').forEach(btn => {
@@ -195,6 +198,7 @@
         tab = btn.dataset.tab;
         document.getElementById('bookings').classList.toggle('hidden', tab !== 'bookings');
         document.getElementById('apps').classList.toggle('hidden', tab !== 'apps');
+        document.getElementById('email').classList.toggle('hidden', tab !== 'email');
         updateCount();
       };
     });
@@ -202,6 +206,7 @@
     document.getElementById('refresh').onclick = () => {
       loadBookings();
       loadApps();
+      loadEmails();
     };
 
     function updateCount() {
@@ -209,8 +214,11 @@
       if (tab === 'bookings') {
         const n = Object.values(bookingsData).filter(v => v.startsWith('booked')).length;
         el.textContent = n;
-      } else {
+      } else if (tab === 'apps') {
         el.textContent = appsData.length;
+      } else {
+        const unread = emailsData.filter(e => !e.read).length;
+        el.textContent = unread;
       }
     }
 
@@ -232,6 +240,16 @@
         appsData = d.applications || [];
       } catch(e) {}
       renderApps();
+      updateCount();
+    }
+
+    async function loadEmails() {
+      try {
+        const r = await fetch('/api/emails');
+        const d = await r.json();
+        emailsData = d.emails || [];
+      } catch(e) {}
+      renderEmails();
       updateCount();
     }
 
@@ -314,6 +332,63 @@
       `).join('') + '</div>';
     }
 
+    function renderEmails() {
+      const el = document.getElementById('email');
+      if (!emailsData.length) {
+        el.innerHTML = '<div class="empty">No emails yet<br><small style="opacity:0.6">ben@garage.co.nz</small></div>';
+        return;
+      }
+
+      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:12px">' + emailsData.map(e => {
+        const date = new Date(e.received_at);
+        const timeStr = date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+        const fromDisplay = e.from_name || e.from_address;
+        const preview = (e.body_text || '').slice(0, 80).replace(/\s+/g, ' ');
+
+        return `
+        <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);${e.read ? 'opacity:0.7' : ''}">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <div style="width:48px;height:48px;border-radius:24px;background:${e.read ? '#f2f2f7' : '#007aff'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:20px;font-weight:600;color:${e.read ? '#8e8e93' : '#fff'}">${esc(fromDisplay[0].toUpperCase())}</span>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div style="font-size:17px;font-weight:${e.read ? '400' : '600'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(fromDisplay)}</div>
+                <span style="flex-shrink:0;font-size:13px;color:#8e8e93">${timeStr}</span>
+              </div>
+              <div style="font-size:15px;font-weight:${e.read ? '400' : '500'};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.subject || '(no subject)')}</div>
+              <div style="font-size:14px;color:#8e8e93;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <a href="mailto:${esc(e.from_address)}?subject=Re: ${esc(e.subject || '')}" style="flex:1;padding:10px 16px;border-radius:8px;font-size:15px;font-weight:500;border:none;text-decoration:none;text-align:center;background:#007aff;color:#fff">Reply</a>
+            <button onclick="markRead(${e.id},${e.read ? 0 : 1})" style="flex:1;padding:10px 16px;border-radius:8px;font-size:15px;font-weight:500;border:none;background:rgba(118,118,128,0.12);color:#000">${e.read ? 'Unread' : 'Read'}</button>
+            <button onclick="delEmail(${e.id})" style="padding:10px 16px;border-radius:8px;font-size:15px;font-weight:500;border:none;background:#ff3b30;color:#fff">🗑</button>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+
+    async function markRead(id, read) {
+      await fetch('/api/emails', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, read })
+      });
+      loadEmails();
+    }
+    window.markRead = markRead;
+
+    async function delEmail(id) {
+      await fetch('/api/emails', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      loadEmails();
+    }
+    window.delEmail = delEmail;
+
     async function delBooking(key) {
       const fd = new FormData();
       fd.append('type', 'calendar-slot');
@@ -395,7 +470,8 @@
     setupPush(false);
     loadBookings();
     loadApps();
-    setInterval(() => { loadBookings(); loadApps(); }, 30000);
+    loadEmails();
+    setInterval(() => { loadBookings(); loadApps(); loadEmails(); }, 30000);
   </script>
 </body>
 </html>
