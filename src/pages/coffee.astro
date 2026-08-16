@@ -17,6 +17,7 @@ import Layout from '../components/Layout.astro';
 
     <!-- Story -->
     <section class="story-section">
+      <img src="/surfben.png" alt="Ben the surfer" class="story-ben" />
       <div class="story-content">
         <h2>The Origin Story</h2>
         <p>It started when a couple of barefoot surfers went seeking a strong brew to power them through their day. Armed with an old roaster, a blowtorch, and pure kiwi ingenuity, they created <strong>Brown Lightning</strong> — serving it from a hole-in-the-wall surf shop in Raglan.</p>
@@ -176,9 +177,29 @@ import Layout from '../components/Layout.astro';
 
   /* Story */
   .story-section {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 4rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .story-ben {
+    width: 200px;
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .story-section {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .story-ben {
+      width: 150px;
+    }
   }
 
   .story-content h2 {
