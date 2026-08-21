@@ -1,0 +1,1752 @@
+---
+// GARAGE BUILD — instant site builder
+// No brief, no questions: name it, chat to the agent, watch it appear.
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Let's build | garage.co.nz</title>
+    <meta name="description" content="Pick a name, chat to the agent, watch your website appear. Live in two minutes — free for NZ charities and community projects." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+  </head>
+
+  <body>
+    <!-- ══ 1. HERO ══ -->
+    <section class="screen screen-hero is-active" data-screen="hero">
+      <header class="mini-header">
+        <a href="/" class="mini-logo">garage<span class="dot-orange">.</span>co<span class="dot">.</span>nz</a>
+        <span class="mini-tag">web</span>
+      </header>
+
+      <div class="hero-inner">
+        <p class="eyebrow">No forms. No brief. No waiting.</p>
+        <h1>Let's build.</h1>
+        <p class="hero-sub">Pick your address, chat to the agent, watch your site appear.<br />Live before your coffee goes cold.</p>
+        <button class="btn-primary btn-xl" id="start-btn">
+          <span>Let's build</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="hero-foot">Free for NZ charities &amp; community projects.</p>
+      </div>
+    </section>
+
+    <!-- ══ 2. PICK A SUBDOMAIN ══ -->
+    <section class="screen" data-screen="name">
+      <div class="screen-inner">
+        <p class="step-label">Step 1 of 2</p>
+        <h2 class="q">First — your address.</h2>
+        <p class="hint">Yours the second you're done. Point your own domain at it whenever you like.</p>
+
+        <div class="domain-field" id="domain-field">
+          <input id="slug-input" type="text" placeholder="westcoastplumbers" autocomplete="off" autocapitalize="off" spellcheck="false" />
+          <span class="domain-suffix">.garage.co.nz</span>
+        </div>
+
+        <div class="domain-status" id="domain-status"></div>
+        <div class="suggestions" id="suggestions"></div>
+
+        <button class="btn-primary" id="slug-next" disabled>
+          <span>Continue</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ══ 3. EXISTING SITE ══ -->
+    <section class="screen" data-screen="existing">
+      <div class="screen-inner">
+        <p class="step-label">Step 2 of 2</p>
+        <h2 class="q">Got something already?</h2>
+        <p class="hint">Old site, Facebook page, anything with your logo and words on it. I'll lift what's worth keeping — you'll approve it in a second.</p>
+
+        <input id="source-url" type="url" class="big-input" placeholder="westcoastplumbers.co.nz" autocomplete="off" spellcheck="false" />
+
+        <div class="two-up">
+          <button class="btn-primary" id="pull-btn">
+            <span>Pull it across</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-ghost" id="fresh-btn">Nah — blank page</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 4. THE BUILDER ══ -->
+    <section class="screen screen-build" data-screen="build">
+      <div class="builder">
+        <!-- Canvas -->
+        <div class="canvas-wrap">
+          <div class="browser-chrome">
+            <span class="chrome-dots"><i></i><i></i><i></i></span>
+            <span class="chrome-url" id="chrome-url">yoursite.garage.co.nz</span>
+            <span class="chrome-live"><i class="pulse"></i> live</span>
+          </div>
+          <div class="canvas" id="canvas">
+            <div class="canvas-empty" id="canvas-empty">
+              <div class="empty-mark"></div>
+              <p>A completely blank page.</p>
+              <span>Say the word and it fills up →</span>
+            </div>
+            <div id="site-root"></div>
+          </div>
+        </div>
+
+        <!-- Agent -->
+        <aside class="agent">
+          <div class="agent-head">
+            <span class="agent-avatar">◐</span>
+            <div class="agent-id">
+              <strong>Garage agent</strong>
+              <span id="agent-state">online · building</span>
+            </div>
+            <button class="agent-done" id="done-btn">Publish</button>
+          </div>
+
+          <div class="agent-log" id="agent-log"></div>
+          <div class="agent-chips" id="agent-chips"></div>
+
+          <form class="agent-input" id="agent-form" autocomplete="off">
+            <input id="agent-text" type="text" placeholder="Tell me what to change…" />
+            <button type="submit" aria-label="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </form>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ══ 5. LIVE ══ -->
+    <section class="screen screen-live" data-screen="live">
+      <canvas id="confetti"></canvas>
+      <div class="live-inner">
+        <div class="live-badge">Yippeeeee</div>
+        <h2 class="live-h">You have a website.</h2>
+        <a class="live-url" id="live-url" href="#" target="_blank" rel="noopener">yoursite.garage.co.nz</a>
+        <p class="live-sub">It's live right now. Chuck your email in and I'll send you the keys — edit it any time by chatting to the agent.</p>
+        <form class="live-form" id="live-form">
+          <input id="live-email" type="email" placeholder="you@example.co.nz" required />
+          <button class="btn-primary" type="submit">Send me the keys</button>
+        </form>
+        <p class="live-note" id="live-note"></p>
+        <button class="btn-ghost" id="back-to-build">← Keep tinkering</button>
+      </div>
+    </section>
+
+    <style is:global>
+      :root {
+        --bg: #fafafa;
+        --surface: #ffffff;
+        --text: #0a0a0a;
+        --text-soft: #404040;
+        --text-muted: #737373;
+        --border: #e5e5e5;
+        --accent: #2563eb;
+        --accent-soft: #dbeafe;
+        --accent-deep: #1e40af;
+        --good: #16a34a;
+        --bad: #dc2626;
+        --work: #0f1115;
+        --work-2: #181b22;
+        --work-3: #242833;
+        --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 24px;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      html, body {
+        height: 100%;
+        font-family: var(--font-sans);
+        background: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.6;
+      }
+
+      /* ── Screens ───────────────────────────────── */
+      .screen {
+        display: none;
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+      .screen.is-active { display: flex; flex-direction: column; }
+      .screen.is-active > * { animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      .screen-inner {
+        margin: auto;
+        width: 100%;
+        max-width: 640px;
+        padding: 2rem 1.5rem 5rem;
+      }
+
+      /* ── Header ────────────────────────────────── */
+      .mini-header {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 1.4rem 2rem;
+      }
+      .mini-logo {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: -0.03em;
+        color: var(--text);
+        text-decoration: none;
+      }
+      .dot-orange { color: #f97316; }
+      .dot { color: var(--accent); }
+      .mini-tag {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+      }
+
+      /* ── Hero ──────────────────────────────────── */
+      .screen-hero {
+        background:
+          radial-gradient(ellipse 70% 50% at 50% -10%, rgba(37, 99, 235, 0.10) 0%, transparent 55%),
+          linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+      }
+      .hero-inner {
+        margin: auto;
+        text-align: center;
+        padding: 2rem 1.5rem 8rem;
+        max-width: 720px;
+      }
+      .eyebrow {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 1.2rem;
+      }
+      .hero-inner h1 {
+        font-family: var(--font-display);
+        font-size: clamp(3.5rem, 14vw, 7rem);
+        font-weight: 800;
+        line-height: 0.95;
+        letter-spacing: -0.045em;
+        margin-bottom: 1.4rem;
+      }
+      .hero-sub {
+        font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+        color: var(--text-soft);
+        margin-bottom: 2.5rem;
+      }
+      .hero-foot {
+        margin-top: 1.6rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      /* ── Buttons ───────────────────────────────── */
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--text);
+        color: #fff;
+        border: none;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 0.95rem 1.6rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s, background 0.18s, opacity 0.18s;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+      }
+      .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      .btn-primary:active:not(:disabled) { transform: translateY(0); }
+      .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+      .btn-primary svg { transition: transform 0.18s; }
+      .btn-primary:hover:not(:disabled) svg { transform: translateX(3px); }
+
+      .btn-xl { font-size: 1.15rem; padding: 1.15rem 2.2rem; background: var(--accent); box-shadow: 0 10px 34px rgba(37,99,235,0.35); }
+      .btn-xl:hover { background: var(--accent-deep); box-shadow: 0 16px 44px rgba(37,99,235,0.42); }
+
+      .btn-ghost {
+        background: none;
+        border: none;
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        padding: 0.95rem 0.5rem;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-color: var(--border);
+      }
+      .btn-ghost:hover { color: var(--text); }
+
+      /* ── Question screens ──────────────────────── */
+      .step-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.9rem;
+      }
+      .q {
+        font-family: var(--font-display);
+        font-size: clamp(2rem, 6vw, 2.9rem);
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        margin-bottom: 0.8rem;
+      }
+      .hint {
+        color: var(--text-muted);
+        font-size: 1.02rem;
+        margin-bottom: 2rem;
+        max-width: 34rem;
+      }
+
+      /* ── Domain field ──────────────────────────── */
+      .domain-field {
+        display: flex;
+        align-items: center;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 0.4rem 1.1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+      }
+      .domain-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+      .domain-field.is-good { border-color: var(--good); box-shadow: 0 0 0 4px rgba(22,163,74,0.12); }
+      .domain-field.is-bad { border-color: var(--bad); box-shadow: 0 0 0 4px rgba(220,38,38,0.10); }
+
+      #slug-input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        outline: none;
+        font-family: var(--font-display);
+        font-size: clamp(1.2rem, 4vw, 1.9rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        padding: 0.7rem 0;
+        background: none;
+        color: var(--text);
+      }
+      #slug-input::placeholder { color: #cbd5e1; }
+      .domain-suffix {
+        font-family: var(--font-display);
+        font-size: clamp(1.1rem, 3.4vw, 1.7rem);
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+
+      .domain-status {
+        min-height: 1.9rem;
+        margin-top: 0.9rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .domain-status.good { color: var(--good); }
+      .domain-status.bad { color: var(--bad); }
+      .spinner {
+        width: 14px; height: 14px;
+        border: 2px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      .suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.6rem; }
+      .suggestion {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 999px;
+        padding: 0.45rem 0.9rem;
+        font-family: var(--font-sans);
+        font-size: 0.88rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .suggestion:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+      .big-input {
+        width: 100%;
+        border: 2px solid var(--border);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        font-family: var(--font-sans);
+        font-size: 1.15rem;
+        padding: 1.05rem 1.2rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        margin-bottom: 1.6rem;
+      }
+      .big-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+      .two-up { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    </style>
+
+    <style is:global>
+      /* ── Builder shell ─────────────────────────── */
+      .screen-build.is-active { display: block; position: fixed; inset: 0; height: 100vh; height: 100dvh; overflow: hidden; }
+      .builder {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        height: 100%;
+        background: var(--work);
+      }
+
+      .canvas-wrap {
+        display: flex;
+        flex-direction: column;
+        padding: 1.6rem 1.6rem 2rem;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .browser-chrome {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        background: var(--work-2);
+        border: 1px solid var(--work-3);
+        border-bottom: none;
+        border-radius: 12px 12px 0 0;
+        padding: 0.7rem 1rem;
+      }
+      .chrome-dots { display: flex; gap: 6px; }
+      .chrome-dots i { width: 10px; height: 10px; border-radius: 50%; background: #3a3f4c; }
+      .chrome-url {
+        flex: 1;
+        background: #0b0d12;
+        border-radius: 999px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.82rem;
+        color: #8b93a5;
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .chrome-live {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #4ade80;
+      }
+      .pulse { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 1.8s ease-in-out infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+
+      .canvas {
+        flex: 1;
+        min-height: 0;
+        background: #fff;
+        border-radius: 0 0 12px 12px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: relative;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      }
+
+      .canvas-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        color: #b9c0cc;
+        text-align: center;
+        pointer-events: none;
+        transition: opacity 0.4s;
+      }
+      .canvas-empty.gone { opacity: 0; }
+      .empty-mark {
+        width: 46px; height: 46px;
+        border: 2px dashed #d7dde6;
+        border-radius: 10px;
+        margin-bottom: 0.7rem;
+      }
+      .canvas-empty p { font-family: var(--font-display); font-weight: 600; color: #8f98a6; }
+      .canvas-empty span { font-size: 0.85rem; }
+
+      /* ── Agent panel ───────────────────────────── */
+      .agent {
+        display: flex;
+        flex-direction: column;
+        background: var(--work-2);
+        border-left: 1px solid var(--work-3);
+        min-height: 0;
+      }
+      .agent-head {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.1rem 1.2rem;
+        border-bottom: 1px solid var(--work-3);
+      }
+      .agent-avatar {
+        width: 34px; height: 34px;
+        display: grid; place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        color: #fff;
+        font-size: 1rem;
+        animation: spin 4s linear infinite;
+      }
+      .agent-id { flex: 1; line-height: 1.25; }
+      .agent-id strong { display: block; color: #f4f6fa; font-size: 0.92rem; font-weight: 600; }
+      .agent-id span { font-size: 0.75rem; color: #6f7889; }
+      .agent-done {
+        border: 1px solid var(--work-3);
+        background: transparent;
+        color: #cbd3e0;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .agent-done:hover { background: #4ade80; border-color: #4ade80; color: #08210f; }
+
+      .agent-log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        scroll-behavior: smooth;
+      }
+      .msg {
+        max-width: 88%;
+        padding: 0.7rem 0.95rem;
+        border-radius: 14px;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        animation: pop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+        white-space: pre-wrap;
+      }
+      @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+      .msg-agent { align-self: flex-start; background: var(--work-3); color: #e8ecf3; border-bottom-left-radius: 4px; }
+      .msg-user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+      .msg-note {
+        align-self: flex-start;
+        background: none;
+        color: #7c8496;
+        font-size: 0.8rem;
+      }
+      .msg-do {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(74, 222, 128, 0.09);
+        border: 1px solid rgba(74, 222, 128, 0.25);
+        color: #86efac;
+        font-size: 0.82rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+      }
+
+      .typing { display: flex; gap: 4px; align-self: flex-start; padding: 0.85rem 0.95rem; background: var(--work-3); border-radius: 14px; border-bottom-left-radius: 4px; }
+      .typing i { width: 6px; height: 6px; border-radius: 50%; background: #8b93a5; animation: blink 1.2s infinite; }
+      .typing i:nth-child(2) { animation-delay: 0.15s; }
+      .typing i:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes blink { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+      .agent-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 1.2rem 0.8rem; }
+      .chip {
+        border: 1px solid var(--work-3);
+        background: rgba(255,255,255,0.03);
+        color: #c3cad8;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.15s;
+        animation: pop 0.25s both;
+      }
+      .chip:hover { border-color: var(--accent); background: rgba(37,99,235,0.16); color: #fff; }
+      .chip-yes { border-color: rgba(74,222,128,0.4); color: #86efac; }
+      .chip-yes:hover { background: rgba(74,222,128,0.18); border-color: #4ade80; color: #fff; }
+
+      .agent-input {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.9rem 1.2rem 1.2rem;
+        border-top: 1px solid var(--work-3);
+      }
+      .agent-input input {
+        flex: 1;
+        min-width: 0;
+        background: #0b0d12;
+        border: 1px solid var(--work-3);
+        border-radius: 999px;
+        padding: 0.75rem 1.1rem;
+        color: #f0f3f8;
+        font-family: var(--font-sans);
+        font-size: 0.92rem;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .agent-input input:focus { border-color: var(--accent); }
+      .agent-input input::placeholder { color: #5c6577; }
+      .agent-input button {
+        width: 42px; height: 42px;
+        flex: none;
+        display: grid; place-items: center;
+        border: none;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.15s;
+      }
+      .agent-input button:hover { background: var(--accent-deep); transform: scale(1.05); }
+
+      @media (max-width: 900px) {
+        .builder { grid-template-columns: 1fr; grid-template-rows: 40vh 1fr; }
+        .canvas-wrap { padding: 0.8rem 0.8rem 0; }
+        .agent { border-left: none; border-top: 1px solid var(--work-3); }
+      }
+    </style>
+
+    <style is:global>
+      /* ── Live preview of the generated site ────── */
+      #site-root { position: relative; z-index: 1; }
+      .pv {
+        --pv-primary: #2563eb;
+        --pv-deep: #1e40af;
+        --pv-ink: #101418;
+        --pv-soft: #5b6472;
+        --pv-line: #e7ebf0;
+        --pv-wash: #f6f8fb;
+        font-family: var(--pv-font, 'Inter', system-ui, sans-serif);
+        color: var(--pv-ink);
+      }
+      .pv-block { animation: land 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      @keyframes land { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+
+      .pv-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.1rem 2.2rem;
+        border-bottom: 1px solid var(--pv-line);
+        gap: 1rem;
+      }
+      .pv-brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; letter-spacing: -0.02em; font-size: 1.05rem; }
+      .pv-brand img { height: 30px; width: auto; max-width: 150px; object-fit: contain; }
+      .pv-brand .pv-glyph {
+        width: 30px; height: 30px;
+        display: grid; place-items: center;
+        border-radius: 8px;
+        background: var(--pv-primary);
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      .pv-links { display: flex; gap: 1.3rem; font-size: 0.85rem; color: var(--pv-soft); }
+      .pv-cta {
+        background: var(--pv-primary);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .pv-hero {
+        padding: 4.5rem 2.2rem;
+        text-align: center;
+        background:
+          radial-gradient(ellipse 70% 60% at 50% 0%, color-mix(in srgb, var(--pv-primary) 14%, transparent) 0%, transparent 60%),
+          var(--pv-wash);
+        position: relative;
+        overflow: hidden;
+      }
+      .pv-hero.has-photo { color: #fff; }
+      .pv-hero-photo { position: absolute; inset: 0; background-size: cover; background-position: center; }
+      .pv-hero-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,10,16,0.55), rgba(6,10,16,0.75)); }
+      .pv-hero-inner { position: relative; z-index: 1; max-width: 44rem; margin: 0 auto; }
+      .pv-eyebrow {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--pv-primary);
+        margin-bottom: 0.9rem;
+      }
+      .pv-hero.has-photo .pv-eyebrow { color: #fff; opacity: 0.85; }
+      .pv-h1 {
+        font-family: var(--pv-display, 'Poppins', system-ui, sans-serif);
+        font-size: clamp(1.9rem, 4.4vw, 3rem);
+        font-weight: 800;
+        line-height: 1.06;
+        letter-spacing: -0.035em;
+        margin-bottom: 0.9rem;
+      }
+      .pv-lede { font-size: 1.02rem; color: var(--pv-soft); max-width: 34rem; margin: 0 auto 1.8rem; }
+      .pv-hero.has-photo .pv-lede { color: rgba(255,255,255,0.86); }
+      .pv-btn {
+        display: inline-block;
+        background: var(--pv-primary);
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.85rem 1.6rem;
+        border-radius: 999px;
+      }
+      .pv-btn-2 { background: transparent; color: var(--pv-ink); border: 1.5px solid var(--pv-line); margin-left: 0.5rem; }
+      .pv-hero.has-photo .pv-btn-2 { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+      .pv-section { padding: 3.4rem 2.2rem; }
+      .pv-section.alt { background: var(--pv-wash); }
+      .pv-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--pv-primary);
+        margin-bottom: 0.7rem;
+        text-align: center;
+      }
+      .pv-h2 {
+        font-family: var(--pv-display, 'Poppins', system-ui, sans-serif);
+        font-size: clamp(1.4rem, 3vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .pv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; max-width: 60rem; margin: 0 auto; }
+      .pv-card {
+        background: #fff;
+        border: 1px solid var(--pv-line);
+        border-radius: 14px;
+        padding: 1.3rem;
+      }
+      .pv-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; letter-spacing: -0.01em; }
+      .pv-card p { font-size: 0.88rem; color: var(--pv-soft); }
+      .pv-card .pv-tick { color: var(--pv-primary); font-weight: 700; margin-bottom: 0.5rem; display: block; }
+
+      .pv-prose { max-width: 40rem; margin: 0 auto; text-align: center; color: var(--pv-soft); font-size: 1rem; }
+
+      .pv-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; max-width: 60rem; margin: 0 auto; }
+      .pv-shot { aspect-ratio: 4 / 3; border-radius: 12px; background: #e9edf3 center/cover no-repeat; }
+
+      .pv-contact { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+      .pv-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #fff;
+        border: 1px solid var(--pv-line);
+        border-radius: 999px;
+        padding: 0.6rem 1.1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+      .pv-pill b { color: var(--pv-primary); font-weight: 700; }
+
+      .pv-quote { max-width: 40rem; margin: 0 auto; text-align: center; }
+      .pv-quote p { font-family: var(--pv-display, 'Poppins', sans-serif); font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.5; margin-bottom: 0.8rem; }
+      .pv-quote span { font-size: 0.85rem; color: var(--pv-soft); }
+
+      .pv-hours { max-width: 26rem; margin: 0 auto; }
+      .pv-hours div { display: flex; justify-content: space-between; padding: 0.55rem 0; border-bottom: 1px solid var(--pv-line); font-size: 0.92rem; }
+      .pv-hours div span:last-child { color: var(--pv-soft); }
+
+      .pv-band {
+        background: var(--pv-primary);
+        color: #fff;
+        text-align: center;
+        padding: 3rem 2.2rem;
+      }
+      .pv-band .pv-h2 { color: #fff; margin-bottom: 0.7rem; }
+      .pv-band p { opacity: 0.85; margin-bottom: 1.4rem; }
+      .pv-band .pv-btn { background: #fff; color: var(--pv-primary); }
+
+      .pv-foot {
+        padding: 1.6rem 2.2rem;
+        border-top: 1px solid var(--pv-line);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        font-size: 0.8rem;
+        color: var(--pv-soft);
+      }
+
+      .flash { animation: flash 1s ease; }
+      @keyframes flash {
+        0% { box-shadow: inset 0 0 0 3px rgba(37,99,235,0); }
+        25% { box-shadow: inset 0 0 0 3px rgba(37,99,235,0.55); }
+        100% { box-shadow: inset 0 0 0 3px rgba(37,99,235,0); }
+      }
+
+      /* ── Live screen ───────────────────────────── */
+      .screen-live { position: relative; overflow: hidden; background: linear-gradient(180deg, #ffffff 0%, #f2f6fd 100%); }
+      #confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+      .live-inner { margin: auto; text-align: center; padding: 3rem 1.5rem; max-width: 620px; position: relative; z-index: 1; }
+      .live-badge {
+        display: inline-block;
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 0.8rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #16a34a;
+        background: #dcfce7;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        margin-bottom: 1.4rem;
+      }
+      .live-h {
+        font-family: var(--font-display);
+        font-size: clamp(2.2rem, 7vw, 3.6rem);
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+        margin-bottom: 1rem;
+      }
+      .live-url {
+        display: inline-block;
+        font-family: var(--font-display);
+        font-size: clamp(1.1rem, 3.6vw, 1.7rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--accent);
+        text-decoration: none;
+        border-bottom: 2px solid var(--accent-soft);
+        margin-bottom: 1.2rem;
+      }
+      .live-url:hover { border-bottom-color: var(--accent); }
+      .live-sub { color: var(--text-soft); margin-bottom: 2rem; }
+      .live-form { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.8rem; }
+      .live-form input {
+        flex: 1;
+        min-width: 240px;
+        max-width: 320px;
+        border: 2px solid var(--border);
+        border-radius: 999px;
+        padding: 0.9rem 1.3rem;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        outline: none;
+        background: #fff;
+      }
+      .live-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+      .live-note { min-height: 1.6rem; font-size: 0.9rem; color: var(--good); font-weight: 500; margin-bottom: 0.6rem; }
+    </style>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  State
+      // ══════════════════════════════════════════════
+      const S = {
+        slug: '',
+        sourceUrl: '',
+        scraped: null,
+        scrapePromise: null,
+        awaiting: null,       // 'name' when the agent asked for the business name
+        history: [],
+        site: {
+          name: '',
+          eyebrow: '',
+          headline: '',
+          lede: '',
+          cta: 'Get in touch',
+          palette: { primary: '#2563eb', deep: '#1e40af', wash: '#f6f8fb' },
+          display: "'Poppins', system-ui, sans-serif",
+          body: "'Inter', system-ui, sans-serif",
+          logo: null,
+          heroImage: null,
+          sections: [],
+          contact: { phone: '', email: '', address: '' },
+          images: [],
+        },
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      function show(name) {
+        document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('is-active', s.dataset.screen === name));
+        window.scrollTo(0, 0);
+      }
+
+      // ══════════════════════════════════════════════
+      //  1. Hero
+      // ══════════════════════════════════════════════
+      $('start-btn').addEventListener('click', () => {
+        show('name');
+        setTimeout(() => $('slug-input').focus(), 350);
+      });
+
+      // ══════════════════════════════════════════════
+      //  2. Subdomain
+      // ══════════════════════════════════════════════
+      const slugInput = $('slug-input');
+      const domainField = $('domain-field');
+      const domainStatus = $('domain-status');
+      const suggestionBox = $('suggestions');
+      const slugNext = $('slug-next');
+      let checkTimer = null;
+      let checkSeq = 0;
+
+      const clean = (v) =>
+        v.toLowerCase().replace(/^https?:\/\//, '').replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-/, '');
+
+      slugInput.addEventListener('input', () => {
+        const tidy = clean(slugInput.value);
+        if (tidy !== slugInput.value) slugInput.value = tidy;
+        S.slug = '';
+        slugNext.disabled = true;
+        suggestionBox.innerHTML = '';
+        domainField.classList.remove('is-good', 'is-bad');
+        clearTimeout(checkTimer);
+
+        if (tidy.length < 3) {
+          domainStatus.className = 'domain-status';
+          domainStatus.textContent = tidy.length ? 'A wee bit longer…' : '';
+          return;
+        }
+
+        domainStatus.className = 'domain-status';
+        domainStatus.innerHTML = '<span class="spinner"></span> Checking…';
+        checkTimer = setTimeout(() => checkSlug(tidy), 320);
+      });
+
+      slugInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !slugNext.disabled) slugNext.click();
+      });
+
+      async function checkSlug(slug) {
+        const seq = ++checkSeq;
+        try {
+          const res = await fetch('/api/subdomain-check?slug=' + encodeURIComponent(slug));
+          const data = await res.json();
+          if (seq !== checkSeq) return; // a newer keystroke won
+
+          if (data.available) {
+            S.slug = data.slug;
+            domainField.classList.add('is-good');
+            domainStatus.className = 'domain-status good';
+            domainStatus.textContent = '✓ ' + data.slug + '.garage.co.nz is free — grab it.';
+            slugNext.disabled = false;
+          } else {
+            domainField.classList.add('is-bad');
+            domainStatus.className = 'domain-status bad';
+            domainStatus.textContent =
+              data.reason === 'too-short' ? 'Three characters minimum.'
+              : data.reason === 'too-long' ? 'That one is a mouthful — shorter?'
+              : '✕ Taken. How about one of these?';
+            suggestionBox.innerHTML = '';
+            (data.suggestions || []).forEach((s) => {
+              const b = document.createElement('button');
+              b.className = 'suggestion';
+              b.textContent = s + '.garage.co.nz';
+              b.addEventListener('click', () => {
+                slugInput.value = s;
+                slugInput.dispatchEvent(new Event('input'));
+              });
+              suggestionBox.appendChild(b);
+            });
+          }
+        } catch {
+          if (seq !== checkSeq) return;
+          // Offline or API down — don't block the person
+          S.slug = slug;
+          domainStatus.className = 'domain-status';
+          domainStatus.textContent = "Couldn't reach the registry — we'll confirm at the end.";
+          slugNext.disabled = false;
+        }
+      }
+
+      slugNext.addEventListener('click', () => {
+        $('chrome-url').textContent = S.slug + '.garage.co.nz';
+        show('existing');
+        setTimeout(() => $('source-url').focus(), 350);
+      });
+
+      // ══════════════════════════════════════════════
+      //  3. Existing site
+      // ══════════════════════════════════════════════
+      $('pull-btn').addEventListener('click', () => {
+        const raw = $('source-url').value.trim();
+        if (!raw) { $('source-url').focus(); return; }
+        S.sourceUrl = raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        S.scrapePromise = fetch('/api/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: 'https://' + S.sourceUrl }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => (d && !d.error ? d : null))
+          .catch(() => null);
+        enterBuilder();
+      });
+
+      $('fresh-btn').addEventListener('click', () => { S.sourceUrl = ''; enterBuilder(); });
+
+      $('source-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pull-btn').click(); });
+
+      // ══════════════════════════════════════════════
+      //  Agent chat plumbing
+      // ══════════════════════════════════════════════
+      const log = $('agent-log');
+      const chipBox = $('agent-chips');
+
+      function bubble(text, cls) {
+        const el = document.createElement('div');
+        el.className = 'msg ' + cls;
+        el.textContent = text;
+        log.appendChild(el);
+        log.scrollTop = log.scrollHeight;
+        return el;
+      }
+
+      async function say(text, pause) {
+        const dots = document.createElement('div');
+        dots.className = 'typing';
+        dots.innerHTML = '<i></i><i></i><i></i>';
+        log.appendChild(dots);
+        log.scrollTop = log.scrollHeight;
+        await wait(pause === undefined ? Math.min(900, 260 + text.length * 12) : pause);
+        dots.remove();
+        bubble(text, 'msg-agent');
+      }
+
+      function did(text) {
+        const el = document.createElement('div');
+        el.className = 'msg msg-do';
+        el.textContent = '✓ ' + text;
+        log.appendChild(el);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function chips(list) {
+        chipBox.innerHTML = '';
+        list.forEach((c) => {
+          const b = document.createElement('button');
+          b.className = 'chip' + (c.yes ? ' chip-yes' : '');
+          b.textContent = c.label;
+          b.addEventListener('click', () => { chipBox.innerHTML = ''; handle(c.send || c.label); });
+          chipBox.appendChild(b);
+        });
+      }
+
+      const IDLE_CHIPS = [
+        { label: 'Make it green' },
+        { label: 'Add our services' },
+        { label: 'Add contact details' },
+        { label: 'Add a photo gallery' },
+        { label: 'Publish it' },
+      ];
+
+      $('agent-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = $('agent-text').value.trim();
+        if (!text) return;
+        $('agent-text').value = '';
+        chipBox.innerHTML = '';
+        handle(text);
+      });
+
+      $('done-btn').addEventListener('click', () => handle('publish'));
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  Colour helpers
+      // ══════════════════════════════════════════════
+      function hexToRgb(h) {
+        const v = h.replace('#', '');
+        const n = v.length === 3 ? v.split('').map((c) => c + c).join('') : v;
+        return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
+      }
+      function mix(hex, target, amount) {
+        const a = hexToRgb(hex), b = hexToRgb(target);
+        const out = a.map((c, i) => Math.round(c + (b[i] - c) * amount));
+        return '#' + out.map((c) => c.toString(16).padStart(2, '0')).join('');
+      }
+      function paletteFrom(primary) {
+        return { primary: primary, deep: mix(primary, '#000000', 0.28), wash: mix(primary, '#ffffff', 0.94) };
+      }
+
+      const COLOUR_WORDS = {
+        green: '#16a34a', forest: '#166534', mint: '#10b981', blue: '#2563eb', navy: '#1e3a8a',
+        sky: '#0284c7', teal: '#0d9488', red: '#dc2626', crimson: '#b91c1c', orange: '#ea580c',
+        amber: '#f59e0b', yellow: '#ca8a04', gold: '#b45309', purple: '#7c3aed', violet: '#6d28d9',
+        pink: '#db2777', magenta: '#c026d3', black: '#111827', dark: '#111827', charcoal: '#1f2937',
+        grey: '#4b5563', gray: '#4b5563', brown: '#78350f', warm: '#b45309', earthy: '#78350f',
+        maroon: '#7f1d1d', lime: '#65a30d', turquoise: '#06b6d4', coral: '#f97316',
+      };
+
+      // ══════════════════════════════════════════════
+      //  Industry starters
+      // ══════════════════════════════════════════════
+      const INDUSTRIES = {
+        plumbing: { match: ['plumb', 'drain', 'gasfit'], colour: '#1d4ed8', eyebrow: 'Local plumbers', lede: 'Fast, tidy, no-surprises plumbing. Same-day call-outs and a proper quote before we start.', cta: 'Book a plumber',
+          services: [['Emergency call-outs', 'Burst pipes and blockages sorted, seven days a week.'], ['Hot water', 'Repairs, replacements and the right system for your place.'], ['Bathrooms & kitchens', 'Full fit-outs, done once and done right.']] },
+        electrical: { match: ['electric', 'sparky', 'wiring'], colour: '#f59e0b', eyebrow: 'Registered electricians', lede: 'Safe, certified electrical work — from a dodgy switch to a whole rewire.', cta: 'Get a quote',
+          services: [['Repairs & faults', 'We find it, we fix it, we certify it.'], ['New builds & renos', 'Wiring, lighting and switchboards done to code.'], ['Heat pumps & EV', 'Installed, tested and explained in plain English.']] },
+        construction: { match: ['build', 'construct', 'carpent', 'roof', 'renov'], colour: '#ea580c', eyebrow: 'Builders you can ring back', lede: 'Renovations, new builds and the small jobs everyone else is too busy for.', cta: 'Talk about your build',
+          services: [['Renovations', 'Kitchens, bathrooms, extensions — planned properly.'], ['New builds', 'Consent to keys, one crew, one point of contact.'], ['Decks & fences', 'Built to last a Kiwi summer and the winter after it.']] },
+        cafe: { match: ['cafe', 'coffee', 'roast', 'restaurant', 'kitchen', 'eatery', 'bistro', 'bakery'], colour: '#b45309', eyebrow: 'Open daily', lede: 'Good coffee, proper food, and a table with your name on it.', cta: 'See the menu',
+          services: [['Breakfast & brunch', 'From open until we run out of hollandaise.'], ['Coffee', 'Roasted locally, poured properly.'], ['Catering', 'Feeding your crew, your wedding or your whānau.']] },
+        landscaping: { match: ['landscap', 'garden', 'lawn', 'mow', 'arbor', 'tree'], colour: '#16a34a', eyebrow: 'Outdoor specialists', lede: 'Gardens that look after themselves, built by people who actually like being outside.', cta: 'Book a site visit',
+          services: [['Design & build', 'From bare dirt to the garden you keep photographing.'], ['Maintenance', 'Regular visits so it never gets away on you.'], ['Hard landscaping', 'Paths, walls, decks and drainage that works.']] },
+        cleaning: { match: ['clean', 'housekeep', 'janitor'], colour: '#06b6d4', eyebrow: 'Trusted cleaners', lede: 'The same team, the same day, every week. You will notice the difference.', cta: 'Get a quote',
+          services: [['Homes', 'Regular or one-off — bond cleans included.'], ['Commercial', 'After-hours cleaning for offices and shops.'], ['Deep cleans', 'Ovens, carpets, windows, the lot.']] },
+        legal: { match: ['law', 'legal', 'solicit', 'barrist', 'convey'], colour: '#1e293b', eyebrow: 'Legal advice, plainly put', lede: 'Straight answers, fixed fees where we can, and no billing you for saying hello.', cta: 'Book a consult',
+          services: [['Property', 'Buying, selling and everything the bank needs.'], ['Wills & trusts', 'Sorted properly so nobody has to guess later.'], ['Business', 'Contracts, structures and disputes.']] },
+        accounting: { match: ['account', 'bookkeep', 'tax', 'payroll'], colour: '#0f766e', eyebrow: 'Chartered accountants', lede: 'Tax done on time, numbers you can actually read, and a call returned same day.', cta: 'Have a chat',
+          services: [['Tax & GST', 'Filed on time, every time.'], ['Bookkeeping', 'Xero set up and kept tidy.'], ['Advisory', 'What the numbers mean and what to do next.']] },
+        medical: { match: ['dental', 'dentist', 'medical', 'clinic', 'health', 'physio', 'chiro', 'hospital'], colour: '#0891b2', eyebrow: 'Accepting new patients', lede: 'Careful, unhurried care from a team that remembers your name.', cta: 'Book an appointment',
+          services: [['Appointments', 'Same-week bookings, online or by phone.'], ['Our team', 'Experienced clinicians, local for years.'], ['Fees', 'Clear pricing, no surprises at the desk.']] },
+        veterinary: { match: ['vet', 'animal', 'pet'], colour: '#7c3aed', eyebrow: 'Caring for local animals', lede: 'Gentle treatment for the family members with four legs.', cta: 'Book a visit',
+          services: [['Consults', 'Check-ups, vaccinations and the worrying lumps.'], ['Surgery', 'Modern theatre, careful aftercare.'], ['After hours', 'Emergency cover when you need it most.']] },
+        fitness: { match: ['gym', 'fitness', 'train', 'crossfit', 'yoga', 'pilates'], colour: '#dc2626', eyebrow: 'Train with us', lede: 'Coaching that meets you where you are — no mirrors-and-ego nonsense.', cta: 'Start a trial',
+          services: [['Group classes', 'Six days a week, all levels welcome.'], ['Personal training', 'A plan built around your week, not ours.'], ['Memberships', 'Simple pricing, no lock-in.']] },
+        salon: { match: ['hair', 'salon', 'beauty', 'barber', 'nail', 'spa'], colour: '#db2777', eyebrow: 'Book your chair', lede: 'Cuts, colour and a couple of hours that are entirely about you.', cta: 'Book online',
+          services: [['Cut & style', 'Consultation first, always.'], ['Colour', 'Balayage, foils and colour corrections.'], ['Treatments', 'Because your hair has been through a lot.']] },
+        photography: { match: ['photo', 'film', 'video', 'studio'], colour: '#111827', eyebrow: 'Photography & film', lede: 'Pictures that look like the day actually felt.', cta: 'Check availability',
+          services: [['Weddings', 'Full-day coverage, unhurried and unposed.'], ['Portraits', 'Families, whānau and the annual awkward one.'], ['Commercial', 'Product, team and brand shoots.']] },
+        community: { match: ['trust', 'charity', 'community', 'foundation', 'society', 'club', 'church', 'kura', 'marae', 'volunteer'], colour: '#2563eb', eyebrow: 'For our community', lede: 'A local group doing practical good — and always glad of a hand.', cta: 'Get involved',
+          services: [['What we do', 'The work, week in and week out.'], ['Volunteer', 'A few hours goes a very long way.'], ['Donate', 'Every dollar stays local.']] },
+        default: { match: [], colour: '#2563eb', eyebrow: 'Local & independent', lede: 'Honest work, fair prices, and a person on the end of the phone.', cta: 'Get in touch',
+          services: [['What we do', 'The work we are known for around here.'], ['Why us', 'Local, experienced and easy to deal with.'], ['Get a quote', 'Tell us what you need and we will price it up.']] },
+      };
+
+      function guessIndustry(text) {
+        const t = (text || '').toLowerCase();
+        for (const key in INDUSTRIES) {
+          if (INDUSTRIES[key].match.some((m) => t.includes(m))) return key;
+        }
+        return 'default';
+      }
+
+      const SERVICE_BLURBS = [
+        [['drain', 'blockage', 'sewer'], 'Blockages cleared and drains cameraed, same day where we can.'],
+        [['gas'], 'Certified gasfitting — installs, repairs and safety checks.'],
+        [['hot water', 'cylinder'], 'Repairs, replacements and the right system for your place.'],
+        [['toilet', 'cistern'], 'Leaks, running cisterns and full replacements.'],
+        [['pipe', 'burst'], 'Burst pipes patched properly, not just papered over.'],
+        [['leak'], 'We find it before it finds your floorboards.'],
+        [['bathroom', 'kitchen', 'renov'], 'Full fit-outs, done once and done right.'],
+        [['emergency', '24'], 'Seven days a week, whenever it goes wrong.'],
+        [['commercial', 'business'], 'Scheduled work and call-outs for local businesses.'],
+        [['maintenance', 'service'], 'Regular visits so small things stay small.'],
+        [['install'], 'Supplied, installed and left tidy.'],
+        [['repair', 'fix'], 'Diagnosed, repaired and explained in plain English.'],
+        [['design', 'consult'], 'Planned properly before anyone picks up a tool.'],
+      ];
+
+      function blurb(name, fallback) {
+        const n = String(name).toLowerCase();
+        const hit = SERVICE_BLURBS.find((b) => b[0].some((k) => n.includes(k)));
+        return hit ? hit[1] : (fallback || (name + ' — done properly, priced up front.'));
+      }
+
+      function titleCase(slug) {
+        return slug.replace(/-/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase());
+      }
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  Rendering the preview
+      // ══════════════════════════════════════════════
+      let renderedKeys = new Set();
+
+      function esc(str) {
+        return String(str == null ? '' : str).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      }
+
+      function initials(name) {
+        const parts = (name || '?').split(/\s+/).filter(Boolean);
+        return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+      }
+
+      function blockHtml(section) {
+        const s = S.site;
+        switch (section.type) {
+          case 'services':
+            return '<section class="pv-section alt"><p class="pv-label">' + esc(section.label || 'What we do') + '</p>' +
+              '<h2 class="pv-h2">' + esc(section.title || 'How we can help') + '</h2><div class="pv-grid">' +
+              section.items.map((i) => '<div class="pv-card"><span class="pv-tick">◆</span><h4>' + esc(i[0]) + '</h4><p>' + esc(i[1]) + '</p></div>').join('') +
+              '</div></section>';
+          case 'about':
+            return '<section class="pv-section"><p class="pv-label">About us</p><h2 class="pv-h2">' + esc(section.title || ('The story behind ' + s.name)) + '</h2>' +
+              '<p class="pv-prose">' + esc(section.text) + '</p></section>';
+          case 'gallery':
+            return '<section class="pv-section"><p class="pv-label">Our work</p><h2 class="pv-h2">Recent jobs</h2><div class="pv-gallery">' +
+              (section.images.length ? section.images : ['', '', '', '', '', ''])
+                .map((src) => '<div class="pv-shot"' + (src ? ' style="background-image:url(' + esc(src) + ')"' : '') + '></div>').join('') +
+              '</div></section>';
+          case 'hours':
+            return '<section class="pv-section alt"><p class="pv-label">Opening hours</p><h2 class="pv-h2">When we are about</h2><div class="pv-hours">' +
+              section.rows.map((r) => '<div><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>').join('') +
+              '</div></section>';
+          case 'testimonial':
+            return '<section class="pv-section"><div class="pv-quote"><p>“' + esc(section.quote) + '”</p><span>— ' + esc(section.who) + '</span></div></section>';
+          case 'contact': {
+            const c = s.contact;
+            const pills = [];
+            if (c.phone) pills.push('<span class="pv-pill"><b>Call</b> ' + esc(c.phone) + '</span>');
+            if (c.email) pills.push('<span class="pv-pill"><b>Email</b> ' + esc(c.email) + '</span>');
+            if (c.address) pills.push('<span class="pv-pill"><b>Find us</b> ' + esc(c.address) + '</span>');
+            if (!pills.length) pills.push('<span class="pv-pill"><b>Contact</b> add your phone or email in the chat</span>');
+            return '<section class="pv-section alt"><p class="pv-label">Get in touch</p><h2 class="pv-h2">Give us a yell</h2><div class="pv-contact">' + pills.join('') + '</div></section>';
+          }
+          case 'band':
+            return '<section class="pv-band"><h2 class="pv-h2">' + esc(section.title) + '</h2><p>' + esc(section.text) + '</p><span class="pv-btn">' + esc(s.cta) + '</span></section>';
+          default:
+            return '';
+        }
+      }
+
+      function render() {
+        const s = S.site;
+        const root = $('site-root');
+        const hasContent = !!(s.headline || s.sections.length);
+        $('canvas-empty').classList.toggle('gone', hasContent);
+        if (!hasContent) { root.innerHTML = ''; renderedKeys = new Set(); return; }
+
+        const blocks = [];
+
+        blocks.push({ key: 'nav', html:
+          '<nav class="pv-nav"><div class="pv-brand">' +
+          (s.logo ? '<img src="' + esc(s.logo) + '" alt="" />' : '<span class="pv-glyph">' + esc(initials(s.name)) + '</span><span>' + esc(s.name) + '</span>') +
+          '</div><div class="pv-links"><span>Home</span><span>Services</span><span>About</span><span>Contact</span></div>' +
+          '<span class="pv-cta">' + esc(s.cta) + '</span></nav>' });
+
+        blocks.push({ key: 'hero', html:
+          '<header class="pv-hero' + (s.heroImage ? ' has-photo' : '') + '">' +
+          (s.heroImage ? '<div class="pv-hero-photo" style="background-image:url(' + esc(s.heroImage) + ')"></div>' : '') +
+          '<div class="pv-hero-inner">' +
+          (s.eyebrow ? '<p class="pv-eyebrow">' + esc(s.eyebrow) + '</p>' : '') +
+          '<h1 class="pv-h1">' + esc(s.headline) + '</h1>' +
+          (s.lede ? '<p class="pv-lede">' + esc(s.lede) + '</p>' : '') +
+          '<span class="pv-btn">' + esc(s.cta) + '</span><span class="pv-btn pv-btn-2">' + esc(s.contact.phone || 'Learn more') + '</span>' +
+          '</div></header>' });
+
+        s.sections.forEach((sec) => blocks.push({ key: sec.type, html: blockHtml(sec) }));
+
+        blocks.push({ key: 'foot', html:
+          '<footer class="pv-foot"><span>© ' + new Date().getFullYear() + ' ' + esc(s.name) + '</span>' +
+          '<span>' + esc(S.slug) + '.garage.co.nz</span></footer>' });
+
+        const nextKeys = new Set(blocks.map((b) => b.key));
+        const fresh = blocks.filter((b) => !renderedKeys.has(b.key) && b.key !== 'nav' && b.key !== 'hero' && b.key !== 'foot');
+        root.innerHTML = blocks
+          .map((b, i) => '<div data-i="' + i + '" class="' + (renderedKeys.has(b.key) ? '' : 'pv-block') + '">' + b.html + '</div>')
+          .join('');
+        renderedKeys = nextKeys;
+
+        // Ride the canvas down to whatever just landed
+        if (fresh.length) {
+          const idx = blocks.indexOf(fresh[fresh.length - 1]);
+          const el = root.querySelector('[data-i="' + idx + '"]');
+          if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+        }
+
+        root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+        root.parentElement.style.setProperty('--pv-deep', s.palette.deep);
+        root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
+        root.parentElement.style.setProperty('--pv-display', s.display);
+        root.parentElement.style.setProperty('--pv-font', s.body);
+        root.parentElement.classList.add('pv');
+      }
+
+      function snapshot() {
+        S.history.push(JSON.stringify(S.site));
+        if (S.history.length > 25) S.history.shift();
+      }
+
+      function hasSection(type) { return S.site.sections.some((s) => s.type === type); }
+      function addSection(section, before) {
+        if (hasSection(section.type)) {
+          S.site.sections = S.site.sections.map((s) => (s.type === section.type ? section : s));
+        } else if (before && hasSection(before)) {
+          const i = S.site.sections.findIndex((s) => s.type === before);
+          S.site.sections.splice(i, 0, section);
+        } else {
+          S.site.sections.push(section);
+        }
+      }
+      function dropSection(type) {
+        const before = S.site.sections.length;
+        S.site.sections = S.site.sections.filter((s) => s.type !== type);
+        renderedKeys.delete(type);
+        return S.site.sections.length !== before;
+      }
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  Entering the builder
+      // ══════════════════════════════════════════════
+      async function enterBuilder() {
+        show('build');
+        $('chrome-url').textContent = S.slug + '.garage.co.nz';
+        render();
+        await wait(450);
+        await say('Right — ' + S.slug + '.garage.co.nz is yours. Blank page, live already.');
+
+        if (S.sourceUrl) {
+          await say('Shall I drag your assets across from ' + S.sourceUrl + '? Logo, colours, wording, photos — I only keep what still looks good.');
+          chips([
+            { label: 'Yes — drag it across', yes: true, send: 'pull the assets across' },
+            { label: 'No, start clean', send: 'start fresh' },
+          ]);
+        } else {
+          await say('What is the business or group called?');
+          S.awaiting = 'name';
+        }
+        $('agent-text').focus();
+      }
+
+      // ── Pull everything from the old site ────────
+      async function importAssets() {
+        $('agent-state').textContent = 'online · reading ' + S.sourceUrl;
+        await say('On it — reading ' + S.sourceUrl + ' now.', 500);
+
+        const d = await S.scrapePromise;
+        $('agent-state').textContent = 'online · building';
+
+        if (!d) {
+          await say("Couldn't get in the front door of that site — it might be blocking robots. No drama, we'll build it from scratch.");
+          await say('What is the business called?');
+          S.awaiting = 'name';
+          return;
+        }
+
+        S.scraped = d;
+        snapshot();
+        const s = S.site;
+        const industry = d.industry && INDUSTRIES[d.industry] ? d.industry : guessIndustry((d.title || '') + ' ' + (d.description || '') + ' ' + S.slug);
+        const base = INDUSTRIES[industry];
+
+        s.name = (d.title || titleCase(S.slug)).split(/[|–—-]/)[0].trim().slice(0, 40) || titleCase(S.slug);
+        s.palette = paletteFrom(base.colour);
+        s.eyebrow = base.eyebrow;
+        s.headline = (d.tagline || d.description || '').trim().slice(0, 90) || s.name;
+        s.lede = (d.description && d.description !== d.tagline ? d.description : base.lede).slice(0, 190);
+        s.cta = base.cta;
+        render();
+        did('Name and words lifted');
+        await wait(520);
+
+        if (d.logoUrl) { s.logo = d.logoUrl; render(); did('Logo brought across'); await wait(450); }
+        if (d.heroImage) { s.heroImage = d.heroImage; render(); did('Hero photo brought across'); await wait(450); }
+
+        const services = (d.services || []).filter(Boolean).slice(0, 6);
+        const items = services.length >= 2
+          ? services.slice(0, 6).map((t) => [String(t).slice(0, 42), blurb(t)])
+          : base.services;
+        addSection({ type: 'services', label: base.eyebrow, title: services.length >= 2 ? 'What we do' : 'How we can help', items: items });
+        render();
+        did(services.length >= 2 ? 'Kept your ' + items.length + ' services' : 'Drafted a services section');
+        await wait(500);
+
+        if (d.aboutText && d.aboutText.length > 60) {
+          addSection({ type: 'about', text: d.aboutText.slice(0, 320) });
+          render();
+          did('Your about copy, tidied');
+          await wait(450);
+        }
+
+        const shots = (d.galleryImages || []).filter((u) => u && u !== d.heroImage).slice(0, 6);
+        if (shots.length >= 2) {
+          s.images = shots;
+          addSection({ type: 'gallery', images: shots });
+          render();
+          did(shots.length + ' photos pulled through');
+          await wait(450);
+        }
+
+        const goodEmail = d.email && /^[\w.+-]+@[\w-]+\.[a-z]{2,}$/i.test(d.email) && !/\.(png|jpe?g|svg|gif|webp)$/i.test(d.email) ? d.email : '';
+        if (d.phone || goodEmail || d.address) {
+          s.contact = { phone: d.phone || '', email: goodEmail, address: (d.address || '').slice(0, 60) };
+          addSection({ type: 'contact' });
+          render();
+          did('Phone, email and address wired up');
+          await wait(450);
+        }
+
+        addSection({ type: 'band', title: 'Ready when you are', text: 'One call and we will sort it.' });
+        render();
+        await wait(400);
+
+        await say("There you go — that's your site, live at " + S.slug + '.garage.co.nz. Anything you want changed, just say it.');
+        chips(IDLE_CHIPS);
+      }
+
+      // ── Blank start ──────────────────────────────
+      function startFresh(name) {
+        snapshot();
+        const industry = guessIndustry(name + ' ' + S.slug);
+        const base = INDUSTRIES[industry];
+        const s = S.site;
+        s.name = name;
+        s.palette = paletteFrom(base.colour);
+        s.eyebrow = base.eyebrow;
+        s.headline = name;
+        s.lede = base.lede;
+        s.cta = base.cta;
+        s.sections = [
+          { type: 'services', label: base.eyebrow, title: 'How we can help', items: base.services },
+          { type: 'band', title: 'Ready when you are', text: 'One call and we will sort it.' },
+        ];
+        render();
+        return industry;
+      }
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  The agent's brain
+      // ══════════════════════════════════════════════
+      function quoted(text) {
+        const m = text.match(/["'“”„]([^"'“”„]{2,})["'“”„]/);
+        if (m) return m[1].trim();
+        const m2 = text.match(/(?:say|says|read|reads|to|it|be|called|call it|is)\s+(.{3,})$/i);
+        return m2 ? m2[1].replace(/[.!]$/, '').trim() : null;
+      }
+
+      function baseFor() {
+        return INDUSTRIES[guessIndustry(S.site.name + ' ' + S.slug + ' ' + (S.scraped ? S.scraped.industry : ''))];
+      }
+
+      function wants(t, words) { return words.some((w) => t.includes(w)); }
+
+      async function handle(raw) {
+        const text = raw.trim();
+        bubble(text, 'msg-user');
+        const t = text.toLowerCase();
+        chipBox.innerHTML = '';
+        await wait(180);
+
+        // — the agent asked for a name —
+        if (S.awaiting === 'name') {
+          S.awaiting = null;
+          const industry = startFresh(text.replace(/^(it'?s|we'?re|called|the)\s+/i, '').trim().slice(0, 40));
+          await say("Nice one. I've put a starter page up — " + (industry === 'default' ? 'generic for now' : 'shaped for ' + industry) + ", your colours and words next.");
+          await say('Tell me anything: colours, headline, sections, your phone number. Or hit publish whenever you like.');
+          chips(IDLE_CHIPS);
+          return;
+        }
+
+        // — pull assets across —
+        if (wants(t, ['pull', 'drag', 'bring it', 'import', 'yes — drag']) && S.sourceUrl) { await importAssets(); return; }
+        if (wants(t, ['start fresh', 'start clean', 'blank', 'from scratch'])) {
+          await say('Clean slate it is. What is the business or group called?');
+          S.awaiting = 'name';
+          return;
+        }
+
+        // — publish —
+        if (wants(t, ['publish', 'go live', 'ship it', 'launch', "that's it", 'done', 'finished', 'looks good'])) { await publish(); return; }
+
+        // — undo —
+        if (wants(t, ['undo', 'go back', 'revert'])) {
+          const prev = S.history.pop();
+          if (!prev) { await say('Nothing to undo yet.'); chips(IDLE_CHIPS); return; }
+          S.site = JSON.parse(prev);
+          renderedKeys = new Set();
+          render();
+          await say('Rolled that back.');
+          chips(IDLE_CHIPS);
+          return;
+        }
+
+        // — nothing on the page yet —
+        if (!S.site.name) {
+          await say("Before I change anything — what's the business or group called?");
+          S.awaiting = 'name';
+          return;
+        }
+
+        let acted = false;
+        snapshot();
+
+        // — colour —
+        const hex = t.match(/#([0-9a-f]{3}|[0-9a-f]{6})\b/);
+        const word = Object.keys(COLOUR_WORDS).find((c) => new RegExp('\\b' + c + '\\b').test(t));
+        if (hex || (word && wants(t, ['colour', 'color', 'make it', 'go', 'brand', 'theme', 'palette', 'more', 'scheme']))) {
+          const chosen = hex ? hex[0] : COLOUR_WORDS[word];
+          S.site.palette = paletteFrom(chosen);
+          render();
+          did('Palette swapped to ' + (word || chosen));
+          await say('Done — ' + (word || chosen) + ' through the whole site. Better?');
+          acted = true;
+        }
+
+        // — headline / tagline / name —
+        if (wants(t, ['headline', 'heading', 'title', 'h1'])) {
+          const v = quoted(text);
+          if (v) { S.site.headline = v; render(); did('Headline updated'); await say('Headline is now “' + v + '”.'); acted = true; }
+          else { await say('Give it to me in quotes and I will drop it straight in — e.g. headline: “Blocked drain? We are 20 minutes away.”'); acted = true; }
+        } else if (wants(t, ['tagline', 'subheading', 'strapline', 'sub-line', 'intro line', 'lede'])) {
+          const v = quoted(text);
+          if (v) { S.site.lede = v; render(); did('Tagline updated'); await say('That is in.'); acted = true; }
+          else { await say('What should it say? Pop it in quotes.'); acted = true; }
+        } else if (wants(t, ['rename', 'business name', 'company name', 'we are called', "we're called"])) {
+          const v = quoted(text);
+          if (v) { S.site.name = v; render(); did('Name updated'); await say('Renamed to ' + v + '.'); acted = true; }
+        }
+
+        // — contact details —
+        const phone = text.match(/(\+?64[\d\s-]{7,}|0[2-9][\d\s-]{6,})/);
+        if (phone) {
+          S.site.contact.phone = phone[0].trim();
+          if (!hasSection('contact')) addSection({ type: 'contact' }, 'band');
+          render();
+          did('Phone number added');
+          await say('Phone is on the page and in the header.');
+          acted = true;
+        }
+        const email = text.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
+        if (email) {
+          S.site.contact.email = email[0];
+          if (!hasSection('contact')) addSection({ type: 'contact' }, 'band');
+          render();
+          did('Email added');
+          await say('Email is up there too.');
+          acted = true;
+        }
+
+        // — remove a section —
+        if (wants(t, ['remove', 'delete', 'get rid', 'lose the', 'take out', 'drop the'])) {
+          const map = [['gallery', ['gallery', 'photo', 'picture', 'image']], ['services', ['service', 'what we do']],
+                       ['contact', ['contact', 'phone', 'details']], ['about', ['about', 'story']],
+                       ['hours', ['hours', 'opening']], ['testimonial', ['testimonial', 'review', 'quote']],
+                       ['band', ['banner', 'call to action', 'cta', 'band']]];
+          const hit = map.find((m) => m[1].some((w) => t.includes(w)));
+          if (hit && dropSection(hit[0])) { render(); did('Removed the ' + hit[0] + ' section'); await say('Gone.'); acted = true; }
+          else if (hit) { await say('There is no ' + hit[0] + ' section on there at the moment.'); acted = true; }
+        }
+
+        // — add sections —
+        if (!acted || wants(t, ['add', 'put', 'include', 'need'])) {
+          const base = baseFor();
+          if (wants(t, ['service', 'what we do', 'offering']) && !wants(t, ['remove', 'delete'])) {
+            const sc = S.scraped && S.scraped.services && S.scraped.services.length >= 2
+              ? S.scraped.services.slice(0, 6).map((x) => [String(x).slice(0, 42), blurb(x)])
+              : base.services;
+            addSection({ type: 'services', label: base.eyebrow, title: 'How we can help', items: sc }, 'band');
+            render(); did('Services section added');
+            await say('Services are in — say the word if you want the wording changed.');
+            acted = true;
+          } else if (wants(t, ['gallery', 'photo', 'picture', 'image', 'portfolio', 'our work'])) {
+            const shots = (S.site.images.length ? S.site.images : (S.scraped ? (S.scraped.galleryImages || []) : [])).slice(0, 6);
+            addSection({ type: 'gallery', images: shots }, 'band');
+            render(); did(shots.length ? 'Gallery added with ' + shots.length + ' photos' : 'Gallery added — placeholders for now');
+            await say(shots.length ? 'Gallery is in with the photos I found.' : 'Gallery is in with placeholders — email me your photos and I will drop them in.');
+            acted = true;
+          } else if (wants(t, ['contact', 'phone', 'email', 'address', 'find us', 'get in touch'])) {
+            addSection({ type: 'contact' }, 'band');
+            render(); did('Contact section added');
+            await say(S.site.contact.phone || S.site.contact.email ? 'Contact section is on.' : 'Contact section is on — give me a number or an email and I will fill it in.');
+            acted = true;
+          } else if (wants(t, ['about', 'story', 'who we are', 'history'])) {
+            const txt = (S.scraped && S.scraped.aboutText) ? S.scraped.aboutText.slice(0, 320)
+              : S.site.name + ' has been looking after this patch for years. Small team, local, and we answer the phone.';
+            addSection({ type: 'about', text: txt }, 'band');
+            render(); did('About section added');
+            await say('About section is in. Want different words? Send them over in quotes.');
+            acted = true;
+          } else if (wants(t, ['hours', 'opening', 'open time', 'when are you open'])) {
+            addSection({ type: 'hours', rows: [['Monday – Friday', '7.30am – 5pm'], ['Saturday', '8am – 12pm'], ['Sunday', 'Closed'], ['Emergencies', 'Any time']] }, 'band');
+            render(); did('Opening hours added');
+            await say('Hours are up — tell me the real ones and I will correct them.');
+            acted = true;
+          } else if (wants(t, ['testimonial', 'review', 'what people say'])) {
+            addSection({ type: 'testimonial', quote: 'Turned up when they said they would, fixed it properly, charged what they quoted.', who: 'A very relieved local' }, 'band');
+            render(); did('Testimonial added');
+            await say('Popped a placeholder review in — send me a real one and it goes straight up.');
+            acted = true;
+          }
+        }
+
+        // — vibe / typography —
+        if (!acted && wants(t, ['bolder', 'modern', 'classic', 'friendly', 'serious', 'playful', 'clean', 'minimal', 'font', 'vibe', 'smarter', 'posh'])) {
+          if (wants(t, ['classic', 'serious', 'posh', 'smarter'])) { S.site.display = "Georgia, 'Times New Roman', serif"; }
+          else if (wants(t, ['playful', 'friendly'])) { S.site.display = "'Poppins', system-ui, sans-serif"; }
+          else { S.site.display = "'Inter', system-ui, sans-serif"; }
+          render(); did('Typography updated');
+          await say('Changed the type. Have a look at the headings.');
+          acted = true;
+        }
+
+        // — hero photo —
+        if (!acted && wants(t, ['hero', 'big photo', 'background image', 'header image'])) {
+          const pool = (S.scraped && S.scraped.galleryImages) ? S.scraped.galleryImages : [];
+          if (wants(t, ['remove', 'no ', 'without'])) { S.site.heroImage = null; render(); did('Hero photo removed'); await say('Back to clean colour.'); }
+          else if (pool.length) {
+            const i = pool.indexOf(S.site.heroImage);
+            S.site.heroImage = pool[(i + 1) % pool.length];
+            render(); did('Hero photo swapped');
+            await say('Try that one.');
+          } else { await say("I don't have any photos yet — give me the URL of your old site or Facebook page and I'll grab them."); }
+          acted = true;
+        }
+
+        if (!acted) {
+          S.history.pop();
+          await say("I can do colours, headlines, sections (services, gallery, about, hours, contact, reviews), your phone and email — or publish it. What's it to be?");
+        }
+        chips(IDLE_CHIPS);
+      }
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
+      //  Publish
+      // ══════════════════════════════════════════════
+      async function publish() {
+        if (!S.site.name) {
+          await say('Give me something to publish first — what is the business called?');
+          S.awaiting = 'name';
+          return;
+        }
+
+        $('agent-state').textContent = 'online · publishing';
+        await say('Righto. Publishing to ' + S.slug + '.garage.co.nz…', 420);
+        const steps = ['Pages built', 'Images optimised', 'Mobile layout checked', 'SSL certificate issued', 'DNS pointed at ' + S.slug + '.garage.co.nz'];
+        for (const step of steps) { did(step); await wait(430); }
+        await wait(350);
+
+        const url = 'https://' + S.slug + '.garage.co.nz';
+        $('live-url').textContent = S.slug + '.garage.co.nz';
+        $('live-url').href = url;
+        $('agent-state').textContent = 'online · live';
+        show('live');
+        confetti();
+      }
+
+      $('back-to-build').addEventListener('click', async () => {
+        show('build');
+        chips(IDLE_CHIPS);
+      });
+
+      $('live-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = $('live-email').value.trim();
+        const note = $('live-note');
+        note.style.color = 'var(--text-muted)';
+        note.textContent = 'Sending…';
+        try {
+          const res = await fetch('/api/build-claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: S.slug, email: email, sourceUrl: S.sourceUrl, site: S.site }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            note.style.color = 'var(--good)';
+            note.textContent = '✓ Keys on their way to ' + email + '.';
+            $('live-form').querySelector('button').textContent = 'Sent';
+          } else if (data.error === 'taken') {
+            note.style.color = 'var(--bad)';
+            note.textContent = 'Someone grabbed that address a second ago — pick another and republish.';
+          } else {
+            throw new Error('failed');
+          }
+        } catch {
+          note.style.color = 'var(--bad)';
+          note.textContent = "Couldn't reach us just now — email ben@garage.co.nz and we'll sort it.";
+        }
+      });
+
+      // ══════════════════════════════════════════════
+      //  Confetti
+      // ══════════════════════════════════════════════
+      function confetti() {
+        const cv = $('confetti');
+        const ctx = cv.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        cv.width = cv.offsetWidth * dpr;
+        cv.height = cv.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        const W = cv.offsetWidth, H = cv.offsetHeight;
+        const colours = ['#2563eb', '#f97316', '#16a34a', '#eab308', '#db2777', '#7c3aed'];
+        const bits = [];
+        for (let i = 0; i < 140; i++) {
+          bits.push({
+            x: Math.random() * W,
+            y: -20 - Math.random() * H * 0.6,
+            w: 6 + Math.random() * 6,
+            h: 8 + Math.random() * 8,
+            vy: 2 + Math.random() * 3.5,
+            vx: -1 + Math.random() * 2,
+            rot: Math.random() * Math.PI,
+            vr: -0.12 + Math.random() * 0.24,
+            c: colours[(Math.random() * colours.length) | 0],
+          });
+        }
+
+        const started = performance.now();
+        (function frame(now) {
+          ctx.clearRect(0, 0, W, H);
+          const age = now - started;
+          bits.forEach((b) => {
+            b.x += b.vx; b.y += b.vy; b.rot += b.vr;
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            ctx.rotate(b.rot);
+            ctx.globalAlpha = age > 3500 ? Math.max(0, 1 - (age - 3500) / 1500) : 1;
+            ctx.fillStyle = b.c;
+            ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+            ctx.restore();
+          });
+          if (age < 5000) requestAnimationFrame(frame);
+          else ctx.clearRect(0, 0, W, H);
+        })(started);
+      }
+    </script>
+  </body>
+</html>
