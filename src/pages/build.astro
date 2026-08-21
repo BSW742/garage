@@ -885,6 +885,7 @@
       // ══════════════════════════════════════════════
       const S = {
         slug: '',
+        token: null,
         sourceUrl: '',
         scraped: null,
         scrapePromise: null,
@@ -1008,6 +1009,17 @@
         show('existing');
         setTimeout(() => $('source-url').focus(), 350);
       });
+
+      // Arriving from an unclaimed address: skip the hero, pre-fill the name
+      const preset = new URLSearchParams(location.search).get('slug');
+      if (preset) {
+        show('name');
+        setTimeout(() => {
+          slugInput.value = clean(preset);
+          slugInput.dispatchEvent(new Event('input'));
+          slugInput.focus();
+        }, 80);
+      }
 
       // ══════════════════════════════════════════════
       //  3. Existing site
@@ -1469,6 +1481,31 @@
         chipBox.innerHTML = '';
         await wait(180);
 
+        // — the agent asked for a different address —
+        if (S.awaiting === 'slug') {
+          const tidy = clean(text);
+          if (tidy.length < 3) { await say('Three characters minimum — try another.'); return; }
+          let free = false;
+          try {
+            const res = await fetch('/api/subdomain-check?slug=' + encodeURIComponent(tidy));
+            const data = await res.json();
+            free = !!data.available;
+            if (!free && data.suggestions && data.suggestions.length) {
+              await say('That one has gone too. ' + data.suggestions[0] + '.garage.co.nz is free if you want it.');
+              return;
+            }
+          } catch (e) { free = true; }
+          if (!free) { await say('Taken as well, sorry. Another?'); return; }
+          S.awaiting = null;
+          S.slug = tidy;
+          S.token = null;
+          $('chrome-url').textContent = S.slug + '.garage.co.nz';
+          render();
+          await say(S.slug + '.garage.co.nz it is. Publishing now.');
+          await publish();
+          return;
+        }
+
         // — the agent asked for a name —
         if (S.awaiting === 'name') {
           S.awaiting = null;
@@ -1655,11 +1692,37 @@
 
         $('agent-state').textContent = 'online · publishing';
         await say('Righto. Publishing to ' + S.slug + '.garage.co.nz…', 420);
+
+        // Claim the address while the build steps play out
+        const claim = fetch('/api/build-claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: S.slug, site: S.site, sourceUrl: S.sourceUrl, token: S.token }),
+        })
+          .then((r) => r.json().catch(() => ({ error: 'bad-response' })))
+          .catch(() => ({ error: 'network' }));
+
         const steps = ['Pages built', 'Images optimised', 'Mobile layout checked', 'SSL certificate issued', 'DNS pointed at ' + S.slug + '.garage.co.nz'];
         for (const step of steps) { did(step); await wait(430); }
-        await wait(350);
 
-        const url = 'https://' + S.slug + '.garage.co.nz';
+        const result = await claim;
+        $('agent-state').textContent = 'online · building';
+
+        if (result.error === 'taken') {
+          await say('Ah — somebody claimed ' + S.slug + '.garage.co.nz while we were working. Give me another address and I will publish straight away.');
+          S.awaiting = 'slug';
+          return;
+        }
+        if (!result.success) {
+          await say("Publishing fell over just then. Try again in a moment, or email ben@garage.co.nz and I'll sort it by hand.");
+          chips(IDLE_CHIPS);
+          return;
+        }
+
+        S.token = result.token;
+        try { localStorage.setItem('garage-build:' + S.slug, result.token); } catch (e) {}
+
+        const url = result.url || ('https://' + S.slug + '.garage.co.nz');
         $('live-url').textContent = S.slug + '.garage.co.nz';
         $('live-url').href = url;
         $('agent-state').textContent = 'online · live';
@@ -1682,7 +1745,7 @@
           const res = await fetch('/api/build-claim', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slug: S.slug, email: email, sourceUrl: S.sourceUrl, site: S.site }),
+            body: JSON.stringify({ slug: S.slug, email: email, sourceUrl: S.sourceUrl, site: S.site, token: S.token }),
           });
           const data = await res.json();
           if (data.success) {
