@@ -1,0 +1,14 @@
+name = "garage-sites"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Every subdomain of garage.co.nz is served from D1 by this worker.
+# Needs a proxied wildcard DNS record (*.garage.co.nz) for requests to arrive.
+routes = [
+  { pattern = "*.garage.co.nz/*", zone_name = "garage.co.nz" }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "garage-db"
+database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
