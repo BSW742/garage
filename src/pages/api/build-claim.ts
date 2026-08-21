@@ -96,10 +96,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const editToken = crypto.randomUUID();
+    // Empty string rather than null: the original table declared email NOT NULL
     await db.prepare(`
       INSERT INTO site_claims (slug, email, source_url, config, edit_token)
       VALUES (?, ?, ?, ?, ?)
-    `).bind(slug, email || null, sourceUrl || null, JSON.stringify(site || {}), editToken).run();
+    `).bind(slug, email || '', sourceUrl || null, JSON.stringify(site || {}), editToken).run();
 
     try {
       await sendPushToAll(db, {
