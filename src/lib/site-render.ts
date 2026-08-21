@@ -8,6 +8,7 @@ export interface SiteSection {
   title?: string;
   text?: string;
   items?: [string, string][];
+  tint?: string;
   images?: string[];
   rows?: [string, string][];
   quote?: string;
@@ -15,6 +16,7 @@ export interface SiteSection {
 }
 export interface SiteConfig {
   name?: string;
+  tone?: 'light' | 'warm' | 'dark';
   eyebrow?: string;
   headline?: string;
   lede?: string;
@@ -52,7 +54,7 @@ const CSS = `
 :root{--primary:#2563eb;--deep:#1e40af;--wash:#f6f8fb;--ink:#101418;--soft:#5b6472;--line:#e7ebf0;
 --display:'Poppins',system-ui,sans-serif;--body:'Inter',system-ui,-apple-system,sans-serif}
 html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-body{font-family:var(--body);color:var(--ink);line-height:1.6;background:#fff}
+body{font-family:var(--body);color:var(--ink);line-height:1.6;background:var(--page,#fff)}
 img{max-width:100%}
 a{color:inherit;text-decoration:none}
 .wrap{max-width:70rem;margin:0 auto}
@@ -80,7 +82,7 @@ section.alt{background:var(--wash)}
 .label{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--primary);text-align:center;margin-bottom:.7rem}
 h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:700;letter-spacing:-.03em;text-align:center;margin-bottom:2rem}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
-.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.4rem}
+.card{background:var(--card,#fff);border:1px solid var(--line);border-radius:14px;padding:1.4rem}
 .card h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.01em}
 .card p{font-size:.92rem;color:var(--soft)}
 .tick{color:var(--primary);font-weight:700;display:block;margin-bottom:.5rem}
@@ -88,7 +90,7 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.7rem}
 .shot{aspect-ratio:4/3;border-radius:12px;background:#e9edf3 center/cover no-repeat}
 .pills{display:flex;flex-wrap:wrap;gap:.7rem;justify-content:center}
-.pill{display:inline-flex;align-items:center;gap:.5rem;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.7rem 1.2rem;font-size:.95rem;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:.5rem;background:var(--card,#fff);border:1px solid var(--line);border-radius:999px;padding:.7rem 1.2rem;font-size:.95rem;font-weight:500}
 .pill b{color:var(--primary);font-weight:700}
 .quote{max-width:42rem;margin:0 auto;text-align:center}
 .quote p{font-family:var(--display);font-size:1.25rem;font-weight:600;letter-spacing:-.02em;line-height:1.5;margin-bottom:.8rem}
@@ -113,18 +115,18 @@ function sectionHtml(section: SiteSection, site: SiteConfig): string {
           .map((i) => `<div class="card"><span class="tick">◆</span><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
           .join('')}</div></div></section>`;
     case 'about':
-      return `<section><div class="wrap"><p class="label">About us</p>
+      return `<section><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
         <h2>${esc(section.title || `The story behind ${site.name || ''}`)}</h2>
         <p class="prose">${esc(section.text)}</p></div></section>`;
     case 'gallery': {
       const shots = (section.images || []).map(safeUrl).filter(Boolean) as string[];
       const cells = shots.length ? shots : ['', '', '', ''];
-      return `<section><div class="wrap"><p class="label">Our work</p><h2>Recent jobs</h2><div class="gallery">${cells
+      return `<section><div class="wrap"><p class="label">${esc(section.label || 'Our work')}</p><h2>${esc(section.title || 'Recent jobs')}</h2><div class="gallery">${cells
         .map((src) => `<div class="shot"${src ? ` style="background-image:url(${esc(src)})"` : ''}></div>`)
         .join('')}</div></div></section>`;
     }
     case 'hours':
-      return `<section class="alt"><div class="wrap"><p class="label">Opening hours</p><h2>When we are about</h2>
+      return `<section class="alt"><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
           .join('')}</div></div></section>`;
@@ -137,19 +139,40 @@ function sectionHtml(section: SiteSection, site: SiteConfig): string {
       if (c.email) pills.push(`<a class="pill" href="mailto:${esc(c.email)}"><b>Email</b> ${esc(c.email)}</a>`);
       if (c.address) pills.push(`<span class="pill"><b>Find us</b> ${esc(c.address)}</span>`);
       if (!pills.length) return '';
-      return `<section class="alt" id="contact"><div class="wrap"><p class="label">Get in touch</p><h2>Give us a yell</h2>
+      return `<section class="alt" id="contact"><div class="wrap"><p class="label">${esc(section.label || 'Get in touch')}</p><h2>${esc(section.title || 'Give us a yell')}</h2>
         <div class="pills">${pills.join('')}</div></div></section>`;
     }
     case 'band':
-      return `<section class="band"><div class="wrap"><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p>
+      return `<section class="band"${section.tint ? ` style="background:${esc(section.tint)}"` : ''}><div class="wrap"><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p>
         <a class="btn" href="#contact">${esc(site.cta || 'Get in touch')}</a></div></section>`;
     default:
       return '';
   }
 }
 
+function mixHex(hex: string, target: string, amount: number): string {
+  const parse = (h: string) => {
+    const v = h.replace('#', '');
+    const full = v.length === 3 ? v.split('').map((c) => c + c).join('') : v;
+    return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  };
+  const a = parse(hex);
+  const b = parse(target);
+  return '#' + a.map((c, i) => Math.round(c + (b[i] - c) * amount).toString(16).padStart(2, '0')).join('');
+}
+
+const TONES: Record<string, { page: string; ink: string; soft: string; line: string; card: string }> = {
+  light: { page: '#ffffff', ink: '#101418', soft: '#5b6472', line: '#e7ebf0', card: '#ffffff' },
+  warm: { page: '#fffaf3', ink: '#1b1410', soft: '#6b5a4c', line: '#efe2d2', card: '#fffdf9' },
+  dark: { page: '#0e1116', ink: '#f2f5fa', soft: '#a2acbd', line: '#232a35', card: '#161b23' },
+};
+
 export function renderSite(site: SiteConfig, slug: string): string {
   const palette = site.palette || {};
+  const tone = TONES[site.tone || 'light'] || TONES.light;
+  const primary = palette.primary || '#2563eb';
+  // On a dark page the alternating band has to be dark too
+  const wash = site.tone === 'dark' ? mixHex(primary, tone.page, 0.86) : (palette.wash || '#f6f8fb');
   const logo = safeUrl(site.logo);
   const hero = safeUrl(site.heroImage);
   const name = site.name || slug;
@@ -194,8 +217,9 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
 <style>${CSS}
-:root{--primary:${esc(palette.primary || '#2563eb')};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(palette.wash || '#f6f8fb')};
---display:${site.display ? esc(site.display) : "'Poppins',system-ui,sans-serif"};--body:${site.body ? esc(site.body) : "'Inter',system-ui,sans-serif"}}
+:root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
+--ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
+--page:${tone.page};--display:${site.display ? esc(site.display) : "'Poppins',system-ui,sans-serif"};--body:${site.body ? esc(site.body) : "'Inter',system-ui,sans-serif"}}
 </style>
 </head>
 <body>${body}</body>
