@@ -13,7 +13,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
   </head>
 
   <body>
@@ -112,6 +112,11 @@
           <div class="agent-chips" id="agent-chips"></div>
 
           <div class="agent-paint">
+            <div class="paint-row styles">
+              <button class="tone style" data-style="modern">Modern</button>
+              <button class="tone style" data-style="brutal">Brutal</button>
+              <button class="tone style" data-style="classic">Classic</button>
+            </div>
             <div class="paint-row" id="swatches"></div>
             <div class="paint-row tones">
               <button class="tone" data-tone="light">Light</button>
@@ -636,7 +641,7 @@
       }
       .swatch:hover { transform: scale(1.14); }
       .swatch.on { border-color: #fff; box-shadow: 0 0 0 2px var(--work); }
-      .tones { gap: 4px; }
+      .tones, .styles { gap: 4px; }
       .tone {
         flex: 1;
         border: 1px solid var(--work-3);
@@ -946,6 +951,80 @@
         color: var(--pv-soft);
       }
 
+      /* ── Design styles ───────────────────────── */
+      .pv.st-brutal {
+        --pv-display: 'Archivo Black', Impact, sans-serif;
+      }
+      .st-brutal .pv-h1, .st-brutal .pv-h2 { letter-spacing: -0.02em; text-transform: uppercase; }
+      .st-brutal .pv-h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); line-height: 0.98; }
+      .st-brutal .pv-hero { text-align: left; background: var(--pv-wash); border-bottom: 3px solid var(--pv-ink); }
+      .st-brutal .pv-hero-inner { margin: 0; max-width: 40rem; }
+      .st-brutal .pv-h2 { text-align: left; }
+      .st-brutal .pv-label {
+        text-align: left;
+        display: inline-block;
+        background: var(--pv-ink);
+        color: var(--pv-page, #fff);
+        padding: 0.2rem 0.5rem;
+      }
+      .st-brutal .pv-nav { border-bottom: 3px solid var(--pv-ink); }
+      .st-brutal .pv-card {
+        border: 3px solid var(--pv-ink);
+        border-radius: 0;
+        box-shadow: 6px 6px 0 var(--pv-ink);
+      }
+      .st-brutal .pv-btn, .st-brutal .pv-cta, .st-brutal .pv-pill, .st-brutal .pv-glyph {
+        border-radius: 0;
+        border: 3px solid var(--pv-ink);
+        box-shadow: 4px 4px 0 var(--pv-ink);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .st-brutal .pv-shot { border-radius: 0; border: 3px solid var(--pv-ink); }
+      .st-brutal .pv-band { border-top: 3px solid var(--pv-ink); border-bottom: 3px solid var(--pv-ink); }
+      .st-brutal .pv-lede { margin-left: 0; }
+      .st-brutal .pv-band { text-align: left; }
+      .st-brutal .pv-hours, .st-brutal .pv-prose, .st-brutal .pv-quote { margin-left: 0; text-align: left; }
+      .st-brutal .pv-contact { justify-content: flex-start; }
+
+      .pv.st-classic {
+        --pv-display: 'Playfair Display', Georgia, serif;
+      }
+      .st-classic .pv-h1 { font-weight: 700; letter-spacing: -0.01em; }
+      .st-classic .pv-h2 { font-weight: 600; letter-spacing: 0; }
+      .st-classic .pv-h2::after {
+        content: '';
+        display: block;
+        width: 42px;
+        height: 1px;
+        background: var(--pv-primary);
+        margin: 0.9rem auto 0;
+      }
+      .st-classic .pv-hero { background: var(--pv-page, #fff); padding-top: 5.5rem; padding-bottom: 5.5rem; }
+      .st-classic .pv-label { letter-spacing: 0.24em; color: var(--pv-soft); font-weight: 600; }
+      .st-classic .pv-card {
+        border: none;
+        border-top: 1px solid var(--pv-line);
+        border-radius: 0;
+        padding-left: 0;
+        padding-right: 1.2rem;
+        background: none;
+      }
+      .st-classic .pv-btn, .st-classic .pv-cta {
+        border-radius: 2px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+      }
+      .st-classic .pv-btn-2 { border-color: var(--pv-primary); color: var(--pv-primary); }
+      .st-classic .pv-pill { border-radius: 2px; }
+      .st-classic .pv-shot { border-radius: 2px; }
+      .st-classic .pv-section { padding-top: 4.2rem; padding-bottom: 4.2rem; }
+      .st-classic .pv-section.alt { background: var(--pv-wash); }
+
+      .pv-socials { display: flex; gap: 0.9rem; }
+      .pv-socials span { border-bottom: 1px solid var(--pv-line); }
+
       .flash { animation: flash 1s ease; }
       @keyframes flash {
         0% { box-shadow: inset 0 0 0 3px rgba(37,99,235,0); }
@@ -1027,12 +1106,15 @@
           lede: '',
           cta: 'Get in touch',
           palette: { primary: '#2563eb', deep: '#1e40af', wash: '#f6f8fb' },
+          style: 'modern',
+          tone: 'light',
           display: "'Poppins', system-ui, sans-serif",
           body: "'Inter', system-ui, sans-serif",
           logo: null,
           heroImage: null,
           sections: [],
           contact: { phone: '', email: '', address: '' },
+          socials: {},
           images: [],
         },
       };
@@ -1218,8 +1300,7 @@
       }
 
       const IDLE_CHIPS = [
-        { label: 'Make it green' },
-        { label: 'Add our services' },
+        { label: 'Try the brutal style', send: 'make it brutal' },
         { label: 'Add contact details' },
         { label: 'Add a photo gallery' },
         { label: 'Publish it' },
@@ -1328,6 +1409,31 @@
         const n = String(name).toLowerCase();
         const hit = SERVICE_BLURBS.find((b) => b[0].some((k) => n.includes(k)));
         return hit ? hit[1] : (fallback || (name + ' — done properly, priced up front.'));
+      }
+
+      // Cut to length without slicing a word in half
+      function clip(text, max) {
+        const clean = String(text || '').replace(/\s+/g, ' ').trim();
+        if (clean.length <= max) return clean;
+        const cut = clean.slice(0, max);
+        const space = cut.lastIndexOf(' ');
+        return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[,;:\-–—]$/, '').trim();
+      }
+
+      // A headline should be a whole thought, not a sentence with its tail cut off
+      function headlineFrom(text, fallback) {
+        const clean = String(text || '').replace(/\s+/g, ' ').trim();
+        if (!clean) return fallback;
+        const sentence = (clean.split(/(?<=[.!?])\s+/)[0] || clean).replace(/[.]$/, '');
+        if (sentence.length <= 72) return sentence;
+        const clause = sentence.split(/\s*[,;—–]\s*/)[0];
+        if (clause.length >= 12 && clause.length <= 72) return clause;
+        return fallback;
+      }
+
+      function echoes(a, b) {
+        const norm = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').slice(0, 40);
+        return !!norm(a) && norm(a) === norm(b);
       }
 
       function titleCase(slug) {
@@ -1453,8 +1559,12 @@
 
         s.sections.forEach((sec, i) => blocks.push({ key: sec.type, block: 'sec.' + i, html: blockHtml(sec, i) }));
 
+        const socialNames = Object.keys(s.socials || {});
         blocks.push({ key: 'foot', html:
           '<footer class="pv-foot"><span>© ' + new Date().getFullYear() + ' ' + esc(s.name) + '</span>' +
+          (socialNames.length
+            ? '<span class="pv-socials">' + socialNames.map((n) => '<span>' + esc(n[0].toUpperCase() + n.slice(1)) + '</span>').join('') + '</span>'
+            : '') +
           '<span>' + esc(S.slug) + '.garage.co.nz</span></footer>' });
 
         const nextKeys = new Set(blocks.map((b) => b.key));
@@ -1475,9 +1585,10 @@
         root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
         root.parentElement.style.setProperty('--pv-deep', s.palette.deep);
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
-        root.parentElement.style.setProperty('--pv-display', s.display);
-        root.parentElement.style.setProperty('--pv-font', s.body);
         root.parentElement.classList.add('pv');
+        const st = S.site.style || 'modern';
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic');
+        root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
       }
@@ -1548,18 +1659,23 @@
         S.scraped = d;
         snapshot();
         const s = S.site;
-        const industry = d.industry && INDUSTRIES[d.industry] ? d.industry : guessIndustry((d.title || '') + ' ' + (d.description || '') + ' ' + S.slug);
+        const mine = guessIndustry((d.title || '') + ' ' + (d.description || '') + ' ' + (d.services || []).join(' ') + ' ' + S.slug);
+        const industry = mine !== 'default' ? mine : (d.industry && INDUSTRIES[d.industry] ? d.industry : 'default');
         const base = INDUSTRIES[industry];
 
         s.name = (d.title || titleCase(S.slug)).split(/[|–—-]/)[0].trim().slice(0, 40) || titleCase(S.slug);
-        s.palette = paletteFrom(base.colour);
+        s.palette = paletteFrom(d.brandColour || base.colour);
         s.eyebrow = base.eyebrow;
-        s.headline = (d.tagline || d.description || '').trim().slice(0, 90) || s.name;
-        s.lede = (d.description && d.description !== d.tagline ? d.description : base.lede).slice(0, 190);
+        s.headline = headlineFrom(d.tagline || d.description || '', s.name);
+        // Don't print the same sentence twice under itself
+        const ledeSource = d.description && !echoes(d.description, s.headline) ? d.description : base.lede;
+        s.lede = clip(ledeSource, 190);
         s.cta = base.cta;
         render();
         did('Name and words lifted');
-        await wait(520);
+        await wait(450);
+
+        if (d.brandColour) { did('Your brand colour, lifted off the old site'); await wait(420); }
 
         if (d.logoUrl) { s.logo = d.logoUrl; render(); did('Logo brought across'); await wait(450); }
         if (d.heroImage) { s.heroImage = d.heroImage; render(); did('Hero photo brought across'); await wait(450); }
@@ -1589,9 +1705,27 @@
           await wait(450);
         }
 
+        // Scrapers happily glue two phone numbers together — sanity-check the digits
+        const phoneDigits = String(d.phone || '').replace(/\D/g, '');
+        const goodPhone = phoneDigits.length >= 7 && phoneDigits.length <= 11 ? d.phone : '';
         const goodEmail = d.email && /^[\w.+-]+@[\w-]+\.[a-z]{2,}$/i.test(d.email) && !/\.(png|jpe?g|svg|gif|webp)$/i.test(d.email) ? d.email : '';
-        if (d.phone || goodEmail || d.address) {
-          s.contact = { phone: d.phone || '', email: goodEmail, address: (d.address || '').slice(0, 60) };
+        const socials = d.socials && Object.keys(d.socials).length ? d.socials : null;
+        if (socials) {
+          s.socials = socials;
+          render();
+          did(Object.keys(socials).map((k) => k[0].toUpperCase() + k.slice(1)).join(' and ') + ' linked up');
+          await wait(420);
+        }
+
+        if (d.hours && d.hours.length >= 2) {
+          addSection({ type: 'hours', rows: d.hours.slice(0, 4) });
+          render();
+          did('Your actual opening hours');
+          await wait(420);
+        }
+
+        if (goodPhone || goodEmail || d.address) {
+          s.contact = { phone: goodPhone, email: goodEmail, address: (d.address || '').slice(0, 60) };
           addSection({ type: 'contact' });
           render();
           did('Phone, email and address wired up');
@@ -1942,14 +2076,23 @@
           }
         }
 
-        // — vibe / typography —
-        if (!acted && wants(t, ['bolder', 'modern', 'classic', 'friendly', 'serious', 'playful', 'clean', 'minimal', 'font', 'vibe', 'smarter', 'posh'])) {
-          if (wants(t, ['classic', 'serious', 'posh', 'smarter'])) { S.site.display = "Georgia, 'Times New Roman', serif"; }
-          else if (wants(t, ['playful', 'friendly'])) { S.site.display = "'Poppins', system-ui, sans-serif"; }
-          else { S.site.display = "'Inter', system-ui, sans-serif"; }
-          render(); did('Typography updated');
-          await say('Changed the type. Have a look at the headings.');
-          acted = true;
+        // — design style —
+        if (!acted) {
+          const style = wants(t, ['brutal', 'bold', 'loud', 'punchy', 'shouty', 'blocky'])
+            ? 'brutal'
+            : wants(t, ['classic', 'serif', 'traditional', 'elegant', 'posh', 'smart', 'formal'])
+              ? 'classic'
+              : wants(t, ['modern', 'clean', 'minimal', 'simple', 'current'])
+                ? 'modern'
+                : null;
+          if (style) {
+            if (setStyle(style)) {
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal" or "classic" to flip between them.');
+            } else {
+              await say("It's already in that style. Try one of the other two.");
+            }
+            acted = true;
+          }
         }
 
         // — hero photo —
@@ -2216,6 +2359,8 @@
           b.classList.toggle('on', b.dataset.tone === (S.site.tone || 'light')));
         document.querySelectorAll('.swatch').forEach((b) =>
           b.classList.toggle('on', b.dataset.colour === S.site.palette.primary));
+        document.querySelectorAll('.style[data-style]').forEach((b) =>
+          b.classList.toggle('on', b.dataset.style === (S.site.style || 'modern')));
       }
 
       function paint(colour, quiet) {
@@ -2235,6 +2380,22 @@
         if (!quiet) did('Colours updated');
       }
 
+      const STYLE_NOTES = {
+        modern: 'Clean and current — rounded, soft shadows, plenty of air.',
+        brutal: 'Loud and blocky — heavy type, hard edges, black borders. People remember it.',
+        classic: 'Quiet and serif — hairlines, wide letter-spacing, an established look.',
+      };
+
+      function setStyle(style, quiet) {
+        if (!STYLE_NOTES[style] || S.site.style === style) return false;
+        snapshot();
+        S.site.style = style;
+        renderedKeys = new Set();
+        render();
+        if (!quiet) did(style[0].toUpperCase() + style.slice(1) + ' style');
+        return true;
+      }
+
       function buildSwatches() {
         const row = $('swatches');
         if (!row || row.childElementCount) return;
@@ -2247,6 +2408,8 @@
           b.addEventListener('click', () => { paint(c); });
           row.appendChild(b);
         });
+        document.querySelectorAll('.style[data-style]').forEach((b) =>
+          b.addEventListener('click', () => setStyle(b.dataset.style)));
         document.querySelectorAll('.tone[data-tone]').forEach((b) =>
           b.addEventListener('click', () => {
             snapshot();

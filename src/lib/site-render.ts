@@ -17,6 +17,8 @@ export interface SiteSection {
 export interface SiteConfig {
   name?: string;
   tone?: 'light' | 'warm' | 'dark';
+  style?: 'modern' | 'brutal' | 'classic';
+  socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
   lede?: string;
@@ -102,6 +104,36 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .band h2{color:#fff;margin-bottom:.7rem}
 .band p{opacity:.88;margin-bottom:1.5rem}
 .band .btn{background:#fff;color:var(--primary)}
+/* Design styles */
+.st-brutal{--display:'Archivo Black',Impact,sans-serif}
+.st-brutal h1,.st-brutal h2{text-transform:uppercase;letter-spacing:-.02em}
+.st-brutal header.hero{text-align:left;background:var(--wash);border-bottom:3px solid var(--ink)}
+.st-brutal .hero-inner{margin:0}
+.st-brutal h2{text-align:left}
+.st-brutal .label{text-align:left;display:inline-block;background:var(--ink);color:var(--page,#fff);padding:.2rem .5rem}
+.st-brutal nav.top{border-bottom:3px solid var(--ink)}
+.st-brutal .card{border:3px solid var(--ink);border-radius:0;box-shadow:6px 6px 0 var(--ink)}
+.st-brutal .btn,.st-brutal .top .cta,.st-brutal .pill,.st-brutal .glyph{border-radius:0;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);text-transform:uppercase;font-weight:700}
+.st-brutal .shot{border-radius:0;border:3px solid var(--ink)}
+.st-brutal .band{border-top:3px solid var(--ink);border-bottom:3px solid var(--ink)}
+.st-brutal .lede{margin-left:0}
+.st-brutal .band{text-align:left}
+.st-brutal .hours,.st-brutal .prose,.st-brutal .quote{margin-left:0;text-align:left}
+.st-brutal .pills{justify-content:flex-start}
+.st-classic{--display:'Playfair Display',Georgia,serif}
+.st-classic h1{font-weight:700;letter-spacing:-.01em}
+.st-classic h2{font-weight:600;letter-spacing:0}
+.st-classic h2::after{content:'';display:block;width:42px;height:1px;background:var(--primary);margin:.9rem auto 0}
+.st-classic header.hero{background:var(--page,#fff);padding:5.5rem 1.6rem}
+.st-classic .label{letter-spacing:.24em;color:var(--soft);font-weight:600}
+.st-classic .card{border:none;border-top:1px solid var(--line);border-radius:0;padding-left:0;background:none}
+.st-classic .btn,.st-classic .top .cta{border-radius:2px;font-weight:500;letter-spacing:.04em}
+.st-classic .btn.alt{border-color:var(--primary);color:var(--primary)}
+.st-classic .pill,.st-classic .shot{border-radius:2px}
+.st-classic section{padding:4.2rem 1.6rem}
+.socials{display:flex;gap:.9rem;align-items:center}
+.socials a{border-bottom:1px solid var(--line);font-size:.82rem}
+.socials a:hover{border-bottom-color:var(--primary);color:var(--primary)}
 footer{padding:1.8rem 1.6rem;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;font-size:.82rem;color:var(--soft)}
 footer a{border-bottom:1px solid var(--line)}
 @media(max-width:640px){.links{display:none}section{padding:2.8rem 1.2rem}}
@@ -167,6 +199,18 @@ const TONES: Record<string, { page: string; ink: string; soft: string; line: str
   dark: { page: '#0e1116', ink: '#f2f5fa', soft: '#a2acbd', line: '#232a35', card: '#161b23' },
 };
 
+function socialLinks(socials?: Record<string, string>): string {
+  const entries = Object.entries(socials || {}).filter(([, url]) => safeUrl(url));
+  if (!entries.length) return '';
+  const label: Record<string, string> = {
+    facebook: 'Facebook', instagram: 'Instagram', linkedin: 'LinkedIn',
+    youtube: 'YouTube', tiktok: 'TikTok',
+  };
+  return `<span class="socials">${entries
+    .map(([name, url]) => `<a href="${esc(safeUrl(url) as string)}" target="_blank" rel="noopener">${esc(label[name] || name)}</a>`)
+    .join('')}</span>`;
+}
+
 export function renderSite(site: SiteConfig, slug: string): string {
   const palette = site.palette || {};
   const tone = TONES[site.tone || 'light'] || TONES.light;
@@ -198,6 +242,7 @@ export function renderSite(site: SiteConfig, slug: string): string {
 ${(site.sections || []).map((s) => sectionHtml(s, site)).join('')}
 <footer>
   <span>&copy; ${new Date().getFullYear()} ${esc(name)}</span>
+  ${socialLinks(site.socials)}
   <span>Built with <a href="https://garage.co.nz/build">garage.co.nz</a></span>
 </footer>`;
 
@@ -215,14 +260,14 @@ ${(site.sections || []).map((s) => sectionHtml(s, site)).join('')}
 ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${site.style === 'brutal' ? '&family=Archivo+Black' : site.style === 'classic' ? '&family=Playfair+Display:wght@600;700' : ''}&display=swap" rel="stylesheet" />
 <style>${CSS}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
---page:${tone.page};--display:${site.display ? esc(site.display) : "'Poppins',system-ui,sans-serif"};--body:${site.body ? esc(site.body) : "'Inter',system-ui,sans-serif"}}
+--page:${tone.page}}
 </style>
 </head>
-<body>${body}</body>
+<body class="st-${esc(site.style || 'modern')}">${body}</body>
 </html>`;
 }
 

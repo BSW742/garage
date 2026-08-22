@@ -18,6 +18,9 @@ interface ScrapedData {
   faviconUrl: string | null;
   industry: string;
   businessType: string;
+  socials: Record<string, string>;
+  hours: [string, string][];
+  brandColour: string | null;
 }
 
 // Industry detection with weighted keywords
@@ -156,6 +159,9 @@ async function scrapeWebsite(url: string): Promise<ScrapedData> {
   // Extract services with industry context
   const services = extractServices(html, industry);
   const businessType = getBusinessType(industry);
+  const socials = extractSocials(html);
+  const hours = extractHours(html);
+  const brandColour = extractBrandColour(html);
 
   return {
     url,
@@ -173,7 +179,95 @@ async function scrapeWebsite(url: string): Promise<ScrapedData> {
     faviconUrl,
     industry,
     businessType,
+    socials,
+    hours,
+    brandColour,
   };
+}
+
+// Their social accounts, so the new site still points where their audience is
+function extractSocials(html: string): Record<string, string> {
+  const networks: [string, RegExp][] = [
+    ['facebook', /https?:\/\/(?:www\.)?facebook\.com\/[A-Za-z0-9._\-/]+/i],
+    ['instagram', /https?:\/\/(?:www\.)?instagram\.com\/[A-Za-z0-9._\-/]+/i],
+    ['linkedin', /https?:\/\/(?:www\.)?linkedin\.com\/(?:company|in)\/[A-Za-z0-9._\-/]+/i],
+    ['youtube', /https?:\/\/(?:www\.)?youtube\.com\/(?:@|c\/|channel\/|user\/)[A-Za-z0-9._\-/]+/i],
+    ['tiktok', /https?:\/\/(?:www\.)?tiktok\.com\/@[A-Za-z0-9._\-]+/i],
+  ];
+
+  const found: Record<string, string> = {};
+  for (const [name, pattern] of networks) {
+    const match = html.match(pattern);
+    if (!match) continue;
+    const link = match[0].replace(/["'<>\\]+$/, '').replace(/\/(sharer|share|plugins)\b.*$/i, '');
+    // Share buttons point at the network's own pages, not theirs
+    if (/\b(sharer|share\.php|intent)\b/i.test(link)) continue;
+    found[name] = link;
+  }
+  return found;
+}
+
+const DAY_WORDS = '(mon|tues?|wed(nes)?|thur?s?|fri|sat(ur)?|sun)(day)?';
+
+// Opening hours, if they publish them in a form we can recognise
+function extractHours(html: string): [string, string][] {
+  const text = cleanText(html.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' '));
+  const pattern = new RegExp(
+    DAY_WORDS + '(?:\\s*(?:-|–|—|to)\\s*' + DAY_WORDS + ')?' +
+    '\\s*:?\\s*' +
+    '(closed|(?:\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?\\s*(?:-|–|—|to)\\s*\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)))',
+    'gi'
+  );
+
+  const rows: [string, string][] = [];
+  const seen = new Set<string>();
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) && rows.length < 5) {
+    const whole = match[0];
+    const time = match[match.length - 1];
+    const days = whole.slice(0, whole.length - time.length).replace(/[:\s]+$/, '').trim();
+    const key = days.toLowerCase();
+    if (!days || seen.has(key)) continue;
+    seen.add(key);
+    rows.push([titleCaseWords(days), titleCaseWords(time)]);
+  }
+  return rows;
+}
+
+function titleCaseWords(value: string): string {
+  return value.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()).replace(/\b(Am|Pm)\b/g, (m) => m.toLowerCase());
+}
+
+// Their actual brand colour beats our industry guess
+function extractBrandColour(html: string): string | null {
+  const theme = html.match(/<meta[^>]+name=["']theme-color["'][^>]+content=["']([^"']+)["']/i);
+  const candidates: string[] = [];
+  if (theme) candidates.push(theme[1].trim());
+
+  // Otherwise the hex that appears most often in the markup
+  const counts = new Map<string, number>();
+  const hexes = html.match(/#[0-9a-fA-F]{6}\b/g) || [];
+  for (const raw of hexes) {
+    const hex = raw.toLowerCase();
+    counts.set(hex, (counts.get(hex) || 0) + 1);
+  }
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([hex]) => hex);
+  candidates.push(...ranked.slice(0, 12));
+
+  for (const candidate of candidates) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(candidate)) continue;
+    const r = parseInt(candidate.slice(1, 3), 16);
+    const g = parseInt(candidate.slice(3, 5), 16);
+    const b = parseInt(candidate.slice(5, 7), 16);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lightness = (max + min) / 2 / 255;
+    const saturation = max === min ? 0 : (max - min) / (255 - Math.abs(max + min - 255));
+    // Skip greys, near-whites and near-blacks: they are page furniture, not brand
+    if (saturation < 0.3 || lightness < 0.12 || lightness > 0.82) continue;
+    return candidate;
+  }
+  return null;
 }
 
 function extractTitle(html: string): string {
