@@ -83,12 +83,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       history = [],
       selection = null,
       ownImages = [],
+      sourceUrl = null,
     } = body as {
       site: SiteConfig;
       message: string;
       history: any[];
       selection: string | null;
       ownImages: string[];
+      sourceUrl: string | null;
     };
 
     if (!site || !message) {
@@ -108,6 +110,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         role: 'user',
         content:
           `Here is the page as it stands:\n\n${pageSummary(site, selection)}\n\n` +
+          (sourceUrl ? `Their existing site is ${sourceUrl} — read it if you need more material.\n\n` : '') +
           `They said: ${message}`,
       },
     ];

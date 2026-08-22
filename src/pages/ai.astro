@@ -1322,7 +1322,10 @@
       // Everything the person types goes to the real agent first; the built-in
       // editor is the safety net for when there is no key or the call fails.
       async function route(text) {
-        if (!S.llm || S.awaiting) return handle(text);
+        // Onboarding (naming the business, pulling the old site across) stays
+        // scripted — it's instant, and it gives the agent something to work with.
+        const bare = !S.site.name && !(S.site.sections || []).length;
+        if (!S.llm || S.awaiting || bare) return handle(text);
         return askAgent(text);
       }
 
@@ -2463,6 +2466,7 @@
               message: text,
               history: S.chat,
               selection: S.sel ? S.sel.label + ' (' + S.sel.path + ')' : null,
+              sourceUrl: S.sourceUrl || null,
               ownImages: (S.scraped && S.scraped.galleryImages ? S.scraped.galleryImages : [])
                 .concat(S.site.images || [])
                 .filter(Boolean)
