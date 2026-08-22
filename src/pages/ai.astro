@@ -2477,13 +2477,16 @@
           dots.remove();
 
           if (res.status === 503) {
-            // No key on the server — quietly fall back for the rest of the session
-            S.llm = false;
+            // Missing key, or a deploy rolling over. Only give up on the agent
+            // after it says so twice — a single blip shouldn't cost the session.
+            S.llmMisses = (S.llmMisses || 0) + 1;
+            if (S.llmMisses >= 2) S.llm = false;
             S.thinking = false;
             $('agent-state').textContent = 'online · building';
             await say("I'm running without my full brain right now, so I'll do what I can with the basics.");
             return handle(text);
           }
+          S.llmMisses = 0;
           if (!res.ok) throw new Error('agent ' + res.status);
 
           const data = await res.json();
@@ -2505,7 +2508,7 @@
         } catch (error) {
           dots.remove();
           console.error(error);
-          await say("That didn't go through — let me try it the simple way.");
+          await say("That didn't go through — let me try it the simple way. Say it again if you want me to have another crack.");
           S.thinking = false;
           $('agent-state').textContent = 'online · building';
           return handle(text);
