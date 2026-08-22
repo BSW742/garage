@@ -1325,7 +1325,10 @@
         // Onboarding (naming the business, pulling the old site across) stays
         // scripted — it's instant, and it gives the agent something to work with.
         const bare = !S.site.name && !(S.site.sections || []).length;
-        if (!S.llm || S.awaiting || bare) return handle(text);
+        // Publishing and undo are ours, not the agent's — they touch the
+        // address and the claim, not the page content.
+        const local = /^(publish|go live|ship it|launch|undo|go back|revert)\b/i.test(text.trim());
+        if (!S.llm || S.awaiting || bare || local) return handle(text);
         return askAgent(text);
       }
 
