@@ -31,6 +31,7 @@ export interface SiteConfig {
   sections?: SiteSection[];
   contact?: SiteContact;
   images?: string[];
+  chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
 
 function esc(value: unknown): string {
@@ -139,6 +140,13 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .socials a:hover{border-bottom-color:var(--primary);color:var(--primary)}
 footer{padding:1.8rem 1.6rem;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;font-size:.82rem;color:var(--soft)}
 footer a{border-bottom:1px solid var(--line)}
+.faq{max-width:760px;margin:0 auto;text-align:left}
+.faq details{border:1px solid var(--line);border-radius:12px;background:var(--card,#fff);margin-bottom:.6rem;overflow:hidden}
+.faq summary{cursor:pointer;padding:.9rem 1.1rem;font-weight:600;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';float:right;color:var(--primary);font-weight:700}
+.faq details[open] summary::after{content:'−'}
+.faq details p{padding:0 1.1rem 1rem;margin:0;color:var(--soft)}
 @media(max-width:640px){.links{display:none}section{padding:2.8rem 1.2rem}}
 `;
 
@@ -164,6 +172,11 @@ function sectionHtml(section: SiteSection, site: SiteConfig): string {
       return `<section class="alt"><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
+          .join('')}</div></div></section>`;
+    case 'faq':
+      return `<section id="faq"><div class="wrap"><p class="label">${esc(section.label || 'Questions')}</p>
+        <h2>${esc(section.title || 'Common questions')}</h2><div class="faq">${(section.items || [])
+          .map((i) => `<details><summary>${esc(i[0])}</summary><p>${esc(i[1])}</p></details>`)
           .join('')}</div></div></section>`;
     case 'testimonial':
       return `<section><div class="wrap quote"><p>&ldquo;${esc(section.quote)}&rdquo;</p><span>&mdash; ${esc(section.who)}</span></div></section>`;
@@ -216,6 +229,168 @@ function socialLinks(socials?: Record<string, string>): string {
   return `<span class="socials">${entries
     .map(([name, url]) => `<a href="${esc(safeUrl(url) as string)}" target="_blank" rel="noopener">${esc(label[name] || name)}</a>`)
     .join('')}</span>`;
+}
+
+// The chat widget every published site carries. It lives in a shadow root so
+// the site's own styles — which vary a lot between modern, brutal and classic
+// — cannot reach in and break it.
+function chatWidget(site: SiteConfig, slug: string): string {
+  const faqSection = (site.sections || []).find((s) => s.type === 'faq');
+  const faq = (faqSection?.items || []).slice(0, 4);
+  const config = JSON.stringify({
+    slug,
+    name: site.name || 'We',
+    primary: site.palette?.primary || '#2563eb',
+    faq,
+  }).replace(/</g, '\\u003c');
+
+  return `<div id="garage-chat"></div>
+<script>(function(){
+var C = ${config};
+var API = 'https://garage.co.nz';
+var KEY = 'garage-chat:' + C.slug;
+var threadId = '';
+try { threadId = localStorage.getItem(KEY) || ''; } catch (e) {}
+var seen = 0, timer = null, asked = false, replyTime = '';
+
+var host = document.getElementById('garage-chat');
+var root = host.attachShadow({ mode: 'open' });
+root.innerHTML = [
+'<style>',
+':host{all:initial}',
+'*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,sans-serif}',
+'.bubble{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;border:0;',
+'background:' + C.primary + ';color:#fff;font-size:24px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:2147483000}',
+'.panel{position:fixed;right:18px;bottom:84px;width:340px;max-width:calc(100vw - 36px);max-height:min(560px,calc(100vh - 110px));',
+'background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.24);display:none;flex-direction:column;overflow:hidden;z-index:2147483000}',
+'.panel.on{display:flex}',
+'.head{padding:14px 16px;background:' + C.primary + ';color:#fff}',
+'.head b{display:block;font-size:15px}',
+'.head span{font-size:12px;opacity:.85}',
+'.log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:90px}',
+'.m{max-width:80%;padding:9px 12px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}',
+'.them{align-self:flex-start;background:#f1f3f7;color:#10131a}',
+'.me{align-self:flex-end;background:' + C.primary + ';color:#fff}',
+'.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px}',
+'.chip{border:1px solid #dfe4ec;background:#fff;color:#33405c;border-radius:999px;padding:6px 11px;font-size:12.5px;cursor:pointer;text-align:left}',
+'.chip:hover{border-color:' + C.primary + ';color:' + C.primary + '}',
+'form{display:flex;gap:6px;padding:10px;border-top:1px solid #e9edf3}',
+'input{flex:1;font:inherit;font-size:14px;padding:9px 12px;border:1px solid #dfe4ec;border-radius:11px;outline:none}',
+'input:focus{border-color:' + C.primary + '}',
+'button.send{border:0;background:' + C.primary + ';color:#fff;border-radius:11px;padding:0 14px;font-size:14px;font-weight:600;cursor:pointer}',
+'@media(max-width:420px){.panel{right:10px;left:10px;width:auto;bottom:80px}}',
+'</style>',
+'<button class="bubble" part="bubble" aria-label="Chat">&#128172;</button>',
+'<div class="panel" role="dialog" aria-label="Chat">',
+'<div class="head"><b>' + esc(C.name) + '</b><span class="sub"></span></div>',
+'<div class="log"></div>',
+'<div class="chips"></div>',
+'<form><input placeholder="Ask a question..." autocomplete="off" /><button class="send" type="submit">Send</button></form>',
+'</div>'
+].join('');
+
+function esc(t){ var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+var bubble = root.querySelector('.bubble');
+var panel = root.querySelector('.panel');
+var log = root.querySelector('.log');
+var chips = root.querySelector('.chips');
+var form = root.querySelector('form');
+var input = root.querySelector('input');
+var sub = root.querySelector('.sub');
+
+function say(text, mine){
+  var d = document.createElement('div');
+  d.className = 'm ' + (mine ? 'me' : 'them');
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+function drawChips(){
+  chips.innerHTML = '';
+  if (threadId) return;
+  C.faq.forEach(function(pair){
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.textContent = pair[0];
+    b.addEventListener('click', function(){
+      say(pair[0], true);
+      say(pair[1], false);
+      chips.innerHTML = '';
+    });
+    chips.appendChild(b);
+  });
+}
+
+function setSub(){
+  sub.textContent = replyTime ? C.name + ' ' + replyTime : 'Ask us anything';
+}
+
+async function poll(){
+  try {
+    var url = API + '/api/chat?slug=' + encodeURIComponent(C.slug) +
+      (threadId ? '&threadId=' + encodeURIComponent(threadId) + '&after=' + seen : '');
+    var res = await fetch(url);
+    var data = await res.json();
+    if (data.replyTime) { replyTime = data.replyTime; setSub(); }
+    (data.messages || []).forEach(function(m){
+      if (m.id > seen) { seen = m.id; if (m.sender === 'owner') say(m.body, false); }
+    });
+  } catch (e) {}
+}
+
+form.addEventListener('submit', async function(e){
+  e.preventDefault();
+  var body = input.value.trim();
+  if (!body) return;
+  input.value = '';
+  say(body, true);
+  chips.innerHTML = '';
+  var payload = { slug: C.slug, body: body };
+  if (threadId) payload.threadId = threadId;
+  if (asked) { payload.contact = body; }
+  try {
+    var res = await fetch(API + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (data.threadId) {
+      var isNew = !threadId;
+      threadId = data.threadId;
+      try { localStorage.setItem(KEY, threadId); } catch (e) {}
+      if (data.replyTime) { replyTime = data.replyTime; setSub(); }
+      if (isNew && !asked) {
+        asked = true;
+        setTimeout(function(){
+          say('Thanks — what is the best phone or email to reach you on, in case we miss you here?', false);
+        }, 400);
+      }
+    }
+  } catch (e) {
+    say('That did not send. Try again in a moment.', false);
+  }
+});
+
+bubble.addEventListener('click', function(){
+  var on = panel.classList.toggle('on');
+  bubble.innerHTML = on ? '&#10005;' : '&#128172;';
+  if (on) {
+    drawChips();
+    setSub();
+    poll();
+    if (!timer) timer = setInterval(poll, 5000);
+    input.focus();
+  } else if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+});
+
+poll();
+})();</script>`;
 }
 
 export function renderSite(site: SiteConfig, slug: string): string {
@@ -274,7 +449,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}</body>
+<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}</body>
 </html>`;
 }
 
