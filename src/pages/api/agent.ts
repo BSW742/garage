@@ -103,6 +103,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const client = new Anthropic({ apiKey });
     const ctx = { site, ownImages: (ownImages || []).filter(Boolean) };
     const actions: { name: string; summary: string; ok: boolean }[] = [];
+    const foundImages: string[] = [];
 
     const messages: any[] = [
       ...history.slice(-12),
@@ -148,6 +149,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       for (const call of calls as any[]) {
         const result = await runTool(call.name, call.input, ctx, { scrape: scrapeWebsite });
         actions.push({ name: call.name, summary: result.message, ok: result.ok });
+        if (call.name === 'find_images' && Array.isArray(result.data)) {
+          for (const image of result.data as any[]) if (image?.url) foundImages.push(image.url);
+        }
         results.push({
           type: 'tool_result',
           tool_use_id: call.id,
@@ -163,6 +167,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         reply: reply || 'Done.',
         site: ctx.site,
         actions,
+        foundImages,
         // Trimmed history for the next turn: the exchange without the page dump
         history: [
           ...history.slice(-12),

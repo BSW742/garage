@@ -106,6 +106,7 @@
               <strong>Garage agent</strong>
               <span id="agent-state">online · building</span>
             </div>
+            <button class="agent-done" id="media-btn">Media</button>
             <button class="agent-done" id="done-btn">Publish</button>
           </div>
 
@@ -142,6 +143,25 @@
       </div>
     </section>
 
+    <!-- ══ MEDIA LIBRARY ══ -->
+    <div class="media-back" id="media-back" hidden>
+      <div class="media-modal">
+        <div class="media-head">
+          <strong>Media</strong>
+          <span id="media-count"></span>
+          <label class="media-upload">
+            <input type="file" id="media-file" accept="image/*" multiple hidden />
+            <span>Upload photos</span>
+          </label>
+          <button class="media-close" id="media-close" aria-label="Close">×</button>
+        </div>
+        <div class="media-grid" id="media-grid"></div>
+        <p class="media-empty" id="media-empty">
+          Nothing here yet. Upload photos from your phone or computer, or ask the agent to find some.
+        </p>
+      </div>
+    </div>
+
     <!-- ══ 5. LIVE ══ -->
     <section class="screen screen-live" data-screen="live">
       <canvas id="confetti"></canvas>
@@ -172,9 +192,11 @@
         --accent-deep: #1e40af;
         --good: #16a34a;
         --bad: #dc2626;
-        --work: #0f1115;
-        --work-2: #181b22;
-        --work-3: #242833;
+        --work: #eceff4;
+        --work-2: #ffffff;
+        --work-3: #dfe4ec;
+        --work-ink: #10131a;
+        --work-soft: #626b7d;
         --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
         --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
         --radius-sm: 8px;
@@ -465,14 +487,14 @@
         padding: 0.7rem 1rem;
       }
       .chrome-dots { display: flex; gap: 6px; }
-      .chrome-dots i { width: 10px; height: 10px; border-radius: 50%; background: #3a3f4c; }
+      .chrome-dots i { width: 10px; height: 10px; border-radius: 50%; background: #cdd4e0; }
       .chrome-url {
         flex: 1;
-        background: #0b0d12;
+        background: #f6f8fb;
         border-radius: 999px;
         padding: 0.3rem 0.9rem;
         font-size: 0.82rem;
-        color: #8b93a5;
+        color: #6b7383;
         font-family: ui-monospace, 'SF Mono', Menlo, monospace;
         white-space: nowrap;
         overflow: hidden;
@@ -486,9 +508,9 @@
         font-weight: 600;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: #4ade80;
+        color: #16a34a;
       }
-      .pulse { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: pulse 1.8s ease-in-out infinite; }
+      .pulse { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: pulse 1.8s ease-in-out infinite; }
       @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
 
       .canvas {
@@ -499,7 +521,7 @@
         overflow-y: auto;
         overflow-x: hidden;
         position: relative;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        box-shadow: 0 18px 50px rgba(16, 19, 26, 0.14);
       }
 
       .canvas-empty {
@@ -550,12 +572,12 @@
         animation: spin 4s linear infinite;
       }
       .agent-id { flex: 1; line-height: 1.25; }
-      .agent-id strong { display: block; color: #f4f6fa; font-size: 0.92rem; font-weight: 600; }
-      .agent-id span { font-size: 0.75rem; color: #6f7889; }
+      .agent-id strong { display: block; color: var(--work-ink); font-size: 0.92rem; font-weight: 600; }
+      .agent-id span { font-size: 0.75rem; color: var(--work-soft); }
       .agent-done {
         border: 1px solid var(--work-3);
         background: transparent;
-        color: #cbd3e0;
+        color: var(--work-ink);
         font-family: var(--font-sans);
         font-size: 0.8rem;
         font-weight: 600;
@@ -564,7 +586,7 @@
         cursor: pointer;
         transition: all 0.15s;
       }
-      .agent-done:hover { background: #4ade80; border-color: #4ade80; color: #08210f; }
+      .agent-done:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
 
       .agent-log {
         flex: 1;
@@ -585,12 +607,12 @@
         white-space: pre-wrap;
       }
       @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
-      .msg-agent { align-self: flex-start; background: var(--work-3); color: #e8ecf3; border-bottom-left-radius: 4px; }
+      .msg-agent { align-self: flex-start; background: #f2f5fa; color: var(--work-ink); border-bottom-left-radius: 4px; }
       .msg-user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
       .msg-note {
         align-self: flex-start;
         background: none;
-        color: #7c8496;
+        color: var(--work-soft);
         font-size: 0.8rem;
       }
       .msg-do {
@@ -598,16 +620,16 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        background: rgba(74, 222, 128, 0.09);
-        border: 1px solid rgba(74, 222, 128, 0.25);
-        color: #86efac;
+        background: rgba(22, 163, 74, 0.08);
+        border: 1px solid rgba(22, 163, 74, 0.28);
+        color: #15803d;
         font-size: 0.82rem;
         padding: 0.5rem 0.8rem;
         border-radius: 8px;
       }
 
-      .typing { display: flex; gap: 4px; align-self: flex-start; padding: 0.85rem 0.95rem; background: var(--work-3); border-radius: 14px; border-bottom-left-radius: 4px; }
-      .typing i { width: 6px; height: 6px; border-radius: 50%; background: #8b93a5; animation: blink 1.2s infinite; }
+      .typing { display: flex; gap: 4px; align-self: flex-start; padding: 0.85rem 0.95rem; background: #f2f5fa; border-radius: 14px; border-bottom-left-radius: 4px; }
+      .typing i { width: 6px; height: 6px; border-radius: 50%; background: #9aa3b4; animation: blink 1.2s infinite; }
       .typing i:nth-child(2) { animation-delay: 0.15s; }
       .typing i:nth-child(3) { animation-delay: 0.3s; }
       @keyframes blink { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
@@ -615,8 +637,8 @@
       .agent-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 1.2rem 0.8rem; }
       .chip {
         border: 1px solid var(--work-3);
-        background: rgba(255,255,255,0.03);
-        color: #c3cad8;
+        background: #fff;
+        color: #44506b;
         font-family: var(--font-sans);
         font-size: 0.8rem;
         padding: 0.4rem 0.75rem;
@@ -625,9 +647,9 @@
         transition: all 0.15s;
         animation: pop 0.25s both;
       }
-      .chip:hover { border-color: var(--accent); background: rgba(37,99,235,0.16); color: #fff; }
-      .chip-yes { border-color: rgba(74,222,128,0.4); color: #86efac; }
-      .chip-yes:hover { background: rgba(74,222,128,0.18); border-color: #4ade80; color: #fff; }
+      .chip:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep); }
+      .chip-yes { border-color: rgba(22,163,74,0.45); color: #15803d; }
+      .chip-yes:hover { background: #dcfce7; border-color: #16a34a; color: #14532d; }
 
       /* ── Palette + selection ─────────────────── */
       .agent-paint { padding: 0 1.2rem 0.6rem; }
@@ -646,8 +668,8 @@
       .tone {
         flex: 1;
         border: 1px solid var(--work-3);
-        background: rgba(255,255,255,0.03);
-        color: #aab3c4;
+        background: #fff;
+        color: #44506b;
         font-family: var(--font-sans);
         font-size: 0.75rem;
         font-weight: 500;
@@ -656,7 +678,7 @@
         cursor: pointer;
         transition: all 0.15s;
       }
-      .tone:hover { color: #fff; border-color: var(--accent); }
+      .tone:hover { color: var(--accent-deep); border-color: var(--accent); }
       .tone.on { background: var(--accent); border-color: var(--accent); color: #fff; }
       .tone.roll { flex: 0 0 34px; font-size: 0.95rem; }
 
@@ -666,11 +688,11 @@
         gap: 0.5rem;
         margin: 0 1.2rem 0.5rem;
         padding: 0.4rem 0.5rem 0.4rem 0.85rem;
-        background: rgba(37,99,235,0.16);
-        border: 1px solid rgba(37,99,235,0.45);
+        background: var(--accent-soft);
+        border: 1px solid rgba(37,99,235,0.35);
         border-radius: 999px;
         font-size: 0.8rem;
-        color: #cddcff;
+        color: var(--accent-deep);
         animation: pop 0.2s both;
       }
       .agent-target[hidden] { display: none; }
@@ -678,13 +700,13 @@
       .agent-target button {
         border: none;
         background: none;
-        color: #9fb6ee;
+        color: var(--accent);
         font-size: 1.05rem;
         line-height: 1;
         cursor: pointer;
         padding: 0 0.25rem;
       }
-      .agent-target button:hover { color: #fff; }
+      .agent-target button:hover { color: var(--accent-deep); }
 
       /* ── Direct manipulation on the canvas ───── */
       .canvas.pickable [data-edit], .canvas.pickable [data-photo], .canvas.pickable [data-block] { cursor: pointer; }
@@ -710,16 +732,16 @@
         display: none;
         align-items: center;
         gap: 0.35rem;
-        background: #10141c;
-        border: 1px solid #2b3341;
+        background: #fff;
+        border: 1px solid var(--work-3);
         border-radius: 9px;
         padding: 0.3rem;
-        box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+        box-shadow: 0 12px 28px rgba(16,19,26,0.16);
         white-space: nowrap;
       }
       .pick-bar.on { display: flex; }
       .pick-bar .name {
-        color: #8e97a8;
+        color: var(--work-soft);
         font-size: 0.72rem;
         font-weight: 600;
         letter-spacing: 0.06em;
@@ -728,8 +750,8 @@
       }
       .pick-bar button {
         border: none;
-        background: #222a36;
-        color: #dce3ee;
+        background: #f2f5fa;
+        color: #2a3345;
         font-family: var(--font-sans);
         font-size: 0.76rem;
         font-weight: 500;
@@ -749,18 +771,18 @@
       .agent-input input {
         flex: 1;
         min-width: 0;
-        background: #0b0d12;
+        background: #f6f8fb;
         border: 1px solid var(--work-3);
         border-radius: 999px;
         padding: 0.75rem 1.1rem;
-        color: #f0f3f8;
+        color: var(--work-ink);
         font-family: var(--font-sans);
         font-size: 0.92rem;
         outline: none;
         transition: border-color 0.15s;
       }
       .agent-input input:focus { border-color: var(--accent); }
-      .agent-input input::placeholder { color: #5c6577; }
+      .agent-input input::placeholder { color: #9aa3b4; }
       .agent-input button {
         width: 42px; height: 42px;
         flex: none;
@@ -782,6 +804,113 @@
     </style>
 
     <style is:global>
+      /* ── Media library ─────────────────────────── */
+      .media-back {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: rgba(16, 19, 26, 0.45);
+        backdrop-filter: blur(3px);
+        display: grid;
+        place-items: center;
+        padding: 2rem 1rem;
+        animation: fade 0.18s ease;
+      }
+      .media-back[hidden] { display: none; }
+      @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+      .media-modal {
+        width: min(900px, 100%);
+        max-height: 82vh;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 30px 80px rgba(16,19,26,0.3);
+        overflow: hidden;
+        animation: rise 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      .media-head {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid var(--work-3);
+      }
+      .media-head strong { font-family: var(--font-display); font-size: 1.05rem; }
+      .media-head span { flex: 1; color: var(--work-soft); font-size: 0.85rem; }
+      .media-upload {
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      .media-upload:hover { background: var(--accent-deep); }
+      .media-close {
+        border: none;
+        background: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--work-soft);
+        cursor: pointer;
+        padding: 0 0.25rem;
+      }
+      .media-close:hover { color: var(--work-ink); }
+
+      .media-grid {
+        flex: 1;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.9rem;
+        padding: 1.2rem;
+      }
+      .media-empty { padding: 0 1.2rem 1.6rem; color: var(--work-soft); font-size: 0.9rem; }
+      .media-empty[hidden] { display: none; }
+
+      .media-item {
+        border: 1px solid var(--work-3);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #f6f8fb;
+      }
+      .media-shot {
+        aspect-ratio: 4 / 3;
+        background: #e9edf3 center/cover no-repeat;
+        display: block;
+      }
+      .media-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .media-src {
+        flex: 1 1 100%;
+        margin-bottom: 0.15rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--work-soft);
+      }
+      .media-act {
+        flex: 1;
+        border: 1px solid var(--work-3);
+        background: #fff;
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .media-act:hover { border-color: var(--accent); color: var(--accent); }
+      .media-item.in-use { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
       /* ── Live preview of the generated site ────── */
       #site-root { position: relative; z-index: 1; background: var(--pv-page, #fff); }
       .pv {
@@ -1096,6 +1225,7 @@
         slug: '',
         token: null,
         llm: true,          // switched off if the endpoint says there is no key
+        media: [],          // everything we have to hand: theirs, uploaded, found
         chat: [],           // conversation history for the agent
         thinking: false,
         sourceUrl: '',
@@ -2446,6 +2576,125 @@
 
     <script is:inline>
       // ══════════════════════════════════════════════
+      //  Media library
+      // ══════════════════════════════════════════════
+      function addMedia(url, source) {
+        if (!url || !/^https?:\/\//i.test(url)) return;
+        if (S.media.some((m) => m.url === url)) return;
+        S.media.push({ url: url, source: source || 'found' });
+      }
+
+      function mediaInUse(url) {
+        if (S.site.heroImage === url || S.site.logo === url) return true;
+        return (S.site.sections || []).some((sec) => (sec.images || []).includes(url));
+      }
+
+      function renderMedia() {
+        const grid = $('media-grid');
+        grid.innerHTML = '';
+        $('media-empty').hidden = S.media.length > 0;
+        $('media-count').textContent = S.media.length
+          ? S.media.length + (S.media.length === 1 ? ' photo' : ' photos')
+          : '';
+
+        S.media.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'media-item' + (mediaInUse(item.url) ? ' in-use' : '');
+
+          const shot = document.createElement('span');
+          shot.className = 'media-shot';
+          shot.style.backgroundImage = 'url(' + item.url + ')';
+          card.appendChild(shot);
+
+          const meta = document.createElement('div');
+          meta.className = 'media-meta';
+          const src = document.createElement('span');
+          src.className = 'media-src';
+          src.textContent = mediaInUse(item.url) ? 'on the page' : item.source;
+          meta.appendChild(src);
+
+          [['Hero', () => { snapshot(); S.site.heroImage = item.url; }],
+           ['Gallery', () => {
+              snapshot();
+              const gallery = S.site.sections.find((x) => x.type === 'gallery');
+              if (gallery) gallery.images = [...(gallery.images || []), item.url].slice(0, 8);
+              else S.site.sections.push({ type: 'gallery', images: [item.url] });
+            }],
+           ['Logo', () => { snapshot(); S.site.logo = item.url; }],
+          ].forEach(([label, apply]) => {
+            const b = document.createElement('button');
+            b.className = 'media-act';
+            b.textContent = label;
+            b.addEventListener('click', () => {
+              apply();
+              renderedKeys = new Set();
+              render();
+              renderMedia();
+              did(label === 'Gallery' ? 'Added a photo to the gallery' : label + ' photo set');
+            });
+            meta.appendChild(b);
+          });
+
+          card.appendChild(meta);
+          grid.appendChild(card);
+        });
+      }
+
+      function openMedia() {
+        // Anything already on the page or scraped counts as media
+        (S.site.images || []).forEach((u) => addMedia(u, 'their site'));
+        if (S.scraped) {
+          addMedia(S.scraped.heroImage, 'their site');
+          addMedia(S.scraped.logoUrl, 'their site');
+          (S.scraped.galleryImages || []).forEach((u) => addMedia(u, 'their site'));
+        }
+        addMedia(S.site.heroImage, 'their site');
+        renderMedia();
+        $('media-back').hidden = false;
+      }
+
+      $('media-btn').addEventListener('click', openMedia);
+      $('media-close').addEventListener('click', () => { $('media-back').hidden = true; });
+      $('media-back').addEventListener('click', (e) => {
+        if (e.target === $('media-back')) $('media-back').hidden = true;
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !$('media-back').hidden) $('media-back').hidden = true;
+      });
+
+      $('media-file').addEventListener('change', async (e) => {
+        const files = [...(e.target.files || [])].slice(0, 12);
+        if (!files.length) return;
+        $('media-count').textContent = 'Uploading ' + files.length + '…';
+
+        for (const file of files) {
+          try {
+            const dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: dataUrl }),
+            });
+            const data = await res.json();
+            if (data.url) addMedia(data.url, 'yours');
+          } catch (err) {
+            console.error('upload failed', err);
+          }
+        }
+
+        e.target.value = '';
+        renderMedia();
+        did(files.length + (files.length === 1 ? ' photo uploaded' : ' photos uploaded'));
+      });
+    </script>
+
+    <script is:inline>
+      // ══════════════════════════════════════════════
       //  The real agent: tools, in a loop, server-side
       // ══════════════════════════════════════════════
       async function askAgent(text) {
@@ -2470,10 +2719,11 @@
               history: S.chat,
               selection: S.sel ? S.sel.label + ' (' + S.sel.path + ')' : null,
               sourceUrl: S.sourceUrl || null,
-              ownImages: (S.scraped && S.scraped.galleryImages ? S.scraped.galleryImages : [])
+              ownImages: S.media.filter((m) => m.source === 'yours').map((m) => m.url)
+                .concat(S.scraped && S.scraped.galleryImages ? S.scraped.galleryImages : [])
                 .concat(S.site.images || [])
                 .filter(Boolean)
-                .slice(0, 8),
+                .slice(0, 10),
             }),
           });
 
@@ -2501,6 +2751,7 @@
           clearSelection(false);
           render();
 
+          (data.foundImages || []).forEach((u) => addMedia(u, 'found'));
           (data.actions || []).forEach((a) => {
             if (a.ok) did(a.summary);
             else bubble('· ' + a.summary, 'msg-note');
