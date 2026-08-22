@@ -18,3 +18,7 @@ dist/
 .DS_Store
 Thumbs.db
 .wrangler/
+
+# Local secrets for wrangler / astro dev
+.dev.vars
+.dev.vars.*

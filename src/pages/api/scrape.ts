@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
-interface ScrapedData {
+export interface ScrapedData {
   url: string;
   title: string;
   description: string;
@@ -124,7 +124,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-async function scrapeWebsite(url: string): Promise<ScrapedData> {
+export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
