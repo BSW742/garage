@@ -93,6 +93,8 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .shot{aspect-ratio:4/3;border-radius:12px;background:#e9edf3 center/cover no-repeat}
 .pills{display:flex;flex-wrap:wrap;gap:.7rem;justify-content:center}
 .pill{display:inline-flex;align-items:center;gap:.5rem;background:var(--card,#fff);border:1px solid var(--line);border-radius:999px;padding:.7rem 1.2rem;font-size:.95rem;font-weight:500}
+.map{margin:1.6rem auto 0;max-width:760px;border:1px solid var(--line);border-radius:14px;overflow:hidden;line-height:0}
+.map iframe{display:block;width:100%;height:320px;border:0}
 .pill b{color:var(--primary);font-weight:700}
 .quote{max-width:42rem;margin:0 auto;text-align:center}
 .quote p{font-family:var(--display);font-size:1.25rem;font-weight:600;letter-spacing:-.02em;line-height:1.5;margin-bottom:.8rem}
@@ -120,6 +122,7 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .st-brutal .band{text-align:left}
 .st-brutal .hours,.st-brutal .prose,.st-brutal .quote{margin-left:0;text-align:left}
 .st-brutal .pills{justify-content:flex-start}
+.st-brutal .map{margin-left:0;border-radius:0;border-width:2px}
 .st-classic{--display:'Playfair Display',Georgia,serif}
 .st-classic h1{font-weight:700;letter-spacing:-.01em}
 .st-classic h2{font-weight:600;letter-spacing:0}
@@ -171,8 +174,12 @@ function sectionHtml(section: SiteSection, site: SiteConfig): string {
       if (c.email) pills.push(`<a class="pill" href="mailto:${esc(c.email)}"><b>Email</b> ${esc(c.email)}</a>`);
       if (c.address) pills.push(`<span class="pill"><b>Find us</b> ${esc(c.address)}</span>`);
       if (!pills.length) return '';
+      // A map is only meaningful once there is an address to point at.
+      const map = c.address
+        ? `<div class="map"><iframe src="https://maps.google.com/maps?q=${encodeURIComponent(c.address)}&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${esc(c.address)}"></iframe></div>`
+        : '';
       return `<section class="alt" id="contact"><div class="wrap"><p class="label">${esc(section.label || 'Get in touch')}</p><h2>${esc(section.title || 'Give us a yell')}</h2>
-        <div class="pills">${pills.join('')}</div></div></section>`;
+        <div class="pills">${pills.join('')}</div>${map}</div></section>`;
     }
     case 'band':
       return `<section class="band"${section.tint ? ` style="background:${esc(section.tint)}"` : ''}><div class="wrap"><h2>${esc(section.title)}</h2><p>${esc(section.text)}</p>

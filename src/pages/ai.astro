@@ -1055,6 +1055,17 @@
       .pv-shot { aspect-ratio: 4 / 3; border-radius: 12px; background: #e9edf3 center/cover no-repeat; }
 
       .pv-contact { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+      .pv-map {
+        margin: 1.2rem auto 0;
+        max-width: 620px;
+        border: 1px solid var(--pv-line);
+        border-radius: 12px;
+        overflow: hidden;
+        line-height: 0;
+      }
+      /* The canvas is click-to-edit, so the preview map must not swallow
+         clicks. The published site keeps it interactive. */
+      .pv-map iframe { display: block; width: 100%; height: 240px; border: 0; pointer-events: none; }
       .pv-pill {
         display: inline-flex;
         align-items: center;
@@ -1136,6 +1147,7 @@
       .st-brutal .pv-band { text-align: left; }
       .st-brutal .pv-hours, .st-brutal .pv-prose, .st-brutal .pv-quote { margin-left: 0; text-align: left; }
       .st-brutal .pv-contact { justify-content: flex-start; }
+      .st-brutal .pv-map { margin-left: 0; border-radius: 0; border-width: 2px; }
 
       .pv.st-classic {
         --pv-display: 'Playfair Display', Georgia, serif;
@@ -1716,10 +1728,16 @@
             if (c.email) pills.push('<span class="pv-pill"><b>Email</b> ' + ed('contact.email', '', 'span', c.email) + '</span>');
             if (c.address) pills.push('<span class="pv-pill"><b>Find us</b> ' + ed('contact.address', '', 'span', c.address) + '</span>');
             if (!pills.length) pills.push('<span class="pv-pill"><b>Contact</b> add your phone or email in the chat</span>');
+            // Mirrors the published map in site-render.ts.
+            const map = c.address
+              ? '<div class="pv-map"><iframe src="https://maps.google.com/maps?q=' +
+                encodeURIComponent(c.address) + '&amp;output=embed" loading="lazy" ' +
+                'referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe></div>'
+              : '';
             return '<section class="pv-section alt">' +
               ed(p + '.label', 'pv-label', 'p', section.label || 'Get in touch') +
               ed(p + '.title', 'pv-h2', 'h2', section.title || 'Give us a yell') +
-              '<div class="pv-contact">' + pills.join('') + '</div></section>';
+              '<div class="pv-contact">' + pills.join('') + '</div>' + map + '</section>';
           }
 
           case 'band':
