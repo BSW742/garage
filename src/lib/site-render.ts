@@ -1,5 +1,5 @@
 // Renders a site claimed at <slug>.garage.co.nz from the config the
-// builder stored in D1. Mirrors the live preview in /build.
+// builder stored in D1. Mirrors the live preview in /ai.
 
 export interface SiteContact { phone?: string; email?: string; address?: string }
 export interface SiteSection {
@@ -243,7 +243,7 @@ ${(site.sections || []).map((s) => sectionHtml(s, site)).join('')}
 <footer>
   <span>&copy; ${new Date().getFullYear()} ${esc(name)}</span>
   ${socialLinks(site.socials)}
-  <span>Built with <a href="https://garage.co.nz/build">garage.co.nz</a></span>
+  <span>Built with <a href="https://garage.co.nz/ai">garage.co.nz</a></span>
 </footer>`;
 
   return `<!doctype html>
@@ -300,7 +300,7 @@ a.home{display:block;margin-top:1.6rem;font-size:.9rem;color:#737373}
   <p class="eyebrow">Nobody has taken this one</p>
   <h1>${esc(slug)}.garage.co.nz<br />is going spare.</h1>
   <p class="sub">Free address, free website. Pick it, chat to the agent for a couple of minutes, and it is yours.</p>
-  <a class="btn" href="https://garage.co.nz/build?slug=${encodeURIComponent(slug)}">Build it &rarr;</a>
+  <a class="btn" href="https://garage.co.nz/ai?slug=${encodeURIComponent(slug)}">Build it &rarr;</a>
   <a class="home" href="https://garage.co.nz">garage.co.nz</a>
 </div>
 </body>

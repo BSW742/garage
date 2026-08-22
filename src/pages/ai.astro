@@ -1,7 +1,7 @@
 ---
 // GARAGE AI — the builder with a real agent behind it.
-// Same flow as /build, but the chat goes to Claude with tools rather than
-// a local intent engine. Falls back to the local engine if the key is missing.
+// The chat goes to Claude with tools rather than a local intent engine.
+// Falls back to the local engine if the key is missing.
 ---
 
 <!doctype html>
@@ -106,27 +106,30 @@
               <strong>Garage agent</strong>
               <span id="agent-state">online · building</span>
             </div>
+            <button class="agent-done" id="style-btn" aria-expanded="false">Style</button>
             <button class="agent-done" id="media-btn">Media</button>
             <button class="agent-done" id="done-btn">Publish</button>
+
+            <!-- Style controls live behind the Style button, anchored to the
+                 head, so they stay out of the conversation. -->
+            <div class="agent-paint" id="agent-paint" hidden>
+              <div class="paint-row styles">
+                <button class="tone style" data-style="modern">Modern</button>
+                <button class="tone style" data-style="brutal">Brutal</button>
+                <button class="tone style" data-style="classic">Classic</button>
+              </div>
+              <div class="paint-row" id="swatches"></div>
+              <div class="paint-row tones">
+                <button class="tone" data-tone="light">Light</button>
+                <button class="tone" data-tone="warm">Warm</button>
+                <button class="tone" data-tone="dark">Dark</button>
+                <button class="tone roll" id="roll-colour" title="Surprise me">⟳</button>
+              </div>
+            </div>
           </div>
 
           <div class="agent-log" id="agent-log"></div>
           <div class="agent-chips" id="agent-chips"></div>
-
-          <div class="agent-paint">
-            <div class="paint-row styles">
-              <button class="tone style" data-style="modern">Modern</button>
-              <button class="tone style" data-style="brutal">Brutal</button>
-              <button class="tone style" data-style="classic">Classic</button>
-            </div>
-            <div class="paint-row" id="swatches"></div>
-            <div class="paint-row tones">
-              <button class="tone" data-tone="light">Light</button>
-              <button class="tone" data-tone="warm">Warm</button>
-              <button class="tone" data-tone="dark">Dark</button>
-              <button class="tone roll" id="roll-colour" title="Surprise me">⟳</button>
-            </div>
-          </div>
 
           <div class="agent-target" id="agent-target" hidden>
             <span id="target-label">Headline</span>
@@ -556,6 +559,7 @@
         min-height: 0;
       }
       .agent-head {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 0.75rem;
@@ -587,6 +591,7 @@
         transition: all 0.15s;
       }
       .agent-done:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
+      .agent-done.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
       .agent-log {
         flex: 1;
@@ -652,7 +657,21 @@
       .chip-yes:hover { background: #dcfce7; border-color: #16a34a; color: #14532d; }
 
       /* ── Palette + selection ─────────────────── */
-      .agent-paint { padding: 0 1.2rem 0.6rem; }
+      /* Style controls drop down from the Style button rather than sitting
+         in the conversation, so the thread stays uncluttered. */
+      .agent-paint {
+        position: absolute;
+        top: calc(100% - 0.4rem);
+        right: 1.2rem;
+        left: 1.2rem;
+        z-index: 40;
+        padding: 0.8rem;
+        background: var(--work-2);
+        border: 1px solid var(--work-3);
+        border-radius: var(--radius-md);
+        box-shadow: 0 18px 40px rgba(16,19,26,0.16);
+      }
+      .agent-paint[hidden] { display: none; }
       .paint-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
       .swatch {
         width: 24px; height: 24px;
@@ -2689,6 +2708,24 @@
         renderMedia();
         $('media-back').hidden = false;
       }
+
+      // Style panel — a dropdown off the head, so the thread stays clean.
+      const paintPanel = $('agent-paint');
+      const styleBtn = $('style-btn');
+      function setPaint(open) {
+        paintPanel.hidden = !open;
+        styleBtn.classList.toggle('on', open);
+        styleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      styleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setPaint(paintPanel.hidden);
+      });
+      paintPanel.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => { if (!paintPanel.hidden) setPaint(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !paintPanel.hidden) setPaint(false);
+      });
 
       $('media-btn').addEventListener('click', openMedia);
       $('media-close').addEventListener('click', () => { $('media-back').hidden = true; });
