@@ -84,7 +84,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     <footer>
       <div class="footer-content">
         <p class="footer-mission">Good websites for good people.</p>
-        <p class="footer-copy">garage.co.nz — Aotearoa</p>
+        <p class="footer-copy"><a href="mailto:ben@garage.co.nz">ben@garage.co.nz</a> — Aotearoa</p>
       </div>
     </footer>
 
@@ -932,6 +932,15 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   .footer-copy {
     font-size: 0.85rem;
     color: var(--color-text-muted);
+  }
+
+  .footer-copy a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .footer-copy a:hover {
+    color: var(--color-accent);
   }
 
   @media (max-width: 640px) {

@@ -11,7 +11,7 @@ if (db) {
       SELECT id, slot_id, type, content, created_at, views, hearts
       FROM noticeboard
       ORDER BY created_at DESC
-      LIMIT 50
+      LIMIT 30
     `).all();
     notices = result.results || [];
   } catch (e) {
@@ -24,58 +24,6 @@ notices = notices.map(n => ({
   ...n,
   content: typeof n.content === 'string' ? JSON.parse(n.content) : n.content
 }));
-
-// Generate random positions and rotations for each notice
-// We'll position them scattered across the board
-function generateNoticeStyle(index: number, total: number) {
-  // Random position within the board area
-  const cols = Math.ceil(Math.sqrt(total * 1.5));
-  const row = Math.floor(index / cols);
-  const col = index % cols;
-
-  // Base position with some randomness
-  const baseX = 5 + (col * (90 / cols));
-  const baseY = 5 + (row * 25);
-  const x = baseX + (Math.random() - 0.5) * 10;
-  const y = baseY + (Math.random() - 0.5) * 8;
-
-  // Random rotation (-12 to 12 degrees)
-  const rotation = (Math.random() - 0.5) * 24;
-
-  // Random z-index for overlapping
-  const zIndex = Math.floor(Math.random() * 20) + 1;
-
-  // Random slight scale variation
-  const scale = 0.85 + Math.random() * 0.3;
-
-  return {
-    x: Math.max(2, Math.min(85, x)),
-    y: Math.max(2, Math.min(85, y)),
-    rotation,
-    zIndex,
-    scale
-  };
-}
-
-// Pin colors
-const pinColors = [
-  'radial-gradient(circle at 35% 35%, #ff8a80, #c0392b 60%, #8b1a1a)', // red
-  'radial-gradient(circle at 35% 35%, #90caf9, #1976d2 60%, #0d47a1)', // blue
-  'radial-gradient(circle at 35% 35%, #a5d6a7, #388e3c 60%, #1b5e20)', // green
-  'radial-gradient(circle at 35% 35%, #fff59d, #fbc02d 60%, #f57f17)', // yellow
-  'radial-gradient(circle at 35% 35%, #ce93d8, #8e24aa 60%, #4a148c)', // purple
-  'radial-gradient(circle at 35% 35%, #ffab91, #e64a19 60%, #bf360c)', // orange
-];
-
-// Card background colors based on cardColor
-const cardColors: Record<string, string> = {
-  white: '#ffffff',
-  yellow: '#fff9c4',
-  pink: '#f8bbd9',
-  blue: '#bbdefb',
-  green: '#c8e6c9',
-  orange: '#ffe0b2',
-};
 
 const categoryLabels: Record<string, string> = {
   'for-sale': 'For Sale',
@@ -99,87 +47,86 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 ---
 
 <Layout title="Community Noticeboard" description="Pin your notices to our community board - for sale, wanted, events, services">
-  <div class="board-wrapper">
-    <!-- The plywood board -->
-    <div class="plywood-board" id="board">
-      <!-- Wood grain texture overlay -->
-      <div class="wood-grain"></div>
+  <div class="board-container">
+    <!-- The real photo as the board -->
+    <div class="real-board">
+      <img src="/noticeboard-bg-v3.jpg" alt="Community noticeboard" class="board-photo" />
 
-      <!-- Pinned garage.co.nz flyer (always visible, prominent) -->
-      <article
-        class="notice flyer-main"
-        style="left: 3%; top: 4%; transform: rotate(-3deg); z-index: 5;"
-        data-id="garage-flyer"
-      >
-        <div class="pin" style="background: radial-gradient(circle at 35% 35%, #fff59d, #fbc02d 60%, #f57f17);"></div>
-        <div class="notice-inner flyer-dark">
-          <div class="badge" style="background: #f97316; color: white;">Announcement</div>
-          <h3>Free Website for Your Charity</h3>
-          <p>We build free websites for charities and community projects in Aotearoa.</p>
-          <div class="notice-footer">
-            <span class="notice-link">garage.co.nz</span>
-          </div>
-        </div>
-      </article>
+      <!-- Clickable hotspots on the existing notices in the photo -->
+      <!-- These are positioned over actual notices visible in the image -->
+      <button class="hotspot" style="left: 8%; top: 12%; width: 12%; height: 18%;" data-notice="we-mow" title="We Mow"></button>
+      <button class="hotspot" style="left: 22%; top: 8%; width: 8%; height: 12%;" data-notice="list" title="Notice"></button>
+      <button class="hotspot" style="left: 32%; top: 6%; width: 10%; height: 10%;" data-notice="bees" title="Bees"></button>
+      <button class="hotspot" style="left: 44%; top: 5%; width: 9%; height: 12%;" data-notice="surfed" title="Surfed"></button>
+      <button class="hotspot" style="left: 8%; top: 32%; width: 10%; height: 14%;" data-notice="pumula" title="Pumula"></button>
+      <button class="hotspot" style="left: 20%; top: 30%; width: 10%; height: 14%;" data-notice="artfront" title="Art Front"></button>
+      <button class="hotspot" style="left: 32%; top: 28%; width: 10%; height: 12%;" data-notice="suncamel" title="Sun Camel"></button>
+      <button class="hotspot" style="left: 44%; top: 26%; width: 12%; height: 14%;" data-notice="herbilion" title="Herbilion"></button>
+      <button class="hotspot" style="left: 8%; top: 48%; width: 10%; height: 12%;" data-notice="photo1" title="Notice"></button>
+      <button class="hotspot" style="left: 20%; top: 46%; width: 8%; height: 12%;" data-notice="yellow" title="Notice"></button>
+      <button class="hotspot" style="left: 30%; top: 44%; width: 12%; height: 14%;" data-notice="livelocal" title="Live & Local"></button>
+      <button class="hotspot" style="left: 8%; top: 62%; width: 10%; height: 10%;" data-notice="massage" title="Massage"></button>
+      <button class="hotspot" style="left: 20%; top: 60%; width: 10%; height: 12%;" data-notice="lisbon" title="Lisbon"></button>
+      <button class="hotspot" style="left: 32%; top: 58%; width: 8%; height: 10%;" data-notice="cards" title="Business Cards"></button>
 
-      <!-- Dynamic notices -->
-      {notices.map((notice, index) => {
-        const style = generateNoticeStyle(index, notices.length);
-        const pinColor = pinColors[index % pinColors.length];
-        const bgColor = cardColors[notice.content.cardColor] || '#ffffff';
-        const cat = categoryColors[notice.content.category] || { bg: '#f3f4f6', text: '#374151' };
+      <!-- Overlay for user-submitted notices - these appear "pinned" on top -->
+      <div class="user-notices">
+        {notices.slice(0, 8).map((notice, index) => {
+          // Position user notices in remaining spaces on the board
+          const positions = [
+            { left: 55, top: 15, rotation: 3 },
+            { left: 60, top: 35, rotation: -2 },
+            { left: 52, top: 50, rotation: 4 },
+            { left: 65, top: 55, rotation: -3 },
+            { left: 70, top: 20, rotation: 2 },
+            { left: 75, top: 40, rotation: -4 },
+            { left: 58, top: 68, rotation: 1 },
+            { left: 72, top: 65, rotation: -2 },
+          ];
+          const pos = positions[index] || positions[0];
+          const cat = categoryColors[notice.content.category] || { bg: '#f3f4f6', text: '#374151' };
 
-        return (
-          <article
-            class="notice"
-            style={`left: ${style.x}%; top: ${style.y}%; transform: rotate(${style.rotation}deg) scale(${style.scale}); z-index: ${style.zIndex};`}
-            data-id={notice.id}
-          >
-            <div class="pin" style={`background: ${pinColor};`}></div>
-            <div class="notice-inner" style={`background: ${bgColor};`}>
-              {notice.content.category && (
-                <div class="badge" style={`background: ${cat.bg}; color: ${cat.text};`}>
-                  {categoryLabels[notice.content.category] || notice.content.category}
+          return (
+            <article
+              class="pinned-notice"
+              style={`left: ${pos.left}%; top: ${pos.top}%; transform: rotate(${pos.rotation}deg);`}
+              data-id={notice.id}
+            >
+              <div class="pin"></div>
+              <div class="notice-card">
+                {notice.content.photoData && (
+                  <div class="notice-thumb">
+                    <img src={notice.content.photoData} alt="" />
+                  </div>
+                )}
+                <div class="notice-body">
+                  <span class="badge" style={`background: ${cat.bg}; color: ${cat.text};`}>
+                    {categoryLabels[notice.content.category] || 'Notice'}
+                  </span>
+                  <h4>{notice.content.title}</h4>
                 </div>
-              )}
-
-              {notice.content.photoData && (
-                <div class="notice-photo">
-                  <img src={notice.content.photoData} alt="" loading="lazy" />
-                </div>
-              )}
-
-              <h3>{notice.content.title}</h3>
-
-              {notice.content.desc && (
-                <p>{notice.content.desc}</p>
-              )}
-
-              <div class="notice-footer">
-                <span class="notice-date">
-                  {new Date(notice.created_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}
-                </span>
               </div>
-            </div>
-          </article>
-        );
-      })}
+            </article>
+          );
+        })}
+      </div>
 
-      <!-- Some decorative elements like the photo shows -->
-      <div class="deco-surfboard"></div>
+      <!-- Pin a notice button -->
+      <button class="pin-btn" id="pin-btn">
+        <span class="pin-icon">📌</span>
+        Pin a Notice
+      </button>
     </div>
-
-    <!-- Post button -->
-    <button class="post-btn" id="post-btn">+ Pin a Notice</button>
   </div>
 
-  <!-- View Modal (blown up notice) -->
+  <!-- View Modal -->
   <div id="view-modal" class="modal">
     <div class="modal-backdrop"></div>
-    <div class="modal-content">
+    <div class="modal-card">
       <button class="modal-close">&times;</button>
-      <div id="view-inner" class="view-inner">
-        <!-- Content populated by JS -->
+      <div class="modal-pin"></div>
+      <div id="modal-content" class="modal-inner">
+        <!-- Filled by JS -->
       </div>
     </div>
   </div>
@@ -187,9 +134,10 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   <!-- Post Modal -->
   <div id="post-modal" class="modal">
     <div class="modal-backdrop"></div>
-    <div class="modal-content post-content">
+    <div class="modal-card post-card">
       <button class="modal-close">&times;</button>
-      <h2>Pin to the Board</h2>
+      <div class="modal-pin"></div>
+      <h2>📌 Pin Your Notice</h2>
 
       <div class="form-group">
         <label>Type</label>
@@ -227,244 +175,171 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
         <input type="text" id="post-contact" placeholder="Email or phone (optional)" />
       </div>
 
-      <div class="form-group">
-        <label>Paper colour</label>
-        <div class="color-picker">
-          <button type="button" class="color-btn active" data-color="white" style="background: white;"></button>
-          <button type="button" class="color-btn" data-color="yellow" style="background: #fff9c4;"></button>
-          <button type="button" class="color-btn" data-color="pink" style="background: #f8bbd9;"></button>
-          <button type="button" class="color-btn" data-color="blue" style="background: #bbdefb;"></button>
-          <button type="button" class="color-btn" data-color="green" style="background: #c8e6c9;"></button>
-          <button type="button" class="color-btn" data-color="orange" style="background: #ffe0b2;"></button>
-        </div>
-      </div>
-
       <div class="form-actions">
         <button type="button" id="cancel-post">Cancel</button>
-        <button type="button" id="submit-post" class="primary">📌 Pin It</button>
+        <button type="button" id="submit-post" class="primary">📌 Pin It!</button>
       </div>
     </div>
   </div>
 </Layout>
 
 <style is:global>
-  .board-wrapper {
+  .board-container {
     min-height: 100vh;
-    background: #2a2a2a;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 1rem;
-    position: relative;
   }
 
-  /* The plywood board */
-  .plywood-board {
+  .real-board {
     position: relative;
-    width: 100%;
-    min-height: calc(100vh - 6rem);
-    background: #c4a77d;
+    max-width: 100%;
+    max-height: calc(100vh - 8rem);
     border-radius: 4px;
-    box-shadow:
-      inset 0 0 60px rgba(0,0,0,0.15),
-      0 8px 32px rgba(0,0,0,0.4),
-      0 2px 4px rgba(0,0,0,0.2);
     overflow: hidden;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.5),
+      0 4px 12px rgba(0,0,0,0.3);
   }
 
-  /* Wood grain texture */
-  .wood-grain {
+  .board-photo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100vh - 8rem);
+  }
+
+  /* Hotspots - invisible clickable areas over existing notices in photo */
+  .hotspot {
+    position: absolute;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .hotspot:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .hotspot:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+
+  /* User-submitted notices overlaid on the board */
+  .user-notices {
     position: absolute;
     inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 2px,
-        rgba(139, 115, 85, 0.1) 2px,
-        rgba(139, 115, 85, 0.1) 4px
-      ),
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 40px,
-        rgba(139, 115, 85, 0.08) 40px,
-        rgba(139, 115, 85, 0.08) 80px
-      );
     pointer-events: none;
   }
 
-  /* Decorative surfboard like in the photo */
-  .deco-surfboard {
+  .pinned-notice {
     position: absolute;
-    bottom: 2%;
-    left: 1%;
-    width: 40px;
-    height: 140px;
-    background: linear-gradient(180deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%);
-    border-radius: 20px 20px 50% 50%;
-    transform: rotate(15deg);
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  /* Individual notices */
-  .notice {
-    position: absolute;
+    pointer-events: auto;
     cursor: pointer;
-    transition: transform 0.2s ease, z-index 0s;
-    transform-origin: center top;
+    transition: transform 0.2s, z-index 0s;
   }
 
-  .notice:hover {
-    z-index: 100 !important;
+  .pinned-notice:hover {
     transform: rotate(0deg) scale(1.1) !important;
+    z-index: 100;
   }
 
-  .notice-inner {
-    background: white;
-    padding: 0.75rem;
-    padding-top: 1.25rem;
-    border-radius: 2px;
-    box-shadow:
-      2px 3px 8px rgba(0,0,0,0.2),
-      0 1px 2px rgba(0,0,0,0.1);
-    min-width: 140px;
-    max-width: 200px;
-    position: relative;
-  }
-
-  /* Dark flyer style (for the garage.co.nz announcement) */
-  .flyer-dark {
-    background: linear-gradient(135deg, #1a1a1a, #2d2d2d) !important;
-    color: white;
-  }
-
-  .flyer-dark h3 { color: white; }
-  .flyer-dark p { color: rgba(255,255,255,0.8); }
-
-  .flyer-main .notice-inner {
-    min-width: 180px;
-    max-width: 220px;
-  }
-
-  /* Push pins */
-  .pin {
+  .pinned-notice .pin {
     position: absolute;
-    top: -10px;
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
+    background: radial-gradient(circle at 35% 35%, #ff8a80, #c0392b 60%, #8b1a1a);
     border-radius: 50%;
-    box-shadow:
-      0 2px 4px rgba(0,0,0,0.3),
-      inset 0 -2px 4px rgba(0,0,0,0.2),
-      inset 0 2px 4px rgba(255,255,255,0.3);
-    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    z-index: 2;
   }
 
-  .pin::after {
-    content: '';
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 3px;
-    height: 14px;
-    background: linear-gradient(90deg, #888 0%, #ccc 40%, #888 100%);
-    border-radius: 0 0 2px 2px;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-  }
-
-  /* Badge */
-  .badge {
-    display: inline-block;
-    font-size: 0.6rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.2rem 0.4rem;
+  .notice-card {
+    background: white;
     border-radius: 3px;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Photo */
-  .notice-photo {
-    width: 100%;
-    height: 80px;
+    box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
     overflow: hidden;
-    border-radius: 2px;
-    margin-bottom: 0.5rem;
-    background: #f0f0f0;
+    width: 100px;
   }
 
-  .notice-photo img {
+  .notice-thumb {
+    height: 50px;
+    overflow: hidden;
+  }
+
+  .notice-thumb img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .notice-inner h3 {
-    font-size: 0.85rem;
+  .notice-body {
+    padding: 0.4rem;
+  }
+
+  .notice-body .badge {
+    display: inline-block;
+    font-size: 0.5rem;
     font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.15rem 0.3rem;
+    border-radius: 2px;
+    margin-bottom: 0.25rem;
+  }
+
+  .notice-body h4 {
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.2;
     color: #1a1a1a;
-    margin-bottom: 0.35rem;
-    line-height: 1.25;
+    margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  .notice-inner p {
-    font-size: 0.7rem;
-    color: #666;
-    line-height: 1.4;
-    margin-bottom: 0.5rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .notice-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.65rem;
-    color: #999;
-    padding-top: 0.35rem;
-    border-top: 1px solid rgba(0,0,0,0.08);
-  }
-
-  .notice-link {
-    color: #f97316;
-    font-weight: 600;
-  }
-
-  /* Post button */
-  .post-btn {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: #3d2314;
+  /* Pin button */
+  .pin-btn {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: rgba(61, 35, 20, 0.95);
     color: white;
     border: none;
-    padding: 1rem 2rem;
+    padding: 0.875rem 1.5rem;
     font-size: 1rem;
     font-weight: 600;
     border-radius: 100px;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     transition: all 0.2s;
     z-index: 50;
   }
 
-  .post-btn:hover {
-    background: #5d3a1a;
+  .pin-btn:hover {
+    background: rgba(93, 58, 26, 0.95);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
   }
 
-  /* Modal */
+  .pin-icon {
+    font-size: 1.2rem;
+  }
+
+  /* Modal styles */
   .modal {
     position: fixed;
     inset: 0;
@@ -482,73 +357,100 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   .modal-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
   }
 
-  .modal-content {
+  .modal-card {
     position: relative;
     background: white;
-    border-radius: 12px;
+    border-radius: 4px;
     padding: 2rem;
-    max-width: 500px;
+    padding-top: 2.5rem;
+    max-width: 450px;
     width: 100%;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+    box-shadow:
+      4px 6px 20px rgba(0,0,0,0.3),
+      0 2px 4px rgba(0,0,0,0.2);
+    /* Slight tilt like a pinned notice */
+    transform: rotate(-1deg);
+  }
+
+  .modal-pin {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 35% 35%, #ff8a80, #c0392b 60%, #8b1a1a);
+    border-radius: 50%;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  }
+
+  .modal-pin::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 16px;
+    background: linear-gradient(90deg, #888, #ccc, #888);
+    border-radius: 0 0 2px 2px;
   }
 
   .modal-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: none;
     border: none;
-    font-size: 2rem;
+    font-size: 1.75rem;
     cursor: pointer;
     color: #999;
     line-height: 1;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 0.25rem;
     border-radius: 50%;
     transition: all 0.15s;
+    z-index: 10;
   }
 
   .modal-close:hover {
-    background: #f5f5f5;
+    background: #f0f0f0;
     color: #333;
   }
 
-  /* View modal - blown up notice */
-  .view-inner {
-    padding-top: 1rem;
+  /* View modal content */
+  .modal-inner .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
   }
 
-  .view-inner .badge {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
-    margin-bottom: 1rem;
-  }
-
-  .view-inner h3 {
-    font-size: 1.5rem;
+  .modal-inner h3 {
+    font-size: 1.4rem;
     font-weight: 700;
     margin-bottom: 1rem;
     line-height: 1.3;
+    color: #1a1a1a;
   }
 
-  .view-inner .view-photo {
+  .modal-inner .view-photo {
     width: 100%;
-    max-height: 300px;
+    max-height: 250px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 4px;
     margin-bottom: 1rem;
   }
 
-  .view-inner p {
+  .modal-inner p {
     font-size: 1rem;
     line-height: 1.6;
     color: #444;
@@ -556,24 +458,48 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
     margin-bottom: 1rem;
   }
 
-  .view-inner .view-contact {
+  .modal-inner .contact-box {
     background: #f5f5f5;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.9rem;
     margin-bottom: 1rem;
   }
 
-  .view-inner .view-date {
-    font-size: 0.85rem;
+  .modal-inner .date-line {
+    font-size: 0.8rem;
     color: #999;
   }
 
-  /* Post form styles */
-  .post-content h2 {
-    font-size: 1.5rem;
+  /* Static notice content (for hotspots on the photo) */
+  .static-notice {
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .static-notice .notice-image {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .static-notice h3 {
+    text-align: center;
+  }
+
+  .static-notice p {
+    text-align: center;
+    color: #666;
+  }
+
+  /* Post modal */
+  .post-card {
+    transform: rotate(1deg);
+  }
+
+  .post-card h2 {
+    font-size: 1.4rem;
     margin-bottom: 1.5rem;
-    padding-right: 2.5rem;
+    padding-right: 2rem;
   }
 
   .form-group {
@@ -582,26 +508,27 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 
   .form-group label {
     display: block;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    color: #333;
   }
 
   .form-group input,
   .form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 2px solid #e5e5e5;
+    border-radius: 6px;
     font-size: 1rem;
     font-family: inherit;
+    transition: border-color 0.15s;
   }
 
   .form-group input:focus,
   .form-group textarea:focus {
     outline: none;
     border-color: #c4a77d;
-    box-shadow: 0 0 0 3px rgba(196, 167, 125, 0.2);
   }
 
   .category-grid {
@@ -612,8 +539,8 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 
   .cat-btn {
     padding: 0.6rem 0.75rem;
-    border: 2px solid #eee;
-    border-radius: 8px;
+    border: 2px solid #e5e5e5;
+    border-radius: 6px;
     background: white;
     font-size: 0.85rem;
     cursor: pointer;
@@ -630,33 +557,9 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
     background: #faf6f0;
   }
 
-  .color-picker {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .color-btn {
-    width: 36px;
-    height: 36px;
-    border: 2px solid #ddd;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.15s;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-  }
-
-  .color-btn:hover {
-    transform: scale(1.1);
-  }
-
-  .color-btn.active {
-    border-color: #333;
-    box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
-  }
-
   .photo-upload {
     border: 2px dashed #ddd;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 1.25rem;
     text-align: center;
     cursor: pointer;
@@ -683,9 +586,9 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   .photo-preview {
     display: none;
     width: 100%;
-    max-height: 150px;
+    max-height: 120px;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 6px;
     margin-top: 0.75rem;
   }
 
@@ -703,9 +606,9 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   .form-actions button {
     padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
   }
 
@@ -722,41 +625,34 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
     background: #5d3a1a;
   }
 
-  .form-actions button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
   /* Responsive */
   @media (max-width: 768px) {
-    .notice-inner {
-      min-width: 100px;
-      max-width: 140px;
-      padding: 0.5rem;
-      padding-top: 1rem;
+    .board-photo {
+      max-height: calc(100vh - 10rem);
     }
 
-    .notice-inner h3 {
-      font-size: 0.7rem;
+    .notice-card {
+      width: 80px;
     }
 
-    .notice-inner p {
-      font-size: 0.6rem;
+    .notice-thumb {
+      height: 40px;
     }
 
-    .badge {
-      font-size: 0.5rem;
+    .notice-body {
+      padding: 0.3rem;
     }
 
-    .flyer-main .notice-inner {
-      min-width: 120px;
-      max-width: 160px;
+    .notice-body .badge {
+      font-size: 0.45rem;
     }
 
-    .post-btn {
-      bottom: 1rem;
-      right: 1rem;
-      padding: 0.875rem 1.5rem;
+    .notice-body h4 {
+      font-size: 0.55rem;
+    }
+
+    .pin-btn {
+      padding: 0.75rem 1.25rem;
       font-size: 0.9rem;
     }
 
@@ -769,23 +665,19 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 <script>
   interface NoticeItem {
     id: string;
-    slot_id: number;
-    type: string;
     content: {
       category: string;
       title: string;
       desc?: string;
       photoData?: string;
       contact?: string;
-      cardColor?: string;
     };
     created_at: string;
-    views: number;
-    hearts: number;
   }
 
   const viewModal = document.getElementById('view-modal')!;
   const postModal = document.getElementById('post-modal')!;
+  const modalContent = document.getElementById('modal-content')!;
 
   const categoryLabels: Record<string, string> = {
     'for-sale': 'For Sale',
@@ -807,39 +699,61 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
     'announcement': { bg: '#f97316', text: '#ffffff' },
   };
 
+  // Static notices (the ones in the photo)
+  const staticNotices: Record<string, { title: string; desc: string; icon: string }> = {
+    'we-mow': { title: 'We Mow', desc: 'Local lawn mowing service. Professional and reliable.', icon: '🌿' },
+    'list': { title: 'Community List', desc: 'Local community notices and updates.', icon: '📋' },
+    'bees': { title: 'Beekeeping', desc: 'Local honey and bee services.', icon: '🐝' },
+    'surfed': { title: 'Surfed', desc: 'Surf lessons and board hire.', icon: '🏄' },
+    'pumula': { title: 'Pumula', desc: 'Local accommodation and retreat.', icon: '🏡' },
+    'artfront': { title: 'Art Front', desc: 'Local art gallery and exhibitions.', icon: '🎨' },
+    'suncamel': { title: 'Sun Camel', desc: 'Local business services.', icon: '☀️' },
+    'herbilion': { title: 'Herbilion', desc: 'Natural remedies and wellness.', icon: '🌿' },
+    'photo1': { title: 'Local Photography', desc: 'Photography services for events and portraits.', icon: '📸' },
+    'yellow': { title: 'Notice', desc: 'Community announcement.', icon: '📝' },
+    'livelocal': { title: 'Live & Local', desc: 'Live music and local events.', icon: '🎵' },
+    'massage': { title: 'Boardroom Massage', desc: 'Professional massage therapy.', icon: '💆' },
+    'lisbon': { title: 'Lisbon', desc: 'Local business.', icon: '🏪' },
+    'cards': { title: 'Business Cards', desc: 'Various local businesses.', icon: '💼' },
+  };
+
   let selectedCategory = 'for-sale';
-  let selectedColor = 'white';
   let photoData: string | null = null;
 
-  // Click on notice to view
-  document.querySelectorAll('.notice').forEach(notice => {
-    notice.addEventListener('click', () => {
-      const id = (notice as HTMLElement).dataset.id;
-      if (id === 'garage-flyer') {
-        // Special case for garage flyer
-        showGarageFlyer();
-      } else {
-        openViewModal(id!);
+  // Click on photo hotspots
+  document.querySelectorAll('.hotspot').forEach(hotspot => {
+    hotspot.addEventListener('click', () => {
+      const noticeId = (hotspot as HTMLElement).dataset.notice!;
+      const notice = staticNotices[noticeId];
+      if (notice) {
+        showStaticNotice(notice);
       }
     });
   });
 
-  function showGarageFlyer() {
-    const inner = document.getElementById('view-inner')!;
-    inner.innerHTML = `
-      <div class="badge" style="background: #f97316; color: white;">Announcement</div>
-      <h3>Free Website for Your Charity</h3>
-      <p>We build free, professional websites for charities and community projects in Aotearoa New Zealand.</p>
-      <p>No cost. No catch. Just good people helping good causes.</p>
-      <div class="view-contact">🌐 <a href="/" style="color: #f97316; font-weight: 600;">garage.co.nz</a></div>
-      <div style="margin-top: 1rem;">
-        <a href="/apply" style="display: inline-block; background: #f97316; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Apply Now →</a>
+  function showStaticNotice(notice: { title: string; desc: string; icon: string }) {
+    modalContent.innerHTML = `
+      <div class="static-notice">
+        <div class="notice-image">${notice.icon}</div>
+        <h3>${notice.title}</h3>
+        <p>${notice.desc}</p>
+        <p style="margin-top: 1rem; font-size: 0.85rem; color: #888;">
+          This is a notice from the physical board at the surf shop.
+        </p>
       </div>
     `;
     viewModal.classList.add('visible');
   }
 
-  async function openViewModal(id: string) {
+  // Click on user-submitted notices
+  document.querySelectorAll('.pinned-notice').forEach(notice => {
+    notice.addEventListener('click', () => {
+      const id = (notice as HTMLElement).dataset.id!;
+      openUserNotice(id);
+    });
+  });
+
+  async function openUserNotice(id: string) {
     // Track view
     try {
       await fetch('/api/noticeboard', {
@@ -849,7 +763,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
       });
     } catch (e) {}
 
-    // Fetch the notice data
+    // Fetch notice
     try {
       const res = await fetch('/api/noticeboard');
       const data = await res.json();
@@ -860,14 +774,13 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
       const content = typeof notice.content === 'string' ? JSON.parse(notice.content) : notice.content;
       const cat = categoryColors[content.category] || { bg: '#f3f4f6', text: '#374151' };
 
-      const inner = document.getElementById('view-inner')!;
-      inner.innerHTML = `
+      modalContent.innerHTML = `
         ${content.category ? `<div class="badge" style="background: ${cat.bg}; color: ${cat.text};">${categoryLabels[content.category] || content.category}</div>` : ''}
         <h3>${escapeHtml(content.title)}</h3>
         ${content.photoData ? `<img src="${content.photoData}" alt="" class="view-photo" />` : ''}
         ${content.desc ? `<p>${escapeHtml(content.desc)}</p>` : ''}
-        ${content.contact ? `<div class="view-contact">📧 ${escapeHtml(content.contact)}</div>` : ''}
-        <div class="view-date">Posted ${new Date(notice.created_at).toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+        ${content.contact ? `<div class="contact-box">📧 ${escapeHtml(content.contact)}</div>` : ''}
+        <div class="date-line">Posted ${new Date(notice.created_at).toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
       `;
 
       viewModal.classList.add('visible');
@@ -897,7 +810,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   }
 
   // Post modal
-  document.getElementById('post-btn')?.addEventListener('click', () => {
+  document.getElementById('pin-btn')?.addEventListener('click', () => {
     resetPostForm();
     postModal.classList.add('visible');
   });
@@ -915,11 +828,8 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
     document.getElementById('photo-preview')!.classList.remove('visible');
     photoData = null;
     selectedCategory = 'for-sale';
-    selectedColor = 'white';
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('.cat-btn[data-cat="for-sale"]')?.classList.add('active');
-    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.color-btn[data-color="white"]')?.classList.add('active');
   }
 
   // Category selection
@@ -928,15 +838,6 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedCategory = (btn as HTMLElement).dataset.cat || 'for-sale';
-    });
-  });
-
-  // Color selection
-  document.querySelectorAll('.color-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedColor = (btn as HTMLElement).dataset.color || 'white';
     });
   });
 
@@ -986,7 +887,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
             desc,
             photoData,
             contact,
-            cardColor: selectedColor
+            cardColor: 'white'
           }
         })
       });
@@ -995,7 +896,6 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 
       if (result.success) {
         postModal.classList.remove('visible');
-        // Reload to see the new notice
         window.location.reload();
       } else {
         alert('Failed to post. Please try again.');
@@ -1005,7 +905,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
       alert('Failed to post. Please try again.');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = '📌 Pin It';
+      submitBtn.textContent = '📌 Pin It!';
     }
   });
 </script>

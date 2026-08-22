@@ -913,7 +913,7 @@ import Layout from '../components/Layout.astro';
                     const booked = isBooked(status);
                     const meetType = getMeetingType(status);
                     const cls = past ? 'past' : booked ? 'booked' : 'available';
-                    const icon = meetType ? `<img class="slot-icon" src="/booking/${meetType}.png" alt="${meetType}">` : '';
+                    const icon = meetType ? `<img class="slot-icon" src="/booking/${meetType}.png" alt="${meetType}" width="18" height="18" style="width:18px;height:18px;">` : '';
                     return `<div class="slot ${cls}" data-date="${date.toISOString()}" data-time="${time}">${icon}${formatTime12(time)}</div>`;
                   }).join('')}
                 </div>
