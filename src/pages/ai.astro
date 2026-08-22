@@ -1355,9 +1355,46 @@
         setTimeout(() => $('source-url').focus(), 350);
       });
 
+      // Reopening a published site: load it and go straight to the builder
+      const params = new URLSearchParams(location.search);
+      const editSlug = params.get('edit');
+      if (editSlug) {
+        (async () => {
+          show('build');
+          try {
+            const res = await fetch('/api/site/' + encodeURIComponent(editSlug));
+            if (!res.ok) throw new Error('load ' + res.status);
+            const data = await res.json();
+
+            S.slug = data.slug;
+            S.site = data.site;
+            S.sourceUrl = data.sourceUrl || '';
+            S.token = params.get('t') || (() => {
+              try { return localStorage.getItem('garage-build:' + data.slug); } catch (e) { return null; }
+            })();
+
+            $('chrome-url').textContent = S.slug + '.garage.co.nz';
+            renderedKeys = new Set();
+            render();
+
+            await wait(300);
+            await say(
+              S.token
+                ? 'Reopened ' + S.slug + '.garage.co.nz. Change whatever you like and publish again when you are happy.'
+                : 'Reopened ' + S.slug + ".garage.co.nz — but I haven't got the edit key for it, so I can't republish from here. Everything else works."
+            );
+            chips(IDLE_CHIPS);
+            $('agent-text').focus();
+          } catch (error) {
+            console.error(error);
+            await say("Couldn't load that one — check the address and try again.");
+          }
+        })();
+      }
+
       // Arriving from an unclaimed address: skip the hero, pre-fill the name
       const preset = new URLSearchParams(location.search).get('slug');
-      if (preset) {
+      if (preset && !editSlug) {
         show('name');
         setTimeout(() => {
           slugInput.value = clean(preset);

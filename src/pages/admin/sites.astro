@@ -1,0 +1,142 @@
+---
+import Layout from '../../components/Layout.astro';
+
+const db = (Astro.locals.runtime?.env as any)?.DB;
+let sites: any[] = [];
+let error = '';
+
+if (db) {
+  try {
+    const result = await db.prepare(`
+      SELECT slug, email, source_url, edit_token, status, created_at, updated_at,
+             LENGTH(config) AS config_size
+      FROM site_claims
+      ORDER BY COALESCE(updated_at, created_at) DESC
+      LIMIT 200
+    `).all();
+    sites = result.results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+} else {
+  error = 'No database binding — run against the deployed site.';
+}
+
+function summarise(site: any) {
+  const bits = [];
+  if (site.source_url) bits.push(site.source_url);
+  if (site.config_size) bits.push(Math.round(site.config_size / 1024) + 'kb');
+  return bits.join(' · ');
+}
+---
+
+<Layout title="Sites" description="Published sites">
+  <div class="wrap">
+    <header class="head">
+      <div>
+        <h1>Sites</h1>
+        <p class="sub">{sites.length} published · edit opens the builder with the page loaded</p>
+      </div>
+      <div class="nav-links">
+        <a href="/admin" class="nav-btn">Admin</a>
+        <a href="/ai" class="nav-btn primary">Build a new one</a>
+      </div>
+    </header>
+
+    {error && <p class="error">{error}</p>}
+
+    {sites.length === 0 && !error && <p class="empty">Nothing published yet.</p>}
+
+    {sites.length > 0 && (
+      <table>
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Owner</th>
+            <th>Source</th>
+            <th>Updated</th>
+            <th>Status</th>
+            <th class="right">Open</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sites.map((site) => (
+            <tr class={site.status === 'disabled' ? 'off' : ''}>
+              <td>
+                <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="slug">
+                  {site.slug}<span>.garage.co.nz</span>
+                </a>
+              </td>
+              <td class="muted">{site.email || '—'}</td>
+              <td class="muted small">{summarise(site)}</td>
+              <td class="muted small">{(site.updated_at || site.created_at || '').slice(0, 16)}</td>
+              <td>
+                <span class={`pill ${site.status}`}>{site.status}</span>
+              </td>
+              <td class="right nowrap">
+                <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="act">View</a>
+                <a
+                  href={`/ai?edit=${encodeURIComponent(site.slug)}${site.edit_token ? `&t=${encodeURIComponent(site.edit_token)}` : ''}`}
+                  class="act edit"
+                >Edit</a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+  .sub { color: var(--color-text-muted); font-size: 0.95rem; }
+  .nav-links { display: flex; gap: 0.5rem; }
+  .nav-btn {
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--color-text);
+  }
+  .nav-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .nav-btn.primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { padding: 0.75rem 0.6rem; border-bottom: 1px solid var(--color-border); text-align: left; vertical-align: middle; }
+  th { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; }
+  .right { text-align: right; }
+  .nowrap { white-space: nowrap; }
+  .muted { color: var(--color-text-soft); }
+  .small { font-size: 0.82rem; }
+  tr.off { opacity: 0.5; }
+
+  .slug { font-weight: 600; text-decoration: none; color: var(--color-text); }
+  .slug span { color: var(--color-text-muted); font-weight: 400; }
+  .slug:hover { color: var(--color-accent); }
+
+  .pill { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px; background: #dcfce7; color: #15803d; }
+  .pill.disabled { background: #fee2e2; color: #b91c1c; }
+
+  .act {
+    display: inline-block;
+    margin-left: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--color-text);
+  }
+  .act:hover { border-color: var(--color-accent); color: var(--color-accent); }
+  .act.edit { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+  .act.edit:hover { background: var(--color-accent-deep); color: #fff; }
+
+  .error { color: #b91c1c; }
+  .empty { color: var(--color-text-muted); }
+</style>
