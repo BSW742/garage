@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
           ((body as any)?.total ? `Total: ${(body as any).total}\n` : '') +
           `\nReach them on: ${[email, phone].filter(Boolean).join(' or ')}\n` +
           ((body as any)?.note ? `\nThey said: ${String((body as any).note).slice(0, 400)}\n` : '') +
-          `\nNobody has paid anything — check you have stock and get in touch to sort payment.\n` +
+          `\nNobody has paid anything — check the order and get in touch to sort payment.\n` +
           `\nAll your orders:  https://${slug}.garage.co.nz/admin\n`,
       });
     }

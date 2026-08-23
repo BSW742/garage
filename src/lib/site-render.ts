@@ -624,7 +624,7 @@ function cartHtml(site: SiteConfig, slug: string): string {
   <div class="cart-body" id="cart-body"></div>
   <div class="cart-foot" id="cart-foot" hidden>
     <div class="cart-total"><span>Total</span><strong id="cart-total">$0</strong></div>
-    <p class="cart-promise">No payment now. A human checks we have stock and gets in touch to sort payment.</p>
+    <p class="cart-promise">No payment now. A human checks your order and gets in touch to sort payment.</p>
     <form id="cart-form">
       <input id="cart-name" placeholder="Your name" autocomplete="name" required />
       <input id="cart-email" type="email" placeholder="Email" autocomplete="email" />
