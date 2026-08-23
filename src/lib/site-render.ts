@@ -31,7 +31,7 @@ export interface SiteConfig {
   sections?: SiteSection[];
   contact?: SiteContact;
   images?: string[];
-  chatLabel?: string;  // what the launcher says, default "Talk right now"
+  chatLabel?: string;  // what the launcher says, default "Chat right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
 
@@ -284,7 +284,7 @@ function chatWidget(site: SiteConfig, slug: string): string {
     slug,
     name: site.name || 'We',
     primary: site.palette?.primary || '#2563eb',
-    label: site.chatLabel || 'Talk right now',
+    label: site.chatLabel || 'Chat right now',
     faq,
   }).replace(/</g, '\\u003c');
 
