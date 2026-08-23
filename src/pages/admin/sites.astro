@@ -68,7 +68,17 @@ function summarise(site: any) {
                   {site.slug}<span>.garage.co.nz</span>
                 </a>
               </td>
-              <td class="muted">{site.email || '—'}</td>
+              <td class="muted">
+                <input
+                  class="owner-email"
+                  type="email"
+                  value={site.email || ''}
+                  placeholder="no address — email-in disabled"
+                  data-slug={site.slug}
+                  data-key={site.edit_token}
+                  data-was={site.email || ''}
+                />
+              </td>
               <td class="muted small">{summarise(site)}</td>
               <td class="muted small">{(site.updated_at || site.created_at || '').slice(0, 16)}</td>
               <td>
@@ -113,6 +123,28 @@ function summarise(site: any) {
 </Layout>
 
 <script>
+  document.querySelectorAll('input.owner-email').forEach((el) => {
+    const input = el as HTMLInputElement;
+    const save = async () => {
+      const email = input.value.trim();
+      if (email === input.dataset.was) return;
+      input.classList.remove('saved', 'failed');
+      const res = await fetch('/api/site/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: input.dataset.slug, key: input.dataset.key, email }),
+      });
+      if (res.ok) {
+        input.dataset.was = email;
+        input.classList.add('saved');
+      } else {
+        input.classList.add('failed');
+      }
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+  });
+
   document.querySelectorAll('button.chat').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const el = btn as HTMLButtonElement;
@@ -134,6 +166,22 @@ function summarise(site: any) {
 
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  .owner-email {
+    font: inherit;
+    font-size: 0.85rem;
+    width: 100%;
+    min-width: 12rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+  }
+  .owner-email:hover { border-color: var(--color-border, #e5e5e5); }
+  .owner-email:focus { border-color: #2563eb; background: #fff; outline: none; }
+  .owner-email::placeholder { color: #b42318; opacity: 0.75; font-size: 0.8rem; }
+  .owner-email.saved { border-color: #16a34a; }
+  .owner-email.failed { border-color: #dc2626; }
   .act.icon { display: inline-flex; align-items: center; padding: 0.3rem 0.5rem; }
   .act.icon svg { display: block; }
   button.act.chat { cursor: pointer; font: inherit; }
