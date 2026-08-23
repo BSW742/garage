@@ -126,7 +126,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // hand back a thin result — an empty start loses them in two seconds.
       const reason = readError instanceof Error ? readError.message : 'unreadable';
       const origin = new URL(url).origin;
-      const salvage = await salvageIcon(origin);
+      const salvage = await salvageIcon(origin, new URL(url).hostname);
       const icon = salvage.url;
       const salvaged = {
         url, title: '', description: '', tagline: '', phone: '', email: '', address: '',
@@ -140,7 +140,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
       const key = (locals.runtime?.env as any)?.ANTHROPIC_API_KEY;
       if (key && icon) {
-        const seen = await lookAtImages(key, [icon]);
+        // Inline it: this icon often comes from a source the model cannot fetch.
+        const seen = await lookAtImages(key, [icon], { inline: true });
+        salvaged.salvageNote = `${salvage.note}; vision ${seen.ok ? 'ok' : seen.note}`;
         if (seen.ok) {
           salvaged.vision = seen.images;
           if (seen.palette) salvaged.brandColour = seen.palette;
@@ -206,7 +208,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 // standard size ladder from the same source. That is enough for their real mark
 // and their real colours — which is the difference between a page that looks like
 // their business and a generic shell nobody stays on.
-async function salvageIcon(baseUrl: string): Promise<{ url: string | null; note: string }> {
+async function salvageIcon(baseUrl: string, host: string): Promise<{ url: string | null; note: string }> {
   const get = async (u: string) => {
     try {
       return await fetch(u, {
@@ -224,10 +226,18 @@ async function salvageIcon(baseUrl: string): Promise<{ url: string | null; note:
   };
 
   const first = await get(`${baseUrl}/favicon.ico`);
-  if (!first) return { url: null, note: 'favicon fetch threw' };
-  const type = first.headers.get('content-type') || '';
-  if (!first.ok) return { url: null, note: `favicon HTTP ${first.status} (${type})` };
-  if (!/^image\//i.test(type)) return { url: null, note: `favicon not an image (${type})` };
+  const type = first?.headers.get('content-type') || '';
+  if (!first || !first.ok || !/^image\//i.test(type)) {
+    // Their own server will not hand it to us — but the icon has been public for
+    // years and the search engines already hold a copy. Google fetched it with
+    // their crawler, so the block on our address never comes into it.
+    const mirrored = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=256`;
+    const viaIndex = await get(mirrored);
+    if (viaIndex && viaIndex.ok && /^image\//i.test(viaIndex.headers.get('content-type') || '')) {
+      return { url: mirrored, note: 'favicon blocked, took the indexed copy' };
+    }
+    return { url: null, note: `favicon unavailable (${type || 'no response'})` };
+  }
 
   const landed = first.url || `${baseUrl}/favicon.ico`;
   // A 32px favicon is no use as a logo, but the ladder it came from is.

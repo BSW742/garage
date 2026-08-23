@@ -117,16 +117,56 @@ const REPORT_TOOL = {
  * call errors, callers get ok:false and should keep whatever the old heuristics
  * gave them. Acquisition degrading is survivable; acquisition breaking is not.
  */
-export async function lookAtImages(apiKey: string, urls: string[]): Promise<VisionResult> {
+/**
+ * Send the bytes rather than the link. Some sources we can reach are ones the
+ * model's own fetcher cannot — a query-string image URL, or a host that treats
+ * an unfamiliar caller as a bot. If we already hold the file, hand it over.
+ */
+async function inlineSource(url: string): Promise<any | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+          '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        Accept: 'image/avif,image/webp,image/png,image/*,*/*;q=0.8',
+      },
+      redirect: 'follow',
+    });
+    if (!response.ok) return null;
+    const type = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!/^image\/(png|jpeg|gif|webp)$/.test(type)) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.length || bytes.length > 4_500_000) return null;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    return { type: 'base64', media_type: type, data: btoa(binary) };
+  } catch {
+    return null;
+  }
+}
+
+export async function lookAtImages(
+  apiKey: string,
+  urls: string[],
+  opts: { inline?: boolean } = {}
+): Promise<VisionResult> {
   const candidates = [...new Set((urls || []).filter(Boolean))].slice(0, MAX_IMAGES);
   if (!apiKey || !candidates.length) return { ...EMPTY, note: 'nothing to look at' };
 
   try {
     const client = new Anthropic({ apiKey });
+    const sources = await Promise.all(
+      candidates.map(async (url) =>
+        opts.inline ? (await inlineSource(url)) || { type: 'url', url } : { type: 'url', url }
+      )
+    );
     const content: any[] = [{ type: 'text', text: PROMPT }];
     candidates.forEach((url, i) => {
       content.push({ type: 'text', text: `Image ${i + 1}:` });
-      content.push({ type: 'image', source: { type: 'url', url } });
+      content.push({ type: 'image', source: sources[i] });
     });
 
     const response = await client.messages.create({
