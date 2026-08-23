@@ -1,4 +1,5 @@
 import { renderSite, renderAvailable, type SiteConfig } from '../../src/lib/site-render';
+import { renderInbox } from '../../src/lib/chat-admin';
 
 // Hostnames that belong to the main app, not to a claimed site
 const RESERVED_HOSTS = new Set([
@@ -32,6 +33,12 @@ export default {
     }
 
     const slug = match[1];
+
+    // The owner's message inbox. The page itself is public; everything it
+    // shows needs the site's edit_token, which it asks for as ?k=.
+    if (url.pathname === '/admin' || url.pathname === '/admin/') {
+      return html(renderInbox(slug), 200);
+    }
 
     if (url.pathname === '/robots.txt') {
       return new Response('User-agent: *\nAllow: /\n', {

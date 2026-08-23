@@ -79,6 +79,15 @@ function summarise(site: any) {
                   href={`/ai?edit=${encodeURIComponent(site.slug)}${site.edit_token ? `&t=${encodeURIComponent(site.edit_token)}` : ''}`}
                   class="act edit"
                 >Edit</a>
+                {site.edit_token && (
+                  <a
+                    href={`https://${site.slug}.garage.co.nz/admin?k=${encodeURIComponent(site.edit_token)}`}
+                    target="_blank"
+                    rel="noopener"
+                    class="act"
+                    title="The owner's message inbox — this is the link to send them"
+                  >Messages</a>
+                )}
               </td>
             </tr>
           ))}
