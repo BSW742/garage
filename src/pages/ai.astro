@@ -966,6 +966,20 @@
       }
       .media-act:hover { border-color: var(--accent); color: var(--accent); }
       .media-item.in-use { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+      .media-item { position: relative; }
+      .media-drop {
+        position: absolute;
+        top: 6px; right: 6px;
+        width: 22px; height: 22px;
+        border: 0; border-radius: 50%;
+        background: rgba(16,19,26,0.62);
+        color: #fff; font-size: 10px; line-height: 1;
+        display: grid; place-items: center;
+        cursor: pointer; opacity: 0;
+        transition: opacity 0.12s, background 0.12s;
+      }
+      .media-item:hover .media-drop { opacity: 1; }
+      .media-drop:hover { background: #dc2626; }
 
       /* ── Live preview of the generated site ────── */
       #site-root { position: relative; z-index: 1; background: var(--pv-page, #fff); }
@@ -2233,6 +2247,9 @@
             seen[sec.type] = true;
             out.push('<span>' + label + '</span>');
           });
+          // Pages, same rule as site-render.ts: a link once there is a page.
+          if ((site.team || []).length) out.push('<span>Team</span>');
+          if ((site.cases || []).length) out.push('<span>Case studies</span>');
           return out.join('');
         }
 
@@ -3014,7 +3031,7 @@
         const buttons = [];
         if (kind === 'text') buttons.push(['Rewrite it', () => route('rewrite this')]);
         if (kind === 'photo') {
-          buttons.push(['Swap photo', () => route('find a better photo for this and use it')]);
+          buttons.push(['Swap photo', () => openMedia({ path: path })]);
           buttons.push(['Remove', () => deleteSelected(), true]);
         }
         if (kind === 'block') {
@@ -3374,9 +3391,11 @@
         const grid = $('media-grid');
         grid.innerHTML = '';
         $('media-empty').hidden = S.media.length > 0;
-        $('media-count').textContent = S.media.length
-          ? S.media.length + (S.media.length === 1 ? ' photo' : ' photos')
-          : '';
+        $('media-count').textContent = S.mediaTarget
+          ? 'Pick one for the ' + labelFor(S.mediaTarget.path).toLowerCase()
+          : S.media.length
+            ? S.media.length + (S.media.length === 1 ? ' photo' : ' photos')
+            : '';
 
         S.media.forEach((item) => {
           const card = document.createElement('div');
@@ -3394,15 +3413,20 @@
           src.textContent = mediaInUse(item.url) ? 'on the page' : item.source;
           meta.appendChild(src);
 
-          [['Hero', () => { snapshot(); S.site.heroImage = item.url; }],
-           ['Gallery', () => {
-              snapshot();
-              const gallery = S.site.sections.find((x) => x.type === 'gallery');
-              if (gallery) gallery.images = [...(gallery.images || []), item.url].slice(0, 8);
-              else S.site.sections.push({ type: 'gallery', images: [item.url] });
-            }],
-           ['Logo', () => { snapshot(); S.site.logo = item.url; }],
-          ].forEach(([label, apply]) => {
+          // Opened from a photo on the page, the library is a picker: one
+          // button that puts this image in that slot.
+          const acts = S.mediaTarget
+            ? [['Use this', () => { snapshot(); setByPath(S.mediaTarget.path, item.url); }]]
+            : [['Hero', () => { snapshot(); S.site.heroImage = item.url; }],
+               ['Gallery', () => {
+                  snapshot();
+                  const gallery = S.site.sections.find((x) => x.type === 'gallery');
+                  if (gallery) gallery.images = [...(gallery.images || []), item.url].slice(0, 8);
+                  else S.site.sections.push({ type: 'gallery', images: [item.url] });
+                }],
+               ['Logo', () => { snapshot(); S.site.logo = item.url; }]];
+
+          acts.forEach(([label, apply]) => {
             const b = document.createElement('button');
             b.className = 'media-act';
             b.textContent = label;
@@ -3410,18 +3434,38 @@
               apply();
               renderedKeys = new Set();
               render();
+              if (S.mediaTarget) {
+                $('media-back').hidden = true;
+                S.mediaTarget = null;
+                did('Photo swapped');
+                return;
+              }
               renderMedia();
               did(label === 'Gallery' ? 'Added a photo to the gallery' : label + ' photo set');
             });
             meta.appendChild(b);
           });
 
+          // There was no way to get rid of anything at all.
+          const drop = document.createElement('button');
+          drop.className = 'media-drop';
+          drop.innerHTML = '&#10005;';
+          drop.title = 'Take this out of the library';
+          drop.setAttribute('aria-label', 'Remove from library');
+          drop.addEventListener('click', (e) => {
+            e.stopPropagation();
+            S.media = S.media.filter((m) => m.url !== item.url);
+            renderMedia();
+          });
+          card.appendChild(drop);
+
           card.appendChild(meta);
           grid.appendChild(card);
         });
       }
 
-      function openMedia() {
+      function openMedia(target) {
+        S.mediaTarget = target || null;
         // Anything already on the page or scraped counts as media
         (S.site.images || []).forEach((u) => addMedia(u, 'their site'));
         if (S.scraped) {
@@ -3453,7 +3497,7 @@
       });
 
       $('media-btn').addEventListener('click', openMedia);
-      $('media-close').addEventListener('click', () => { $('media-back').hidden = true; });
+      $('media-close').addEventListener('click', () => { $('media-back').hidden = true; S.mediaTarget = null; });
       $('media-back').addEventListener('click', (e) => {
         if (e.target === $('media-back')) $('media-back').hidden = true;
       });

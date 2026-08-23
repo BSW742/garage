@@ -57,6 +57,8 @@ function pageSummary(site: SiteConfig, selection: string | null) {
       has_hero_photo: !!site.heroImage,
       has_logo: !!site.logo,
       contact: site.contact,
+      team_page: (site.team || []).map((p) => ({ name: p.name, role: p.role })),
+      case_studies_page: (site.cases || []).map((c) => ({ title: c.title })),
       sections,
       selected_by_the_user: selection || undefined,
     },
