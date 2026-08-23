@@ -1,67 +1,246 @@
-export interface Env {
-  DB: D1Database;
+import PostalMime from 'postal-mime';
+// @ts-expect-error — provided by the Workers runtime, not by node types.
+import { EmailMessage } from 'cloudflare:email';
+import {
+  mailboxSlug, bareAddress, authVerdict, isAutomated, buildReplyMime,
+  WEB_SAFE_IMAGES, MAX_IMAGES_PER_EMAIL, addToGallery,
+} from '../../src/lib/site-mail';
+
+// Declared here rather than pulled in wholesale, matching how the API routes
+// in src/pages/api describe their own bindings.
+interface R2Bucket {
+  put(
+    key: string,
+    value: ArrayBuffer | string,
+    options?: { httpMetadata?: { contentType?: string } }
+  ): Promise<unknown>;
 }
 
+export interface Env {
+  DB: D1Database;
+  IMAGES: R2Bucket;
+}
+
+interface EmailMessageIn {
+  readonly from: string;
+  readonly to: string;
+  readonly headers: Headers;
+  readonly raw: ReadableStream;
+  reply(message: EmailMessage): Promise<void>;
+}
+
+const SITE_ORIGIN = 'https://garage.co.nz';
+
 export default {
-  async email(message: EmailMessage, env: Env): Promise<void> {
-    // Parse email headers
-    const from = message.from;
-    const to = message.to;
-    const subject = message.headers.get('subject') || '(no subject)';
+  async email(message: EmailMessageIn, env: Env): Promise<void> {
+    const slug = mailboxSlug(message.to);
 
-    // Get the raw email content
-    const rawEmail = await new Response(message.raw).text();
+    // Not a site mailbox — behave exactly as this worker always has.
+    if (!slug) return storeAsInboxMail(message, env);
 
-    // Simple body extraction (basic parsing)
-    let bodyText = '';
-    const parts = rawEmail.split('\r\n\r\n');
-    if (parts.length > 1) {
-      bodyText = parts.slice(1).join('\r\n\r\n');
-    }
-
-    // Extract sender name from "Name <email@example.com>" format
-    let fromName = null;
-    let fromAddress = from;
-    const nameMatch = from.match(/^(.+?)\s*<(.+?)>$/);
-    if (nameMatch) {
-      fromName = nameMatch[1].replace(/"/g, '').trim();
-      fromAddress = nameMatch[2];
-    }
-
-    // Store in D1
-    await env.DB.prepare(`
-      INSERT INTO emails (from_address, from_name, to_address, subject, body_text, received_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(
-      fromAddress,
-      fromName,
-      to,
-      subject,
-      bodyText.slice(0, 50000), // Limit body size
-      new Date().toISOString()
-    ).run();
-
-    // Send push notification
     try {
-      await fetch('https://garage.co.nz/api/booking-notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: fromName || fromAddress,
-          email: fromAddress,
-          time: 'Email received',
-          meetingType: 'email'
-        })
-      });
-    } catch (e) {
-      // Ignore push errors
+      await handleSiteMail(message, env, slug);
+    } catch (error) {
+      console.error('Site mail failed:', slug, error);
     }
-  }
+  },
 };
 
-interface EmailMessage {
-  from: string;
-  to: string;
-  headers: Headers;
-  raw: ReadableStream;
+// ── The site mailbox ────────────────────────────────────────────────────────
+
+async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): Promise<void> {
+  const from = bareAddress(message.from);
+  const mailbox = `${slug}@garage.co.nz`;
+  const automated = isAutomated(message.headers);
+  const messageId = message.headers.get('message-id') || crypto.randomUUID();
+
+  // A retried delivery must not append the same photos twice.
+  const seen = await env.DB
+    .prepare('SELECT id FROM site_mail WHERE message_id = ?')
+    .bind(messageId)
+    .first();
+  if (seen) return;
+
+  const record = {
+    id: crypto.randomUUID(),
+    slug,
+    from,
+    subject: message.headers.get('subject') || '',
+    messageId,
+    auth: '',
+    intent: 'rejected',
+    applied: 0,
+    prevConfig: null as string | null,
+    undoToken: null as string | null,
+    note: '',
+  };
+
+  const say = async (note: string) => {
+    record.note = note;
+    await saveMail(env, record);
+    if (!automated) await sendReply(message, mailbox, from, note, messageId);
+  };
+
+  const site = await env.DB
+    .prepare('SELECT slug, email, config, edit_token FROM site_claims WHERE slug = ? AND status != ?')
+    .bind(slug, 'disabled')
+    .first<{ slug: string; email: string; config: string; edit_token: string }>();
+
+  if (!site) {
+    return say(`There is no site called ${slug}.garage.co.nz, so there was nothing to update.`);
+  }
+
+  // 1. Did the message really come from where it claims?
+  const verdict = authVerdict(message.headers.get('authentication-results'), from);
+  record.auth = verdict.detail;
+  if (!verdict.ok) {
+    return say(
+      `That message could not be verified as genuinely coming from ${from}, so nothing was changed.\n\n` +
+      `This usually means the sending domain has no DKIM or DMARC set up. Sending from a Gmail, ` +
+      `Outlook or iCloud address will work.\n\n(${verdict.detail})`
+    );
+  }
+
+  // 2. Is the sender the owner of this site?
+  if (bareAddress(site.email) !== from) {
+    return say(
+      `${from} is not the address registered for ${slug}.garage.co.nz, so nothing was changed.\n\n` +
+      `Send from the address you signed up with and it will go straight up.`
+    );
+  }
+
+  // 3. What did they send?
+  const parsed = await PostalMime.parse(message.raw);
+  const attachments = (parsed.attachments || []).filter((a: any) =>
+    WEB_SAFE_IMAGES.has(String(a.mimeType || '').toLowerCase())
+  );
+  const unusable = (parsed.attachments || []).length - attachments.length;
+
+  if (!attachments.length) {
+    record.intent = 'held';
+    const heic = unusable > 0;
+    return say(
+      heic
+        ? `Those photos are in a format websites cannot show (HEIC). On an iPhone: Settings > Camera > Formats > Most Compatible, then send them again.`
+        : `Nothing was changed — there were no photos attached.\n\nAttach photos to this address and they will be added to your gallery. The subject line becomes the caption.`
+    );
+  }
+
+  const use = attachments.slice(0, MAX_IMAGES_PER_EMAIL);
+  const config = JSON.parse(site.config || '{}');
+  record.prevConfig = site.config || '{}';
+
+  const urls: string[] = [];
+  for (const attachment of use) {
+    const type = String(attachment.mimeType).toLowerCase();
+    const ext = type.split('/')[1].replace('jpeg', 'jpg');
+    const key = `${slug}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    await env.IMAGES.put(key, attachment.content as ArrayBuffer, {
+      httpMetadata: { contentType: type },
+    });
+    urls.push(`${SITE_ORIGIN}/images/${key}`);
+  }
+
+  addToGallery(config, urls, (record.subject || '').trim());
+
+  record.undoToken = crypto.randomUUID().replace(/-/g, '');
+  record.intent = 'gallery';
+  record.applied = 1;
+
+  await env.DB
+    .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
+    .bind(JSON.stringify(config), new Date().toISOString(), slug)
+    .run();
+
+  const count = `${use.length} photo${use.length === 1 ? '' : 's'}`;
+  const skipped = attachments.length > use.length
+    ? `\n\nThe other ${attachments.length - use.length} did not fit in one email — send them separately.`
+    : '';
+  const bad = unusable > 0
+    ? `\n\n${unusable} attachment${unusable === 1 ? '' : 's'} were not images we can show, so they were left out.`
+    : '';
+
+  await say(
+    `${count} went up on your site.${skipped}${bad}\n\n` +
+    `See it:  https://${slug}.garage.co.nz\n` +
+    `Change anything:  ${SITE_ORIGIN}/ai?edit=${slug}&t=${site.edit_token}\n` +
+    `Undo this:  ${SITE_ORIGIN}/mail/undo/${record.undoToken}\n\n` +
+    `Reply to this email with more photos any time.`
+  );
+}
+
+async function saveMail(env: Env, r: any): Promise<void> {
+  await env.DB
+    .prepare(
+      `INSERT OR IGNORE INTO site_mail
+         (id, slug, from_address, subject, message_id, auth_result, intent, applied,
+          prev_config, undo_token, note, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(r.id, r.slug, r.from, r.subject, r.messageId, r.auth, r.intent, r.applied,
+          r.prevConfig, r.undoToken, r.note, new Date().toISOString())
+    .run();
+}
+
+async function sendReply(
+  message: EmailMessageIn, fromAddress: string, toAddress: string,
+  body: string, inReplyTo: string
+): Promise<void> {
+  try {
+    const raw = buildReplyMime({
+      fromAddress,
+      toAddress,
+      subject: message.headers.get('subject') || 'your website',
+      inReplyTo,
+      messageId: `${crypto.randomUUID()}@garage.co.nz`,
+      body: body + '\n\n—\ngarage.co.nz\n',
+    });
+    await message.reply(new EmailMessage(fromAddress, toAddress, raw));
+  } catch (error) {
+    // A failed reply must never undo work that already succeeded.
+    console.error('Reply failed:', error);
+  }
+}
+
+// ── Everything else: unchanged behaviour ────────────────────────────────────
+
+async function storeAsInboxMail(message: EmailMessageIn, env: Env): Promise<void> {
+  const from = message.from;
+  const subject = message.headers.get('subject') || '(no subject)';
+  const rawEmail = await new Response(message.raw).text();
+
+  let bodyText = '';
+  const parts = rawEmail.split('\r\n\r\n');
+  if (parts.length > 1) bodyText = parts.slice(1).join('\r\n\r\n');
+
+  let fromName: string | null = null;
+  let fromAddress = from;
+  const nameMatch = from.match(/^(.+?)\s*<(.+?)>$/);
+  if (nameMatch) {
+    fromName = nameMatch[1].replace(/"/g, '').trim();
+    fromAddress = nameMatch[2];
+  }
+
+  await env.DB
+    .prepare(
+      `INSERT INTO emails (from_address, from_name, to_address, subject, body_text, received_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .bind(fromAddress, fromName, message.to, subject, bodyText.slice(0, 50000), new Date().toISOString())
+    .run();
+
+  try {
+    await fetch(`${SITE_ORIGIN}/api/booking-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fromName || fromAddress,
+        email: fromAddress,
+        time: 'Email received',
+        meetingType: 'email',
+      }),
+    });
+  } catch {
+    // Push failures must not lose the email.
+  }
 }

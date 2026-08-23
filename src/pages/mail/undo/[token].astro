@@ -1,0 +1,87 @@
+---
+// Undo one emailed change. The token comes from the confirmation email, and
+// restoring is a straight put-back of the config we snapshotted before writing,
+// so it cannot drift from what was actually there.
+const { token } = Astro.params;
+const db = (Astro.locals.runtime?.env as any)?.DB;
+
+let heading = 'That link is not valid';
+let detail = 'Undo links work once, and only from a confirmation email.';
+let site = '';
+
+if (db && token) {
+  const row = await db
+    .prepare('SELECT id, slug, prev_config, applied FROM site_mail WHERE undo_token = ?')
+    .bind(token)
+    .first();
+
+  if (!row) {
+    // leave the default
+  } else if (!row.applied) {
+    heading = 'Already undone';
+    detail = 'That change has been put back once already.';
+    site = row.slug;
+  } else {
+    await db
+      .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
+      .bind(row.prev_config, new Date().toISOString(), row.slug)
+      .run();
+    await db
+      .prepare('UPDATE site_mail SET applied = 0 WHERE id = ?')
+      .bind(row.id)
+      .run();
+    heading = 'Put back';
+    detail = 'Your site is how it was before that email.';
+    site = row.slug;
+  }
+}
+---
+
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Undo</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #f4f6fa;
+        color: #10131a;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        padding: 1.5rem;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #dfe4ec;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 26rem;
+        text-align: center;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 0.5rem; }
+      p { margin: 0; color: #626b7d; line-height: 1.6; }
+      a {
+        display: inline-block;
+        margin-top: 1.4rem;
+        background: #2563eb;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.6rem 1.1rem;
+        border-radius: 999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>{heading}</h1>
+      <p>{detail}</p>
+      {site && <a href={`https://${site}.garage.co.nz`}>See your site</a>}
+    </div>
+  </body>
+</html>

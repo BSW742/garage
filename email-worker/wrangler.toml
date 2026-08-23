@@ -6,3 +6,9 @@ compatibility_date = "2024-01-01"
 binding = "DB"
 database_name = "garage-db"
 database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
+
+# Photos emailed in land in the same bucket the builder uploads to, so they are
+# served by the existing /images/<key> route.
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "garage-images"
