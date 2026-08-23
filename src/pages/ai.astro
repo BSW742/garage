@@ -1709,10 +1709,10 @@
         S.awaiting = 'logostyle';
         await say('I can draw you one. What sort?');
         chips([
-          { label: 'Simple mark' },
+          { label: 'Cartoon' },
+          { label: 'Simple' },
           { label: 'Badge' },
-          { label: 'Letter' },
-          { label: 'Picture' },
+          { label: 'Lettering' },
         ]);
       }
 
@@ -1777,11 +1777,16 @@
           trade: S.logoTrade || '',
           extra: S.logoExtra || '',
           style: style,
-          colour: (S.site.palette && S.site.palette.primary) || '',
+          // Two colours, not one — the site's own pair, so the logo comes back
+          // already belonging to the page it is going on.
+          colour: [
+            S.site.palette && S.site.palette.primary,
+            S.site.palette && S.site.palette.deep,
+          ].filter(Boolean).join(' and '),
           slug: S.slug || '',
         };
 
-        await say('Right — drawing it now. Takes a minute or two, so leave this open.');
+        await say('Righto, drawing it now.');
         $('agent-state').textContent = 'online · drawing';
 
         let url = null, failed = null;
@@ -1791,29 +1796,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(brief),
           });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            failed = err.error || 'the drawing desk said no';
-          } else {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-              const parts = buffer.split('\n\n');
-              buffer = parts.pop();
-              for (const part of parts) {
-                const event = /event: (\w+)/.exec(part);
-                const payload = /data: (.+)/.exec(part);
-                if (!event || !payload) continue;
-                const body = JSON.parse(payload[1]);
-                if (event[1] === 'done') url = body.url;
-                if (event[1] === 'failed') failed = body.error;
-              }
-            }
-          }
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) failed = data.error || 'the drawing desk said no';
+          else url = data.url;
         } catch (e) {
           failed = 'the connection dropped while it was drawing';
         }
@@ -2565,13 +2550,12 @@
             await offerToDraw();
             return;
           }
-          const styles = { simple: 'mark', badge: 'badge', letter: 'letter', picture: 'illustration' };
+          const styles = { cartoon: 'cartoon', simple: 'mark', badge: 'badge', letter: 'letter' };
           const pick = Object.keys(styles).find((k) => new RegExp(k, 'i').test(text));
           S.awaiting = null;
-          // Anything they typed themselves goes through as art direction rather
-          // than being quietly rounded to the nearest of our four buttons.
-          S.logoExtra = pick ? '' : text.trim().slice(0, 120);
-          await askTradeThenDraw(styles[pick] || 'mark');
+          // Whatever they typed goes straight through. The model understands
+          // "watercolour" or "1970s" far better than our four buttons do.
+          await askTradeThenDraw(pick ? styles[pick] : text.trim().slice(0, 60));
           return;
         }
 
