@@ -177,6 +177,14 @@ footer a{border-bottom:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){.reel-track{scroll-behavior:auto}}
 .st-brutal .reel-slide{border-radius:0;border:2px solid var(--ink)}
 .st-brutal .reel-nav{border-radius:0;border-width:2px}
+.rates{max-width:640px;margin:0 auto;text-align:left}
+.rates>div{display:flex;align-items:baseline;gap:.7rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
+.rates>div:last-child{border-bottom:0}
+.rate-name{font-weight:600}
+.rate-dots{flex:1;border-bottom:1px dotted var(--line);transform:translateY(-.28rem);min-width:1.5rem}
+.rate-price{font-weight:700;color:var(--primary);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rate-note{max-width:640px;margin:1.2rem auto 0;font-size:.85rem;color:var(--soft);text-align:left}
+.st-brutal .rates>div{border-bottom-width:2px}
 .faq{max-width:760px;margin:0 auto;text-align:left}
 .faq details{border:1px solid var(--line);border-radius:12px;background:var(--card,#fff);margin-bottom:.6rem;overflow:hidden}
 .faq summary{cursor:pointer;padding:.9rem 1.1rem;font-weight:600;list-style:none}
@@ -194,6 +202,7 @@ const NAV_LABELS: Record<string, string> = {
   about: 'About',
   gallery: 'Gallery',
   hours: 'Hours',
+  pricing: 'Pricing',
   video: 'Video',
   faq: 'FAQ',
   contact: 'Contact',
@@ -253,6 +262,11 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
           .join('')}</div></div></section>`;
+    case 'pricing':
+      return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Pricing')}</p>
+        <h2>${esc(section.title || 'What it costs')}</h2><div class="rates">${(section.rows || [])
+          .map((r) => `<div><span class="rate-name">${esc(r[0])}</span><span class="rate-dots"></span><span class="rate-price">${esc(r[1])}</span></div>`)
+          .join('')}</div>${section.text ? `<p class="rate-note">${esc(section.text)}</p>` : ''}</div></section>`;
     case 'faq':
       return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Questions')}</p>
         <h2>${esc(section.title || 'Common questions')}</h2><div class="faq">${(section.items || [])

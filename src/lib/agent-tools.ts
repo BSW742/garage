@@ -16,7 +16,7 @@ export interface ToolContext {
   ownImages: string[];
 }
 
-const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq'];
+const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing'];
 
 export const TOOLS = [
   {
@@ -57,7 +57,8 @@ export const TOOLS = [
     description:
       'Add a section to the page. services takes items (name + description pairs). about and band ' +
       'take text. hours takes rows (day + hours pairs). testimonial takes quote and who. gallery ' +
-      'takes images. faq takes items (question + answer pairs). contact renders the ' +
+      'takes images. faq takes items (question + answer pairs). pricing is a rate card and takes ' +
+      'rows (item + price pairs), plus optional text for a note such as GST or travel. contact renders the ' +
       'phone/email/address already on the site.',
     input_schema: {
       type: 'object',
@@ -78,7 +79,7 @@ export const TOOLS = [
         },
         rows: {
           type: 'array',
-          description: 'For hours: [{day, hours}]',
+          description: 'For hours: [{day, hours}]. For pricing: [{day: item, hours: price}]',
           items: {
             type: 'object',
             properties: { day: { type: 'string' }, hours: { type: 'string' } },
