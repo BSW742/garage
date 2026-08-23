@@ -23,6 +23,13 @@ export interface TeamMember {
   image?: string;
 }
 
+export interface Product {
+  name?: string;
+  price?: string;
+  text?: string;
+  image?: string;
+}
+
 export interface CaseStudy {
   title?: string;
   role?: string;
@@ -50,6 +57,8 @@ export interface SiteConfig {
   logoVideo?: string | null;   // plays when the logo is opened
   team?: TeamMember[];         // its own page at /team, when there is anyone on it
   cases?: CaseStudy[];         // its own page at /case-studies
+  products?: Product[];        // what the cart sells
+  shop?: boolean;              // cart is on unless a site turns it off
   chatLabel?: string;  // what the launcher says, default "Chat right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
@@ -223,6 +232,50 @@ align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid va
 .profile-media{max-width:min(88vw,420px)}
 }
 .st-brutal .profile-media{border-radius:0;border:2px solid var(--ink)}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.2rem;text-align:left}
+.buy{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card,#fff);display:flex;flex-direction:column}
+.buy-shot{aspect-ratio:4/3;background:var(--wash) center/cover no-repeat}
+.buy h3{margin:.9rem 1rem 0;font-size:1rem}
+.buy p{margin:.35rem 1rem 0;font-size:.88rem;color:var(--soft);line-height:1.5}
+.buy-foot{margin-top:auto;padding:1rem;display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.buy-price{font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
+.buy-add{border:0;background:var(--primary);color:#fff;font:inherit;font-size:.85rem;font-weight:600;
+padding:.45rem .95rem;border-radius:999px;cursor:pointer}
+.buy-add:hover{background:var(--deep)}
+
+.cart-open{position:fixed;right:18px;bottom:88px;z-index:8000;width:48px;height:48px;border-radius:50%;
+border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);display:grid;place-items:center;
+cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.16)}
+.cart-open:hover{transform:translateY(-2px)}
+.cart-count{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;border-radius:999px;
+background:var(--primary);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
+.cart-count[hidden]{display:none}
+.cart-back{position:fixed;inset:0;background:rgba(10,12,16,.45);z-index:8500}
+.cart-back[hidden]{display:none}
+.cart{position:fixed;top:0;right:0;bottom:0;width:min(400px,92vw);background:var(--card,#fff);z-index:8600;
+display:flex;flex-direction:column;box-shadow:-18px 0 50px rgba(0,0,0,.22)}
+.cart[hidden]{display:none}
+.cart-head{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.2rem;border-bottom:1px solid var(--line)}
+.cart-shut{border:0;background:none;font-size:1rem;cursor:pointer;color:var(--soft)}
+.cart-body{flex:1;overflow-y:auto;padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.7rem}
+.cart-row{display:grid;grid-template-columns:1fr auto auto auto;gap:.6rem;align-items:center;font-size:.9rem}
+.cart-qty{display:inline-flex;align-items:center;gap:.45rem}
+.cart-qty button{width:22px;height:22px;border:1px solid var(--line);background:none;border-radius:6px;cursor:pointer;color:var(--ink)}
+.cart-line{font-variant-numeric:tabular-nums;color:var(--soft)}
+.cart-drop{border:0;background:none;color:var(--soft);cursor:pointer;font-size:.8rem}
+.cart-drop:hover{color:#dc2626}
+.cart-empty,.cart-done,.cart-warn{color:var(--soft);font-size:.9rem;line-height:1.6;margin:0}
+.cart-warn{color:#b42318}
+.cart-foot{border-top:1px solid var(--line);padding:1rem 1.2rem 1.3rem}
+.cart-foot[hidden]{display:none}
+.cart-total{display:flex;justify-content:space-between;font-size:1rem;margin-bottom:.5rem}
+.cart-promise{font-size:.8rem;color:var(--soft);line-height:1.5;margin:0 0 .9rem}
+.cart-foot input,.cart-foot textarea{width:100%;font:inherit;font-size:.9rem;padding:.55rem .7rem;margin-bottom:.5rem;
+border:1px solid var(--line);border-radius:9px;background:var(--page);color:var(--ink)}
+.cart-send{width:100%;border:0;background:var(--primary);color:#fff;font:inherit;font-weight:600;
+padding:.7rem;border-radius:10px;cursor:pointer}
+.cart-send:disabled{opacity:.6}
+.st-brutal .buy,.st-brutal .cart-open{border-radius:0;border-width:2px}
 .rates{max-width:640px;margin:0 auto;text-align:left}
 .rates>div{display:flex;align-items:baseline;gap:.7rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
 .rates>div:last-child{border-bottom:0}
@@ -248,6 +301,7 @@ const NAV_LABELS: Record<string, string> = {
   about: 'About',
   gallery: 'Gallery',
   hours: 'Hours',
+  shop: 'Shop',
   pricing: 'Pricing',
   video: 'Video',
   faq: 'FAQ',
@@ -422,6 +476,23 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
           .join('')}</div></div></section>`;
+    case 'shop':
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Shop')}</p>
+        <h2>${esc(section.title || 'Have a look')}</h2><div class="shop">${(site.products || [])
+          .map((product, i) => {
+            const picture = safeUrl(product.image);
+            return `<div class="buy">
+              <div class="buy-shot"${picture ? ` style="background-image:url(${esc(picture)})"` : ''}></div>
+              <h3>${esc(product.name || '')}</h3>
+              ${product.text ? `<p>${esc(product.text)}</p>` : ''}
+              <div class="buy-foot">
+                <span class="buy-price">${esc(product.price || '')}</span>
+                <button type="button" class="buy-add" data-i="${i}"
+                  data-name="${esc(product.name || '')}" data-price="${esc(product.price || '')}">Add</button>
+              </div>
+            </div>`;
+          })
+          .join('')}</div></div></section>`;
     case 'pricing':
       return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Pricing')}</p>
         <h2>${esc(section.title || 'What it costs')}</h2><div class="rates">${(section.rows || [])
@@ -511,6 +582,157 @@ function socialLinks(socials?: Record<string, string>): string {
   return `<span class="socials">${entries
     .map(([name, url]) => `<a href="${esc(safeUrl(url) as string)}" target="_blank" rel="noopener">${esc(label[name] || name)}</a>`)
     .join('')}</span>`;
+}
+
+/**
+ * The cart. A placeholder for a real shop rather than a pretend one: nothing
+ * here asks for a card, because nothing here can take a payment. What it does
+ * is collect what someone wants and how to reach them, and say plainly that a
+ * person will check stock and come back about paying.
+ */
+function cartHtml(site: SiteConfig, slug: string): string {
+  const config = JSON.stringify({ slug, name: site.name || slug }).replace(/</g, '\\u003c');
+  return `<button type="button" class="cart-open" id="cart-open" aria-label="Your cart">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+  <span class="cart-count" id="cart-count" hidden>0</span>
+</button>
+
+<div class="cart-back" id="cart-back" hidden></div>
+<aside class="cart" id="cart" hidden aria-label="Your cart">
+  <div class="cart-head">
+    <strong>Your cart</strong>
+    <button type="button" class="cart-shut" id="cart-shut" aria-label="Close">&#10005;</button>
+  </div>
+  <div class="cart-body" id="cart-body"></div>
+  <div class="cart-foot" id="cart-foot" hidden>
+    <div class="cart-total"><span>Total</span><strong id="cart-total">$0</strong></div>
+    <p class="cart-promise">No payment now. A human checks we have stock and gets in touch to sort payment.</p>
+    <form id="cart-form">
+      <input id="cart-name" placeholder="Your name" autocomplete="name" required />
+      <input id="cart-email" type="email" placeholder="Email" autocomplete="email" />
+      <input id="cart-phone" placeholder="Phone" autocomplete="tel" />
+      <textarea id="cart-note" rows="2" placeholder="Anything we should know?"></textarea>
+      <button type="submit" class="cart-send">Send this through</button>
+    </form>
+  </div>
+</aside>
+
+<script>(function(){
+var C = ${config};
+var KEY = 'cart:' + C.slug;
+var items = [];
+try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { items = []; }
+
+var openBtn = document.getElementById('cart-open');
+var back = document.getElementById('cart-back');
+var panel = document.getElementById('cart');
+var bodyEl = document.getElementById('cart-body');
+var foot = document.getElementById('cart-foot');
+var countEl = document.getElementById('cart-count');
+
+function money(v){ var n = parseFloat(String(v).replace(/[^0-9.]/g,'')); return isNaN(n) ? 0 : n; }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {} }
+
+function draw(){
+  var total = 0, count = 0;
+  bodyEl.innerHTML = '';
+  items.forEach(function(it, i){
+    count += it.qty; total += money(it.price) * it.qty;
+    var row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = '<span class="cart-name"></span>' +
+      '<span class="cart-qty"><button type="button" data-d="-1" aria-label="One fewer">&minus;</button>' +
+      '<b>' + it.qty + '</b>' +
+      '<button type="button" data-d="1" aria-label="One more">+</button></span>' +
+      '<span class="cart-line"></span>' +
+      '<button type="button" class="cart-drop" data-drop="1" aria-label="Remove">&#10005;</button>';
+    row.querySelector('.cart-name').textContent = it.name;
+    row.querySelector('.cart-line').textContent = it.price || '';
+    row.querySelectorAll('[data-d]').forEach(function(b){
+      b.addEventListener('click', function(){
+        it.qty += Number(b.dataset.d);
+        if (it.qty < 1) items.splice(i, 1);
+        save(); draw();
+      });
+    });
+    row.querySelector('[data-drop]').addEventListener('click', function(){
+      items.splice(i, 1); save(); draw();
+    });
+    bodyEl.appendChild(row);
+  });
+
+  if (!items.length) {
+    bodyEl.innerHTML = '<p class="cart-empty">Nothing in here yet.</p>';
+  }
+  foot.hidden = !items.length;
+  document.getElementById('cart-total').textContent = '$' + total.toFixed(2).replace(/\\.00$/, '');
+  countEl.textContent = count;
+  countEl.hidden = !count;
+}
+
+function show(on){
+  panel.hidden = !on; back.hidden = !on;
+  document.body.style.overflow = on ? 'hidden' : '';
+}
+
+document.querySelectorAll('.buy-add').forEach(function(b){
+  b.addEventListener('click', function(){
+    var found = items.filter(function(i){ return i.name === b.dataset.name; })[0];
+    if (found) found.qty += 1;
+    else items.push({ name: b.dataset.name, price: b.dataset.price, qty: 1 });
+    save(); draw(); show(true);
+  });
+});
+
+openBtn.addEventListener('click', function(){ draw(); show(true); });
+document.getElementById('cart-shut').addEventListener('click', function(){ show(false); });
+back.addEventListener('click', function(){ show(false); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') show(false); });
+
+document.getElementById('cart-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var name = document.getElementById('cart-name').value.trim();
+  var email = document.getElementById('cart-email').value.trim();
+  var phone = document.getElementById('cart-phone').value.trim();
+  if (!name || (!email && !phone)) {
+    alertless('We need your name and either an email or a phone number.');
+    return;
+  }
+  var btn = e.target.querySelector('.cart-send');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    var res = await fetch('https://garage.co.nz/api/shop/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug: C.slug, name: name, email: email, phone: phone,
+        note: document.getElementById('cart-note').value.trim(),
+        items: items, total: document.getElementById('cart-total').textContent
+      })
+    });
+    if (!res.ok) throw new Error('bad');
+    items = []; save();
+    bodyEl.innerHTML = '<p class="cart-done">Thanks ' + name.split(' ')[0] +
+      '. ' + C.name + ' will check stock and be in touch about payment.</p>';
+    foot.hidden = true; countEl.hidden = true;
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Send this through';
+    alertless('That did not send. Try again in a moment.');
+  }
+});
+
+// A blocking dialog would freeze the page, so say it in the panel.
+function alertless(message){
+  var note = document.createElement('p');
+  note.className = 'cart-warn';
+  note.textContent = message;
+  var old = bodyEl.querySelector('.cart-warn');
+  if (old) old.remove();
+  bodyEl.prepend(note);
+}
+
+draw();
+})();</script>`;
 }
 
 // The chat widget every published site carries. It lives in a shadow root so
@@ -775,7 +997,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 </head>
 <body class="st-${esc(site.style || 'modern')}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
-    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
+    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
 function shut(){z.classList.remove('on');document.body.style.overflow='';
 var f=document.getElementById('logo-film');if(f){try{f.pause();}catch(e){}}}

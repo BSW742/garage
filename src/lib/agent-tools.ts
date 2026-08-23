@@ -16,7 +16,7 @@ export interface ToolContext {
   ownImages: string[];
 }
 
-const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing'];
+const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop'];
 
 export const TOOLS = [
   {
@@ -50,6 +50,41 @@ export const TOOLS = [
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },
+    },
+  },
+  {
+    name: 'set_products',
+    description:
+      'Put things in the shop. The site already carries a cart; this fills it. Nobody is asked for ' +
+      'card details — a cart is sent through as an enquiry and the owner arranges payment. ' +
+      'Replaces whatever is listed. Add a shop section to show them on the page.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        products: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              price: { type: 'string', description: 'Written as it should appear, eg $42' },
+              text: { type: 'string', description: 'A line about it' },
+              image: { type: 'string', description: 'Photo URL' },
+            },
+            required: ['name'],
+          },
+        },
+      },
+      required: ['products'],
+    },
+  },
+  {
+    name: 'set_cart',
+    description: 'Turn the shopping cart on or off for this site. It is on by default.',
+    input_schema: {
+      type: 'object',
+      properties: { on: { type: 'boolean' } },
+      required: ['on'],
     },
   },
   {
@@ -109,7 +144,8 @@ export const TOOLS = [
       'Add a section to the page. services takes items (name + description pairs). about and band ' +
       'take text. hours takes rows (day + hours pairs). testimonial takes quote and who. gallery ' +
       'takes images. faq takes items (question + answer pairs). pricing is a rate card and takes ' +
-      'rows (item + price pairs), plus optional text for a note such as GST or travel. contact renders the ' +
+      'rows (item + price pairs), plus optional text for a note such as GST or travel. shop shows ' +
+      'whatever set_products has put in the shop. contact renders the ' +
       'phone/email/address already on the site.',
     input_schema: {
       type: 'object',
@@ -347,6 +383,22 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to change' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'set_products': {
+      const products = (input.products || []).slice(0, 24).map((p: any) => ({
+        name: String(p?.name ?? '').slice(0, 120),
+        price: String(p?.price ?? '').slice(0, 40),
+        text: String(p?.text ?? '').slice(0, 400),
+        image: safeImage(p?.image) || undefined,
+      })).filter((p: any) => p.name);
+      site.products = products;
+      return { ok: true, message: products.length ? `Shop now has ${products.length}` : 'Shop cleared' };
+    }
+
+    case 'set_cart': {
+      site.shop = input.on !== false;
+      return { ok: true, message: site.shop ? 'Cart is on' : 'Cart removed' };
     }
 
     case 'set_team': {

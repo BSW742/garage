@@ -37,6 +37,18 @@ export const GET: APIRoute = async ({ url, locals }) => {
       return json({ messages: results ?? [] });
     }
 
+    // Carts sent through from the shop, newest first.
+    if (url.searchParams.get('orders')) {
+      const { results } = await db
+        .prepare(
+          `SELECT id, name, email, phone, note, items, total, status, created_at
+             FROM orders WHERE slug = ? ORDER BY created_at DESC LIMIT 50`
+        )
+        .bind(slug)
+        .all();
+      return json({ orders: results ?? [] });
+    }
+
     // Every conversation for this site, newest first.
     const { results } = await db
       .prepare(

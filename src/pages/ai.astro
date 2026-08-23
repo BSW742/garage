@@ -1166,6 +1166,13 @@
       .pv-profile-role { display: block; color: var(--pv-primary); font-size: 0.82rem; font-weight: 600; margin-top: 0.15rem; }
       .pv-profile p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--pv-soft); line-height: 1.6; }
 
+      .pv-shop { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.8rem; text-align: left; }
+      .pv-buy { border: 1px solid var(--pv-line); border-radius: 10px; overflow: hidden; padding-bottom: 0.6rem; }
+      .pv-buy-shot { aspect-ratio: 4/3; background: var(--pv-wash) center/cover no-repeat; }
+      .pv-buy strong { display: block; font-size: 0.85rem; margin: 0.5rem 0.6rem 0; }
+      .pv-buy p { margin: 0.2rem 0.6rem 0; font-size: 0.75rem; color: var(--pv-soft); line-height: 1.45; }
+      .pv-buy-price { display: block; margin: 0.35rem 0.6rem 0; font-weight: 700; color: var(--pv-primary); font-size: 0.82rem; }
+
       .pv-rates { max-width: 460px; margin: 0 auto; text-align: left; }
       .pv-rates > div {
         display: flex;
@@ -2174,6 +2181,19 @@
               (ids.length > 1 ? '<p class="pv-reel-count">1 / ' + ids.length + '</p>' : '') +
               '</section>';
           }
+
+          case 'shop':
+            return '<section class="pv-section">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'Shop') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'Have a look') +
+              '<div class="pv-shop">' +
+              (s.products || []).map((prod, j) => '<div class="pv-buy">' +
+                '<div class="pv-buy-shot" data-photo="products.' + j + '.image"' +
+                (prod.image ? ' style="background-image:url(' + esc(prod.image) + ')"' : '') + '></div>' +
+                '<strong>' + esc(prod.name || '') + '</strong>' +
+                (prod.text ? '<p>' + esc(prod.text) + '</p>' : '') +
+                '<span class="pv-buy-price">' + esc(prod.price || '') + '</span></div>').join('') +
+              '</div></section>';
 
           case 'pricing':
             return '<section class="pv-section alt">' +

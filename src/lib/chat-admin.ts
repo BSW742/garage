@@ -37,12 +37,22 @@ input{flex:1;font:inherit;padding:.6rem .8rem;border:1px solid var(--line);borde
 input:focus{border-color:var(--accent)}
 button.send{border:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:0 1.1rem;border-radius:12px;cursor:pointer}
 .note{padding:2rem 1.2rem;text-align:center;color:var(--soft);line-height:1.6}
+.order{border-bottom:1px solid var(--line);background:#fff;padding:.9rem 1rem}
+.order b{font-size:.95rem}
+.order .ago{float:right;font-size:.72rem;color:var(--soft);font-weight:400}
+.order .who{display:block;font-size:.8rem;color:var(--soft);margin-top:.15rem}
+.order ul{margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem}
+.order .total{display:block;margin-top:.4rem;font-weight:700;color:var(--accent)}
+.order .note-text{margin:.4rem 0 0;font-size:.82rem;color:var(--soft);font-style:italic}
+#orders-tab{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 .note code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:.15rem .4rem;font-size:.85rem}
 </style>
 </head>
 <body>
 <header>
   <div><b id="title">Messages</b><br /><span id="sub">${slug}.garage.co.nz</span></div>
+  <button id="orders-tab">Orders</button>
   <button id="back" hidden>All messages</button>
 </header>
 <main id="main"><p class="note">Loading…</p></main>
@@ -137,6 +147,33 @@ async function show(t){
   main.appendChild(log);
   main.scrollTop = main.scrollHeight;
 }
+
+document.getElementById('orders-tab').addEventListener('click', async function(){
+  if (!key) return noKey();
+  var res = await fetch(API + '/api/chat/inbox?orders=1&slug=' + encodeURIComponent(SLUG) + '&key=' + encodeURIComponent(key));
+  var data = await res.json();
+  if (!res.ok) { main.innerHTML = '<p class="note">' + (data.error || 'Could not load orders') + '</p>'; return; }
+  form.hidden = true; back.hidden = false; openThread = null; title.textContent = 'Orders';
+  if (!data.orders.length) {
+    main.innerHTML = '<p class="note">No orders yet.<br />They appear here when someone sends a cart through.</p>';
+    return;
+  }
+  main.innerHTML = '';
+  data.orders.forEach(function(o){
+    var items = [];
+    try { items = JSON.parse(o.items || '[]'); } catch (e) {}
+    var el = document.createElement('div');
+    el.className = 'order';
+    el.innerHTML = '<span class="ago">' + ago(o.created_at) + '</span><b>' + escapeHtml(o.name || 'Someone') + '</b>' +
+      '<span class="who">' + escapeHtml([o.email, o.phone].filter(Boolean).join(' · ')) + '</span>' +
+      '<ul>' + items.map(function(i){
+        return '<li>' + escapeHtml(i.qty + ' × ' + i.name + (i.price ? ' — ' + i.price : '')) + '</li>';
+      }).join('') + '</ul>' +
+      (o.total ? '<span class="total">' + escapeHtml(o.total) + '</span>' : '') +
+      (o.note ? '<p class="note-text">' + escapeHtml(o.note) + '</p>' : '');
+    main.appendChild(el);
+  });
+});
 
 back.addEventListener('click', function(){
   document.getElementById('sub').textContent = SLUG + '.garage.co.nz';
