@@ -2160,6 +2160,26 @@
         return !!norm(a) && norm(a) === norm(b);
       }
 
+      // flowlineplumbing.co.nz tells us the business is called Flowline Plumbing
+      // and that they are plumbers. Throwing that away and calling them
+      // "Flowline3" off the slug is wasting the best thing we have.
+      function nameFromDomain(host) {
+        const bare = String(host || '').replace(/^www\./i, '').split('/')[0].split('.')[0];
+        if (!bare) return '';
+        let out = bare.replace(/[-_]/g, ' ');
+        if (!/\s/.test(out)) {
+          // Trade names run the words together. Split on a trade we recognise.
+          const stems = [];
+          for (const key in INDUSTRIES) for (const m of INDUSTRIES[key].match) stems.push(m);
+          stems.sort((a, b) => b.length - a.length);
+          for (const stem of stems) {
+            const at = out.toLowerCase().indexOf(stem);
+            if (at > 1) { out = out.slice(0, at) + ' ' + out.slice(at); break; }
+          }
+        }
+        return out.replace(/\b[a-z]/g, (c) => c.toUpperCase()).trim().slice(0, 40);
+      }
+
       function titleCase(slug) {
         return slug.replace(/-/g, ' ').replace(/\b[a-z]/g, (c) => c.toUpperCase());
       }
@@ -2484,10 +2504,9 @@
       function scrapeExcuse(detail, site) {
         const d = String(detail || '');
         if (/sgcaptcha/i.test(d)) {
-          return 'Your web host (SiteGround) has a CAPTCHA sitting in front of ' + site +
-            ", so we get stopped the same way a bot would — and I'm not going to try picking that lock. " +
-            'You can allowlist us in your host security settings if you want the old site pulled across. ' +
-            "Quicker though: tell me what you do and put your photos straight in here.";
+          return 'Your old site sits behind a CAPTCHA from your web host, so I cannot read it — ' +
+            'building this one fresh instead. Photos are the bit I actually need: put a few in ' +
+            'and it will look like your business straight away.';
         }
         if (/captcha|challenge|cf-mitigated: challenge/i.test(d)) {
           return site + ' is behind a bot check we get stopped by. Faster to build it here — ' +
@@ -2533,11 +2552,16 @@
         }
 
         const s = S.site;
-        const mine = guessIndustry((d.title || '') + ' ' + (d.description || '') + ' ' + (d.services || []).join(' ') + ' ' + S.slug);
+        const fromDomain = nameFromDomain(S.sourceUrl);
+        const mine = guessIndustry(
+          (d.title || '') + ' ' + (d.description || '') + ' ' + (d.services || []).join(' ') +
+          ' ' + S.slug + ' ' + S.sourceUrl
+        );
         const industry = mine !== 'default' ? mine : (d.industry && INDUSTRIES[d.industry] ? d.industry : 'default');
         const base = INDUSTRIES[industry];
 
-        s.name = (d.title || titleCase(S.slug)).split(/[|–—-]/)[0].trim().slice(0, 40) || titleCase(S.slug);
+        s.name = (d.title || fromDomain || titleCase(S.slug)).split(/[|–—-]/)[0].trim().slice(0, 40)
+          || titleCase(S.slug);
         s.palette = paletteFrom(d.brandColour || base.colour);
         // A white mark on transparency vanishes on a pale page. Move the page to
         // the logo rather than throwing the logo away.
@@ -2549,7 +2573,9 @@
         s.lede = clip(ledeSource, 190);
         s.cta = base.cta;
         render();
-        did('Name and words lifted');
+        did(d.blocked
+          ? 'Name and trade read off your web address'
+          : 'Name and words lifted');
         await wait(450);
 
         if (d.brandColour) { did('Your brand colour, lifted off the old site'); await wait(420); }
