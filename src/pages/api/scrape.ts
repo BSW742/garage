@@ -256,7 +256,9 @@ async function salvageIcon(baseUrl: string, host: string): Promise<{ url: string
   return { url: landed, note: 'ladder missed, kept the small one' };
 }
 
-export async function scrapeWebsite(url: string): Promise<ScrapedData> {
+// One attempt at the page. Throws with the evidence when what comes back is a
+// refusal rather than a site.
+async function fetchPage(url: string): Promise<string> {
   // The old User-Agent stopped mid-string, which reads as a bot to most
   // firewalls. Sites that serve us a challenge page instead of their content
   // are the main reason a scrape comes back with nothing in it.
@@ -295,6 +297,27 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
         `cf-mitigated: ${response.headers.get('cf-mitigated') || 'no'}) — ${snippet}`
     );
   }
+
+  return html;
+}
+
+export async function scrapeWebsite(url: string): Promise<ScrapedData> {
+  // Hosts like SiteGround challenge by source address, and a Worker does not
+  // always leave from the same one. The same request a moment later often lands
+  // on an address they have no quarrel with, so one refusal is not an answer.
+  // Two attempts, no more — their server is not ours to lean on.
+  let html: string;
+  try {
+    html = await fetchPage(url);
+  } catch (firstTry) {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+      html = await fetchPage(url);
+    } catch {
+      throw firstTry;
+    }
+  }
+
   const baseUrl = new URL(url).origin;
 
   // Extract all data
