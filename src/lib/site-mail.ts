@@ -18,6 +18,27 @@ export const WEB_SAFE_IMAGES = new Set(['image/jpeg', 'image/png', 'image/webp',
 
 export const MAX_IMAGES_PER_EMAIL = 6;
 
+// Signature logos, social badges and tracking pixels are all images, all
+// web-safe, and none of them belong on anybody's website. Real photos off a
+// phone are hundreds of kilobytes; this junk is one or two.
+export const MIN_PHOTO_BYTES = 30_000;
+
+/**
+ * The attachments that are actually photographs someone meant to send.
+ *
+ * `related` marks an image the HTML body refers to by cid — which is exactly
+ * what an email signature is. Size catches the rest. Disposition is
+ * deliberately not used: Apple Mail sends genuine photos inline.
+ */
+export function usablePhotos(attachments: any[]): any[] {
+  return (attachments || []).filter((a) => {
+    if (!WEB_SAFE_IMAGES.has(String(a?.mimeType || '').toLowerCase())) return false;
+    if (a?.related) return false;
+    const bytes = a?.content?.byteLength ?? 0;
+    return bytes >= MIN_PHOTO_BYTES;
+  });
+}
+
 /** "Dave <dave@x.co.nz>" -> "dave@x.co.nz" */
 export function bareAddress(value: unknown): string {
   const raw = String(value ?? '').trim();

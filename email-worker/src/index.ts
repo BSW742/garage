@@ -3,7 +3,7 @@ import PostalMime from 'postal-mime';
 import { EmailMessage } from 'cloudflare:email';
 import {
   mailboxSlug, bareAddress, authVerdict, isAutomated, buildReplyMime,
-  WEB_SAFE_IMAGES, MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, setVideo,
+  MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, setVideo, usablePhotos,
 } from '../../src/lib/site-mail';
 
 // Declared here rather than pulled in wholesale, matching how the API routes
@@ -117,50 +117,32 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
 
   // 3. What did they send?
   const parsed = await PostalMime.parse(message.raw);
-  const attachments = (parsed.attachments || []).filter((a: any) =>
-    WEB_SAFE_IMAGES.has(String(a.mimeType || '').toLowerCase())
+  const attachments = usablePhotos(parsed.attachments || []);
+  const heic = (parsed.attachments || []).some((a: any) =>
+    /hei[cf]/i.test(String(a?.mimeType || '') + String(a?.filename || ''))
   );
-  const unusable = (parsed.attachments || []).length - attachments.length;
 
-  // A shared YouTube link is as much a thing to publish as a photo is.
   const video = youtubeId(`${parsed.text || ''} ${parsed.html || ''} ${record.subject}`);
 
-  if (!attachments.length && video) {
-    const config = JSON.parse(site.config || '{}');
-    record.prevConfig = site.config || '{}';
-    setVideo(config, video, (record.subject || '').trim());
-    record.undoToken = crypto.randomUUID().replace(/-/g, '');
-    record.intent = 'video';
-    record.applied = 1;
-
-    await env.DB
-      .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
-      .bind(JSON.stringify(config), new Date().toISOString(), slug)
-      .run();
-
-    return say(
-      `Your video is up on your site.\n\n` +
-      `See it:  https://${slug}.garage.co.nz\n` +
-      `Change anything:  ${SITE_ORIGIN}/ai?edit=${slug}&t=${site.edit_token}\n` +
-      `Undo this:  ${SITE_ORIGIN}/mail/undo/${record.undoToken}\n\n` +
-      `Send another link any time and it will replace this one.`
-    );
-  }
-
-  if (!attachments.length) {
+  if (!attachments.length && !video) {
     record.intent = 'held';
-    const heic = unusable > 0;
     return say(
       heic
         ? `Those photos are in a format websites cannot show (HEIC). On an iPhone: Settings > Camera > Formats > Most Compatible, then send them again.`
-        : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or paste a YouTube link and it goes up as a video.`
+        : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or send a YouTube link and it goes up as a video.`
     );
   }
 
-  const use = attachments.slice(0, MAX_IMAGES_PER_EMAIL);
   const config = JSON.parse(site.config || '{}');
   record.prevConfig = site.config || '{}';
+  const done: string[] = [];
 
+  if (video) {
+    setVideo(config, video, (record.subject || '').trim());
+    done.push('Your video is up');
+  }
+
+  const use = attachments.slice(0, MAX_IMAGES_PER_EMAIL);
   const urls: string[] = [];
   for (const attachment of use) {
     const type = String(attachment.mimeType).toLowerCase();
@@ -172,10 +154,13 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     urls.push(`${SITE_ORIGIN}/images/${key}`);
   }
 
-  addToGallery(config, urls, (record.subject || '').trim());
+  if (urls.length) {
+    addToGallery(config, urls, (record.subject || '').trim());
+    done.push(`${use.length} photo${use.length === 1 ? '' : 's'} went up`);
+  }
 
   record.undoToken = crypto.randomUUID().replace(/-/g, '');
-  record.intent = 'gallery';
+  record.intent = video && urls.length ? 'video+gallery' : video ? 'video' : 'gallery';
   record.applied = 1;
 
   await env.DB
@@ -183,20 +168,20 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     .bind(JSON.stringify(config), new Date().toISOString(), slug)
     .run();
 
-  const count = `${use.length} photo${use.length === 1 ? '' : 's'}`;
   const skipped = attachments.length > use.length
     ? `\n\nThe other ${attachments.length - use.length} did not fit in one email — send them separately.`
     : '';
-  const bad = unusable > 0
-    ? `\n\n${unusable} attachment${unusable === 1 ? '' : 's'} were not images we can show, so they were left out.`
+  // Only offer the builder link when the site actually has a key for it.
+  const editLine = site.edit_token
+    ? `Change anything:  ${SITE_ORIGIN}/ai?edit=${slug}&t=${site.edit_token}\n`
     : '';
 
   await say(
-    `${count} went up on your site.${skipped}${bad}\n\n` +
+    `${done.join(' and ')} on your site.${skipped}\n\n` +
     `See it:  https://${slug}.garage.co.nz\n` +
-    `Change anything:  ${SITE_ORIGIN}/ai?edit=${slug}&t=${site.edit_token}\n` +
+    editLine +
     `Undo this:  ${SITE_ORIGIN}/mail/undo/${record.undoToken}\n\n` +
-    `Reply to this email with more photos any time.`
+    `Send more photos or a video link any time.`
   );
 }
 
