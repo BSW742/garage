@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { json, preflight } from '../../../lib/chat';
-import { logoPrompt, cleanBrief, RATE_PER_IP_HOUR, RATE_PER_DAY } from '../../../lib/logo';
+import Anthropic from '@anthropic-ai/sdk';
+import { logoPrompt, cleanBrief, ART_DIRECTOR, RATE_PER_IP_HOUR, RATE_PER_DAY } from '../../../lib/logo';
 
 export const OPTIONS: APIRoute = async () => preflight();
 
@@ -46,7 +47,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const id = crypto.randomUUID();
-  const prompt = logoPrompt(brief);
+
+  // Work out what the thing should actually be a picture of, before asking for
+  // a picture. Without this the image model gets a business category and draws
+  // something abstract and forgettable.
+  let direction = '';
+  if (env.ANTHROPIC_API_KEY) {
+    try {
+      const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+      const said = await client.messages.create({
+        model: 'claude-opus-5',
+        max_tokens: 200,
+        system: ART_DIRECTOR,
+        messages: [{
+          role: 'user',
+          content: `${brief.name}${brief.trade ? `, ${brief.trade}` : ''}`,
+        }],
+      });
+      const block = (said.content || []).find((c: any) => c.type === 'text') as any;
+      direction = String(block?.text || '').trim().slice(0, 300);
+    } catch {
+      // Fall back to the plain prompt rather than failing the whole request.
+    }
+  }
+
+  const prompt = logoPrompt(brief, direction);
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

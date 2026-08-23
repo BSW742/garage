@@ -17,16 +17,38 @@ export interface LogoBrief {
 }
 
 /**
- * Image models will happily produce a busy full-colour scene with garbled
- * lettering unless told very plainly not to. Logos need flat shapes, one
- * colour, lots of space and absolutely no text — misspelled words are the
- * single most common way these come out unusable.
+ * Image models draw what they are told to draw. Given "a Local & independent
+ * business" they invent something abstract and forgettable; given "a lawn
+ * mowing business" they produce a mower. The subject is the whole game, which
+ * is why the art direction is written by a model that has read the site rather
+ * than assembled from whatever marketing copy happened to be lying around.
  */
-export function logoPrompt(brief: LogoBrief): string {
+export const ART_DIRECTOR = `You art-direct logos for small New Zealand businesses.
+
+Given what a business is called and what it does, describe the single object or
+symbol its logo should show. Reply with one sentence, no preamble.
+
+Rules:
+- Name one concrete, drawable thing. A tool of the trade, an animal, a plant, a
+  landform, a simple object. Never an abstract concept like "flow" or "trust".
+- If the trade is unclear, choose something suggested by the name itself.
+- It must survive being shrunk to 16 pixels, so: one object, bold silhouette,
+  no scenes, no small detail, no multiple elements arranged together.
+- Never mention text, letters, words or typography.
+
+Example in: Raglan Roast, a coffee roastery
+Example out: A single coffee bean with a simple mountain range behind it.
+
+Example in: Flowline, a plumbing business
+Example out: A curved length of pipe forming a smooth continuous loop.`;
+
+export function logoPrompt(brief: LogoBrief, direction?: string): string {
   const style = LOGO_STYLES[brief.style || 'mark'] || LOGO_STYLES.mark;
+  const subject = (direction || '').trim().replace(/[.\s]+$/, '');
   const bits = [
-    `A professional logo for "${brief.name}"`,
-    brief.trade ? `, a ${brief.trade} business in New Zealand` : '',
+    subject
+      ? `A logo showing: ${subject}`
+      : `A professional logo for "${brief.name}"${brief.trade ? `, a ${brief.trade} business` : ''}`,
     `. Design: ${style}.`,
     brief.colour ? ` Use ${brief.colour} as the only colour.` : ' Use a single colour.',
     brief.extra ? ` ${brief.extra}.` : '',
