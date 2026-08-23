@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { json, preflight, cleanSlug, nowIso, replyTimeLabel } from '../../../lib/chat';
 import { sendPushToAll } from '../../../lib/web-push';
-import { sendMail, ownerEmail } from '../../../lib/mail';
+import { sendMail, ownerContact } from '../../../lib/mail';
 
 const MAX_BODY = 2000;
 
@@ -21,15 +21,15 @@ async function notifyOwner(
   // would train them to ignore it, which is worse than not sending at all.
   if (!isNew) return;
   try {
-    const owner = await ownerEmail(db, slug);
+    const owner = await ownerContact(db, slug);
     if (!owner) return;
     await sendMail(env, {
-      to: owner,
+      to: owner.email,
       subject: `Someone is asking on ${slug}.garage.co.nz`,
       text:
         `Somebody has started a chat on your site.\n\n` +
         `They said: ${text.slice(0, 400)}\n\n` +
-        `Answer them here:  https://${slug}.garage.co.nz/admin\n\n` +
+        `Answer them here:  ${owner.inbox}\n\n` +
         `They are more likely to still be there if you are quick.\n`,
     });
   } catch {

@@ -54,15 +54,28 @@ export async function sendMail(env: any, mail: MailOut): Promise<{ ok: boolean; 
   }
 }
 
-/** The address a site was claimed with — where its owner actually reads mail. */
-export async function ownerEmail(db: any, slug: string): Promise<string | null> {
+/**
+ * Where a site's owner reads mail, and the key that gets them into their inbox.
+ *
+ * The link has to carry the key. Their inbox is not behind a login — the key
+ * in the address is the whole credential — so pointing them at a bare /admin
+ * lands them on a page telling them to use the link they are already reading.
+ */
+export async function ownerContact(
+  db: any, slug: string
+): Promise<{ email: string; inbox: string } | null> {
   try {
     const row = await db
-      .prepare('SELECT email FROM site_claims WHERE slug = ?')
+      .prepare('SELECT email, edit_token FROM site_claims WHERE slug = ?')
       .bind(slug)
       .first();
     const address = String((row as any)?.email || '').trim();
-    return address || null;
+    if (!address) return null;
+    const token = String((row as any)?.edit_token || '').trim();
+    return {
+      email: address,
+      inbox: `https://${slug}.garage.co.nz/admin${token ? '?k=' + encodeURIComponent(token) : ''}`,
+    };
   } catch {
     return null;
   }
