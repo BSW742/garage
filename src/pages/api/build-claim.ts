@@ -71,18 +71,32 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .bind(slug)
       .first();
 
+    // A row with no edit_token cannot be republished by anyone, including the
+    // person who made it — the check below would refuse every possible token.
+    // That is a broken record rather than a contested address, so say so.
+    if (existing && !existing.edit_token) {
+      return json({ error: 'no-key', slug }, 409);
+    }
+
     // Somebody else's site
     if (existing && (!token || token !== existing.edit_token)) {
       return json({ error: 'taken' }, 409);
     }
 
     if (existing) {
-      await db.prepare(`
+      const updated = db.prepare(`
         UPDATE site_claims
         SET email = COALESCE(?, email), source_url = COALESCE(?, source_url),
             config = COALESCE(?, config), updated_at = CURRENT_TIMESTAMP
         WHERE slug = ? AND edit_token = ?
-      `).bind(email || null, sourceUrl || null, site ? JSON.stringify(site) : null, slug, token).run();
+      `).bind(email || null, sourceUrl || null, site ? JSON.stringify(site) : null, slug, token);
+
+      // A mismatch here writes nothing while still reporting success, which is
+      // how a change can appear to publish and quietly not.
+      const written = await updated.run();
+      if (written?.meta && written.meta.changes === 0) {
+        return json({ error: 'not-saved', slug }, 409);
+      }
 
       if (email && !existing.email) {
         try {

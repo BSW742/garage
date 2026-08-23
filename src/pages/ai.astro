@@ -2975,7 +2975,11 @@
         const result = await claim;
         $('agent-state').textContent = 'online · building';
 
-        if (result.error === 'taken') {
+        if (result.error === 'no-key' || result.error === 'not-saved') {
+          // Not a contested address — the record itself cannot be written to.
+          await say('I could not save to ' + S.slug + '.garage.co.nz. That address is yours, but its edit key is missing, so publishing is blocked until it is repaired. Nothing you did caused this and your changes are still here.');
+          $('agent-state').textContent = 'online · needs a hand';
+        } else if (result.error === 'taken') {
           await say('Ah — somebody claimed ' + S.slug + '.garage.co.nz while we were working. Give me another address and I will publish straight away.');
           S.awaiting = 'slug';
           return;
