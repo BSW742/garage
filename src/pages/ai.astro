@@ -1848,6 +1848,43 @@
         S.pendingLogo = { url: url, style: style };
       }
 
+      /**
+       * Animating costs roughly twenty times what drawing a still does, so it
+       * is never done automatically. It plays when someone clicks the logo on
+       * the published site, and nowhere else — nobody pays for the download
+       * unless they ask to see it.
+       */
+      async function animateLogo() {
+        await say('Right — animating it. Give it a minute.');
+        $('agent-state').textContent = 'online · animating';
+        let url = null, failed = null;
+        try {
+          const res = await fetch('/api/logo/animate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: S.site.logo, slug: S.slug || '' }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) failed = data.error || 'the animation desk said no';
+          else url = data.url;
+        } catch (e) {
+          failed = 'the connection dropped while it was animating';
+        }
+        $('agent-state').textContent = 'online · building';
+
+        if (!url) {
+          await say(failed || 'That did not come off.');
+          chips(IDLE_CHIPS);
+          return;
+        }
+        snapshot();
+        S.site.logoVideo = url;
+        render();
+        did('Logo animated');
+        await say('Done — click the logo on your published site and it plays.');
+        chips(IDLE_CHIPS);
+      }
+
       async function logoVerdict(text) {
         const pending = S.pendingLogo || {};
         S.awaiting = null;
@@ -1861,10 +1898,12 @@
           if (!pending.url) { await drawLogo(pending.style || 'cartoon'); return; }
           snapshot();
           S.site.logo = pending.url;
+          S.site.logoVideo = null;
           render();
           did('New logo');
           await say('On it goes. Undo puts the old one back.');
-          chips(IDLE_CHIPS);
+          S.awaiting = 'logoanimate';
+          chips([{ label: 'Animate it', yes: true }, { label: 'Leave it' }]);
           return;
         }
         await say('Left it as it was.');
@@ -2552,6 +2591,13 @@
         }
 
         // — drawing a logo —
+        if (S.awaiting === 'logoanimate') {
+          S.awaiting = null;
+          if (/animate|yes|yep|go on|do it/i.test(text)) { await animateLogo(); return; }
+          chips(IDLE_CHIPS);
+          return;
+        }
+
         if (S.awaiting === 'logoverdict') {
           await logoVerdict(text);
           return;

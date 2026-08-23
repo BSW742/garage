@@ -33,6 +33,7 @@ export interface SiteConfig {
   sections?: SiteSection[];
   contact?: SiteContact;
   images?: string[];
+  logoVideo?: string | null;   // plays when the logo is opened
   chatLabel?: string;  // what the launcher says, default "Chat right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
@@ -71,7 +72,7 @@ nav.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;p
 .logo-zoom{position:fixed;inset:0;z-index:9000;display:none;place-items:center;padding:6vw;
 background:rgba(12,14,18,.82);cursor:zoom-out;backdrop-filter:blur(3px)}
 .logo-zoom.on{display:grid}
-.logo-zoom img{max-width:min(92vw,900px);max-height:82vh;width:auto;object-fit:contain;
+.logo-zoom img,.logo-zoom video{max-width:min(92vw,900px);max-height:82vh;width:auto;object-fit:contain;
 border-radius:14px;background:#fff;padding:3vmin;box-shadow:0 24px 70px rgba(0,0,0,.5)}
 @media(prefers-reduced-motion:no-preference){.logo-zoom.on img{animation:logopop .18s ease-out}}
 @keyframes logopop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
@@ -519,6 +520,7 @@ export function renderSite(site: SiteConfig, slug: string): string {
   // On a dark page the alternating band has to be dark too
   const wash = site.tone === 'dark' ? mixHex(primary, tone.page, 0.86) : (palette.wash || '#f6f8fb');
   const logo = safeUrl(site.logo);
+  const logoFilm = safeUrl(site.logoVideo);
   const hero = safeUrl(site.heroImage);
   const name = site.name || slug;
   const contact = site.contact || {};
@@ -577,10 +579,15 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom"><img src="${esc(logo)}" alt="${esc(name)}" /></div>` : ''}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
+<body class="st-${esc(site.style || 'modern')}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+    ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
+    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
-function shut(){z.classList.remove('on');document.body.style.overflow='';}
-b.addEventListener('click',function(){z.classList.add('on');document.body.style.overflow='hidden';});
+function shut(){z.classList.remove('on');document.body.style.overflow='';
+var f=document.getElementById('logo-film');if(f){try{f.pause();}catch(e){}}}
+var film=document.getElementById('logo-film');
+b.addEventListener('click',function(){z.classList.add('on');document.body.style.overflow='hidden';
+if(film){try{film.currentTime=0;film.play();}catch(e){}}});
 z.addEventListener('click',shut);
 document.addEventListener('keydown',function(e){if(e.key==='Escape')shut();});})();</script>
 <script>document.querySelectorAll('.reel').forEach(function(r){
