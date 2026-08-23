@@ -243,11 +243,11 @@ align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid va
 padding:.45rem .95rem;border-radius:999px;cursor:pointer}
 .buy-add:hover{background:var(--deep)}
 
-.cart-open{position:fixed;right:18px;bottom:88px;z-index:8000;width:48px;height:48px;border-radius:50%;
-border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);display:grid;place-items:center;
-cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.16)}
-.cart-open:hover{transform:translateY(-2px)}
-.cart-count{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;border-radius:999px;
+.cart-open{position:relative;flex:none;width:40px;height:40px;border-radius:50%;
+border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;
+cursor:pointer;transition:background .15s,border-color .15s}
+.cart-open:hover{background:var(--wash);border-color:var(--primary);color:var(--primary)}
+.cart-count{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:999px;
 background:var(--primary);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
 .cart-count[hidden]{display:none}
 .cart-back{position:fixed;inset:0;background:rgba(10,12,16,.45);z-index:8500}
@@ -265,6 +265,9 @@ display:flex;flex-direction:column;box-shadow:-18px 0 50px rgba(0,0,0,.22)}
 .cart-drop{border:0;background:none;color:var(--soft);cursor:pointer;font-size:.8rem}
 .cart-drop:hover{color:#dc2626}
 .cart-empty,.cart-done,.cart-warn{color:var(--soft);font-size:.9rem;line-height:1.6;margin:0}
+.cart-browse{align-self:flex-start;border:1px solid var(--line);background:none;color:var(--primary);
+font:inherit;font-size:.88rem;font-weight:600;padding:.5rem 1rem;border-radius:999px;cursor:pointer}
+.cart-browse:hover{border-color:var(--primary);background:var(--wash)}
 .cart-warn{color:#b42318}
 .cart-foot{border-top:1px solid var(--line);padding:1rem 1.2rem 1.3rem}
 .cart-foot[hidden]{display:none}
@@ -301,7 +304,6 @@ const NAV_LABELS: Record<string, string> = {
   about: 'About',
   gallery: 'Gallery',
   hours: 'Hours',
-  shop: 'Shop',
   pricing: 'Pricing',
   video: 'Video',
   faq: 'FAQ',
@@ -435,6 +437,7 @@ function pageNav(site: SiteConfig, slug: string, here: string): string {
     : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</a></div>
   <div class="links">${navLinks(site, '/', here)}</div>
   <a class="cta" href="/#contact">${esc(site.cta || 'Get in touch')}</a>
+  ${cartButton(site)}
 </nav>`;
 }
 
@@ -590,14 +593,23 @@ function socialLinks(socials?: Record<string, string>): string {
  * is collect what someone wants and how to reach them, and say plainly that a
  * person will check stock and come back about paying.
  */
-function cartHtml(site: SiteConfig, slug: string): string {
-  const config = JSON.stringify({ slug, name: site.name || slug }).replace(/</g, '\\u003c');
+// Sits in the nav beside the call to action, where a cart belongs.
+function cartButton(site: SiteConfig): string {
+  if (site.shop === false) return '';
   return `<button type="button" class="cart-open" id="cart-open" aria-label="Your cart">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
+  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
   <span class="cart-count" id="cart-count" hidden>0</span>
-</button>
+</button>`;
+}
 
-<div class="cart-back" id="cart-back" hidden></div>
+function cartHtml(site: SiteConfig, slug: string): string {
+  // Taking Shop out of the nav means an empty cart is the only signpost left,
+  // so it has to point at the products rather than just shrug.
+  const hasShop = (site.sections || []).some((s) => s && s.type === 'shop')
+    && (site.products || []).length > 0;
+  const config = JSON.stringify({ slug, name: site.name || slug, shop: hasShop })
+    .replace(/</g, '\\u003c');
+  return `<div class="cart-back" id="cart-back" hidden></div>
 <aside class="cart" id="cart" hidden aria-label="Your cart">
   <div class="cart-head">
     <strong>Your cart</strong>
@@ -663,6 +675,18 @@ function draw(){
 
   if (!items.length) {
     bodyEl.innerHTML = '<p class="cart-empty">Nothing in here yet.</p>';
+    if (C.shop) {
+      var go = document.createElement('button');
+      go.type = 'button';
+      go.className = 'cart-browse';
+      go.textContent = 'See what we sell';
+      go.addEventListener('click', function(){
+        show(false);
+        var shop = document.getElementById('shop');
+        if (shop) shop.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      bodyEl.appendChild(go);
+    }
   }
   foot.hidden = !items.length;
   document.getElementById('cart-total').textContent = '$' + total.toFixed(2).replace(/\\.00$/, '');
@@ -934,6 +958,7 @@ export function renderSite(site: SiteConfig, slug: string): string {
     : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
   <div class="links">${navLinks(site)}</div>
   <a class="cta" href="#contact">${esc(site.cta || 'Get in touch')}</a>
+  ${cartButton(site)}
 </nav>
 <header class="hero${hero ? ' photo' : ''}" id="top">
   ${hero ? `<div class="hero-photo" style="background-image:url(${esc(hero)})"></div>` : ''}
