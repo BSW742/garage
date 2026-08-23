@@ -1653,11 +1653,15 @@
        * corner, bouncing, interrupting. So he only turns up where there is
        * dead time anyway, plays once, and leaves. No sound, no controls, no
        * second go unless something else is worth waiting for.
+       *
+       * Ten of him doing ordinary things, and two of him in fancy dress that
+       * turn up rarely enough to stay funny.
        */
-      const MASCOTS = [1, 2, 3, 4].map((n) => 'https://garage.co.nz/images/mascot-' + n + '.mp4');
-      // The tutu one. Kept out of the rotation and shown about one time in
-      // twelve — a gag you see every fifth publish stops being a gag.
-      const MASCOT_RARE = 'https://garage.co.nz/images/mascot-rare.mp4';
+      const MASCOTS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        .map((n) => 'https://garage.co.nz/images/mascot-' + n + '.mp4');
+      // The dressing-up ones. Kept out of the rotation and shown about one
+      // time in twelve — a gag on a schedule stops being a gag.
+      const MASCOT_RARE = ['', '-2'].map((v) => 'https://garage.co.nz/images/mascot-rare' + v + '.mp4');
       let lastMascot = -1;
 
       function mascot() {
@@ -1666,7 +1670,9 @@
         let pick = Math.floor(Math.random() * MASCOTS.length);
         if (pick === lastMascot) pick = (pick + 1) % MASCOTS.length;
         lastMascot = pick;
-        const src = Math.random() < 1 / 12 ? MASCOT_RARE : MASCOTS[pick];
+        const src = Math.random() < 1 / 12
+          ? MASCOT_RARE[Math.floor(Math.random() * MASCOT_RARE.length)]
+          : MASCOTS[pick];
 
         const wrap = document.createElement('div');
         wrap.className = 'msg mascot';
