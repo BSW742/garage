@@ -66,7 +66,11 @@ a{color:inherit;text-decoration:none}
 .wrap{max-width:70rem;margin:0 auto}
 nav.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.05rem;letter-spacing:-.02em}
-.brand img{height:34px;width:auto;max-width:170px;object-fit:contain}
+.brand img{height:52px;width:auto;max-width:230px;object-fit:contain}
+h1.hero-logo{margin:0 0 1.1rem;line-height:0}
+h1.hero-logo img{width:auto;max-width:min(88%,520px);max-height:190px;object-fit:contain}
+.hero.photo h1.hero-logo img{filter:drop-shadow(0 6px 22px rgba(0,0,0,.45))}
+@media(max-width:640px){.brand img{height:42px;max-width:170px}h1.hero-logo img{max-height:130px}}
 .glyph{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;background:var(--primary);color:#fff;font-size:.85rem;font-weight:700}
 .links{display:flex;gap:1.3rem;font-size:.9rem;color:var(--soft)}
 .top .cta{background:var(--primary);color:#fff;font-size:.85rem;font-weight:600;padding:.55rem 1.1rem;border-radius:999px}
@@ -513,6 +517,11 @@ export function renderSite(site: SiteConfig, slug: string): string {
   const contact = site.contact || {};
   const description = (site.lede || site.headline || name).slice(0, 155);
 
+  // Same words, ignoring case and punctuation, means the headline is only
+  // repeating the name the logo already carries.
+  const plain = (v: string) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const heroLogo = !!logo && plain(site.headline || name) === plain(name);
+
   const body = `
 <nav class="top">
   <div class="brand">${logo ? `<img src="${esc(logo)}" alt="${esc(name)}" />` : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
@@ -523,7 +532,9 @@ export function renderSite(site: SiteConfig, slug: string): string {
   ${hero ? `<div class="hero-photo" style="background-image:url(${esc(hero)})"></div>` : ''}
   <div class="hero-inner">
     ${site.eyebrow ? `<p class="eyebrow">${esc(site.eyebrow)}</p>` : ''}
-    <h1>${esc(site.headline || name)}</h1>
+    ${heroLogo
+      ? `<h1 class="hero-logo"><img src="${esc(logo)}" alt="${esc(name)}" /></h1>`
+      : `<h1>${esc(site.headline || name)}</h1>`}
     ${site.lede ? `<p class="lede">${esc(site.lede)}</p>` : ''}
     <a class="btn" href="#contact">${esc(site.cta || 'Get in touch')}</a>
     ${contact.phone ? `<a class="btn alt" href="tel:${esc(String(contact.phone).replace(/\s/g, ''))}">${esc(contact.phone)}</a>` : ''}

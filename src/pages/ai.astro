@@ -1092,6 +1092,11 @@
       .pv-shot { aspect-ratio: 4 / 3; border-radius: 12px; background: #e9edf3 center/cover no-repeat; }
 
       .pv-contact { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+      .pv-brand img { height: 30px; width: auto; max-width: 130px; object-fit: contain; }
+      .pv-hero-logo { line-height: 0; margin-bottom: 0.6rem; }
+      .pv-hero-logo img { width: auto; max-width: 78%; max-height: 110px; object-fit: contain; }
+      .pv-hero.has-photo .pv-hero-logo img { filter: drop-shadow(0 4px 14px rgba(0,0,0,0.45)); }
+
       .pv-reel { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
       .pv-reel-slide {
         position: relative;
@@ -2146,6 +2151,9 @@
           return out.join('');
         }
 
+        // Matches heroLogo in site-render.ts.
+        function plainWords(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
         const blocks = [];
 
         blocks.push({ key: 'nav', html:
@@ -2159,7 +2167,9 @@
           (s.heroImage ? '<div class="pv-hero-photo" data-photo="heroImage" style="background-image:url(' + esc(s.heroImage) + ')"></div>' : '') +
           '<div class="pv-hero-inner">' +
           (s.eyebrow ? '<p class="pv-eyebrow" data-edit="eyebrow">' + esc(s.eyebrow) + '</p>' : '') +
-          '<h1 class="pv-h1" data-edit="headline">' + esc(s.headline) + '</h1>' +
+          (plainWords(s.headline) === plainWords(s.name) && s.logo
+            ? '<h1 class="pv-h1 pv-hero-logo"><img src="' + esc(s.logo) + '" alt="" data-photo="logo" /></h1>'
+            : '<h1 class="pv-h1" data-edit="headline">' + esc(s.headline) + '</h1>') +
           (s.lede ? '<p class="pv-lede" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
           '<span class="pv-btn" data-edit="cta">' + esc(s.cta) + '</span>' +
           (s.contact.phone ? '<span class="pv-btn pv-btn-2" data-edit="contact.phone">' + esc(s.contact.phone) + '</span>' : '<span class="pv-btn pv-btn-2">Learn more</span>') +
