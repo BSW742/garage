@@ -75,10 +75,13 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     note: '',
   };
 
+  // Only reply once we know the sender is real. Before that, a From address is
+  // just a claim, and answering it mails whoever the spammer named instead.
+  let verified = false;
   const say = async (note: string) => {
     record.note = note;
     await saveMail(env, record);
-    if (!automated) await sendReply(message, mailbox, from, note, messageId);
+    if (verified && !automated) await sendReply(message, mailbox, from, note, messageId);
   };
 
   const site = await env.DB
@@ -87,19 +90,22 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     .first<{ slug: string; email: string; config: string; edit_token: string }>();
 
   if (!site) {
-    return say(`There is no site called ${slug}.garage.co.nz, so there was nothing to update.`);
+    // With a catch-all in front of this, unknown mailboxes are overwhelmingly
+    // spam. Log it and stay quiet rather than confirming the address is live.
+    record.note = `no site called ${slug}`;
+    return saveMail(env, record);
   }
 
   // 1. Did the message really come from where it claims?
   const verdict = authVerdict(message.headers.get('authentication-results'), from);
   record.auth = verdict.detail;
   if (!verdict.ok) {
-    return say(
-      `That message could not be verified as genuinely coming from ${from}, so nothing was changed.\n\n` +
-      `This usually means the sending domain has no DKIM or DMARC set up. Sending from a Gmail, ` +
-      `Outlook or iCloud address will work.\n\n(${verdict.detail})`
-    );
+    // The From address may well be forged, so a reply would go to whoever was
+    // spoofed. Record it instead — it shows up in site_mail for follow-up.
+    record.note = `unverified sender (${verdict.detail})`;
+    return saveMail(env, record);
   }
+  verified = true;
 
   // 2. Is the sender the owner of this site?
   if (bareAddress(site.email) !== from) {
