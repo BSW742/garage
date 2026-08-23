@@ -176,17 +176,25 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
     redirect: 'follow',
   });
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-
   const html = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `HTTP ${response.status} (${html.length} bytes, server: ${response.headers.get('server') || '?'})`
+    );
+  }
 
   // A 200 carrying nothing is a refusal wearing a success code. Saying so
   // beats handing back a result with every field empty, which reads as "this
   // site has no logo" when it means "we never saw the site".
   if (html.trim().length < 500) {
-    throw new Error('site returned an empty page');
+    // Carry the evidence. "Empty page" alone cannot tell a bot challenge from a
+    // JS shell from a genuinely bare site, and those need different answers.
+    const snippet = html.replace(/\s+/g, ' ').trim().slice(0, 220);
+    throw new Error(
+      `empty page (${html.length} bytes, server: ${response.headers.get('server') || '?'}, ` +
+        `cf-mitigated: ${response.headers.get('cf-mitigated') || 'no'}) — ${snippet}`
+    );
   }
   const baseUrl = new URL(url).origin;
 

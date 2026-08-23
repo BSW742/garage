@@ -1590,14 +1590,20 @@
         const raw = $('source-url').value.trim();
         if (!raw) { $('source-url').focus(); return; }
         S.sourceUrl = raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        S.scrapeError = null;
         S.scrapePromise = fetch('/api/scrape', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: 'https://' + S.sourceUrl }),
         })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => (d && !d.error ? d : null))
-          .catch(() => null);
+          .then(async (r) => {
+            const d = await r.json().catch(() => null);
+            if (r.ok && d && !d.error) return d;
+            // Which way it failed decides what we can usefully say next.
+            S.scrapeError = (d && (d.details || d.error)) || 'unreachable';
+            return null;
+          })
+          .catch(() => { S.scrapeError = 'unreachable'; return null; });
         enterBuilder();
       });
 
@@ -2472,6 +2478,31 @@
         $('agent-text').focus();
       }
 
+      // A blocked scrape is not one thing. A CAPTCHA, a JavaScript shell and a
+      // 403 need different answers from them, and "it might be blocking robots"
+      // is no use to anybody.
+      function scrapeExcuse(detail, site) {
+        const d = String(detail || '');
+        if (/sgcaptcha/i.test(d)) {
+          return 'Your web host (SiteGround) has a CAPTCHA sitting in front of ' + site +
+            ", so we get stopped the same way a bot would — and I'm not going to try picking that lock. " +
+            'You can allowlist us in your host security settings if you want the old site pulled across. ' +
+            "Quicker though: tell me what you do and put your photos straight in here.";
+        }
+        if (/captcha|challenge|cf-mitigated: challenge/i.test(d)) {
+          return site + ' is behind a bot check we get stopped by. Faster to build it here — ' +
+            'tell me what you do and drop your photos in.';
+        }
+        if (/empty page/i.test(d)) {
+          return site + ' builds itself with JavaScript, so there is nothing in the page for me to read. ' +
+            'We will do it here instead.';
+        }
+        const http = d.match(/HTTP (\d{3})/);
+        if (http) return site + ' turned us away (' + http[1] + '). No drama, we will build it here.';
+        return "Couldn't get in the front door of " + site + ' — plenty of sites block robots. ' +
+          'No drama, we will build it here.';
+      }
+
       // ── Pull everything from the old site ────────
       async function importAssets() {
         $('agent-state').textContent = 'online · reading ' + S.sourceUrl;
@@ -2481,7 +2512,11 @@
         $('agent-state').textContent = 'online · building';
 
         if (!d) {
-          await say("Couldn't get in the front door of that site — it might be blocking robots. No drama, we'll build it from scratch.");
+          // We could not fetch their material, so we have to ask for it. The
+          // old path built a generic shell and never mentioned it, which is
+          // how someone ends up staring at an empty page nobody explained.
+          S.scrapeBlocked = true;
+          await say(scrapeExcuse(S.scrapeError, S.sourceUrl));
           await say('What is the business called?');
           S.awaiting = 'name';
           return;
@@ -2843,6 +2878,11 @@
           S.awaiting = null;
           const industry = startFresh(text.replace(/^(it'?s|we'?re|called|the)\s+/i, '').trim().slice(0, 40));
           await say("Nice one. I've put a starter page up — " + (industry === 'default' ? 'generic for now' : 'shaped for ' + industry) + ", your colours and words next.");
+          if (S.scrapeBlocked) {
+            await say("Since I couldn't get your photos off the old site, put a few in here and I'll build the page around them — they beat anything I can find.");
+            chips([{ label: 'Add my photos', yes: true, act: () => openMedia(null) }].concat(IDLE_CHIPS.slice(1)));
+            return;
+          }
           await say('Tell me anything: colours, headline, sections, your phone number. Or hit publish whenever you like.');
           chips(IDLE_CHIPS);
           return;
