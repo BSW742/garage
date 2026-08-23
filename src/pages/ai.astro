@@ -1557,9 +1557,169 @@
         const bare = !S.site.name && !(S.site.sections || []).length;
         // Publishing and undo are ours, not the agent's — they touch the
         // address and the claim, not the page content.
-        const local = /^(publish|go live|ship it|launch|undo|go back|revert)\b/i.test(text.trim());
+        const local = /^(publish|go live|ship it|launch|undo|go back|revert)\b/i.test(text.trim())
+          || /\blogo\b/i.test(text.trim());
         if (!S.llm || S.awaiting || bare || local) return handle(text);
         return askAgent(text);
+      }
+
+      /**
+       * The image service only returns JPEG, which cannot carry transparency,
+       * so the logo arrives sitting on a white rectangle. Cutting it out here
+       * means the stored logo is a real PNG that works on any background.
+       *
+       * Flooding inwards from the edges rather than deleting every white pixel
+       * matters: the white inside a badge ring or a mower wheel is part of the
+       * design and has to stay.
+       */
+      async function cutOutWhite(url) {
+        const img = await new Promise((resolve, reject) => {
+          const i = new Image();
+          i.crossOrigin = 'anonymous';
+          i.onload = () => resolve(i);
+          i.onerror = reject;
+          i.src = url;
+        });
+
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const data = ctx.getImageData(0, 0, c.width, c.height);
+        const px = data.data;
+        const W = c.width, H = c.height;
+        const near = (i) => px[i] > 228 && px[i + 1] > 228 && px[i + 2] > 228;
+
+        const seen = new Uint8Array(W * H);
+        const stack = [];
+        for (let x = 0; x < W; x++) { stack.push(x, (H - 1) * W + x); }
+        for (let y = 0; y < H; y++) { stack.push(y * W, y * W + W - 1); }
+
+        while (stack.length) {
+          const p = stack.pop();
+          if (p < 0 || p >= W * H || seen[p]) continue;
+          const i = p * 4;
+          if (!near(i)) continue;
+          seen[p] = 1;
+          px[i + 3] = 0;
+          const x = p % W, y = (p / W) | 0;
+          if (x > 0) stack.push(p - 1);
+          if (x < W - 1) stack.push(p + 1);
+          if (y > 0) stack.push(p - W);
+          if (y < H - 1) stack.push(p + W);
+        }
+
+        // Soften what is left of the anti-aliased edge.
+        for (let p = 0; p < W * H; p++) {
+          if (seen[p]) continue;
+          const i = p * 4;
+          const x = p % W, y = (p / W) | 0;
+          const touching =
+            (x > 0 && seen[p - 1]) || (x < W - 1 && seen[p + 1]) ||
+            (y > 0 && seen[p - W]) || (y < H - 1 && seen[p + W]);
+          if (!touching) continue;
+          const light = Math.min(px[i], px[i + 1], px[i + 2]);
+          if (light > 200) px[i + 3] = Math.round(255 * (1 - (light - 200) / 55));
+        }
+
+        // Trim the empty margins, or the mark ends up tiny in its own box.
+        let top = H, left = W, right = 0, bottom = 0;
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            if (px[(y * W + x) * 4 + 3] > 12) {
+              if (y < top) top = y;
+              if (y > bottom) bottom = y;
+              if (x < left) left = x;
+              if (x > right) right = x;
+            }
+          }
+        }
+        if (right <= left || bottom <= top) return c.toDataURL('image/png');
+
+        ctx.putImageData(data, 0, 0);
+        const pad = Math.round(Math.max(right - left, bottom - top) * 0.04);
+        const out = document.createElement('canvas');
+        out.width = right - left + 1 + pad * 2;
+        out.height = bottom - top + 1 + pad * 2;
+        out.getContext('2d').drawImage(c, left - pad, top - pad, out.width, out.height, 0, 0, out.width, out.height);
+        return out.toDataURL('image/png');
+      }
+
+      async function drawLogo(style) {
+        const brief = {
+          name: S.site.name,
+          trade: S.site.eyebrow || '',
+          style: style,
+          colour: (S.site.palette && S.site.palette.primary) || '',
+          slug: S.slug || '',
+        };
+
+        await say('Right — drawing it now. Takes a minute or two, so leave this open.');
+        $('agent-state').textContent = 'online · drawing';
+
+        let url = null, failed = null;
+        try {
+          const res = await fetch('/api/logo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(brief),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            failed = err.error || 'the drawing desk said no';
+          } else {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const parts = buffer.split('\n\n');
+              buffer = parts.pop();
+              for (const part of parts) {
+                const event = /event: (\w+)/.exec(part);
+                const payload = /data: (.+)/.exec(part);
+                if (!event || !payload) continue;
+                const body = JSON.parse(payload[1]);
+                if (event[1] === 'done') url = body.url;
+                if (event[1] === 'failed') failed = body.error;
+              }
+            }
+          }
+        } catch (e) {
+          failed = 'the connection dropped while it was drawing';
+        }
+
+        $('agent-state').textContent = 'online · building';
+
+        if (!url) {
+          await say('That did not come off — ' + (failed || 'unknown problem') + '. Try again in a moment.');
+          chips(IDLE_CHIPS);
+          return;
+        }
+
+        try {
+          const cut = await cutOutWhite(url);
+          const up = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: cut }),
+          });
+          const saved = await up.json();
+          if (saved.url) url = saved.url;
+        } catch (e) {
+          // Keep the version with the white background rather than nothing.
+        }
+
+        snapshot();
+        S.site.logo = url;
+        render();
+        did('New logo');
+        await say('There you go. Say "new logo" again for a different take, or undo to put the old one back.');
+        chips(IDLE_CHIPS);
       }
 
       $('done-btn').addEventListener('click', () => handle('publish'));
@@ -2234,6 +2394,28 @@
           render();
           await say(S.slug + '.garage.co.nz it is. Publishing now.');
           await publish();
+          return;
+        }
+
+        // — drawing a logo —
+        if (S.awaiting === 'logostyle') {
+          const styles = { simple: 'mark', badge: 'badge', letter: 'letter', picture: 'illustration' };
+          const pick = Object.keys(styles).find((k) => new RegExp(k, 'i').test(text)) || 'simple';
+          S.awaiting = null;
+          await drawLogo(styles[pick]);
+          return;
+        }
+
+        if (/\blogo\b/i.test(t)) {
+          if (!S.site.name) { await say('Tell me the business name first and I will draw one.'); return; }
+          S.awaiting = 'logostyle';
+          await say('I can draw you one. What sort?');
+          chips([
+            { label: 'Simple mark' },
+            { label: 'Badge' },
+            { label: 'Letter' },
+            { label: 'Picture' },
+          ]);
           return;
         }
 
