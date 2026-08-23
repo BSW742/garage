@@ -1,13 +1,6 @@
 ---
 export const prerender = false;
-const ads = [
-  { kind: 'square', kicker: 'The question', head: 'Would ChatGPT recommend your business?', sub: 'Find out in thirty seconds. Free.', note: 'The broad one. Curiosity, no threat — widest top of funnel.' },
-  { kind: 'square', kicker: 'The specific one', head: 'We asked AI for the best plumbers in Hamilton.', sub: 'Three came up. Was one of them you?', note: 'Swap trade and town per audience. Local and concrete beats clever.' },
-  { kind: 'wide', kicker: 'The rival', head: 'Your competitor is on the list.', sub: 'You’re not. Find out why — takes thirty seconds.', note: 'Sharpest hook we have. Loss, not gain. Use where frequency is low.' },
-  { kind: 'wide', kicker: 'The shift', head: 'Nobody’s googling “plumber near me” any more.', sub: 'They’re asking AI. See what it says about you.', note: 'For owners who already sense Google traffic slipping.' },
-  { kind: 'story', kicker: 'The quiet one', head: 'When AI is asked about your business, what does it say?', sub: 'Often: nothing at all.', note: 'Softer. Good for retargeting people who bounced.' },
-  { kind: 'story', kicker: 'The dare', head: 'Go on. Check.', sub: 'See whether AI would send a customer your way.', note: 'Short-form video end card. Needs the brand already warm.' },
-];
+import { ADS } from '../lib/creative';
 ---
 <!doctype html>
 <html lang="en-NZ">
@@ -20,11 +13,14 @@ const ads = [
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Archivo+Black&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
     <style>
-      :root{--ink:#07080b;--ink2:#0e1016;--line:#1e222c;--paper:#f7f8fa;--soft:#8c94a6;
-        --softer:#5d6577;--hot:#ff4d3d;--font:'Inter',system-ui,sans-serif;
-        --display:'Archivo Black',system-ui,sans-serif;--pop:'Poppins',system-ui,sans-serif}
+      :root{
+        --bg:#fafafa;--paper:#fff;--ink:#0a0a0a;--soft:#525252;--softer:#8a8a8a;
+        --line:#e5e5e5;--line-2:#d4d4d4;--hot:#dc2626;--wash:#fff5f4;
+        --font:'Inter',system-ui,sans-serif;--display:'Archivo Black',system-ui,sans-serif;
+        --pop:'Poppins',system-ui,sans-serif;
+      }
       *{box-sizing:border-box;margin:0;padding:0}
-      body{background:var(--ink);color:var(--paper);font-family:var(--font);line-height:1.5;
+      body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;
         -webkit-font-smoothing:antialiased}
       .wrap{max-width:1060px;margin:0 auto;padding:0 1.5rem 5rem}
       .top{padding:1.6rem 0;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--line)}
@@ -34,15 +30,20 @@ const ads = [
       h1{font-family:var(--display);font-size:clamp(2rem,5.4vw,3rem);line-height:1.02;
         letter-spacing:-.03em;margin-bottom:.9rem}
       .lede{color:var(--soft);font-size:1.05rem}
-      .rule{font-size:.9rem;color:var(--softer);margin-top:1.4rem;padding-left:.9rem;
+      .rule{font-size:.9rem;color:var(--soft);margin-top:1.4rem;padding-left:.9rem;
         border-left:2px solid var(--hot)}
       .grid{display:grid;gap:2.2rem;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
       .item{display:flex;flex-direction:column;gap:.7rem}
-      .ad{background:linear-gradient(150deg,#12141b,#080a0e);border:1px solid var(--line);
-        border-radius:16px;padding:1.7rem;display:flex;flex-direction:column;justify-content:space-between;
-        position:relative;overflow:hidden}
-      .ad:before{content:'';position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0,rgba(255,77,61,.16),transparent 60%)}
+      .ad{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:1.7rem;
+        display:flex;flex-direction:column;justify-content:space-between;position:relative;
+        overflow:hidden;text-decoration:none;color:inherit;
+        box-shadow:0 1px 2px rgba(0,0,0,.04);
+        transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .18s,border-color .18s}
+      .ad:before{content:'';position:absolute;inset:0;
+        background:radial-gradient(120% 80% at 100% 0,var(--wash),transparent 62%)}
       .ad>*{position:relative}
+      .ad:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(10,10,10,.1);border-color:var(--line-2)}
+      .ad:hover .btn{background:#b91c1c}
       .ad.square{aspect-ratio:1}
       .ad.wide{aspect-ratio:1.91}
       .ad.story{aspect-ratio:.72}
@@ -52,13 +53,14 @@ const ads = [
       .ad.wide h2{font-size:clamp(1.15rem,1.9vw,1.5rem)}
       .ad p{color:var(--soft);font-size:.92rem;margin-top:.6rem}
       .ad .btn{margin-top:1.2rem;display:inline-block;align-self:flex-start;background:var(--hot);
-        color:#fff;font-family:var(--pop);font-weight:700;font-size:.82rem;padding:.6rem 1.05rem;border-radius:8px}
-      .ad .brand{font-family:var(--display);font-size:.75rem;opacity:.55;margin-top:1rem}
+        color:#fff;font-family:var(--pop);font-weight:700;font-size:.82rem;padding:.6rem 1.05rem;
+        border-radius:8px;transition:background .18s}
+      .ad .brand{font-family:var(--display);font-size:.75rem;color:var(--softer);margin-top:1rem}
       .meta{display:flex;gap:.55rem;align-items:baseline}
       .fmt{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--softer);
-        border:1px solid var(--line);border-radius:99px;padding:.15rem .5rem;flex:none}
-      .note{font-size:.85rem;color:var(--softer);line-height:1.55}
-      .foot{margin-top:4rem;padding-top:2rem;border-top:1px solid var(--line);color:var(--softer);font-size:.9rem}
+        border:1px solid var(--line);border-radius:99px;padding:.15rem .5rem;flex:none;background:var(--paper)}
+      .note{font-size:.85rem;color:var(--soft);line-height:1.55}
+      .foot{margin-top:4rem;padding-top:2rem;border-top:1px solid var(--line);color:var(--soft);font-size:.9rem}
       .foot a{color:var(--hot)}
     </style>
   </head>
@@ -69,13 +71,13 @@ const ads = [
       <header class="intro">
         <h1>Sell the discovery, not the website.</h1>
         <p class="lede">Nobody wakes up wanting a new website. They do want to know whether the AI everyone keeps talking about is sending customers to the bloke down the road instead of them.</p>
-        <p class="rule">Every ad here has to survive the same test: does the landing page deliver exactly what the ad promised, within thirty seconds? If it doesn't, the ad is lying and the funnel leaks.</p>
+        <p class="rule">Click any of these. Each one lands on the check itself, carrying its own promise through — the page you arrive on says what the ad said, because an ad that hands over to a different promise is where a funnel leaks.</p>
       </header>
 
       <div class="grid">
-        {ads.map((ad) => (
+        {ADS.map((ad) => (
           <div class="item">
-            <div class={`ad ${ad.kind}`}>
+            <a class={`ad ${ad.kind}`} href={`/visible?ad=${ad.id}`}>
               <div>
                 <div class="k">{ad.kicker}</div>
                 <h2>{ad.head}</h2>
@@ -85,9 +87,10 @@ const ads = [
                 <div class="btn">Check my business</div>
                 <div class="brand">garage.co.nz</div>
               </div>
-            </div>
+            </a>
             <div class="meta">
               <span class="fmt">{ad.kind === 'square' ? '1:1 feed' : ad.kind === 'wide' ? '1.91:1 banner' : '4:5 story'}</span>
+              <span class="fmt">{ad.id}</span>
             </div>
             <p class="note">{ad.note}</p>
           </div>
@@ -95,7 +98,7 @@ const ads = [
       </div>
 
       <div class="foot">
-        Every one of these points at <a href="/visible">garage.co.nz/visible</a> — the check itself.
+        All six land on <a href="/visible">garage.co.nz/visible</a>, each with its own opening line.
         Keep the trade and town in the ad matched to the audience: “plumbers in Hamilton” to Hamilton
         plumbers, not “tradies in NZ” to everyone.
       </div>

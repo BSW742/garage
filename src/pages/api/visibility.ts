@@ -183,13 +183,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
             `INSERT INTO leads (id, created_at, domain, url, score, score_meta, score_robots,
                score_llms_txt, score_llm_ld, score_schema, score_structure, score_https,
                score_speed, ab_variant, converted, notes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'visibility', 0, ?)`
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
           )
           .bind(
             crypto.randomUUID(), result.askedAt, theirs.domain, theirs.url, theirs.score,
             theirs.checks.meta.score, theirs.checks.robots.score, theirs.checks.llms_txt.score,
             theirs.checks.llm_ld.score, theirs.checks.schema.score, theirs.checks.structure.score,
             theirs.checks.https.score, theirs.checks.speed.score,
+            String(body.ad || 'direct').slice(0, 20),
             `${name} · ${place} · ${result.query}`
           )
           .run();
