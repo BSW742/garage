@@ -125,11 +125,22 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export async function scrapeWebsite(url: string): Promise<ScrapedData> {
+  // The old User-Agent stopped mid-string, which reads as a bot to most
+  // firewalls. Sites that serve us a challenge page instead of their content
+  // are the main reason a scrape comes back with nothing in it.
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      'Accept': 'text/html,application/xhtml+xml',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+        'Chrome/126.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-NZ,en;q=0.9',
+      'Upgrade-Insecure-Requests': '1',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
     },
+    redirect: 'follow',
   });
 
   if (!response.ok) {
@@ -137,6 +148,13 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   }
 
   const html = await response.text();
+
+  // A 200 carrying nothing is a refusal wearing a success code. Saying so
+  // beats handing back a result with every field empty, which reads as "this
+  // site has no logo" when it means "we never saw the site".
+  if (html.trim().length < 500) {
+    throw new Error('site returned an empty page');
+  }
   const baseUrl = new URL(url).origin;
 
   // Extract all data

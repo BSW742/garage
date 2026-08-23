@@ -1723,8 +1723,9 @@
        * already scraped.
        */
       async function offerRealLogo() {
-        if (!S.sourceUrl || S.site.logo || S.refusedRealLogo) return false;
+        if (!S.sourceUrl || S.site.logo) return false;
         let found = S.scraped && S.scraped.logoUrl;
+        let unreachable = false;
         if (!found) {
           await say('Hang on — let me see if you already have one.');
           try {
@@ -1734,10 +1735,21 @@
               body: JSON.stringify({ url: 'https://' + S.sourceUrl }),
             });
             const data = res.ok ? await res.json() : null;
-            found = data && data.logoUrl;
-          } catch (e) { found = null; }
+            if (!data || data.error) unreachable = true;
+            else found = data.logoUrl;
+          } catch (e) { unreachable = true; }
         }
-        if (!found) return false;
+
+        // Say which of the two things went wrong. "Couldn't reach your site"
+        // and "your site has no logo" call for different answers from them.
+        if (!found) {
+          if (unreachable) {
+            await say("I couldn't get into " + S.sourceUrl + " — a lot of sites block us. If you have your logo as a file, put it in through Media and I'll use it.");
+          } else {
+            await say("Couldn't spot a logo on " + S.sourceUrl + '.');
+          }
+          return false;
+        }
 
         S.foundLogo = found;
         S.refusedRealLogo = true;
@@ -2545,6 +2557,14 @@
         }
 
         if (S.awaiting === 'logostyle') {
+          // "try find my one" is a request to look again, not a style.
+          if (/find|look|search|mine|my one|existing|real/i.test(text)) {
+            S.awaiting = null;
+            S.scraped = null;
+            if (await offerRealLogo()) return;
+            await offerToDraw();
+            return;
+          }
           const styles = { simple: 'mark', badge: 'badge', letter: 'letter', picture: 'illustration' };
           const pick = Object.keys(styles).find((k) => new RegExp(k, 'i').test(text));
           S.awaiting = null;
