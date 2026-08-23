@@ -1759,12 +1759,34 @@
         $('canvas-empty').classList.toggle('gone', hasContent);
         if (!hasContent) { root.innerHTML = ''; renderedKeys = new Set(); return; }
 
+        // Mirrors navLinks() in site-render.ts so the nav here matches the
+        // one that actually publishes.
+        const NAV_LABELS = {
+          services: 'Services', about: 'About', gallery: 'Gallery',
+          hours: 'Hours', faq: 'FAQ', contact: 'Contact',
+        };
+        function navLinks(site) {
+          const seen = {};
+          const out = ['<span>Home</span>'];
+          (site.sections || []).forEach((sec) => {
+            const label = NAV_LABELS[sec.type];
+            if (!label || seen[sec.type]) return;
+            if (sec.type === 'contact') {
+              const c = site.contact || {};
+              if (!c.phone && !c.email && !c.address) return;
+            }
+            seen[sec.type] = true;
+            out.push('<span>' + label + '</span>');
+          });
+          return out.join('');
+        }
+
         const blocks = [];
 
         blocks.push({ key: 'nav', html:
           '<nav class="pv-nav"><div class="pv-brand">' +
           (s.logo ? '<img src="' + esc(s.logo) + '" alt="" data-photo="logo" />' : '<span class="pv-glyph">' + esc(initials(s.name)) + '</span><span data-edit="name">' + esc(s.name) + '</span>') +
-          '</div><div class="pv-links"><span>Home</span><span>Services</span><span>About</span><span>Contact</span></div>' +
+          '</div><div class="pv-links">' + navLinks(s) + '</div>' +
           '<span class="pv-cta" data-edit="cta">' + esc(s.cta) + '</span></nav>' });
 
         blocks.push({ key: 'hero', html:

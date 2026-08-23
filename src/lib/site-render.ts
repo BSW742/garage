@@ -150,26 +150,54 @@ footer a{border-bottom:1px solid var(--line)}
 @media(max-width:640px){.links{display:none}section{padding:2.8rem 1.2rem}}
 `;
 
+// What the nav offers, in page order. Sections that are not somewhere you
+// would navigate to — a testimonial, a call-to-action band — stay out of it.
+const NAV_LABELS: Record<string, string> = {
+  services: 'Services',
+  about: 'About',
+  gallery: 'Gallery',
+  hours: 'Hours',
+  faq: 'FAQ',
+  contact: 'Contact',
+};
+
+function navLinks(site: SiteConfig): string {
+  const seen = new Set<string>();
+  const links = ['<a href="#top">Home</a>'];
+  for (const section of site.sections || []) {
+    const label = NAV_LABELS[section.type];
+    if (!label || seen.has(section.type)) continue;
+    // A contact section with nothing in it never renders, so never link to it.
+    if (section.type === 'contact') {
+      const c = site.contact || {};
+      if (!c.phone && !c.email && !c.address) continue;
+    }
+    seen.add(section.type);
+    links.push(`<a href="#${section.type}">${label}</a>`);
+  }
+  return links.join('');
+}
+
 function sectionHtml(section: SiteSection, site: SiteConfig): string {
   switch (section.type) {
     case 'services':
-      return `<section class="alt"><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
+      return `<section class="alt" id="services"><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
         <h2>${esc(section.title || 'How we can help')}</h2><div class="grid">${(section.items || [])
           .map((i) => `<div class="card"><span class="tick">◆</span><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
           .join('')}</div></div></section>`;
     case 'about':
-      return `<section><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
+      return `<section id="about"><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
         <h2>${esc(section.title || `The story behind ${site.name || ''}`)}</h2>
         <p class="prose">${esc(section.text)}</p></div></section>`;
     case 'gallery': {
       const shots = (section.images || []).map(safeUrl).filter(Boolean) as string[];
       const cells = shots.length ? shots : ['', '', '', ''];
-      return `<section><div class="wrap"><p class="label">${esc(section.label || 'Our work')}</p><h2>${esc(section.title || 'Recent jobs')}</h2><div class="gallery">${cells
+      return `<section id="gallery"><div class="wrap"><p class="label">${esc(section.label || 'Our work')}</p><h2>${esc(section.title || 'Recent jobs')}</h2><div class="gallery">${cells
         .map((src) => `<div class="shot"${src ? ` style="background-image:url(${esc(src)})"` : ''}></div>`)
         .join('')}</div></div></section>`;
     }
     case 'hours':
-      return `<section class="alt"><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
+      return `<section class="alt" id="hours"><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
           .join('')}</div></div></section>`;
@@ -408,7 +436,7 @@ export function renderSite(site: SiteConfig, slug: string): string {
   const body = `
 <nav class="top">
   <div class="brand">${logo ? `<img src="${esc(logo)}" alt="${esc(name)}" />` : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
-  <div class="links"><a href="#top">Home</a><a href="#contact">Contact</a></div>
+  <div class="links">${navLinks(site)}</div>
   <a class="cta" href="#contact">${esc(site.cta || 'Get in touch')}</a>
 </nav>
 <header class="hero${hero ? ' photo' : ''}" id="top">
