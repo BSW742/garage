@@ -3643,6 +3643,7 @@
             body: JSON.stringify({
               site: S.site,
               message: text,
+              slug: S.slug || null,
               history: S.chat,
               selection: S.sel ? S.sel.label + ' (' + S.sel.path + ')' : null,
               sourceUrl: S.sourceUrl || null,

@@ -86,6 +86,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       selection = null,
       ownImages = [],
       sourceUrl = null,
+      slug = null,
     } = body as {
       site: SiteConfig;
       message: string;
@@ -93,6 +94,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       selection: string | null;
       ownImages: string[];
       sourceUrl: string | null;
+      slug: string | null;
     };
 
     if (!site || !message) {
@@ -120,6 +122,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     let reply = '';
 
+    // One message from a person can be several calls to the model, each one
+    // resending the tools and the page. Counting the lot is the only way to
+    // know what a conversation costs.
+    const spend = { steps: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+
     for (let step = 0; step < MAX_STEPS; step++) {
       const response = await client.messages.create({
         model: MODEL,
@@ -129,6 +136,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
         tools: TOOLS as any,
         messages,
       });
+
+      const used = (response as any).usage || {};
+      spend.steps += 1;
+      spend.input += used.input_tokens || 0;
+      spend.output += used.output_tokens || 0;
+      spend.cacheRead += used.cache_read_input_tokens || 0;
+      spend.cacheWrite += used.cache_creation_input_tokens || 0;
 
       if (response.stop_reason === 'refusal') {
         reply = "I can't help with that one, sorry.";
@@ -162,6 +176,28 @@ export const POST: APIRoute = async ({ request, locals }) => {
         });
       }
       messages.push({ role: 'user', content: results });
+    }
+
+    // Bookkeeping must never cost someone their answer.
+    try {
+      const db = (locals.runtime?.env as any)?.DB;
+      if (db) {
+        await db
+          .prepare(
+            `INSERT INTO agent_usage
+               (id, slug, model, steps, input_tokens, output_tokens, cache_read, cache_write,
+                message_chars, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            crypto.randomUUID(), slug || null, MODEL, spend.steps,
+            spend.input, spend.output, spend.cacheRead, spend.cacheWrite,
+            String(message || '').length, new Date().toISOString()
+          )
+          .run();
+      }
+    } catch (usageError) {
+      console.error('Usage log failed:', usageError);
     }
 
     return new Response(

@@ -23,6 +23,41 @@ if (db) {
   error = 'No database binding — run against the deployed site.';
 }
 
+// What the builder agent has cost lately. Prices are per million tokens for
+// the model in use; they are here so the number means something at a glance,
+// and they will need editing if the model or its pricing changes.
+const PER_MILLION_IN = 5;
+const PER_MILLION_OUT = 25;
+
+let spend: any = null;
+if (db) {
+  try {
+    const row = await db.prepare(`
+      SELECT COUNT(*) AS turns,
+             COALESCE(SUM(steps), 0) AS steps,
+             COALESCE(SUM(input_tokens), 0) AS input,
+             COALESCE(SUM(output_tokens), 0) AS output
+      FROM agent_usage
+      WHERE created_at > datetime('now', '-7 days')
+    `).first();
+    const today = await db.prepare(`
+      SELECT COUNT(*) AS turns,
+             COALESCE(SUM(input_tokens), 0) AS input,
+             COALESCE(SUM(output_tokens), 0) AS output
+      FROM agent_usage
+      WHERE created_at > datetime('now', '-1 day')
+    `).first();
+    const cost = (r: any) =>
+      ((r?.input || 0) / 1e6) * PER_MILLION_IN + ((r?.output || 0) / 1e6) * PER_MILLION_OUT;
+    spend = {
+      week: { ...(row as any), cost: cost(row) },
+      today: { ...(today as any), cost: cost(today) },
+    };
+  } catch (e) {
+    spend = null;
+  }
+}
+
 function summarise(site: any) {
   const bits = [];
   if (site.source_url) bits.push(site.source_url);
@@ -43,6 +78,19 @@ function summarise(site: any) {
         <a href="/ai" class="nav-btn primary">Build a new one</a>
       </div>
     </header>
+
+    {spend && spend.week.turns > 0 && (
+      <div class="spend">
+        <span><b>{spend.today.turns}</b> agent messages today · <b>${spend.today.cost.toFixed(2)}</b></span>
+        <span><b>{spend.week.turns}</b> this week · <b>${spend.week.cost.toFixed(2)}</b></span>
+        <span class="muted small">
+          {spend.week.turns > 0 && (
+            <>{(spend.week.steps / spend.week.turns).toFixed(1)} model calls per message ·
+            {' '}{Math.round(spend.week.input / spend.week.turns).toLocaleString()} tokens in each</>
+          )}
+        </span>
+      </div>
+    )}
 
     {error && <p class="error">{error}</p>}
 
@@ -169,6 +217,20 @@ function summarise(site: any) {
 
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  .spend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+    align-items: baseline;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.4rem;
+    border: 1px solid var(--color-border, #e5e5e5);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .spend b { font-weight: 700; }
+
   .pill.nokey {
     background: #fdf0ef;
     color: #b42318;
