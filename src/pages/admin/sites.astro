@@ -83,6 +83,9 @@ function summarise(site: any) {
               <td class="muted small">{(site.updated_at || site.created_at || '').slice(0, 16)}</td>
               <td>
                 <span class={`pill ${site.status}`}>{site.status}</span>
+                {!site.edit_token && (
+                  <span class="pill nokey" title="This site has no edit key, so it cannot be republished and its owner gets no edit link">no key</span>
+                )}
               </td>
               <td class="right nowrap">
                 <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="act">View</a>
@@ -166,6 +169,12 @@ function summarise(site: any) {
 
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  .pill.nokey {
+    background: #fdf0ef;
+    color: #b42318;
+    border: 1px solid #f3c4c0;
+    margin-left: 0.3rem;
+  }
   .owner-email {
     font: inherit;
     font-size: 0.85rem;
