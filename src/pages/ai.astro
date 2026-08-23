@@ -1655,6 +1655,9 @@
        * second go unless something else is worth waiting for.
        */
       const MASCOTS = [1, 2, 3, 4].map((n) => 'https://garage.co.nz/images/mascot-' + n + '.mp4');
+      // The tutu one. Kept out of the rotation and shown about one time in
+      // twelve — a gag you see every fifth publish stops being a gag.
+      const MASCOT_RARE = 'https://garage.co.nz/images/mascot-rare.mp4';
       let lastMascot = -1;
 
       function mascot() {
@@ -1663,11 +1666,12 @@
         let pick = Math.floor(Math.random() * MASCOTS.length);
         if (pick === lastMascot) pick = (pick + 1) % MASCOTS.length;
         lastMascot = pick;
+        const src = Math.random() < 1 / 12 ? MASCOT_RARE : MASCOTS[pick];
 
         const wrap = document.createElement('div');
         wrap.className = 'msg mascot';
         const film = document.createElement('video');
-        film.src = MASCOTS[pick];
+        film.src = src;
         film.muted = true;
         film.autoplay = true;
         film.playsInline = true;

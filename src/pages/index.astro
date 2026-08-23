@@ -91,6 +91,8 @@ import Layout from '../components/Layout.astro';
   if (stage && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const film = stage.querySelector('video') as HTMLVideoElement;
     const clips = [1, 2, 3, 4].map((n) => `https://garage.co.nz/images/mascot-${n}.mp4`);
+    // Rare enough to feel like you caught him at it.
+    const rare = 'https://garage.co.nz/images/mascot-rare.mp4';
     let last = -1;
     let busy = false;
 
@@ -100,7 +102,7 @@ import Layout from '../components/Layout.astro';
       let pick = Math.floor(Math.random() * clips.length);
       if (pick === last) pick = (pick + 1) % clips.length;
       last = pick;
-      film.src = clips[pick];
+      film.src = Math.random() < 1 / 12 ? rare : clips[pick];
       film.currentTime = 0;
       const done = () => { stage.classList.remove('playing'); busy = false; };
       film.addEventListener('ended', done, { once: true });
