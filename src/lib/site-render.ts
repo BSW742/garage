@@ -67,6 +67,14 @@ a{color:inherit;text-decoration:none}
 nav.top{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.05rem;letter-spacing:-.02em}
 .brand img{height:52px;width:auto;max-width:230px;object-fit:contain}
+.brand-zoom{border:0;background:none;padding:0;cursor:zoom-in;display:block;line-height:0}
+.logo-zoom{position:fixed;inset:0;z-index:9000;display:none;place-items:center;padding:6vw;
+background:rgba(12,14,18,.82);cursor:zoom-out;backdrop-filter:blur(3px)}
+.logo-zoom.on{display:grid}
+.logo-zoom img{max-width:min(92vw,900px);max-height:82vh;width:auto;object-fit:contain;
+border-radius:14px;background:#fff;padding:3vmin;box-shadow:0 24px 70px rgba(0,0,0,.5)}
+@media(prefers-reduced-motion:no-preference){.logo-zoom.on img{animation:logopop .18s ease-out}}
+@keyframes logopop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
 h1.hero-logo{margin:0 0 1.1rem;line-height:0}
 h1.hero-logo img{width:auto;max-width:min(88%,520px);max-height:190px;object-fit:contain}
 .hero.photo h1.hero-logo img{filter:drop-shadow(0 6px 22px rgba(0,0,0,.45))}
@@ -523,7 +531,9 @@ export function renderSite(site: SiteConfig, slug: string): string {
 
   const body = `
 <nav class="top">
-  <div class="brand">${logo ? `<img src="${esc(logo)}" alt="${esc(name)}" />` : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
+  <div class="brand">${logo
+    ? `<button type="button" class="brand-zoom" aria-label="See the logo larger"><img src="${esc(logo)}" alt="${esc(name)}" /></button>`
+    : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
   <div class="links">${navLinks(site)}</div>
   <a class="cta" href="#contact">${esc(site.cta || 'Get in touch')}</a>
 </nav>
@@ -567,7 +577,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}<script>document.querySelectorAll('.reel').forEach(function(r){
+<body class="st-${esc(site.style || 'modern')}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom"><img src="${esc(logo)}" alt="${esc(name)}" /></div>` : ''}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
+if(!z||!b)return;
+function shut(){z.classList.remove('on');document.body.style.overflow='';}
+b.addEventListener('click',function(){z.classList.add('on');document.body.style.overflow='hidden';});
+z.addEventListener('click',shut);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')shut();});})();</script>
+<script>document.querySelectorAll('.reel').forEach(function(r){
 var track=r.querySelector('.reel-track'),slides=[].slice.call(r.querySelectorAll('.reel-slide'));
 slides.forEach(function(s){s.querySelector('.reel-play').addEventListener('click',function(){
 slides.forEach(function(o){if(o!==s&&o.querySelector('iframe'))o.innerHTML=o.dataset.poster;});
