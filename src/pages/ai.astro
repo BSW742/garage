@@ -1705,6 +1705,52 @@
        * and asking for a logo for a "Local & independent business" gets you
        * exactly the sort of shape nobody remembers.
        */
+      async function offerToDraw() {
+        S.awaiting = 'logostyle';
+        await say('I can draw you one. What sort?');
+        chips([
+          { label: 'Simple mark' },
+          { label: 'Badge' },
+          { label: 'Letter' },
+          { label: 'Picture' },
+        ]);
+      }
+
+      /**
+       * Look on their existing site before drawing anything. A real logo, the
+       * one already on their vans, is worth more than the best thing a model
+       * can invent — and it is usually sitting in the header of the site we
+       * already scraped.
+       */
+      async function offerRealLogo() {
+        if (!S.sourceUrl || S.site.logo || S.refusedRealLogo) return false;
+        let found = S.scraped && S.scraped.logoUrl;
+        if (!found) {
+          await say('Hang on — let me see if you already have one.');
+          try {
+            const res = await fetch('/api/scrape', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: 'https://' + S.sourceUrl }),
+            });
+            const data = res.ok ? await res.json() : null;
+            found = data && data.logoUrl;
+          } catch (e) { found = null; }
+        }
+        if (!found) return false;
+
+        S.foundLogo = found;
+        S.refusedRealLogo = true;
+        showLogo(found);
+        await say('Found this on ' + S.sourceUrl + '. Is that your logo?');
+        chips([
+          { label: 'Use it', yes: true },
+          { label: 'No, draw me one' },
+        ]);
+        S.awaiting = 'realogo';
+        return true;
+      }
+
       async function askTradeThenDraw(style) {
         S.logoStyle = style;
         if (S.logoTrade) { await drawLogo(style); return; }
@@ -2518,14 +2564,36 @@
 
         if (/\blogo\b/i.test(t)) {
           if (!S.site.name) { await say('Tell me the business name first and I will draw one.'); return; }
-          S.awaiting = 'logostyle';
-          await say('I can draw you one. What sort?');
-          chips([
-            { label: 'Simple mark' },
-            { label: 'Badge' },
-            { label: 'Letter' },
-            { label: 'Picture' },
-          ]);
+          // Most of these businesses already have a logo. Drawing a new one
+          // before even looking for theirs is solving the wrong problem.
+          if (await offerRealLogo()) return;
+          await offerToDraw();
+          return;
+        }
+
+        if (S.awaiting === 'realogo') {
+          S.awaiting = null;
+          if (/use it|yes|keep|yep|that/i.test(text)) {
+            snapshot();
+            // Keep our own copy — their old site is the one being replaced.
+            let keep = S.foundLogo;
+            try {
+              const res = await fetch('/api/logo/adopt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: S.foundLogo }),
+              });
+              const saved = await res.json();
+              if (saved.url) keep = saved.url;
+            } catch (e) { /* hotlink rather than lose it */ }
+            S.site.logo = keep;
+            render();
+            did('Their own logo');
+            await say('Good — that is the real one, which beats anything I could draw.');
+            chips(IDLE_CHIPS);
+            return;
+          }
+          await offerToDraw();
           return;
         }
 

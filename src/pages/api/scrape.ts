@@ -392,7 +392,15 @@ function extractLogo(html: string, baseUrl: string): string | null {
     /<img[^>]+src=["']([^"']+)["'][^>]*class=["'][^"']*logo[^"']*["']/i,
     /<a[^>]+class=["'][^"']*logo[^"']*["'][^>]*>[\s\S]*?<img[^>]+src=["']([^"']+)["']/i,
     /<img[^>]+src=["']([^"']*logo[^"']+)["']/i,
+    // Some builders label the logo in an attribute of their own invention —
+    // Squarespace uses elementtiming — so accept "logo" anywhere in the tag.
+    /<img[^>]*\blogo\b[^>]*\ssrc=["']([^"']+)["']/i,
+    /<img[^>]+src=["']([^"']+)["'][^>]*\blogo\b[^>]*>/i,
     /<header[\s\S]{0,500}<img[^>]+src=["']([^"']+)["']/i,
+    // Last resort: the icon a phone uses for the home screen is nearly always
+    // the business's mark, cropped square.
+    /<link[^>]+rel=["'][^"']*apple-touch-icon[^"']*["'][^>]*href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]*rel=["'][^"']*apple-touch-icon[^"']*["']/i,
   ];
 
   for (const pattern of patterns) {
@@ -677,7 +685,9 @@ function resolveUrl(url: string, baseUrl: string): string | null {
 function isValidImageUrl(url: string): boolean {
   if (!url) return false;
   if (url.startsWith('data:image')) return true;
-  return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url) ||
+  // Logos are very often SVG. Leaving it out meant a real logo was thrown away
+  // unless its URL happened to contain /uploads/ or /image.
+  return /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(url) ||
          url.includes('/image') ||
          url.includes('/uploads/');
 }
