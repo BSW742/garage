@@ -1055,6 +1055,38 @@
       .pv-shot { aspect-ratio: 4 / 3; border-radius: 12px; background: #e9edf3 center/cover no-repeat; }
 
       .pv-contact { display: flex; flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+      .pv-reel { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+      .pv-reel-slide {
+        position: relative;
+        flex: 0 0 62%;
+        aspect-ratio: 16/9;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #000;
+      }
+      .pv-reel-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .pv-reel-play {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 46px; height: 32px; border-radius: 8px;
+        background: rgba(18,18,18,0.82);
+      }
+      .pv-reel-play::after {
+        content: ''; position: absolute; top: 50%; left: 50%;
+        transform: translate(-42%, -50%);
+        border-style: solid; border-width: 6px 0 6px 11px;
+        border-color: transparent transparent transparent #fff;
+      }
+      .pv-reel-count { text-align: center; margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--pv-soft); }
+      .pv-faq { max-width: 560px; margin: 0 auto; text-align: left; }
+      .pv-faq-item {
+        border: 1px solid var(--pv-line);
+        border-radius: 10px;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.5rem;
+      }
+      .pv-faq-q { font-weight: 600; font-size: 0.9rem; }
+      .pv-faq-a { color: var(--pv-soft); font-size: 0.85rem; margin-top: 0.2rem; }
       .pv-map {
         margin: 1.2rem auto 0;
         max-width: 620px;
@@ -1714,6 +1746,34 @@
               section.rows.map((r, j) => '<div>' +
                 ed(p + '.rows.' + j + '.0', '', 'span', r[0]) +
                 ed(p + '.rows.' + j + '.1', '', 'span', r[1]) + '</div>').join('') +
+              '</div></section>';
+
+          case 'video': {
+            // Mirrors the reel in site-render.ts. Thumbnails only — the canvas
+            // is click-to-edit and a player would fight it.
+            const ids = (Array.isArray(section.videos) ? section.videos
+              : section.videoId ? [section.videoId] : []).filter(Boolean);
+            if (!ids.length) return '';
+            return '<section class="pv-section">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'Watch') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'See us at work') +
+              '<div class="pv-reel">' +
+              ids.map((id) => '<div class="pv-reel-slide">' +
+                '<img src="https://i.ytimg.com/vi/' + esc(id) + '/hqdefault.jpg" alt="" />' +
+                '<span class="pv-reel-play"></span></div>').join('') +
+              '</div>' +
+              (ids.length > 1 ? '<p class="pv-reel-count">1 / ' + ids.length + '</p>' : '') +
+              '</section>';
+          }
+
+          case 'faq':
+            return '<section class="pv-section">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'Questions') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'Common questions') +
+              '<div class="pv-faq">' +
+              (section.items || []).map((i, j) => '<div class="pv-faq-item">' +
+                ed(p + '.items.' + j + '.0', 'pv-faq-q', 'div', i[0]) +
+                ed(p + '.items.' + j + '.1', 'pv-faq-a', 'div', i[1]) + '</div>').join('') +
               '</div></section>';
 
           case 'testimonial':
