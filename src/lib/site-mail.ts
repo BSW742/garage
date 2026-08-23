@@ -111,8 +111,33 @@ export interface ReplyParts {
   toAddress: string;
   subject: string;
   inReplyTo?: string | null;
+  references?: string | null;
   body: string;
   messageId: string;
+}
+
+// Cloudflare checks that a reply carries the whole conversation, not just the
+// message being answered: every id already in References, then the incoming
+// Message-ID. Getting this wrong rejects the reply outright.
+const MAX_REFERENCES = 90;
+
+export function threadReferences(prior: unknown, messageId: unknown): string {
+  const ids = [
+    ...String(prior ?? '').split(/\s+/),
+    ...String(messageId ?? '').split(/\s+/),
+  ]
+    .map((id) => id.trim())
+    .filter((id) => /^<[^<>\s]+>$/.test(id));
+
+  const seen = new Set<string>();
+  const chain = ids.filter((id) => (seen.has(id) ? false : (seen.add(id), true)));
+
+  // The platform rejects anything over 100 entries. Long threads keep their
+  // root and their recent history, which is what mail clients thread on.
+  if (chain.length > MAX_REFERENCES) {
+    return [chain[0], ...chain.slice(-(MAX_REFERENCES - 1))].join(' ');
+  }
+  return chain.join(' ');
 }
 
 /** A plain-text reply. Plain text renders everywhere and cannot break. */
@@ -125,9 +150,10 @@ export function buildReplyMime(parts: ReplyParts): string {
     `Message-ID: <${parts.messageId}>`,
   ];
   if (parts.inReplyTo) {
-    const ref = headerSafe(parts.inReplyTo, 400);
-    lines.push(`In-Reply-To: ${ref}`, `References: ${ref}`);
+    lines.push(`In-Reply-To: ${headerSafe(parts.inReplyTo, 400)}`);
   }
+  const references = threadReferences(parts.references, parts.inReplyTo);
+  if (references) lines.push(`References: ${headerSafe(references, 8000)}`);
   lines.push('MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '', parts.body);
   return lines.join('\r\n') + '\r\n';
 }

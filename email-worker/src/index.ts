@@ -215,6 +215,7 @@ async function sendReply(
       toAddress,
       subject: message.headers.get('subject') || 'your website',
       inReplyTo,
+      references: message.headers.get('references'),
       messageId: `${crypto.randomUUID()}@garage.co.nz`,
       body: body + '\n\n—\ngarage.co.nz\n',
     });
