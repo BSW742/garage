@@ -73,6 +73,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     prevConfig: null as string | null,
     undoToken: null as string | null,
     note: '',
+    replyError: null as string | null,
   };
 
   // Only reply once we know the sender is real. Before that, a From address is
@@ -80,8 +81,14 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
   let verified = false;
   const say = async (note: string) => {
     record.note = note;
+    if (verified && !automated) {
+      record.replyError = await sendReply(message, mailbox, from, note, messageId);
+    } else if (!verified) {
+      record.replyError = 'not sent: sender unverified';
+    } else {
+      record.replyError = 'not sent: automated message';
+    }
     await saveMail(env, record);
-    if (verified && !automated) await sendReply(message, mailbox, from, note, messageId);
   };
 
   const site = await env.DB
@@ -190,18 +197,18 @@ async function saveMail(env: Env, r: any): Promise<void> {
     .prepare(
       `INSERT OR IGNORE INTO site_mail
          (id, slug, from_address, subject, message_id, auth_result, intent, applied,
-          prev_config, undo_token, note, received_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          prev_config, undo_token, note, reply_error, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(r.id, r.slug, r.from, r.subject, r.messageId, r.auth, r.intent, r.applied,
-          r.prevConfig, r.undoToken, r.note, new Date().toISOString())
+          r.prevConfig, r.undoToken, r.note, r.replyError ?? null, new Date().toISOString())
     .run();
 }
 
 async function sendReply(
   message: EmailMessageIn, fromAddress: string, toAddress: string,
   body: string, inReplyTo: string
-): Promise<void> {
+): Promise<string | null> {
   try {
     const raw = buildReplyMime({
       fromAddress,
@@ -212,9 +219,12 @@ async function sendReply(
       body: body + '\n\n—\ngarage.co.nz\n',
     });
     await message.reply(new EmailMessage(fromAddress, toAddress, raw));
+    return null;
   } catch (error) {
-    // A failed reply must never undo work that already succeeded.
+    // A failed reply must never undo work that already succeeded, but it must
+    // leave a trace — a missing confirmation is otherwise invisible.
     console.error('Reply failed:', error);
+    return String((error as Error)?.message || error).slice(0, 400);
   }
 }
 

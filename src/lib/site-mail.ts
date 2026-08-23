@@ -129,7 +129,7 @@ export function buildReplyMime(parts: ReplyParts): string {
     lines.push(`In-Reply-To: ${ref}`, `References: ${ref}`);
   }
   lines.push('MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '', parts.body);
-  return lines.join('\r\n');
+  return lines.join('\r\n') + '\r\n';
 }
 
 /**
