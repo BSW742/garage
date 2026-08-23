@@ -46,6 +46,43 @@ export default {
   },
 };
 
+/**
+ * What is sitting in their inbox that nobody has looked at.
+ *
+ * A reply cannot be banked — it has to go out inside the handler for the
+ * message being answered — so there is no way to email someone the moment an
+ * order arrives. What there is, is their next email: they are already writing
+ * to add a photo, so the confirmation can carry the news back with it.
+ */
+async function waitingFor(env: Env, slug: string): Promise<string> {
+  try {
+    const orders = await env.DB
+      .prepare("SELECT COUNT(*) AS n FROM orders WHERE slug = ? AND status = 'new'")
+      .bind(slug)
+      .first<{ n: number }>();
+    const asked = await env.DB
+      .prepare(
+        `SELECT COUNT(*) AS n FROM chat_threads t
+          WHERE t.slug = ?
+            AND (SELECT sender FROM chat_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) = 'visitor'`
+      )
+      .bind(slug)
+      .first<{ n: number }>();
+
+    const bits: string[] = [];
+    const o = orders?.n ?? 0;
+    const a = asked?.n ?? 0;
+    if (o) bits.push(`${o} order${o === 1 ? '' : 's'}`);
+    if (a) bits.push(`${a} ${a === 1 ? 'person' : 'people'} waiting on a reply`);
+    if (!bits.length) return '';
+
+    return `\n\nWhile you are here: ${bits.join(' and ')}.\n` +
+      `Have a look:  https://${slug}.garage.co.nz/admin`;
+  } catch {
+    return '';
+  }
+}
+
 // ── The site mailbox ────────────────────────────────────────────────────────
 
 async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): Promise<void> {
@@ -80,6 +117,8 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
   // just a claim, and answering it mails whoever the spammer named instead.
   let verified = false;
   const say = async (note: string) => {
+    // Anything unattended rides along with the answer they were getting anyway.
+    if (verified && !automated) note += await waitingFor(env, slug);
     record.note = note;
     if (verified && !automated) {
       record.replyError = await sendReply(message, mailbox, from, note, messageId);
