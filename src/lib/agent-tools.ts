@@ -265,6 +265,25 @@ export const TOOLS = [
     },
   },
   {
+    name: 'ask_for_photos',
+    description:
+      'Ask them for photos of their own and open the photo picker in the chat, so they can drop ' +
+      'some in there and then. Use this when the page is running on stock images or has almost ' +
+      'nothing of theirs. They are sitting in front of the preview with a phone full of photos — ' +
+      'asking now beats emailing later. Build the page out first with whatever you have, then ask ' +
+      'once. Never ask twice in a conversation, and never ask if they have already given you photos.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        reason: {
+          type: 'string',
+          description: 'What you are short of, in a few words — e.g. "photos of your work"',
+        },
+      },
+      required: ['reason'],
+    },
+  },
+  {
     name: 'read_url',
     description:
       'Fetch a web page and read what is on it — their old site, a Facebook page, a supplier page. ' +
@@ -510,6 +529,11 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to set' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'ask_for_photos': {
+      const reason = String(input.reason || 'photos of your work').slice(0, 80);
+      return { ok: true, message: `Asked for ${reason}`, data: { reason } };
     }
 
     case 'read_url': {

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { lookAtImages, type ImageVerdict } from '../../lib/vision';
 
 export const prerender = false;
 
@@ -21,6 +22,11 @@ export interface ScrapedData {
   socials: Record<string, string>;
   hours: [string, string][];
   brandColour: string | null;
+  /** Every image we found, judged by nobody — the vision pass decides what they are */
+  candidateImages: string[];
+  vision: ImageVerdict[] | null;
+  /** 0 to 1: is there enough real material here to build a site. Null if we never looked. */
+  mediaConfidence: number | null;
 }
 
 // Industry detection with weighted keywords
@@ -94,7 +100,7 @@ const INDUSTRY_KEYWORDS: Record<string, { keywords: string[]; weight: number }[]
   ],
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const { url } = await request.json();
 
@@ -106,6 +112,33 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const scraped = await scrapeWebsite(url);
+
+    // Look at the images instead of guessing from their filenames. This is
+    // allowed to fail: if it does we keep the heuristic result, because a
+    // degraded scrape beats no scrape.
+    const apiKey = (locals.runtime?.env as any)?.ANTHROPIC_API_KEY;
+    if (apiKey && scraped.candidateImages.length) {
+      const seen = await lookAtImages(apiKey, scraped.candidateImages);
+      if (seen.ok) {
+        scraped.vision = seen.images;
+        scraped.mediaConfidence = seen.confidence;
+
+        if (seen.logo) scraped.logoUrl = seen.logo;
+        else if (
+          scraped.logoUrl &&
+          seen.images.find((v) => v.url === scraped.logoUrl)?.kind === 'furniture'
+        ) {
+          // The regexes' favourite mistake: the first icon in the header.
+          scraped.logoUrl = null;
+        }
+
+        if (seen.hero) scraped.heroImage = seen.hero;
+        // An honestly empty gallery is better than one full of social badges —
+        // empty is a state we can now recognise and ask about.
+        scraped.galleryImages = seen.photos.filter((u) => u !== seen.hero).slice(0, 8);
+        if (seen.palette) scraped.brandColour = seen.palette;
+      }
+    }
 
     return new Response(JSON.stringify(scraped), {
       status: 200,
@@ -168,6 +201,7 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   const faviconUrl = extractFavicon(html, baseUrl);
   const heroImage = extractHeroImage(html, baseUrl);
   const galleryImages = extractGalleryImages(html, baseUrl);
+  const candidateImages = extractCandidateImages(html, baseUrl);
   const aboutText = extractAboutText(html);
 
   // Detect industry FIRST (before extracting services)
@@ -200,6 +234,9 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
     socials,
     hours,
     brandColour,
+    candidateImages,
+    vision: null,
+    mediaConfidence: null,
   };
 }
 
@@ -461,6 +498,50 @@ function extractHeroImage(html: string, baseUrl: string): string | null {
   }
 
   return null;
+}
+
+// Builders serve a tiny blurred placeholder through a transform path and swap the
+// real file in with JS, so the markup is full of 77px blurs. Judging one of those
+// means marking a photo down for being a thumbnail. Go back to the original the
+// transform was derived from — and as a bonus, every size variant of one photo
+// normalises to the same URL, so they stop eating candidate slots.
+function fullSizeImage(url: string): string {
+  const cut = url.split('/v1/')[0];
+  if (cut !== url && /\.(jpe?g|png|webp|gif|avif)$/i.test(cut.split('?')[0])) return cut;
+  return url;
+}
+
+// Everything plausible, in document order, with no opinion about what it is.
+// The old path applied a filename blocklist here — which threw away a hero shot
+// exported as banner-icon.jpg and kept junk called photo-1.png. Judging happens
+// in the vision pass now, where something is actually looking.
+function extractCandidateImages(html: string, baseUrl: string): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  const add = (raw: string | null | undefined) => {
+    if (!raw || urls.length >= 12) return;
+    const resolved = resolveUrl(raw, baseUrl);
+    if (!resolved) return;
+    const full = fullSizeImage(resolved);
+    if (seen.has(full) || !isValidImageUrl(full)) return;
+    seen.add(full);
+    urls.push(full);
+  };
+
+  // The social preview is usually their single best photograph.
+  const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+  if (og) add(og[1]);
+
+  let match: RegExpExecArray | null;
+  const imgPattern = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  while ((match = imgPattern.exec(html)) !== null && urls.length < 12) add(match[1]);
+
+  // Lazy-loading builders park a placeholder in src and the real file in data-src,
+  // so a src-only sweep comes back with a page full of blank spacers.
+  const lazyPattern = /<img[^>]+data-src=["']([^"']+)["']/gi;
+  while ((match = lazyPattern.exec(html)) !== null && urls.length < 12) add(match[1]);
+
+  return urls;
 }
 
 function extractGalleryImages(html: string, baseUrl: string): string[] {

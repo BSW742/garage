@@ -25,12 +25,20 @@ How to work:
 - Never invent facts about their business — no years in business, no staff numbers, no awards, no
   qualifications, no claims about their work unless they told you or it came off a page you read.
   If you need a fact you don't have, write around it or ask one short question.
-- Their own photos beat stock every time.
+- Their own photos beat stock every time. photos_of_their_own counts what is genuinely theirs,
+  and media_confidence is a score out of 1 from actually looking at their images. If they have
+  none of their own, or confidence is under about 0.4, build the page out first with what you
+  have and then call ask_for_photos once. They are sitting in front of you with a phone full of
+  photos — asking beats settling for stock.
 
 When you are done, say what you did in one or two short sentences. No preamble, no bullet lists,
 no recap of every tool call — they watched it happen.`;
 
-function pageSummary(site: SiteConfig, selection: string | null) {
+function pageSummary(
+  site: SiteConfig,
+  selection: string | null,
+  media: { photos: number; confidence: number | null }
+) {
   const sections = (site.sections || []).map((s, i) => ({
     index: i,
     type: s.type,
@@ -56,6 +64,12 @@ function pageSummary(site: SiteConfig, selection: string | null) {
       primary_colour: site.palette?.primary,
       has_hero_photo: !!site.heroImage,
       has_logo: !!site.logo,
+      // Photos they uploaded, or that came off their own site and survived being
+      // looked at. Stock you placed does not count.
+      photos_of_their_own: media.photos,
+      // 0 to 1, from the vision pass over their images. Null means nobody looked,
+      // so do not draw conclusions from it either way.
+      media_confidence: media.confidence,
       contact: site.contact,
       team_page: (site.team || []).map((p) => ({ name: p.name, role: p.role })),
       case_studies_page: (site.cases || []).map((c) => ({ title: c.title })),
@@ -85,6 +99,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       history = [],
       selection = null,
       ownImages = [],
+      theirPhotos = 0,
+      mediaConfidence = null,
       sourceUrl = null,
       slug = null,
     } = body as {
@@ -93,6 +109,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       history: any[];
       selection: string | null;
       ownImages: string[];
+      theirPhotos: number;
+      mediaConfidence: number | null;
       sourceUrl: string | null;
       slug: string | null;
     };
@@ -108,13 +126,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const ctx = { site, ownImages: (ownImages || []).filter(Boolean) };
     const actions: { name: string; summary: string; ok: boolean }[] = [];
     const foundImages: string[] = [];
+    // ask_for_photos has no effect on the site — its whole job is to open the
+    // picker in the chat, so it travels as its own field rather than an action.
+    let askPhotos: unknown = null;
 
     const messages: any[] = [
       ...history.slice(-12),
       {
         role: 'user',
         content:
-          `Here is the page as it stands:\n\n${pageSummary(site, selection)}\n\n` +
+          `Here is the page as it stands:\n\n${pageSummary(site, selection, { photos: Number(theirPhotos) || 0, confidence: mediaConfidence })}\n\n` +
           (sourceUrl ? `Their existing site is ${sourceUrl} — read it if you need more material.\n\n` : '') +
           `They said: ${message}`,
       },
@@ -164,7 +185,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const results: any[] = [];
       for (const call of calls as any[]) {
         const result = await runTool(call.name, call.input, ctx, { scrape: scrapeWebsite });
-        actions.push({ name: call.name, summary: result.message, ok: result.ok });
+        if (call.name === 'ask_for_photos') {
+          if (result.ok) askPhotos = result.data;
+        } else {
+          actions.push({ name: call.name, summary: result.message, ok: result.ok });
+        }
         if (call.name === 'find_images' && Array.isArray(result.data)) {
           for (const image of result.data as any[]) if (image?.url) foundImages.push(image.url);
         }
@@ -206,6 +231,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         site: ctx.site,
         actions,
         foundImages,
+        askPhotos,
         // Trimmed history for the next turn: the exchange without the page dump
         history: [
           ...history.slice(-12),

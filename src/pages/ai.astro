@@ -1702,7 +1702,11 @@
           const b = document.createElement('button');
           b.className = 'chip' + (c.yes ? ' chip-yes' : '');
           b.textContent = c.label;
-          b.addEventListener('click', () => { chipBox.innerHTML = ''; route(c.send || c.label); });
+          b.addEventListener('click', () => {
+            chipBox.innerHTML = '';
+            if (c.act) return c.act();
+            route(c.send || c.label);
+          });
           chipBox.appendChild(b);
         });
       }
@@ -3548,6 +3552,25 @@
         });
       }
 
+      // What we honestly have. Vision verdicts if the images were looked at,
+      // and nothing claimed about confidence if they were not.
+      function mediaTally() {
+        const uploaded = S.media.filter((m) => m.source === 'yours').length;
+        let theirs = uploaded;
+        let confidence = null;
+        if (S.scraped) {
+          if (Array.isArray(S.scraped.vision)) {
+            theirs += S.scraped.vision.filter((v) => v.kind === 'photo' && v.quality >= 3).length;
+            confidence = typeof S.scraped.mediaConfidence === 'number'
+              ? S.scraped.mediaConfidence
+              : null;
+          } else {
+            theirs += (S.scraped.galleryImages || []).length;
+          }
+        }
+        return { theirs: theirs, confidence: confidence };
+      }
+
       function openMedia(target) {
         S.mediaTarget = target || null;
         // Anything already on the page or scraped counts as media
@@ -3580,7 +3603,7 @@
         if (e.key === 'Escape' && !paintPanel.hidden) setPaint(false);
       });
 
-      $('media-btn').addEventListener('click', openMedia);
+      $('media-btn').addEventListener('click', () => openMedia(null));
       $('media-close').addEventListener('click', () => { $('media-back').hidden = true; S.mediaTarget = null; });
       $('media-back').addEventListener('click', (e) => {
         if (e.target === $('media-back')) $('media-back').hidden = true;
@@ -3636,6 +3659,8 @@
         log.appendChild(dots);
         log.scrollTop = log.scrollHeight;
 
+        const tally = mediaTally();
+
         try {
           const res = await fetch('/api/agent', {
             method: 'POST',
@@ -3647,6 +3672,8 @@
               history: S.chat,
               selection: S.sel ? S.sel.label + ' (' + S.sel.path + ')' : null,
               sourceUrl: S.sourceUrl || null,
+              theirPhotos: tally.theirs,
+              mediaConfidence: tally.confidence,
               ownImages: S.media.filter((m) => m.source === 'yours').map((m) => m.url)
                 .concat(S.scraped && S.scraped.galleryImages ? S.scraped.galleryImages : [])
                 .concat(S.site.images || [])
@@ -3686,7 +3713,15 @@
           });
 
           bubble(data.reply, 'msg-agent');
-          chips(IDLE_CHIPS);
+          if (data.askPhotos) {
+            // They are here, now, with the photos on them. One tap, no modal ambush.
+            chips([
+              { label: 'Add my photos', yes: true, act: () => openMedia(null) },
+              { label: 'Not now', act: () => chips(IDLE_CHIPS) },
+            ]);
+          } else {
+            chips(IDLE_CHIPS);
+          }
         } catch (error) {
           dots.remove();
           console.error(error);
