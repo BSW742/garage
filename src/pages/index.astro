@@ -25,7 +25,12 @@ import Layout from '../components/Layout.astro';
       </a>
     </div>
 
-    <img src="/lean.png" alt="Garage mascot" class="hero-mascot" />
+    <!-- Still by default. He moves if you go near him, and not otherwise:
+         nothing loads until then, and nothing loops. -->
+    <div class="hero-mascot" id="hero-mascot">
+      <img src="/lean.png" alt="Garage mascot" />
+      <video muted playsinline preload="none"></video>
+    </div>
 
     <div class="hero-content">
       <p class="hero-eyebrow">For NZ charities & community projects</p>
@@ -78,9 +83,50 @@ import Layout from '../components/Layout.astro';
       </a>
     </div>
   </section>
+
+<script>
+  // Four clips of the same fella. He plays once when you hover or tap, then
+  // goes back to standing there. No loop, no sound, nothing preloaded.
+  const stage = document.getElementById('hero-mascot');
+  if (stage && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const film = stage.querySelector('video') as HTMLVideoElement;
+    const clips = [1, 2, 3, 4].map((n) => `https://garage.co.nz/images/mascot-${n}.mp4`);
+    let last = -1;
+    let busy = false;
+
+    const wake = () => {
+      if (busy) return;
+      busy = true;
+      let pick = Math.floor(Math.random() * clips.length);
+      if (pick === last) pick = (pick + 1) % clips.length;
+      last = pick;
+      film.src = clips[pick];
+      film.currentTime = 0;
+      const done = () => { stage.classList.remove('playing'); busy = false; };
+      film.addEventListener('ended', done, { once: true });
+      film.addEventListener('error', done, { once: true });
+      film.play().then(() => stage.classList.add('playing')).catch(done);
+    };
+
+    stage.addEventListener('mouseenter', wake);
+    stage.addEventListener('click', wake);
+  }
+</script>
 </Layout>
 
 <style>
+  .hero-mascot { position: relative; display: inline-block; cursor: pointer; }
+  .hero-mascot img,
+  .hero-mascot video { display: block; width: 100%; height: auto; }
+  .hero-mascot video {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hero-mascot.playing video { opacity: 1; }
+  .hero-mascot.playing img { opacity: 0; }
+
   /* Hero */
   .hero {
     min-height: 85vh;

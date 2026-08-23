@@ -639,6 +639,14 @@
       .typing i:nth-child(3) { animation-delay: 0.3s; }
       @keyframes blink { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 
+      .mascot { padding: 0; background: transparent; border: 0; max-width: 132px; }
+      .mascot video {
+        width: 100%;
+        display: block;
+        border-radius: 12px;
+        background: transparent;
+      }
+
       .logo-preview { padding: 0.5rem; background: transparent; border: 0; }
       .logo-tiles { display: flex; gap: 6px; }
       .logo-tile {
@@ -1638,6 +1646,38 @@
         log.scrollTop = log.scrollHeight;
       }
 
+      /**
+       * The fella, for the moments you are already waiting through.
+       *
+       * A mascot becomes annoying by demanding attention — looping in a
+       * corner, bouncing, interrupting. So he only turns up where there is
+       * dead time anyway, plays once, and leaves. No sound, no controls, no
+       * second go unless something else is worth waiting for.
+       */
+      const MASCOTS = [1, 2, 3, 4].map((n) => 'https://garage.co.nz/images/mascot-' + n + '.mp4');
+      let lastMascot = -1;
+
+      function mascot() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+        // Never the same one twice running, or four clips feel like one.
+        let pick = Math.floor(Math.random() * MASCOTS.length);
+        if (pick === lastMascot) pick = (pick + 1) % MASCOTS.length;
+        lastMascot = pick;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'msg mascot';
+        const film = document.createElement('video');
+        film.src = MASCOTS[pick];
+        film.muted = true;
+        film.autoplay = true;
+        film.playsInline = true;
+        film.preload = 'auto';
+        wrap.appendChild(film);
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+        return wrap;
+      }
+
       function did(text) {
         const el = document.createElement('div');
         el.className = 'msg msg-do';
@@ -1859,6 +1899,7 @@
         };
 
         await say('Righto, drawing it now.');
+        mascot();
         $('agent-state').textContent = 'online · drawing';
 
         let url = null, failed = null;
@@ -3672,6 +3713,7 @@
           .catch(() => ({ error: 'network' }));
 
         const steps = ['Pages built', 'Images optimised', 'Mobile layout checked', 'SSL certificate issued', 'DNS pointed at ' + S.slug + '.garage.co.nz'];
+        mascot();
         for (const step of steps) { did(step); await wait(430); }
 
         const result = await claim;
