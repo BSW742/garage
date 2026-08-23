@@ -243,10 +243,11 @@ align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid va
 padding:.45rem .95rem;border-radius:999px;cursor:pointer}
 .buy-add:hover{background:var(--deep)}
 
-.cart-open{position:relative;flex:none;width:40px;height:40px;border-radius:50%;
-border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;
-cursor:pointer;transition:background .15s,border-color .15s}
-.cart-open:hover{background:var(--wash);border-color:var(--primary);color:var(--primary)}
+/* Above the chat launcher, which sits at bottom:18px and is about 50 tall. */
+.cart-open{position:fixed;right:18px;bottom:84px;z-index:8000;width:48px;height:48px;border-radius:50%;
+border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);display:grid;place-items:center;
+cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.16);transition:transform .15s,color .15s}
+.cart-open:hover{transform:translateY(-2px);color:var(--primary)}
 .cart-count{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:999px;
 background:var(--primary);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
 .cart-count[hidden]{display:none}
@@ -337,11 +338,15 @@ function navLinks(site: SiteConfig, base = '', here = ''): string {
 
 // Two sections of the same type would otherwise both claim the same id, which
 // is invalid and sends the nav link to whichever came first anyway.
+// Everything worth linking to gets an id. The nav shows a subset — shop is
+// reached by the cart icon, not by a link, but still needs somewhere to land.
+const ANCHORED = new Set([...Object.keys(NAV_LABELS), 'shop']);
+
 function renderSections(site: SiteConfig): string {
   const used = new Set<string>();
   return (site.sections || [])
     .map((section) => {
-      const wanted = NAV_LABELS[section.type] ? section.type : '';
+      const wanted = ANCHORED.has(section.type) ? section.type : '';
       const anchor = wanted && !used.has(wanted) ? ` id="${wanted}"` : '';
       if (anchor) used.add(wanted);
       return sectionHtml(section, site, anchor);
@@ -437,7 +442,6 @@ function pageNav(site: SiteConfig, slug: string, here: string): string {
     : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</a></div>
   <div class="links">${navLinks(site, '/', here)}</div>
   <a class="cta" href="/#contact">${esc(site.cta || 'Get in touch')}</a>
-  ${cartButton(site)}
 </nav>`;
 }
 
@@ -609,7 +613,9 @@ function cartHtml(site: SiteConfig, slug: string): string {
     && (site.products || []).length > 0;
   const config = JSON.stringify({ slug, name: site.name || slug, shop: hasShop })
     .replace(/</g, '\\u003c');
-  return `<div class="cart-back" id="cart-back" hidden></div>
+  return `${cartButton(site)}
+
+<div class="cart-back" id="cart-back" hidden></div>
 <aside class="cart" id="cart" hidden aria-label="Your cart">
   <div class="cart-head">
     <strong>Your cart</strong>
@@ -958,7 +964,6 @@ export function renderSite(site: SiteConfig, slug: string): string {
     : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</div>
   <div class="links">${navLinks(site)}</div>
   <a class="cta" href="#contact">${esc(site.cta || 'Get in touch')}</a>
-  ${cartButton(site)}
 </nav>
 <header class="hero${hero ? ' photo' : ''}" id="top">
   ${hero ? `<div class="hero-photo" style="background-image:url(${esc(hero)})"></div>` : ''}
