@@ -53,5 +53,7 @@ export function cleanBrief(input: any): LogoBrief | null {
   };
 }
 
-export const RATE_PER_IP_HOUR = 6;
-export const RATE_PER_DAY = 120;
+// Enough for someone iterating on their own logo, still short of
+// anything worth doing on a public page for fun.
+export const RATE_PER_IP_HOUR = 25;
+export const RATE_PER_DAY = 250;

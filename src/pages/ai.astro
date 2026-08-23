@@ -1806,8 +1806,14 @@
         $('agent-state').textContent = 'online · building';
 
         if (!url) {
-          await say('That did not come off — ' + (failed || 'unknown problem') + '. Try again in a moment.');
-          chips(IDLE_CHIPS);
+          // The endpoint already writes a sentence for a person to read, so
+          // say it rather than wrapping it in a second one.
+          await say(failed || 'That did not come off. Try again in a moment.');
+          // Stay in the logo conversation. Dropping back to the idle chips sent
+          // "try again" to the agent, which went off and rewrote the page.
+          S.awaiting = 'logoverdict';
+          S.pendingLogo = { url: null, style: style };
+          chips([{ label: 'Try again' }, { label: 'Leave it' }]);
           return;
         }
 
@@ -1848,6 +1854,7 @@
           return;
         }
         if (/use it|yes|keep|yep|good|love/i.test(text)) {
+          if (!pending.url) { await drawLogo(pending.style || 'cartoon'); return; }
           snapshot();
           S.site.logo = pending.url;
           render();
