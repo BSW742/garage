@@ -748,7 +748,7 @@
         outline-offset: 3px;
         border-radius: 3px;
       }
-      .canvas.pickable [data-block]:hover { outline: 1px dashed rgba(37,99,235,0.35); outline-offset: -1px; }
+      .canvas.pickable [data-block]:hover { outline: 2px dashed rgba(220,38,38,0.4); outline-offset: -2px; }
       .canvas [data-edit].is-sel, .canvas [data-photo].is-sel {
         outline: 2px solid var(--accent);
         outline-offset: 3px;
@@ -2859,8 +2859,8 @@
        * remove something means a round trip and a bill for a decision the
        * click already made. snapshot() first, so undo puts it straight back.
        */
-      function deleteSelected() {
-        const sel = S.sel;
+      function deleteSelected(target) {
+        const sel = target || S.sel;
         if (!sel) return;
         snapshot();
 
@@ -2921,7 +2921,10 @@
        * bar floating above it — so put the destructive control where the
        * attention already is, and make it look destructive.
        */
-      function placeDeleteBadge(el) {
+      let badgeTarget = null;
+
+      function placeDeleteBadge(el, target) {
+        badgeTarget = target || S.sel;
         let badge = document.getElementById('del-badge');
         if (!badge) {
           badge = document.createElement('button');
@@ -2933,7 +2936,7 @@
           badge.addEventListener('mousedown', (e) => e.preventDefault());
           badge.addEventListener('click', (e) => {
             e.stopPropagation();
-            deleteSelected();
+            deleteSelected(badgeTarget);
           });
           canvas().appendChild(badge);
         }
@@ -2942,8 +2945,8 @@
         const c = canvas();
         const r = el.getBoundingClientRect();
         const cr = c.getBoundingClientRect();
-        badge.style.top = (r.top - cr.top + c.scrollTop - 11) + 'px';
-        badge.style.left = Math.min(r.right - cr.left - 11, c.clientWidth - 30) + 'px';
+        badge.style.top = (r.top - cr.top + c.scrollTop + 6) + 'px';
+        badge.style.left = Math.min(r.right - cr.left - 28, c.clientWidth - 34) + 'px';
         badge.hidden = false;
       }
 
@@ -2965,6 +2968,31 @@
         render();
         did('Moved the ' + (SECTION_NAMES[sec.type] || 'section').toLowerCase());
       }
+
+      // A section is nearly impossible to click — every click inside one lands
+      // on the text or photo it contains. So offer the cross on hover instead.
+      document.addEventListener('mouseover', (e) => {
+        const c = canvas();
+        if (!c || !c.contains(e.target) || !c.classList.contains('pickable')) return;
+        if (S.sel) return;
+        const badge = document.getElementById('del-badge');
+        if (badge && badge.contains(e.target)) return;
+        const block = e.target.closest('[data-block]');
+        if (!block) return;
+        placeDeleteBadge(block, {
+          kind: 'block',
+          path: block.getAttribute('data-block'),
+          label: labelFor(block.getAttribute('data-block')),
+        });
+      });
+
+      document.addEventListener('mouseout', (e) => {
+        const c = canvas();
+        if (!c || S.sel) return;
+        const to = e.relatedTarget;
+        if (to && (c.contains(to) || (document.getElementById('del-badge') || {}).contains?.(to))) return;
+        hideDeleteBadge();
+      });
 
       // Clicks on the canvas pick things
       document.addEventListener('click', (e) => {
