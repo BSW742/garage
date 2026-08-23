@@ -128,3 +128,46 @@ export function addToGallery(config: any, urls: string[], caption: string): void
   gallery.images = [...urls, ...(Array.isArray(gallery.images) ? gallery.images : [])].slice(0, 24);
   if (caption) gallery.title = caption;
 }
+
+/**
+ * A YouTube id out of whatever shape of link someone pasted. Covers the normal
+ * watch URL, the share shortlink, Shorts, and an embed URL, with or without the
+ * tracking junk that gets added when you share from the app.
+ */
+export function youtubeId(text: unknown): string | null {
+  const body = String(text ?? '');
+  const patterns = [
+    /youtube\.com\/watch\?(?:[^\s"'<>]*&)?v=([A-Za-z0-9_-]{11})/i,
+    /youtu\.be\/([A-Za-z0-9_-]{11})/i,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/i,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/i,
+    /youtube\.com\/live\/([A-Za-z0-9_-]{11})/i,
+  ];
+  for (const pattern of patterns) {
+    const found = body.match(pattern);
+    if (found) return found[1];
+  }
+  return null;
+}
+
+/**
+ * Put the video at the top of the page's own section, replacing whatever was
+ * there before — a business has one film they are proud of at a time, and a
+ * growing pile of half-finished clips is not what anyone wants.
+ */
+export function setVideo(config: any, videoId: string, title: string): void {
+  config.sections = Array.isArray(config.sections) ? config.sections : [];
+  let video = config.sections.find((s: any) => s && s.type === 'video');
+  if (!video) {
+    video = { type: 'video' };
+    const galleryAt = config.sections.findIndex((s: any) => s && s.type === 'gallery');
+    if (galleryAt >= 0) config.sections.splice(galleryAt, 0, video);
+    else {
+      const contactAt = config.sections.findIndex((s: any) => s && s.type === 'contact');
+      if (contactAt >= 0) config.sections.splice(contactAt, 0, video);
+      else config.sections.push(video);
+    }
+  }
+  video.videoId = videoId;
+  if (title) video.title = title;
+}

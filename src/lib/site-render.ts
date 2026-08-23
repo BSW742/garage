@@ -13,6 +13,7 @@ export interface SiteSection {
   rows?: [string, string][];
   quote?: string;
   who?: string;
+  videoId?: string;
 }
 export interface SiteConfig {
   name?: string;
@@ -141,6 +142,15 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .socials a:hover{border-bottom-color:var(--primary);color:var(--primary)}
 footer{padding:1.8rem 1.6rem;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;font-size:.82rem;color:var(--soft)}
 footer a{border-bottom:1px solid var(--line)}
+.video{position:relative;max-width:860px;margin:0 auto;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;cursor:pointer}
+.video img{width:100%;height:100%;object-fit:cover;display:block}
+.video button{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(0,0,0,.18);cursor:pointer;display:grid;place-items:center;transition:background .2s}
+.video:hover button{background:rgba(0,0,0,.3)}
+.video button span{width:72px;height:50px;border-radius:12px;background:rgba(18,18,18,.82);position:relative;display:block;transition:background .2s}
+.video:hover button span{background:#f00}
+.video button span::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-42%,-50%);border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}
+.video iframe{width:100%;height:100%;border:0;display:block}
+.st-brutal .video{border-radius:0;border:2px solid var(--ink)}
 .faq{max-width:760px;margin:0 auto;text-align:left}
 .faq details{border:1px solid var(--line);border-radius:12px;background:var(--card,#fff);margin-bottom:.6rem;overflow:hidden}
 .faq summary{cursor:pointer;padding:.9rem 1.1rem;font-weight:600;list-style:none}
@@ -158,6 +168,7 @@ const NAV_LABELS: Record<string, string> = {
   about: 'About',
   gallery: 'Gallery',
   hours: 'Hours',
+  video: 'Video',
   faq: 'FAQ',
   contact: 'Contact',
 };
@@ -221,6 +232,16 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
         <h2>${esc(section.title || 'Common questions')}</h2><div class="faq">${(section.items || [])
           .map((i) => `<details><summary>${esc(i[0])}</summary><p>${esc(i[1])}</p></details>`)
           .join('')}</div></div></section>`;
+    case 'video': {
+      const id = String(section.videoId || '').match(/^[A-Za-z0-9_-]{11}$/)?.[0];
+      if (!id) return '';
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Watch')}</p>
+        <h2>${esc(section.title || 'See us at work')}</h2>
+        <div class="video" data-yt="${esc(id)}">
+          <img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="${esc(section.title || 'Play video')}" loading="lazy" />
+          <button type="button" aria-label="Play video"><span></span></button>
+        </div></div></section>`;
+    }
     case 'testimonial':
       return `<section><div class="wrap quote"><p>&ldquo;${esc(section.quote)}&rdquo;</p><span>&mdash; ${esc(section.who)}</span></div></section>`;
     case 'contact': {
@@ -504,7 +525,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}</body>
+<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}<script>document.querySelectorAll('.video').forEach(function(v){v.addEventListener('click',function(){var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/'+v.dataset.yt+'?autoplay=1&rel=0';f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture';f.allowFullscreen=true;f.title='Video';v.innerHTML='';v.appendChild(f);});});</script></body>
 </html>`;
 }
 

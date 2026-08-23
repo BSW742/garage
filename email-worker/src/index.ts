@@ -3,7 +3,7 @@ import PostalMime from 'postal-mime';
 import { EmailMessage } from 'cloudflare:email';
 import {
   mailboxSlug, bareAddress, authVerdict, isAutomated, buildReplyMime,
-  WEB_SAFE_IMAGES, MAX_IMAGES_PER_EMAIL, addToGallery,
+  WEB_SAFE_IMAGES, MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, setVideo,
 } from '../../src/lib/site-mail';
 
 // Declared here rather than pulled in wholesale, matching how the API routes
@@ -122,13 +122,38 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
   );
   const unusable = (parsed.attachments || []).length - attachments.length;
 
+  // A shared YouTube link is as much a thing to publish as a photo is.
+  const video = youtubeId(`${parsed.text || ''} ${parsed.html || ''} ${record.subject}`);
+
+  if (!attachments.length && video) {
+    const config = JSON.parse(site.config || '{}');
+    record.prevConfig = site.config || '{}';
+    setVideo(config, video, (record.subject || '').trim());
+    record.undoToken = crypto.randomUUID().replace(/-/g, '');
+    record.intent = 'video';
+    record.applied = 1;
+
+    await env.DB
+      .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
+      .bind(JSON.stringify(config), new Date().toISOString(), slug)
+      .run();
+
+    return say(
+      `Your video is up on your site.\n\n` +
+      `See it:  https://${slug}.garage.co.nz\n` +
+      `Change anything:  ${SITE_ORIGIN}/ai?edit=${slug}&t=${site.edit_token}\n` +
+      `Undo this:  ${SITE_ORIGIN}/mail/undo/${record.undoToken}\n\n` +
+      `Send another link any time and it will replace this one.`
+    );
+  }
+
   if (!attachments.length) {
     record.intent = 'held';
     const heic = unusable > 0;
     return say(
       heic
         ? `Those photos are in a format websites cannot show (HEIC). On an iPhone: Settings > Camera > Formats > Most Compatible, then send them again.`
-        : `Nothing was changed — there were no photos attached.\n\nAttach photos to this address and they will be added to your gallery. The subject line becomes the caption.`
+        : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or paste a YouTube link and it goes up as a video.`
     );
   }
 
