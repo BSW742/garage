@@ -502,13 +502,23 @@ function extractHeroImage(html: string, baseUrl: string): string | null {
 
 // Builders serve a tiny blurred placeholder through a transform path and swap the
 // real file in with JS, so the markup is full of 77px blurs. Judging one of those
-// means marking a photo down for being a thumbnail. Go back to the original the
-// transform was derived from — and as a bonus, every size variant of one photo
-// normalises to the same URL, so they stop eating candidate slots.
-function fullSizeImage(url: string): string {
-  const cut = url.split('/v1/')[0];
-  if (cut !== url && /\.(jpe?g|png|webp|gif|avif)$/i.test(cut.split('?')[0])) return cut;
-  return url;
+// means marking a photo down for being a thumbnail.
+//
+// Asking for the untransformed original is the obvious fix and the wrong one — on
+// this test site it is a 13.5MB camera file, which would land in a gallery and
+// never load. Rebuilding the transform at a sane width gets a real photograph at
+// ~430KB, and every size variant of one photo converges on the same URL, so they
+// stop eating candidate slots as well.
+const DISPLAY_TRANSFORM = 'v1/fit/w_1600,h_1600,al_c,q_85';
+
+function displayImage(url: string): string {
+  const parts = url.split('/v1/');
+  if (parts.length < 2) return url;
+  const base = parts[0];
+  if (!/\.(jpe?g|png|webp|gif|avif)$/i.test(base.split('?')[0])) return url;
+  const name = base.split('/').pop();
+  if (!name) return url;
+  return `${base}/${DISPLAY_TRANSFORM}/${name}`;
 }
 
 // Everything plausible, in document order, with no opinion about what it is.
@@ -522,7 +532,7 @@ function extractCandidateImages(html: string, baseUrl: string): string[] {
     if (!raw || urls.length >= 12) return;
     const resolved = resolveUrl(raw, baseUrl);
     if (!resolved) return;
-    const full = fullSizeImage(resolved);
+    const full = displayImage(resolved);
     if (seen.has(full) || !isValidImageUrl(full)) return;
     seen.add(full);
     urls.push(full);
