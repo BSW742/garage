@@ -178,31 +178,45 @@ function navLinks(site: SiteConfig): string {
   return links.join('');
 }
 
-function sectionHtml(section: SiteSection, site: SiteConfig): string {
+// Two sections of the same type would otherwise both claim the same id, which
+// is invalid and sends the nav link to whichever came first anyway.
+function renderSections(site: SiteConfig): string {
+  const used = new Set<string>();
+  return (site.sections || [])
+    .map((section) => {
+      const wanted = NAV_LABELS[section.type] ? section.type : '';
+      const anchor = wanted && !used.has(wanted) ? ` id="${wanted}"` : '';
+      if (anchor) used.add(wanted);
+      return sectionHtml(section, site, anchor);
+    })
+    .join('');
+}
+
+function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): string {
   switch (section.type) {
     case 'services':
-      return `<section class="alt" id="services"><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
+      return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
         <h2>${esc(section.title || 'How we can help')}</h2><div class="grid">${(section.items || [])
           .map((i) => `<div class="card"><span class="tick">◆</span><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
           .join('')}</div></div></section>`;
     case 'about':
-      return `<section id="about"><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
         <h2>${esc(section.title || `The story behind ${site.name || ''}`)}</h2>
         <p class="prose">${esc(section.text)}</p></div></section>`;
     case 'gallery': {
       const shots = (section.images || []).map(safeUrl).filter(Boolean) as string[];
       const cells = shots.length ? shots : ['', '', '', ''];
-      return `<section id="gallery"><div class="wrap"><p class="label">${esc(section.label || 'Our work')}</p><h2>${esc(section.title || 'Recent jobs')}</h2><div class="gallery">${cells
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Our work')}</p><h2>${esc(section.title || 'Recent jobs')}</h2><div class="gallery">${cells
         .map((src) => `<div class="shot"${src ? ` style="background-image:url(${esc(src)})"` : ''}></div>`)
         .join('')}</div></div></section>`;
     }
     case 'hours':
-      return `<section class="alt" id="hours"><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
+      return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Opening hours')}</p><h2>${esc(section.title || 'When we are about')}</h2>
         <div class="hours">${(section.rows || [])
           .map((r) => `<div><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`)
           .join('')}</div></div></section>`;
     case 'faq':
-      return `<section id="faq"><div class="wrap"><p class="label">${esc(section.label || 'Questions')}</p>
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Questions')}</p>
         <h2>${esc(section.title || 'Common questions')}</h2><div class="faq">${(section.items || [])
           .map((i) => `<details><summary>${esc(i[0])}</summary><p>${esc(i[1])}</p></details>`)
           .join('')}</div></div></section>`;
@@ -219,7 +233,7 @@ function sectionHtml(section: SiteSection, site: SiteConfig): string {
       const map = c.address
         ? `<div class="map"><iframe src="https://maps.google.com/maps?q=${encodeURIComponent(c.address)}&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map of ${esc(c.address)}"></iframe></div>`
         : '';
-      return `<section class="alt" id="contact"><div class="wrap"><p class="label">${esc(section.label || 'Get in touch')}</p><h2>${esc(section.title || 'Give us a yell')}</h2>
+      return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Get in touch')}</p><h2>${esc(section.title || 'Give us a yell')}</h2>
         <div class="pills">${pills.join('')}</div>${map}</div></section>`;
     }
     case 'band':
@@ -449,7 +463,7 @@ export function renderSite(site: SiteConfig, slug: string): string {
     ${contact.phone ? `<a class="btn alt" href="tel:${esc(String(contact.phone).replace(/\s/g, ''))}">${esc(contact.phone)}</a>` : ''}
   </div>
 </header>
-${(site.sections || []).map((s) => sectionHtml(s, site)).join('')}
+${renderSections(site)}
 <footer>
   <span>&copy; ${new Date().getFullYear()} ${esc(name)}</span>
   ${socialLinks(site.socials)}
