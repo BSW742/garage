@@ -9,7 +9,8 @@ if (db) {
   try {
     const result = await db.prepare(`
       SELECT slug, email, source_url, edit_token, status, created_at, updated_at,
-             LENGTH(config) AS config_size
+             LENGTH(config) AS config_size,
+             json_extract(config, '$.chat') AS chat_on
       FROM site_claims
       ORDER BY COALESCE(updated_at, created_at) DESC
       LIMIT 200
@@ -88,6 +89,15 @@ function summarise(site: any) {
                     title="The owner's message inbox — this is the link to send them"
                   >Messages</a>
                 )}
+                {site.edit_token && (
+                  <button
+                    class:list={['act', 'chat', site.chat_on ? 'on' : '']}
+                    data-slug={site.slug}
+                    data-key={site.edit_token}
+                    data-on={site.chat_on ? '1' : ''}
+                    title="Show the chat widget on this site"
+                  >{site.chat_on ? 'Chat on' : 'Chat off'}</button>
+                )}
               </td>
             </tr>
           ))}
@@ -97,8 +107,30 @@ function summarise(site: any) {
   </div>
 </Layout>
 
+<script>
+  document.querySelectorAll('button.chat').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const el = btn as HTMLButtonElement;
+      const on = !el.dataset.on;
+      el.disabled = true;
+      const res = await fetch('/api/site/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: el.dataset.slug, key: el.dataset.key, on }),
+      });
+      el.disabled = false;
+      if (!res.ok) { el.textContent = 'Failed'; return; }
+      el.dataset.on = on ? '1' : '';
+      el.textContent = on ? 'Chat on' : 'Chat off';
+      el.classList.toggle('on', on);
+    });
+  });
+</script>
+
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  button.act.chat { cursor: pointer; font: inherit; }
+  button.act.chat.on { background: #16a34a; border-color: #16a34a; color: #fff; }
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
   h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
   .sub { color: var(--color-text-muted); font-size: 0.95rem; }
