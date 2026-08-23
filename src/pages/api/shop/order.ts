@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { json, preflight, cleanSlug, nowIso } from '../../../lib/chat';
 import { sendPushToAll } from '../../../lib/web-push';
+import { sendMail, ownerEmail } from '../../../lib/mail';
 
 export const OPTIONS: APIRoute = async () => preflight();
 
@@ -51,9 +52,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
       )
       .run();
 
-    // Same shared push list the chat uses. Reaching the individual owner still
-    // needs a way to send mail, which nothing here has yet.
     try { await sendPushToAll(db); } catch { /* an alert failing must not lose the order */ }
+
+    // The one that actually reaches them. An order sitting unseen for a
+    // fortnight is a lost sale, so this goes to the address the site was
+    // claimed with, and replies go straight to the customer.
+    const owner = await ownerEmail(db, slug);
+    if (owner) {
+      const lines = clean.map((i: any) => `  ${i.qty} x ${i.name}${i.price ? '  ' + i.price : ''}`).join('\n');
+      const env = (locals.runtime?.env as any) || {};
+      await sendMail(env, {
+        to: owner,
+        replyTo: email || undefined,
+        subject: `Order from ${name} — ${slug}.garage.co.nz`,
+        text:
+          `${name} has sent a cart through from your site.\n\n` +
+          `${lines}\n\n` +
+          ((body as any)?.total ? `Total: ${(body as any).total}\n` : '') +
+          `\nReach them on: ${[email, phone].filter(Boolean).join(' or ')}\n` +
+          ((body as any)?.note ? `\nThey said: ${String((body as any).note).slice(0, 400)}\n` : '') +
+          `\nNobody has paid anything — check you have stock and get in touch to sort payment.\n` +
+          `\nAll your orders:  https://${slug}.garage.co.nz/admin\n`,
+      });
+    }
 
     return json({ ok: true, id });
   } catch (error) {
