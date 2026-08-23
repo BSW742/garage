@@ -2524,6 +2524,14 @@
 
         S.scraped = d;
         snapshot();
+
+        if (d.blocked) {
+          // We could not read the page, but we are not starting from nothing.
+          S.scrapeBlocked = true;
+          await say(scrapeExcuse(d.blockedReason, S.sourceUrl));
+          if (d.logoUrl) await say('I did get your logo off it, mind you — and your colours with it.');
+        }
+
         const s = S.site;
         const mine = guessIndustry((d.title || '') + ' ' + (d.description || '') + ' ' + (d.services || []).join(' ') + ' ' + S.slug);
         const industry = mine !== 'default' ? mine : (d.industry && INDUSTRIES[d.industry] ? d.industry : 'default');
@@ -2531,6 +2539,9 @@
 
         s.name = (d.title || titleCase(S.slug)).split(/[|–—-]/)[0].trim().slice(0, 40) || titleCase(S.slug);
         s.palette = paletteFrom(d.brandColour || base.colour);
+        // A white mark on transparency vanishes on a pale page. Move the page to
+        // the logo rather than throwing the logo away.
+        if (d.logoNeedsDark) s.tone = 'dark';
         s.eyebrow = base.eyebrow;
         s.headline = headlineFrom(d.tagline || d.description || '', s.name);
         // Don't print the same sentence twice under itself
@@ -2603,6 +2614,13 @@
         await wait(400);
 
         await say("There you go — that's your site, live at " + S.slug + '.garage.co.nz. Anything you want changed, just say it.');
+
+        const gallery = (s.sections.find((x) => x.type === 'gallery') || {}).images || [];
+        if (S.scrapeBlocked || gallery.length < 3) {
+          await say('It would look a good deal more like your business with a few of your own photos in it.');
+          chips([{ label: 'Add my photos', yes: true, act: () => openMedia(null) }].concat(IDLE_CHIPS.slice(1)));
+          return;
+        }
         chips(IDLE_CHIPS);
       }
 

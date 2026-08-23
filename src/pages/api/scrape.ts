@@ -27,6 +27,12 @@ export interface ScrapedData {
   vision: ImageVerdict[] | null;
   /** 0 to 1: is there enough real material here to build a site. Null if we never looked. */
   mediaConfidence: number | null;
+  /** We could not read the page. Whatever else is here was salvaged. */
+  blocked: boolean;
+  blockedReason: string;
+  /** Their logo vanishes unless what sits behind it is dark */
+  logoNeedsDark: boolean;
+  salvageNote?: string;
 }
 
 // Industry detection with weighted keywords
@@ -111,7 +117,44 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const scraped = await scrapeWebsite(url);
+    let scraped: ScrapedData;
+    try {
+      scraped = await scrapeWebsite(url);
+    } catch (readError) {
+      // The page is unreadable, which is not the same as there being nothing to
+      // have. Salvage the mark and the colours off the well-known icon path and
+      // hand back a thin result — an empty start loses them in two seconds.
+      const reason = readError instanceof Error ? readError.message : 'unreadable';
+      const origin = new URL(url).origin;
+      const salvage = await salvageIcon(origin);
+      const icon = salvage.url;
+      const salvaged = {
+        url, title: '', description: '', tagline: '', phone: '', email: '', address: '',
+        services: [], aboutText: '', heroImage: null, galleryImages: [],
+        logoUrl: icon, faviconUrl: icon, industry: 'default', businessType: '',
+        socials: {}, hours: [], brandColour: null,
+        candidateImages: icon ? [icon] : [], vision: null, mediaConfidence: null,
+        blocked: true, blockedReason: reason, logoNeedsDark: false,
+        salvageNote: salvage.note,
+      } as ScrapedData;
+
+      const key = (locals.runtime?.env as any)?.ANTHROPIC_API_KEY;
+      if (key && icon) {
+        const seen = await lookAtImages(key, [icon]);
+        if (seen.ok) {
+          salvaged.vision = seen.images;
+          if (seen.palette) salvaged.brandColour = seen.palette;
+          // A favicon that turns out to be a photo or a scrap of chrome is no logo.
+          if (seen.images[0] && seen.images[0].kind === 'furniture') salvaged.logoUrl = null;
+          salvaged.logoNeedsDark = seen.logoNeedsDark;
+        }
+      }
+
+      return new Response(JSON.stringify(salvaged), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Look at the images instead of guessing from their filenames. This is
     // allowed to fail: if it does we keep the heuristic result, because a
@@ -137,6 +180,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         // empty is a state we can now recognise and ask about.
         scraped.galleryImages = seen.photos.filter((u) => u !== seen.hero).slice(0, 8);
         if (seen.palette) scraped.brandColour = seen.palette;
+        scraped.logoNeedsDark = seen.logoNeedsDark;
       }
     }
 
@@ -156,6 +200,51 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
   }
 };
+
+// When the page itself is unreadable we are not necessarily beaten. /favicon.ico
+// is a well-known path, WordPress redirects it to the site icon, and generates a
+// standard size ladder from the same source. That is enough for their real mark
+// and their real colours — which is the difference between a page that looks like
+// their business and a generic shell nobody stays on.
+async function salvageIcon(baseUrl: string): Promise<{ url: string | null; note: string }> {
+  const get = async (u: string) => {
+    try {
+      return await fetch(u, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
+            '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          Accept: 'image/avif,image/webp,image/png,image/*,*/*;q=0.8',
+        },
+        redirect: 'follow',
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const first = await get(`${baseUrl}/favicon.ico`);
+  if (!first) return { url: null, note: 'favicon fetch threw' };
+  const type = first.headers.get('content-type') || '';
+  if (!first.ok) return { url: null, note: `favicon HTTP ${first.status} (${type})` };
+  if (!/^image\//i.test(type)) return { url: null, note: `favicon not an image (${type})` };
+
+  const landed = first.url || `${baseUrl}/favicon.ico`;
+  // A 32px favicon is no use as a logo, but the ladder it came from is.
+  const stem = landed.replace(/-\d+x\d+(\.[a-z]+)$/i, '$1');
+  if (stem === landed) return { url: landed, note: `no size ladder, kept ${landed}` };
+
+  const ext = (stem.match(/\.[a-z]+$/i) || ['.png'])[0];
+  const root = stem.slice(0, -ext.length);
+  for (const size of ['-512x512', '-270x270', '-192x192', '-180x180', '']) {
+    const candidate = `${root}${size}${ext}`;
+    const probe = await get(candidate);
+    if (probe && probe.ok && /^image\//i.test(probe.headers.get('content-type') || '')) {
+      return { url: candidate, note: `ladder hit ${size || 'base'}` };
+    }
+  }
+  return { url: landed, note: 'ladder missed, kept the small one' };
+}
 
 export async function scrapeWebsite(url: string): Promise<ScrapedData> {
   // The old User-Agent stopped mid-string, which reads as a bot to most
@@ -245,6 +334,9 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
     candidateImages,
     vision: null,
     mediaConfidence: null,
+    blocked: false,
+    blockedReason: '',
+    logoNeedsDark: false,
   };
 }
 

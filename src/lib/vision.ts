@@ -20,6 +20,8 @@ export interface ImageVerdict {
   subject: string;
   /** Would carry a full-bleed header with a headline over the top */
   hero: boolean;
+  /** Logos only: what the mark needs behind it to be visible at all */
+  needs?: 'anything' | 'dark' | 'light';
 }
 
 export interface VisionResult {
@@ -32,6 +34,8 @@ export interface VisionResult {
   hero: string | null;
   /** 0 to 1 — could someone build this business a site from this material alone */
   confidence: number;
+  /** The chosen logo will disappear unless the page behind it is dark */
+  logoNeedsDark: boolean;
   note?: string;
 }
 
@@ -43,6 +47,7 @@ const EMPTY: VisionResult = {
   photos: [],
   hero: null,
   confidence: 0,
+  logoNeedsDark: false,
 };
 
 const PROMPT = `You are looking at images taken off a small business website, to work out what is
@@ -56,7 +61,14 @@ For each image, say what it is:
 
 quality is 0 to 5 and means "would I publish this on their homepage". A sharp, well-lit
 photograph of their actual work is a 5. Dark, blurry, tiny, stretched or heavily watermarked
-is a 1. Judge the picture, not how interesting the subject is.
+is a 1. Judge the picture, not how interesting the subject is. Reserve 0 for genuinely
+unusable — corrupt, blank, or so degraded there is nothing to see. It is a ranking, not a
+pass mark: a mediocre photo of their real work still beats an empty page.
+
+needs applies to logos only, and it matters more than it sounds. A logo drawn in white on a
+transparent background is invisible on a white page — say "dark". One drawn in dark ink on
+transparency needs "light". Anything with its own background, or mid-toned enough to read
+either way, is "anything".
 
 hero means it would carry a full-bleed header with a headline over the top: wide, room to
 breathe, nothing important in the middle where the words go.
@@ -84,6 +96,11 @@ const REPORT_TOOL = {
             orientation: { type: 'string', enum: ['landscape', 'portrait', 'square'] },
             subject: { type: 'string', description: 'What it shows, a few words' },
             hero: { type: 'boolean' },
+            needs: {
+              type: 'string',
+              enum: ['anything', 'dark', 'light'],
+              description: 'Logos only: what must be behind it for it to be visible',
+            },
           },
           required: ['index', 'kind', 'quality', 'orientation', 'subject', 'hero'],
         },
@@ -137,19 +154,21 @@ export async function lookAtImages(apiKey: string, urls: string[]): Promise<Visi
             : 'landscape',
           subject: String(v.subject || '').slice(0, 80),
           hero: !!v.hero,
+          needs: ['anything', 'dark', 'light'].includes(v.needs) ? v.needs : 'anything',
         } as ImageVerdict;
       })
       .filter(Boolean);
 
     // Best logo by quality, so a crisp mark beats a washed-out one.
-    const logo =
-      verdicts
-        .filter((v) => v.kind === 'logo')
-        .sort((a, b) => b.quality - a.quality)[0]?.url || null;
+    const logoVerdict =
+      verdicts.filter((v) => v.kind === 'logo').sort((a, b) => b.quality - a.quality)[0] || null;
+    const logo = logoVerdict?.url || null;
 
-    // A photo has to be worth publishing, not merely be a photograph.
+    // Rank, do not gate. A middling photo of their actual work beats an empty
+    // gallery, and an empty page loses them in seconds. Drop only what is
+    // genuinely unusable and let the best rise to the top.
     const photos = verdicts
-      .filter((v) => v.kind === 'photo' && v.quality >= 3)
+      .filter((v) => v.kind === 'photo' && v.quality > 0)
       .sort((a, b) => b.quality - a.quality);
 
     const hero =
@@ -167,6 +186,7 @@ export async function lookAtImages(apiKey: string, urls: string[]): Promise<Visi
       photos: photos.map((v) => v.url),
       hero,
       confidence: Math.max(0, Math.min(1, Number(said.confidence) || 0)),
+      logoNeedsDark: logoVerdict?.needs === 'dark',
     };
   } catch (error) {
     console.error('Vision pass failed:', error);
