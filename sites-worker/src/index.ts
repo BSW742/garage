@@ -1,4 +1,4 @@
-import { renderSite, renderAvailable, type SiteConfig } from '../../src/lib/site-render';
+import { renderSite, renderTeam, renderCases, renderAvailable, type SiteConfig } from '../../src/lib/site-render';
 import { renderInbox } from '../../src/lib/chat-admin';
 
 // Hostnames that belong to the main app, not to a claimed site
@@ -61,7 +61,19 @@ export default {
 
       if (!row || !row.config) return html(renderAvailable(slug), 404);
 
-      return html(renderSite(JSON.parse(row.config) as SiteConfig, slug), 200);
+      const config = JSON.parse(row.config) as SiteConfig;
+      const path = url.pathname.replace(/\/+$/, '') || '/';
+
+      // These are real pages, but only for sites that have something to put on
+      // them. Everywhere else still falls through to the single page.
+      if (path === '/team' && (config.team || []).length) {
+        return html(renderTeam(config, slug), 200);
+      }
+      if ((path === '/case-studies' || path === '/cases') && (config.cases || []).length) {
+        return html(renderCases(config, slug), 200);
+      }
+
+      return html(renderSite(config, slug), 200);
     } catch (error) {
       console.error('Site render error:', slug, error);
       return html(renderAvailable(slug), 404);

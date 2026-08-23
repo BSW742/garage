@@ -16,6 +16,20 @@ export interface SiteSection {
   videoId?: string;
   videos?: string[];
 }
+export interface TeamMember {
+  name?: string;
+  role?: string;
+  text?: string;
+  image?: string;
+}
+
+export interface CaseStudy {
+  title?: string;
+  role?: string;
+  text?: string;
+  videoId?: string;
+}
+
 export interface SiteConfig {
   name?: string;
   tone?: 'light' | 'warm' | 'dark';
@@ -34,6 +48,8 @@ export interface SiteConfig {
   contact?: SiteContact;
   images?: string[];
   logoVideo?: string | null;   // plays when the logo is opened
+  team?: TeamMember[];         // its own page at /team, when there is anyone on it
+  cases?: CaseStudy[];         // its own page at /case-studies
   chatLabel?: string;  // what the launcher says, default "Chat right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
@@ -177,6 +193,33 @@ footer a{border-bottom:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){.reel-track{scroll-behavior:auto}}
 .st-brutal .reel-slide{border-radius:0;border:2px solid var(--ink)}
 .st-brutal .reel-nav{border-radius:0;border-width:2px}
+.page-head{padding:4.5rem 1.6rem 1rem;text-align:center}
+.page-head h1{font-family:var(--font-display,inherit);font-size:clamp(2.1rem,6vw,3.4rem);line-height:1.05;letter-spacing:-.03em;margin:.4rem 0 0}
+.profiles{padding-top:1.5rem}
+.profile{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(1.4rem,4vw,3.2rem);
+align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid var(--line)}
+.profile:last-child{border-bottom:0}
+.profile-media{position:relative;aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--wash)}
+.profile-media img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-blank{width:100%;height:100%;display:grid;place-items:center;font-size:3rem;font-weight:800;color:var(--primary);opacity:.5}
+.profile-words h2{font-size:clamp(1.5rem,3.4vw,2.1rem);margin:0;letter-spacing:-.02em}
+.profile-role{margin:.35rem 0 0;color:var(--primary);font-weight:600;font-size:.95rem}
+.profile-text{margin:.9rem 0 0;color:var(--soft);line-height:1.65;max-width:52ch}
+/* Every second one turns around, so the eye zigzags down the page. */
+.profile.flip .profile-media{order:2}
+.profile.flip .profile-words{order:1}
+.profile-video{position:relative;width:100%;height:100%;cursor:pointer;background:#000}
+.profile-video img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-video .reel-play{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(0,0,0,.2);cursor:pointer;display:grid;place-items:center}
+.profile-video:hover .reel-play{background:rgba(0,0,0,.32)}
+.profile-video iframe{width:100%;height:100%;border:0;display:block}
+@media(max-width:720px){
+.profile{grid-template-columns:1fr;gap:1.1rem}
+.profile.flip .profile-media{order:0}
+.profile.flip .profile-words{order:0}
+.profile-media{max-width:min(88vw,420px)}
+}
+.st-brutal .profile-media{border-radius:0;border:2px solid var(--ink)}
 .rates{max-width:640px;margin:0 auto;text-align:left}
 .rates>div{display:flex;align-items:baseline;gap:.7rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
 .rates>div:last-child{border-bottom:0}
@@ -208,9 +251,9 @@ const NAV_LABELS: Record<string, string> = {
   contact: 'Contact',
 };
 
-function navLinks(site: SiteConfig): string {
+function navLinks(site: SiteConfig, base = '', here = ''): string {
   const seen = new Set<string>();
-  const links = ['<a href="#top">Home</a>'];
+  const links = [`<a href="${base || '#top'}">Home</a>`];
   for (const section of site.sections || []) {
     const label = NAV_LABELS[section.type];
     if (!label || seen.has(section.type)) continue;
@@ -220,7 +263,15 @@ function navLinks(site: SiteConfig): string {
       if (!c.phone && !c.email && !c.address) continue;
     }
     seen.add(section.type);
-    links.push(`<a href="#${section.type}">${label}</a>`);
+    links.push(`<a href="${base}#${section.type}">${label}</a>`);
+  }
+
+  // Pages, not anchors — and only when there is something on them.
+  if ((site.team || []).length) {
+    links.push(`<a href="/team"${here === '/team' ? ' aria-current="page"' : ''}>Team</a>`);
+  }
+  if ((site.cases || []).length) {
+    links.push(`<a href="/case-studies"${here === '/case-studies' ? ' aria-current="page"' : ''}>Case studies</a>`);
   }
   return links.join('');
 }
@@ -237,6 +288,112 @@ function renderSections(site: SiteConfig): string {
       return sectionHtml(section, site, anchor);
     })
     .join('');
+}
+
+/**
+ * The row both extra pages are made of: a square on one side, words on the
+ * other, and the sides swap every time down the page. One shape, two uses —
+ * a face for the team, a film for a case study.
+ */
+function profileRow(media: string, title: string, role: string, text: string, flip: boolean): string {
+  if (!media && !title && !text) return '';
+  return `<div class="profile${flip ? ' flip' : ''}">
+    <div class="profile-media">${media}</div>
+    <div class="profile-words">
+      ${title ? `<h2>${esc(title)}</h2>` : ''}
+      ${role ? `<p class="profile-role">${esc(role)}</p>` : ''}
+      ${text ? `<p class="profile-text">${esc(text)}</p>` : ''}
+    </div>
+  </div>`;
+}
+
+export function renderTeam(site: SiteConfig, slug: string): string {
+  const name = site.name || slug;
+  const people = (site.team || []).filter(Boolean);
+  const rows = people
+    .map((person, i) => {
+      const photo = safeUrl(person.image);
+      const media = photo
+        ? `<img src="${esc(photo)}" alt="${esc(person.name || '')}" loading="lazy" />`
+        : `<div class="profile-blank">${esc(initials(person.name || name))}</div>`;
+      return profileRow(media, person.name || '', person.role || '', person.text || '', i % 2 === 1);
+    })
+    .join('');
+
+  const body = `${pageNav(site, slug, '/team')}
+<section class="page-head"><div class="wrap">
+  <p class="label">${esc(site.name || name)}</p>
+  <h1>Our team</h1>
+</div></section>
+<section class="profiles"><div class="wrap">${rows}</div></section>
+${pageFoot(site, name)}`;
+
+  return shell(site, slug, {
+    title: `Our team · ${name}`,
+    description: `The people behind ${name}.`,
+    path: '/team',
+    body,
+  });
+}
+
+export function renderCases(site: SiteConfig, slug: string): string {
+  const name = site.name || slug;
+  const studies = (site.cases || []).filter(Boolean);
+  const rows = studies
+    .map((study, i) => {
+      const id = String(study.videoId || '').match(/^[A-Za-z0-9_-]{11}$/)?.[0];
+      const media = id
+        ? `<div class="profile-video" data-yt="${esc(id)}">
+             <img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="${esc(study.title || 'Case study')}" loading="lazy" />
+             <button type="button" class="reel-play" aria-label="Play"><span></span></button>
+           </div>`
+        : `<div class="profile-blank">▶</div>`;
+      return profileRow(media, study.title || '', study.role || '', study.text || '', i % 2 === 1);
+    })
+    .join('');
+
+  const body = `${pageNav(site, slug, '/case-studies')}
+<section class="page-head"><div class="wrap">
+  <p class="label">${esc(name)}</p>
+  <h1>Case studies</h1>
+</div></section>
+<section class="profiles"><div class="wrap">${rows}</div></section>
+${pageFoot(site, name)}`;
+
+  return shell(site, slug, {
+    title: `Case studies · ${name}`,
+    description: `Work ${name} has done.`,
+    path: '/case-studies',
+    body,
+  });
+}
+
+// On a sub-page the section anchors have to point back at the home page.
+function pageNav(site: SiteConfig, slug: string, here: string): string {
+  const logo = safeUrl(site.logo);
+  const name = site.name || slug;
+  return `<nav class="top">
+  <div class="brand"><a href="/">${logo
+    ? `<img src="${esc(logo)}" alt="${esc(name)}" />`
+    : `<span class="glyph">${esc(initials(name))}</span><span>${esc(name)}</span>`}</a></div>
+  <div class="links">${navLinks(site, '/', here)}</div>
+  <a class="cta" href="/#contact">${esc(site.cta || 'Get in touch')}</a>
+</nav>`;
+}
+
+function pageFoot(site: SiteConfig, name: string): string {
+  return `<footer>
+  <span>&copy; ${new Date().getFullYear()} ${esc(name)}</span>
+  ${socialLinks(site.socials)}
+  <span>Built with <a href="https://garage.co.nz/ai">garage.co.nz</a></span>
+</footer>`;
+}
+
+interface PageMeta {
+  title: string;
+  description: string;
+  path: string;
+  body: string;
 }
 
 function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): string {
@@ -572,15 +729,35 @@ ${renderSections(site)}
   <span>Built with <a href="https://garage.co.nz/ai">garage.co.nz</a></span>
 </footer>`;
 
+  return shell(site, slug, {
+    title: name,
+    description,
+    path: '/',
+    body,
+  });
+}
+
+function shell(site: SiteConfig, slug: string, page: PageMeta): string {
+  const palette = site.palette || {};
+  const tone = TONES[site.tone || 'light'] || TONES.light;
+  const primary = palette.primary || '#2563eb';
+  const wash = site.tone === 'dark' ? mixHex(primary, tone.page, 0.86) : (palette.wash || '#f6f8fb');
+  const logo = safeUrl(site.logo);
+  const logoFilm = safeUrl(site.logoVideo);
+  const hero = safeUrl(site.heroImage);
+  const name = site.name || slug;
+  const body = page.body;
+  const description = page.description;
+
   return `<!doctype html>
 <html lang="en-NZ">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${esc(name)}</title>
+<title>${esc(page.title)}</title>
 <meta name="description" content="${esc(description)}" />
-<link rel="canonical" href="https://${esc(slug)}.garage.co.nz/" />
-<meta property="og:title" content="${esc(name)}" />
+<link rel="canonical" href="https://${esc(slug)}.garage.co.nz${esc(page.path)}" />
+<meta property="og:title" content="${esc(page.title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />
 ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
@@ -604,6 +781,12 @@ b.addEventListener('click',function(){z.classList.add('on');document.body.style.
 if(film){try{film.currentTime=0;film.play();}catch(e){}}});
 z.addEventListener('click',shut);
 document.addEventListener('keydown',function(e){if(e.key==='Escape')shut();});})();</script>
+<script>document.querySelectorAll('.profile-video').forEach(function(v){
+v.addEventListener('click',function(){
+var f=document.createElement('iframe');
+f.src='https://www.youtube-nocookie.com/embed/'+v.dataset.yt+'?autoplay=1&rel=0';
+f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture';
+f.allowFullscreen=true;f.title='Case study';v.innerHTML='';v.appendChild(f);});});</script>
 <script>document.querySelectorAll('.reel').forEach(function(r){
 var track=r.querySelector('.reel-track'),slides=[].slice.call(r.querySelectorAll('.reel-slide'));
 slides.forEach(function(s){s.querySelector('.reel-play').addEventListener('click',function(){

@@ -53,6 +53,57 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_team',
+    description:
+      'Put people on the Team page, which becomes its own page at /team once anyone is on it. ' +
+      'Replaces whoever is listed. Each person takes a name, a role, a short description and ' +
+      'optionally a photo URL from the media library.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        people: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              role: { type: 'string', description: 'Job title or qualification' },
+              text: { type: 'string', description: 'A short paragraph about them' },
+              image: { type: 'string', description: 'Photo URL' },
+            },
+            required: ['name'],
+          },
+        },
+      },
+      required: ['people'],
+    },
+  },
+  {
+    name: 'set_case_studies',
+    description:
+      'Put case studies on their own page at /case-studies. Same shape as the team page but each ' +
+      'one shows a YouTube video instead of a photo. Replaces whatever is listed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        studies: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'The job or client' },
+              role: { type: 'string', description: 'What the work was' },
+              text: { type: 'string', description: 'A short paragraph about it' },
+              videoId: { type: 'string', description: 'YouTube video id or full link' },
+            },
+            required: ['title'],
+          },
+        },
+      },
+      required: ['studies'],
+    },
+  },
+  {
     name: 'add_section',
     description:
       'Add a section to the page. services takes items (name + description pairs). about and band ' +
@@ -296,6 +347,40 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to change' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'set_team': {
+      const people = (input.people || []).slice(0, 12).map((p: any) => ({
+        name: String(p?.name ?? '').slice(0, 80),
+        role: String(p?.role ?? '').slice(0, 80),
+        text: String(p?.text ?? '').slice(0, 800),
+        image: safeImage(p?.image) || undefined,
+      })).filter((p: any) => p.name);
+      site.team = people;
+      return {
+        ok: true,
+        message: people.length
+          ? `Team page now has ${people.length} ${people.length === 1 ? 'person' : 'people'}`
+          : 'Team page cleared',
+      };
+    }
+
+    case 'set_case_studies': {
+      const studies = (input.studies || []).slice(0, 12).map((c: any) => {
+        const raw = String(c?.videoId ?? '');
+        const id = raw.match(/[A-Za-z0-9_-]{11}/)?.[0] || '';
+        return {
+          title: String(c?.title ?? '').slice(0, 120),
+          role: String(c?.role ?? '').slice(0, 80),
+          text: String(c?.text ?? '').slice(0, 800),
+          videoId: id,
+        };
+      }).filter((c: any) => c.title);
+      site.cases = studies;
+      return {
+        ok: true,
+        message: studies.length ? `Case studies page now has ${studies.length}` : 'Case studies cleared',
+      };
     }
 
     case 'add_section': {

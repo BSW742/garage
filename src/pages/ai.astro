@@ -1119,6 +1119,26 @@
         border-color: transparent transparent transparent #fff;
       }
       .pv-reel-count { text-align: center; margin: 0.6rem 0 0; font-size: 0.78rem; color: var(--pv-soft); }
+      .pv-page { border-top: 2px dashed var(--pv-line); }
+      .pv-pagetag {
+        font-size: 0.68rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--pv-soft);
+        margin: 0 0 0.3rem;
+      }
+      .pv-profiles { display: flex; flex-direction: column; gap: 1rem; text-align: left; }
+      .pv-profile { display: grid; grid-template-columns: 92px 1fr; gap: 0.9rem; align-items: center; }
+      .pv-profile.flip .pv-profile-media { order: 2; }
+      .pv-profile-media {
+        aspect-ratio: 1;
+        border-radius: 10px;
+        background: var(--pv-wash) center/cover no-repeat;
+      }
+      .pv-profile strong { display: block; font-size: 0.95rem; }
+      .pv-profile-role { display: block; color: var(--pv-primary); font-size: 0.78rem; font-weight: 600; }
+      .pv-profile p { margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--pv-soft); line-height: 1.5; }
+
       .pv-rates { max-width: 460px; margin: 0 auto; text-align: left; }
       .pv-rates > div {
         display: flex;
@@ -2241,6 +2261,29 @@
           '</div></header>' });
 
         s.sections.forEach((sec, i) => blocks.push({ key: sec.type, block: 'sec.' + i, html: blockHtml(sec, i) }));
+
+        // These publish as their own pages, but they still have to be visible
+        // here — a section you cannot see in the builder is one you rebuild by
+        // hand or delete by accident.
+        (s.team || []).length && blocks.push({ key: 'team', html:
+          '<section class="pv-section pv-page"><p class="pv-pagetag">Its own page · /team</p>' +
+          '<h2 class="pv-h2">Our team</h2><div class="pv-profiles">' +
+          s.team.map((p, i) => '<div class="pv-profile' + (i % 2 ? ' flip' : '') + '">' +
+            '<div class="pv-profile-media"' + (p.image ? ' style="background-image:url(' + esc(p.image) + ')"' : '') + '></div>' +
+            '<div><strong>' + esc(p.name || '') + '</strong>' +
+            (p.role ? '<span class="pv-profile-role">' + esc(p.role) + '</span>' : '') +
+            (p.text ? '<p>' + esc(p.text) + '</p>' : '') + '</div></div>').join('') +
+          '</div></section>' });
+
+        (s.cases || []).length && blocks.push({ key: 'cases', html:
+          '<section class="pv-section pv-page"><p class="pv-pagetag">Its own page · /case-studies</p>' +
+          '<h2 class="pv-h2">Case studies</h2><div class="pv-profiles">' +
+          s.cases.map((c, i) => '<div class="pv-profile' + (i % 2 ? ' flip' : '') + '">' +
+            '<div class="pv-profile-media"' + (c.videoId ? ' style="background-image:url(https://i.ytimg.com/vi/' + esc(c.videoId) + '/hqdefault.jpg)"' : '') + '></div>' +
+            '<div><strong>' + esc(c.title || '') + '</strong>' +
+            (c.role ? '<span class="pv-profile-role">' + esc(c.role) + '</span>' : '') +
+            (c.text ? '<p>' + esc(c.text) + '</p>' : '') + '</div></div>').join('') +
+          '</div></section>' });
 
         const socialNames = Object.keys(s.socials || {});
         blocks.push({ key: 'foot', html:
