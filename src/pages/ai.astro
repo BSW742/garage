@@ -1084,7 +1084,6 @@
       }
       .pv-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; letter-spacing: -0.01em; }
       .pv-card p { font-size: 0.88rem; color: var(--pv-soft); }
-      .pv-card .pv-tick { color: var(--pv-primary); font-weight: 700; margin-bottom: 0.5rem; display: block; }
 
       .pv-prose { max-width: 40rem; margin: 0 auto; text-align: center; color: var(--pv-soft); font-size: 1rem; }
 
@@ -2027,7 +2026,7 @@
               ed(p + '.title', 'pv-h2', 'h2', section.title || 'How we can help') +
               '<div class="pv-grid">' +
               section.items.map((it, j) =>
-                '<div class="pv-card" data-block="' + p + '.items.' + j + '"><span class="pv-tick">◆</span>' +
+                '<div class="pv-card" data-block="' + p + '.items.' + j + '">' +
                 ed(p + '.items.' + j + '.0', '', 'h4', it[0]) +
                 ed(p + '.items.' + j + '.1', '', 'p', it[1]) + '</div>').join('') +
               '</div></section>';

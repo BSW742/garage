@@ -95,7 +95,6 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .card{background:var(--card,#fff);border:1px solid var(--line);border-radius:14px;padding:1.4rem}
 .card h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.01em}
 .card p{font-size:.92rem;color:var(--soft)}
-.tick{color:var(--primary);font-weight:700;display:block;margin-bottom:.5rem}
 .prose{max-width:42rem;margin:0 auto;text-align:center;color:var(--soft)}
 .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.7rem}
 .shot{aspect-ratio:4/3;border-radius:12px;background:#e9edf3 center/cover no-repeat}
@@ -227,7 +226,7 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
     case 'services':
       return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
         <h2>${esc(section.title || 'How we can help')}</h2><div class="grid">${(section.items || [])
-          .map((i) => `<div class="card"><span class="tick">◆</span><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
+          .map((i) => `<div class="card"><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
           .join('')}</div></div></section>`;
     case 'about':
       return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
