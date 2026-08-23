@@ -198,6 +198,9 @@ footer a{border-bottom:1px solid var(--line)}
 .profiles{padding-top:1.5rem}
 .profile{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(1.4rem,4vw,3.2rem);
 align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid var(--line)}
+/* Order alone would move the words into the photo's column, so swap the
+   columns as well and the photo keeps its size on both sides. */
+.profile.flip{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
 .profile:last-child{border-bottom:0}
 .profile-media{position:relative;aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--wash)}
 .profile-media img{width:100%;height:100%;object-fit:cover;display:block}
@@ -214,7 +217,7 @@ align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid va
 .profile-video:hover .reel-play{background:rgba(0,0,0,.32)}
 .profile-video iframe{width:100%;height:100%;border:0;display:block}
 @media(max-width:720px){
-.profile{grid-template-columns:1fr;gap:1.1rem}
+.profile,.profile.flip{grid-template-columns:1fr;gap:1.1rem}
 .profile.flip .profile-media{order:0}
 .profile.flip .profile-words{order:0}
 .profile-media{max-width:min(88vw,420px)}

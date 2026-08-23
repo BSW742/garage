@@ -1141,17 +1141,30 @@
         color: var(--pv-soft);
         margin: 0 0 0.3rem;
       }
-      .pv-profiles { display: flex; flex-direction: column; gap: 1rem; text-align: left; }
-      .pv-profile { display: grid; grid-template-columns: 92px 1fr; gap: 0.9rem; align-items: center; }
+      .pv-profiles { display: flex; flex-direction: column; gap: 1.4rem; text-align: left; }
+      .pv-profile {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        gap: 1.2rem;
+        align-items: center;
+        padding-bottom: 1.4rem;
+        border-bottom: 1px solid var(--pv-line);
+      }
+      .pv-profile:last-child { border-bottom: 0; padding-bottom: 0; }
+      /* Swap the columns, not just the order, or the words end up in the
+         photo's column and the photo swells to fill theirs. */
+      .pv-profile.flip { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
       .pv-profile.flip .pv-profile-media { order: 2; }
       .pv-profile-media {
         aspect-ratio: 1;
-        border-radius: 10px;
+        border-radius: 12px;
         background: var(--pv-wash) center/cover no-repeat;
+        min-width: 0;
       }
-      .pv-profile strong { display: block; font-size: 0.95rem; }
-      .pv-profile-role { display: block; color: var(--pv-primary); font-size: 0.78rem; font-weight: 600; }
-      .pv-profile p { margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--pv-soft); line-height: 1.5; }
+      .pv-profile > div:not(.pv-profile-media) { min-width: 0; }
+      .pv-profile strong { display: block; font-size: 1.05rem; letter-spacing: -0.01em; }
+      .pv-profile-role { display: block; color: var(--pv-primary); font-size: 0.82rem; font-weight: 600; margin-top: 0.15rem; }
+      .pv-profile p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--pv-soft); line-height: 1.6; }
 
       .pv-rates { max-width: 460px; margin: 0 auto; text-align: left; }
       .pv-rates > div {
