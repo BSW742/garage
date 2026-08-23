@@ -31,6 +31,7 @@ export interface SiteConfig {
   sections?: SiteSection[];
   contact?: SiteContact;
   images?: string[];
+  chatLabel?: string;  // what the launcher says, default "Talk right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
 }
 
@@ -283,6 +284,7 @@ function chatWidget(site: SiteConfig, slug: string): string {
     slug,
     name: site.name || 'We',
     primary: site.palette?.primary || '#2563eb',
+    label: site.chatLabel || 'Talk right now',
     faq,
   }).replace(/</g, '\\u003c');
 
@@ -295,15 +297,25 @@ var threadId = '';
 try { threadId = localStorage.getItem(KEY) || ''; } catch (e) {}
 var seen = 0, timer = null, asked = false, replyTime = '';
 
+var ICON = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.3 8.3 0 0 1-2.9-.5L4 20l1.4-4.2A7.2 7.2 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5z"/></svg>';
+var CLOSE = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 var host = document.getElementById('garage-chat');
 var root = host.attachShadow({ mode: 'open' });
 root.innerHTML = [
 '<style>',
 ':host{all:initial}',
 '*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,sans-serif}',
-'.bubble{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;border:0;',
-'background:' + C.primary + ';color:#fff;font-size:24px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:2147483000}',
-'.panel{position:fixed;right:18px;bottom:84px;width:340px;max-width:calc(100vw - 36px);max-height:min(560px,calc(100vh - 110px));',
+'.bubble{position:fixed;right:18px;bottom:18px;display:inline-flex;align-items:center;gap:9px;',
+'padding:13px 20px 13px 17px;border-radius:999px;border:0;background:' + C.primary + ';color:#fff;',
+'font-size:15px;font-weight:600;letter-spacing:-.01em;cursor:pointer;z-index:2147483000;',
+'box-shadow:0 6px 16px rgba(0,0,0,.16),0 12px 32px rgba(0,0,0,.14);',
+'transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s ease}',
+'.bubble:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.18),0 18px 44px rgba(0,0,0,.18)}',
+'.bubble:active{transform:translateY(0)}',
+'.bubble svg{display:block;flex:none}',
+'.bubble .txt{white-space:nowrap}',
+'.bubble.open{padding:13px 16px}',
+'.panel{position:fixed;right:18px;bottom:78px;width:340px;max-width:calc(100vw - 36px);max-height:min(560px,calc(100vh - 110px));',
 'background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.24);display:none;flex-direction:column;overflow:hidden;z-index:2147483000}',
 '.panel.on{display:flex}',
 '.head{padding:14px 16px;background:' + C.primary + ';color:#fff}',
@@ -322,7 +334,7 @@ root.innerHTML = [
 'button.send{border:0;background:' + C.primary + ';color:#fff;border-radius:11px;padding:0 14px;font-size:14px;font-weight:600;cursor:pointer}',
 '@media(max-width:420px){.panel{right:10px;left:10px;width:auto;bottom:80px}}',
 '</style>',
-'<button class="bubble" part="bubble" aria-label="Chat">&#128172;</button>',
+'<button class="bubble" part="bubble" aria-label="' + C.label + '">' + ICON + '<span class="txt">' + C.label + '</span></button>',
 '<div class="panel" role="dialog" aria-label="Chat">',
 '<div class="head"><b>' + esc(C.name) + '</b><span class="sub"></span></div>',
 '<div class="log"></div>',
@@ -418,7 +430,8 @@ form.addEventListener('submit', async function(e){
 
 bubble.addEventListener('click', function(){
   var on = panel.classList.toggle('on');
-  bubble.innerHTML = on ? '&#10005;' : '&#128172;';
+  bubble.innerHTML = on ? CLOSE : ICON + '<span class="txt">' + C.label + '</span>';
+  bubble.classList.toggle('open', on);
   if (on) {
     drawChips();
     setSub();
