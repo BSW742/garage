@@ -171,6 +171,18 @@
       <div class="live-inner">
         <div class="live-badge">Yippeeeee</div>
         <h2 class="live-h">You have a website.</h2>
+        <div class="scoreboard" id="scoreboard" hidden>
+          <div class="sb-row">
+            <span class="sb-label">Your old site</span>
+            <span class="sb-num sb-was" id="sb-was">0</span>
+          </div>
+          <div class="sb-arrow">↓</div>
+          <div class="sb-row sb-now-row">
+            <span class="sb-label">This one</span>
+            <span class="sb-num sb-now" id="sb-now">0</span>
+          </div>
+          <p class="sb-line" id="sb-line"></p>
+        </div>
         <a class="live-url" id="live-url" href="#" target="_blank" rel="noopener">yoursite.garage.co.nz</a>
         <p class="live-sub">It's live right now. Chuck your email in and I'll send you the keys — edit it any time by chatting to the agent.</p>
         <form class="live-form" id="live-form">
@@ -1367,6 +1379,21 @@
         line-height: 1.05;
         margin-bottom: 1rem;
       }
+      .scoreboard {
+        margin: 1.4rem auto 1.6rem;
+        max-width: 21rem;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 16px;
+        padding: 1.1rem 1.3rem;
+        background: rgba(0,0,0,.18);
+      }
+      .sb-row { display: flex; align-items: baseline; justify-content: space-between; }
+      .sb-label { font-size: .82rem; opacity: .72; }
+      .sb-num { font-family: var(--font-display); font-size: 2rem; letter-spacing: -.02em; }
+      .sb-was { opacity: .55; }
+      .sb-now { font-size: 3rem; color: #4ade80; }
+      .sb-arrow { text-align: center; opacity: .4; font-size: .95rem; margin: .1rem 0; }
+      .sb-line { font-size: .86rem; opacity: .85; margin-top: .7rem; line-height: 1.5; }
       .live-url {
         display: inline-block;
         font-family: var(--font-display);
@@ -1531,6 +1558,14 @@
 
       slugNext.addEventListener('click', () => {
         $('chrome-url').textContent = S.slug + '.garage.co.nz';
+        if (S.fromVisibility) {
+          // They gave us the website on the way in and clicked "build my new
+          // site". Asking for either again would just spend the momentum.
+          S.scrapeError = null;
+          S.scrapePromise = startScrape(S.sourceUrl);
+          enterBuilder();
+          return;
+        }
         show('existing');
         setTimeout(() => $('source-url').focus(), 350);
       });
@@ -1572,9 +1607,30 @@
         })();
       }
 
+      // Arriving from the visibility check. We know the business, the website,
+      // the town and the score they are trying to beat — so the builder opens
+      // on the job rather than on introductions.
+      if (params.get('from') === 'visibility' && !editSlug) {
+        S.fromVisibility = {
+          name: (params.get('name') || '').slice(0, 60),
+          site: (params.get('site') || '').replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+          place: (params.get('place') || '').split(',')[0],
+          score: Number(params.get('score') || 0),
+          beat: Number(params.get('beat') || 0),
+          beatName: (params.get('beatname') || '').slice(0, 60),
+        };
+        S.sourceUrl = S.fromVisibility.site;
+        show('name');
+        setTimeout(() => {
+          slugInput.value = clean(params.get('slug') || S.fromVisibility.site.split('.')[0]);
+          slugInput.dispatchEvent(new Event('input'));
+          slugInput.focus();
+        }, 80);
+      }
+
       // Arriving from an unclaimed address: skip the hero, pre-fill the name
       const preset = new URLSearchParams(location.search).get('slug');
-      if (preset && !editSlug) {
+      if (preset && !editSlug && !S.fromVisibility) {
         show('name');
         setTimeout(() => {
           slugInput.value = clean(preset);
@@ -1591,10 +1647,17 @@
         if (!raw) { $('source-url').focus(); return; }
         S.sourceUrl = raw.replace(/^https?:\/\//, '').replace(/\/$/, '');
         S.scrapeError = null;
-        S.scrapePromise = fetch('/api/scrape', {
+        S.scrapePromise = startScrape(S.sourceUrl);
+        enterBuilder();
+      });
+
+      function startScrape(host) {
+        return fetch('/api/scrape', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: 'https://' + S.sourceUrl }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: 'https://' + host }),
         })
           .then(async (r) => {
             const d = await r.json().catch(() => null);
@@ -1604,8 +1667,7 @@
             return null;
           })
           .catch(() => { S.scrapeError = 'unreachable'; return null; });
-        enterBuilder();
-      });
+      }
 
       $('fresh-btn').addEventListener('click', () => { S.sourceUrl = ''; enterBuilder(); });
 
@@ -2483,6 +2545,18 @@
         $('chrome-url').textContent = S.slug + '.garage.co.nz';
         render();
         await wait(450);
+        if (S.fromVisibility) {
+          const v = S.fromVisibility;
+          await say('Right — ' + S.slug + '.garage.co.nz is yours, live from this second.');
+          await say(
+            v.beatName
+              ? 'Let us go and take ' + v.beatName + "'s spot. Reading " + v.site + ' now.'
+              : 'Reading ' + v.site + ' now and building from whatever is worth keeping.'
+          );
+          await importAssets();
+          return;
+        }
+
         await say('Right — ' + S.slug + '.garage.co.nz is yours. Blank page, live already.');
 
         if (S.sourceUrl) {
@@ -3873,6 +3947,43 @@
         $('agent-state').textContent = 'online · live';
         show('live');
         confetti();
+
+        // The number that shamed them is the number that pays them off.
+        if (S.fromVisibility) showScore(url);
+      }
+
+      // Score the site we just published and put it next to the one they arrived
+      // with. Nothing else on this screen means as much to them as this does.
+      async function showScore(liveUrl) {
+        const v = S.fromVisibility;
+        const board = $('scoreboard');
+        board.hidden = false;
+        $('sb-was').textContent = v.score;
+        $('sb-line').textContent = 'Checking the new one…';
+
+        let now = 0;
+        try {
+          const res = await fetch('/api/visibility?url=' + encodeURIComponent(liveUrl));
+          const data = await res.json();
+          now = Number(data.score) || 0;
+        } catch (e) {
+          board.hidden = true;
+          return;
+        }
+
+        const target = $('sb-now');
+        let n = 0;
+        const tick = () => {
+          n += Math.max(1, Math.round((now - n) / 7));
+          if (n >= now) { target.textContent = now; return; }
+          target.textContent = n;
+          requestAnimationFrame(tick);
+        };
+        tick();
+
+        $('sb-line').textContent = v.beat && now > v.beat
+          ? 'That puts you ahead of ' + (v.beatName || 'the competition') + ' on ' + v.beat + '. When AI gets asked who to ring in ' + (v.place || 'your area') + ', it can now read every word about you.'
+          : 'AI can now read your services, your hours and how to reach you — none of which it could get from the old site.';
       }
 
       $('back-to-build').addEventListener('click', async () => {

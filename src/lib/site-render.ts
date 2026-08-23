@@ -125,7 +125,7 @@ section{padding:3.8rem 1.6rem}
 section.alt{background:var(--wash)}
 .label{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--primary);text-align:center;margin-bottom:.7rem}
 h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:700;letter-spacing:-.03em;text-align:center;margin-bottom:2rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+.grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
 .card{background:var(--card,#fff);border:1px solid var(--line);border-radius:14px;padding:1.4rem}
 .card h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem;letter-spacing:-.01em}
 .card p{font-size:.92rem;color:var(--soft)}
@@ -464,9 +464,9 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
   switch (section.type) {
     case 'services':
       return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'What we do')}</p>
-        <h2>${esc(section.title || 'How we can help')}</h2><div class="grid">${(section.items || [])
-          .map((i) => `<div class="card"><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></div>`)
-          .join('')}</div></div></section>`;
+        <h2>${esc(section.title || 'How we can help')}</h2><ul class="grid">${(section.items || [])
+          .map((i) => `<li class="card"><h3>${esc(i[0])}</h3><p>${esc(i[1])}</p></li>`)
+          .join('')}</ul></div></section>`;
     case 'about':
       return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'About us')}</p>
         <h2>${esc(section.title || `The story behind ${site.name || ''}`)}</h2>
@@ -992,6 +992,95 @@ ${renderSections(site)}
   });
 }
 
+
+/** What the business is, in the one form every crawler and model already parses. */
+export function businessSchema(site: SiteConfig, slug: string): Record<string, unknown> {
+  const base = `https://${slug}.garage.co.nz`;
+  const contact = site.contact || ({} as any);
+  const services = (site.sections || [])
+    .filter((s) => s.type === 'services')
+    .flatMap((s) => (s.items || []).map((i: any) => String(i[0] || '')))
+    .filter(Boolean);
+  const hourRows = (site.sections || []).find((s) => s.type === 'hours')?.rows || [];
+
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: site.name || slug,
+    url: base,
+    description: site.lede || site.headline || '',
+  };
+  if (site.logo) data.logo = site.logo;
+  if (site.heroImage) data.image = site.heroImage;
+  if (contact.phone) data.telephone = contact.phone;
+  if (contact.email) data.email = contact.email;
+  if (contact.address) {
+    data.address = { '@type': 'PostalAddress', streetAddress: contact.address, addressCountry: 'NZ' };
+    data.areaServed = contact.address;
+  }
+  if (hourRows.length) {
+    data.openingHours = hourRows.map((r: any) => `${r[0]} ${r[1]}`);
+  }
+  if (services.length) {
+    data.makesOffer = services.map((name) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name },
+    }));
+  }
+  return data;
+}
+
+/** The plain-language brief an AI gets handed when it comes looking. */
+export function llmsTxt(site: SiteConfig, slug: string): string {
+  const contact = site.contact || ({} as any);
+  const lines: string[] = [`# ${site.name || slug}`, ''];
+  if (site.lede || site.headline) lines.push(`> ${site.lede || site.headline}`, '');
+  if (contact.address) lines.push(`Based in ${contact.address}.`, '');
+
+  for (const section of site.sections || []) {
+    if (section.type === 'services' && (section.items || []).length) {
+      lines.push('## What we do', '');
+      for (const item of section.items as any[]) {
+        lines.push(`- **${item[0]}** — ${item[1] || ''}`.trim());
+      }
+      lines.push('');
+    }
+    if (section.type === 'about' && section.text) {
+      lines.push('## About', '', String(section.text), '');
+    }
+    if (section.type === 'hours' && (section.rows || []).length) {
+      lines.push('## Opening hours', '');
+      for (const row of section.rows as any[]) lines.push(`- ${row[0]}: ${row[1]}`);
+      lines.push('');
+    }
+    if (section.type === 'faq' && (section.items || []).length) {
+      lines.push('## Common questions', '');
+      for (const item of section.items as any[]) lines.push(`- **${item[0]}** ${item[1] || ''}`.trim());
+      lines.push('');
+    }
+  }
+
+  lines.push('## Contact', '');
+  if (contact.phone) lines.push(`- Phone: ${contact.phone}`);
+  if (contact.email) lines.push(`- Email: ${contact.email}`);
+  if (contact.address) lines.push(`- Address: ${contact.address}`);
+  lines.push(`- Website: https://${slug}.garage.co.nz`, '');
+  return lines.join('\n');
+}
+
+export function llmIndex(site: SiteConfig, slug: string): Record<string, unknown> {
+  const base = `https://${slug}.garage.co.nz`;
+  return {
+    version: '1.0',
+    name: site.name || slug,
+    description: site.lede || site.headline || '',
+    url: base,
+    instructions: `${base}/llms.txt`,
+    entity: businessSchema(site, slug),
+    updated: new Date().toISOString().slice(0, 10),
+  };
+}
+
 function shell(site: SiteConfig, slug: string, page: PageMeta): string {
   const palette = site.palette || {};
   const tone = TONES[site.tone || 'light'] || TONES.light;
@@ -1012,6 +1101,8 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
 <title>${esc(page.title)}</title>
 <meta name="description" content="${esc(description)}" />
 <link rel="canonical" href="https://${esc(slug)}.garage.co.nz${esc(page.path)}" />
+<link rel="llms" type="text/markdown" href="https://${esc(slug)}.garage.co.nz/llms.txt" />
+<script type="application/ld+json">${JSON.stringify(businessSchema(site, slug)).replace(/</g, '\\u003c')}</script>
 <meta property="og:title" content="${esc(page.title)}" />
 <meta property="og:description" content="${esc(description)}" />
 <meta property="og:type" content="website" />

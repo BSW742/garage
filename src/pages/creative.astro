@@ -1,0 +1,104 @@
+---
+export const prerender = false;
+const ads = [
+  { kind: 'square', kicker: 'The question', head: 'Would ChatGPT recommend your business?', sub: 'Find out in thirty seconds. Free.', note: 'The broad one. Curiosity, no threat — widest top of funnel.' },
+  { kind: 'square', kicker: 'The specific one', head: 'We asked AI for the best plumbers in Hamilton.', sub: 'Three came up. Was one of them you?', note: 'Swap trade and town per audience. Local and concrete beats clever.' },
+  { kind: 'wide', kicker: 'The rival', head: 'Your competitor is on the list.', sub: 'You’re not. Find out why — takes thirty seconds.', note: 'Sharpest hook we have. Loss, not gain. Use where frequency is low.' },
+  { kind: 'wide', kicker: 'The shift', head: 'Nobody’s googling “plumber near me” any more.', sub: 'They’re asking AI. See what it says about you.', note: 'For owners who already sense Google traffic slipping.' },
+  { kind: 'story', kicker: 'The quiet one', head: 'When AI is asked about your business, what does it say?', sub: 'Often: nothing at all.', note: 'Softer. Good for retargeting people who bounced.' },
+  { kind: 'story', kicker: 'The dare', head: 'Go on. Check.', sub: 'See whether AI would send a customer your way.', note: 'Short-form video end card. Needs the brand already warm.' },
+];
+---
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Creative — Garage AI visibility</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Archivo+Black&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root{--ink:#07080b;--ink2:#0e1016;--line:#1e222c;--paper:#f7f8fa;--soft:#8c94a6;
+        --softer:#5d6577;--hot:#ff4d3d;--font:'Inter',system-ui,sans-serif;
+        --display:'Archivo Black',system-ui,sans-serif;--pop:'Poppins',system-ui,sans-serif}
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{background:var(--ink);color:var(--paper);font-family:var(--font);line-height:1.5;
+        -webkit-font-smoothing:antialiased}
+      .wrap{max-width:1060px;margin:0 auto;padding:0 1.5rem 5rem}
+      .top{padding:1.6rem 0;display:flex;align-items:center;gap:.6rem;border-bottom:1px solid var(--line)}
+      .mark{font-family:var(--display);font-size:1.05rem}.mark span{color:var(--hot)}
+      .tag{margin-left:auto;font-size:.72rem;color:var(--softer);letter-spacing:.09em;text-transform:uppercase}
+      header.intro{padding:3.4rem 0 2.6rem;max-width:38rem}
+      h1{font-family:var(--display);font-size:clamp(2rem,5.4vw,3rem);line-height:1.02;
+        letter-spacing:-.03em;margin-bottom:.9rem}
+      .lede{color:var(--soft);font-size:1.05rem}
+      .rule{font-size:.9rem;color:var(--softer);margin-top:1.4rem;padding-left:.9rem;
+        border-left:2px solid var(--hot)}
+      .grid{display:grid;gap:2.2rem;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+      .item{display:flex;flex-direction:column;gap:.7rem}
+      .ad{background:linear-gradient(150deg,#12141b,#080a0e);border:1px solid var(--line);
+        border-radius:16px;padding:1.7rem;display:flex;flex-direction:column;justify-content:space-between;
+        position:relative;overflow:hidden}
+      .ad:before{content:'';position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0,rgba(255,77,61,.16),transparent 60%)}
+      .ad>*{position:relative}
+      .ad.square{aspect-ratio:1}
+      .ad.wide{aspect-ratio:1.91}
+      .ad.story{aspect-ratio:.72}
+      .ad .k{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--hot);margin-bottom:.8rem}
+      .ad h2{font-family:var(--display);letter-spacing:-.028em;line-height:1.03;
+        font-size:clamp(1.25rem,2.1vw,1.75rem)}
+      .ad.wide h2{font-size:clamp(1.15rem,1.9vw,1.5rem)}
+      .ad p{color:var(--soft);font-size:.92rem;margin-top:.6rem}
+      .ad .btn{margin-top:1.2rem;display:inline-block;align-self:flex-start;background:var(--hot);
+        color:#fff;font-family:var(--pop);font-weight:700;font-size:.82rem;padding:.6rem 1.05rem;border-radius:8px}
+      .ad .brand{font-family:var(--display);font-size:.75rem;opacity:.55;margin-top:1rem}
+      .meta{display:flex;gap:.55rem;align-items:baseline}
+      .fmt{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--softer);
+        border:1px solid var(--line);border-radius:99px;padding:.15rem .5rem;flex:none}
+      .note{font-size:.85rem;color:var(--softer);line-height:1.55}
+      .foot{margin-top:4rem;padding-top:2rem;border-top:1px solid var(--line);color:var(--softer);font-size:.9rem}
+      .foot a{color:var(--hot)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top"><div class="mark">garage<span>.</span></div><div class="tag">Creative — internal</div></div>
+
+      <header class="intro">
+        <h1>Sell the discovery, not the website.</h1>
+        <p class="lede">Nobody wakes up wanting a new website. They do want to know whether the AI everyone keeps talking about is sending customers to the bloke down the road instead of them.</p>
+        <p class="rule">Every ad here has to survive the same test: does the landing page deliver exactly what the ad promised, within thirty seconds? If it doesn't, the ad is lying and the funnel leaks.</p>
+      </header>
+
+      <div class="grid">
+        {ads.map((ad) => (
+          <div class="item">
+            <div class={`ad ${ad.kind}`}>
+              <div>
+                <div class="k">{ad.kicker}</div>
+                <h2>{ad.head}</h2>
+                <p>{ad.sub}</p>
+              </div>
+              <div>
+                <div class="btn">Check my business</div>
+                <div class="brand">garage.co.nz</div>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="fmt">{ad.kind === 'square' ? '1:1 feed' : ad.kind === 'wide' ? '1.91:1 banner' : '4:5 story'}</span>
+            </div>
+            <p class="note">{ad.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="foot">
+        Every one of these points at <a href="/visible">garage.co.nz/visible</a> — the check itself.
+        Keep the trade and town in the ad matched to the audience: “plumbers in Hamilton” to Hamilton
+        plumbers, not “tradies in NZ” to everyone.
+      </div>
+    </div>
+  </body>
+</html>

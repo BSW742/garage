@@ -1,4 +1,4 @@
-import { renderSite, renderTeam, renderCases, renderAvailable, type SiteConfig } from '../../src/lib/site-render';
+import { renderSite, renderTeam, renderCases, renderAvailable, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
 import { renderInbox } from '../../src/lib/chat-admin';
 
 // Hostnames that belong to the main app, not to a claimed site
@@ -41,9 +41,47 @@ export default {
     }
 
     if (url.pathname === '/robots.txt') {
-      return new Response('User-agent: *\nAllow: /\n', {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      return new Response(
+        `User-agent: *\nAllow: /\n\nSitemap: https://${slug}.garage.co.nz/sitemap.xml\n`,
+        { headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+      );
+    }
+
+    // The brief for anything arriving to read rather than to look. These sit
+    // above the asset check below, which would otherwise 404 them on the dot.
+    if (url.pathname === '/llms.txt' || url.pathname === '/.well-known/llm-index.json') {
+      const row = await env.DB
+        .prepare('SELECT config FROM site_claims WHERE slug = ? AND status != ?')
+        .bind(slug, 'disabled')
+        .first<{ config: string }>();
+      if (!row || !row.config) return new Response('Not found', { status: 404 });
+      const config = JSON.parse(row.config) as SiteConfig;
+
+      if (url.pathname === '/llms.txt') {
+        return new Response(llmsTxt(config, slug), {
+          headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'Cache-Control': 'public, max-age=300' },
+        });
+      }
+      return new Response(JSON.stringify(llmIndex(config, slug), null, 2), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=300' },
       });
+    }
+
+    if (url.pathname === '/sitemap.xml') {
+      const row = await env.DB
+        .prepare('SELECT config FROM site_claims WHERE slug = ? AND status != ?')
+        .bind(slug, 'disabled')
+        .first<{ config: string }>();
+      const config = row?.config ? (JSON.parse(row.config) as SiteConfig) : null;
+      const base = `https://${slug}.garage.co.nz`;
+      const paths = ['/'];
+      if ((config?.team || []).length) paths.push('/team');
+      if ((config?.cases || []).length) paths.push('/case-studies');
+      const body =
+        `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+        paths.map((path) => `  <url><loc>${base}${path}</loc></url>`).join('\n') +
+        `\n</urlset>\n`;
+      return new Response(body, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
     }
     if (url.pathname === '/favicon.ico' || url.pathname === '/favicon.svg') {
       return Response.redirect('https://garage.co.nz/favicon.svg', 302);

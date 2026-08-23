@@ -1,0 +1,386 @@
+---
+export const prerender = false;
+const cf = (Astro.request as any).cf || {};
+const guessedPlace = [cf.city, cf.country === 'NZ' ? 'New Zealand' : cf.country].filter(Boolean).join(', ');
+---
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Would AI recommend your business? — Garage</title>
+    <meta name="description" content="See what AI tells customers when they ask for a business like yours. Free, about thirty seconds." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Archivo+Black&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --ink:#07080b; --ink-2:#0e1016; --line:#1e222c; --line-2:#2a3040;
+        --paper:#f7f8fa; --soft:#8c94a6; --softer:#5d6577;
+        --hot:#ff4d3d; --warm:#ffb020; --cool:#22c55e; --blue:#4d7cff;
+        --font:'Inter',system-ui,sans-serif; --display:'Archivo Black',system-ui,sans-serif;
+        --pop:'Poppins',system-ui,sans-serif;
+      }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{background:var(--ink);color:var(--paper);font-family:var(--font);
+        -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden}
+      .wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
+      .stage{display:none}
+      .stage.on{display:block;animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+      @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+      @keyframes fade{from{opacity:0}to{opacity:1}}
+
+      /* ── head ─────────────────────────────── */
+      .top{padding:1.6rem 0;display:flex;align-items:center;gap:.6rem}
+      .mark{font-family:var(--display);font-size:1.05rem;letter-spacing:-.02em}
+      .mark span{color:var(--hot)}
+      .tag{margin-left:auto;font-size:.72rem;color:var(--softer);letter-spacing:.09em;text-transform:uppercase}
+
+      /* ── ask ──────────────────────────────── */
+      .hero{padding:3.4rem 0 1rem}
+      h1{font-family:var(--display);font-size:clamp(2.5rem,7.5vw,4.3rem);line-height:.98;
+        letter-spacing:-.035em;margin-bottom:1.1rem}
+      h1 em{font-style:normal;color:var(--hot)}
+      .sub{font-size:1.08rem;color:var(--soft);max-width:30rem;margin-bottom:2.4rem}
+      form{display:grid;gap:.7rem;max-width:27rem}
+      .field{position:relative}
+      label{position:absolute;top:.5rem;left:.95rem;font-size:.65rem;letter-spacing:.1em;
+        text-transform:uppercase;color:var(--softer)}
+      input{width:100%;padding:1.55rem .95rem .6rem;background:var(--ink-2);color:var(--paper);
+        border:1px solid var(--line);border-radius:11px;font:inherit;font-size:1rem;transition:border-color .18s}
+      input:focus{outline:none;border-color:var(--blue)}
+      .place{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--softer);padding:.1rem .2rem}
+      .place button{background:none;border:none;color:var(--blue);font:inherit;font-size:.85rem;
+        cursor:pointer;text-decoration:underline;padding:0}
+      .go{margin-top:.5rem;padding:1.05rem;background:var(--hot);color:#fff;border:none;border-radius:11px;
+        font-family:var(--pop);font-weight:700;font-size:1.02rem;cursor:pointer;transition:transform .16s,filter .16s}
+      .go:hover{transform:translateY(-2px);filter:brightness(1.08)}
+      .go:disabled{opacity:.5;cursor:default;transform:none}
+      .fine{font-size:.78rem;color:var(--softer);margin-top:.9rem}
+
+      /* ── running ──────────────────────────── */
+      .run{padding:4.5rem 0;min-height:74vh}
+      .step{display:flex;gap:.85rem;padding:.85rem 0;opacity:.25;transition:opacity .45s}
+      .step.live,.step.done{opacity:1}
+      .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);margin-top:.55rem;flex:none;transition:background .3s}
+      .step.live .dot{background:var(--warm);animation:pulse 1.1s infinite}
+      .step.done .dot{background:var(--cool)}
+      @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+      .step-t{font-size:1rem}
+      .step-s{font-size:.85rem;color:var(--softer);margin-top:.15rem}
+      .asked{font-family:var(--pop);font-weight:600;font-size:clamp(1.4rem,4.6vw,2.1rem);
+        line-height:1.25;margin:2.2rem 0 .4rem;letter-spacing:-.02em}
+      .asked:after{content:'▌';color:var(--hot);animation:pulse .9s infinite}
+      .asked.done:after{content:''}
+
+      /* ── reveal ───────────────────────────── */
+      .reveal{padding:3.2rem 0 1rem}
+      .kicker{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--softer);margin-bottom:.9rem}
+      .verdict{font-family:var(--display);font-size:clamp(2.1rem,6.4vw,3.4rem);line-height:1;
+        letter-spacing:-.03em;margin-bottom:.7rem}
+      .verdict.bad{color:var(--hot)}
+      .verdict-s{color:var(--soft);font-size:1.05rem;margin-bottom:2.4rem;max-width:32rem}
+      .table{border-top:1px solid var(--line)}
+      .row{display:flex;align-items:center;gap:1rem;padding:1.05rem .2rem;border-bottom:1px solid var(--line);
+        opacity:0;animation:rise .5s cubic-bezier(.2,.7,.3,1) forwards}
+      .rank{font-family:var(--display);font-size:.95rem;color:var(--softer);width:1.5rem;flex:none}
+      .who{flex:1;min-width:0}
+      .who b{display:block;font-weight:600;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .who span{font-size:.8rem;color:var(--softer)}
+      .score{font-family:var(--display);font-size:1.55rem;letter-spacing:-.02em;flex:none}
+      .score small{font-size:.68rem;color:var(--softer);font-family:var(--font);margin-left:.15rem}
+      .row.you{background:linear-gradient(90deg,rgba(255,77,61,.13),transparent);
+        margin:0 -.9rem;padding:1.15rem .9rem;border-radius:12px;border-bottom:none;
+        border:1px solid rgba(255,77,61,.32);margin-top:.9rem}
+      .row.you .score{color:var(--hot)}
+      .row.you .who b{color:#fff}
+      .flag{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--hot);
+        border:1px solid rgba(255,77,61,.4);border-radius:99px;padding:.2rem .5rem;flex:none}
+      .receipt{margin-top:1.4rem;font-size:.76rem;color:var(--softer);line-height:1.7}
+
+      /* ── why ──────────────────────────────── */
+      .why{padding:3.6rem 0 1rem;border-top:1px solid var(--line);margin-top:3.2rem}
+      h2{font-family:var(--pop);font-weight:700;font-size:clamp(1.5rem,4.4vw,2.1rem);
+        letter-spacing:-.025em;margin-bottom:.6rem}
+      .why-s{color:var(--soft);margin-bottom:2rem;max-width:32rem}
+      .reason{display:flex;gap:1rem;padding:1.2rem 0;border-bottom:1px solid var(--line)}
+      .cost{font-family:var(--display);font-size:1.05rem;color:var(--hot);flex:none;width:2.9rem;padding-top:.1rem}
+      .reason b{display:block;font-weight:600;margin-bottom:.25rem}
+      .reason p{color:var(--soft);font-size:.92rem}
+
+      /* ── offer ────────────────────────────── */
+      .offer{padding:3.6rem 0 5rem;text-align:center}
+      .offer h2{margin-bottom:.8rem}
+      .offer p{color:var(--soft);max-width:27rem;margin:0 auto 2rem}
+      .cta{display:inline-block;padding:1.15rem 2.4rem;background:var(--hot);color:#fff;
+        border:none;border-radius:12px;font-family:var(--pop);font-weight:700;font-size:1.08rem;
+        cursor:pointer;text-decoration:none;transition:transform .16s,filter .16s}
+      .cta:hover{transform:translateY(-2px);filter:brightness(1.08)}
+      .after{font-size:.82rem;color:var(--softer);margin-top:1rem}
+      .err{color:var(--warm);font-size:.9rem;margin-top:1rem}
+      @media(max-width:520px){
+        .row.you{margin-left:0;margin-right:0}
+        .score{font-size:1.3rem}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="mark">garage<span>.</span></div>
+        <div class="tag">AI visibility check</div>
+      </div>
+
+      <!-- ══ 1. ASK ══ -->
+      <section class="stage on" id="s-ask">
+        <div class="hero">
+          <h1>Would AI recommend <em>your</em> business?</h1>
+          <p class="sub">Customers are asking ChatGPT who to ring. Let's see what it says about you — takes about thirty seconds.</p>
+          <form id="form">
+            <div class="field">
+              <label for="biz">Business name</label>
+              <input id="biz" name="biz" placeholder="Flowline Plumbing" autocomplete="organization" required />
+            </div>
+            <div class="field">
+              <label for="site">Your website</label>
+              <input id="site" name="site" placeholder="flowlineplumbing.co.nz" autocomplete="url" required />
+            </div>
+            <div class="place">
+              <span id="place-txt">Looks like you're in <b id="place-name">New Zealand</b></span>
+              <button type="button" id="place-edit">change</button>
+            </div>
+            <button class="go" type="submit" id="go">Check my business</button>
+          </form>
+          <p class="fine">Free. No account. We don't email you unless you ask us to.</p>
+          <p class="err" id="err" hidden></p>
+        </div>
+      </section>
+
+      <!-- ══ 2. RUNNING ══ -->
+      <section class="stage" id="s-run">
+        <div class="run">
+          <div class="kicker">Asking on your behalf</div>
+          <div class="asked" id="asked"></div>
+          <div id="steps" style="margin-top:2rem"></div>
+        </div>
+      </section>
+
+      <!-- ══ 3. REVEAL + WHY + OFFER ══ -->
+      <section class="stage" id="s-out">
+        <div class="reveal">
+          <div class="kicker" id="out-kicker">We asked AI</div>
+          <div class="verdict" id="verdict"></div>
+          <p class="verdict-s" id="verdict-s"></p>
+          <div class="table" id="table"></div>
+          <p class="receipt" id="receipt"></p>
+        </div>
+        <div class="why" id="why-block">
+          <h2>Why they're ahead</h2>
+          <p class="why-s" id="why-s"></p>
+          <div id="reasons"></div>
+        </div>
+        <div class="offer">
+          <h2>Let's fix it.</h2>
+          <p id="offer-p">We'll build you a new site that AI can actually read — and you can change anything just by telling us. About five minutes, and it's free.</p>
+          <a class="cta" id="cta" href="#">Build my new site</a>
+          <p class="after">Free forever. Yours to keep. No card, no catch.</p>
+        </div>
+      </section>
+    </div>
+
+    <script is:inline define:vars={{ guessedPlace }}>
+      const $ = (id) => document.getElementById(id);
+      let place = guessedPlace || 'New Zealand';
+      $('place-name').textContent = place;
+
+      $('place-edit').addEventListener('click', () => {
+        const next = prompt('Which town or city do you work in?', place);
+        if (next && next.trim()) { place = next.trim(); $('place-name').textContent = place; }
+      });
+
+      function show(id) {
+        document.querySelectorAll('.stage').forEach((s) => s.classList.remove('on'));
+        $(id).classList.add('on');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      // Type the question out. It is the moment they realise this is a real
+      // question a real customer asks, not a marketing gimmick.
+      async function type(el, text, speed) {
+        el.textContent = '';
+        for (const ch of text) { el.textContent += ch; await wait(speed); }
+      }
+
+      function step(title, sub) {
+        const el = document.createElement('div');
+        el.className = 'step live';
+        el.innerHTML = '<div class="dot"></div><div><div class="step-t"></div><div class="step-s"></div></div>';
+        el.querySelector('.step-t').textContent = title;
+        el.querySelector('.step-s').textContent = sub || '';
+        $('steps').appendChild(el);
+        return {
+          done(text) {
+            el.classList.remove('live'); el.classList.add('done');
+            if (text) el.querySelector('.step-s').textContent = text;
+          },
+          sub(text) { el.querySelector('.step-s').textContent = text; },
+        };
+      }
+
+      function countUp(el, to) {
+        let n = 0;
+        const tick = () => {
+          n += Math.max(1, Math.round((to - n) / 6));
+          if (n >= to) { el.firstChild.textContent = to; return; }
+          el.firstChild.textContent = n;
+          requestAnimationFrame(tick);
+        };
+        tick();
+      }
+
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = $('biz').value.trim();
+        const url = $('site').value.trim();
+        if (!name || !url) return;
+        $('go').disabled = true;
+        $('err').hidden = true;
+
+        show('s-run');
+        $('steps').innerHTML = '';
+
+        const s1 = step('Reading your website', url.replace(/^https?:\/\//, ''));
+        const request = fetch('/api/visibility', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, url, location: place }),
+        }).then((r) => r.json());
+
+        // The wait is part of the story, so it gets narrated rather than hidden.
+        await wait(1600);
+        s1.done();
+        const s2 = step('Working out what a customer would ask', 'in ' + place);
+        await wait(1800);
+        s2.done();
+        const s3 = step('Asking AI that question', 'and writing down every business it names');
+
+        let data;
+        try { data = await request; } catch (_) { data = { error: 'network' }; }
+
+        if (!data || data.error) {
+          show('s-ask');
+          $('go').disabled = false;
+          $('err').hidden = false;
+          $('err').textContent = data && data.error === 'no-key'
+            ? "Our AI is having a moment — try again shortly."
+            : "That didn't go through. Check the web address and have another go.";
+          return;
+        }
+
+        s3.done(data.rivals.length ? 'It named ' + data.rivals.length + (data.rivals.length === 1 ? ' business' : ' businesses') : 'It named nobody it was sure of');
+        $('asked').classList.remove('done');
+        await type($('asked'), '"' + data.query + '"', 32);
+        $('asked').classList.add('done');
+
+        const s4 = step('Scoring how visible each one is', 'checking what AI can read on their sites');
+        await wait(2000);
+        s4.done();
+        await wait(600);
+
+        paint(data);
+        show('s-out');
+      });
+
+      function paint(d) {
+        const you = d.you;
+        const ahead = d.rivals.filter((r) => r.score > you.score);
+
+        // The verdict. Not being mentioned is the wound; the table twists it.
+        if (!d.mentioned) {
+          $('verdict').className = 'verdict bad';
+          $('verdict').textContent = 'AI didn’t mention you.';
+        } else {
+          $('verdict').className = 'verdict';
+          $('verdict').textContent = 'AI mentioned you — but you’re not top.';
+        }
+
+        $('verdict-s').textContent = you.unreadable
+          ? 'And there’s a reason. Your website turned us away when we tried to read it — which is exactly what it does to AI.'
+          : ahead.length
+            ? 'When someone in ' + d.place.split(',')[0] + ' asks that question, ' + (ahead.length === 1 ? 'this business comes up' : 'these businesses come up') + ' ahead of you.'
+            : 'Here’s who came up, and how visible each one is.';
+
+        const table = $('table');
+        table.innerHTML = '';
+        d.rivals.forEach((r, i) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.style.animationDelay = (i * 0.11) + 's';
+          row.innerHTML =
+            '<div class="rank">' + (i + 1) + '</div>' +
+            '<div class="who"><b></b><span></span></div>' +
+            '<div class="score"><span>0</span><small>/100</small></div>';
+          row.querySelector('b').textContent = r.name;
+          row.querySelector('.who span').textContent = r.domain;
+          table.appendChild(row);
+          setTimeout(() => countUp(row.querySelector('.score'), r.score), 400 + i * 110);
+        });
+
+        const mine = document.createElement('div');
+        mine.className = 'row you';
+        mine.style.animationDelay = (d.rivals.length * 0.11 + 0.25) + 's';
+        mine.innerHTML =
+          '<div class="rank">—</div>' +
+          '<div class="who"><b></b><span></span></div>' +
+          (d.mentioned ? '' : '<div class="flag">not mentioned</div>') +
+          '<div class="score"><span>0</span><small>/100</small></div>';
+        mine.querySelector('b').textContent = you.name;
+        mine.querySelector('.who span').textContent = you.domain;
+        table.appendChild(mine);
+        setTimeout(() => countUp(mine.querySelector('.score'), you.score), 700 + d.rivals.length * 110);
+
+        const when = new Date(d.askedAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+        $('receipt').textContent =
+          'Asked ' + d.model + ' on ' + when + ': “' + d.query + '”. ' +
+          'Every business listed was checked to make sure it exists. AI answers vary, so this is one honest snapshot rather than a verdict for all time.';
+
+        // Why
+        $('why-s').textContent = you.unreadable
+          ? 'We could not read your site, and neither can AI. Here is what is missing once it gets in.'
+          : 'Nothing here is about how your site looks. It is about what AI can and cannot pick up from it.';
+        const list = $('reasons');
+        list.innerHTML = '';
+        (d.reasons || []).forEach((r) => {
+          const el = document.createElement('div');
+          el.className = 'reason';
+          el.innerHTML = '<div class="cost"></div><div><b></b><p></p></div>';
+          el.querySelector('.cost').textContent = '−' + r.cost;
+          el.querySelector('b').textContent = r.title;
+          el.querySelector('p').textContent = r.detail;
+          list.appendChild(el);
+        });
+
+        // Offer — carry everything we learned into the builder.
+        const slug = you.domain.split('.')[0].replace(/[^a-z0-9-]/gi, '').toLowerCase();
+        const params = new URLSearchParams({
+          from: 'visibility',
+          name: you.name,
+          site: you.domain,
+          slug: slug,
+          place: d.place,
+          score: String(you.score),
+          beat: String(ahead.length ? Math.max.apply(null, ahead.map((r) => r.score)) : 0),
+          beatname: ahead.length ? ahead[0].name : '',
+        });
+        $('cta').href = '/ai?' + params.toString();
+
+        const target = ahead.length ? Math.max.apply(null, ahead.map((r) => r.score)) : 70;
+        $('offer-p').textContent =
+          'We’ll build you a new site that AI can actually read, and you change anything just by telling us. ' +
+          'Businesses we build score ' + Math.max(target + 8, 78) + ' and up. About five minutes, and it’s free.';
+      }
+    </script>
+  </body>
+</html>
