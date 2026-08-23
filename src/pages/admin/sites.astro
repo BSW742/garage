@@ -57,6 +57,7 @@ function summarise(site: any) {
             <th>Source</th>
             <th>Updated</th>
             <th>Status</th>
+            <th>Owner inbox link</th>
             <th class="right">Open</th>
           </tr>
         </thead>
@@ -74,21 +75,30 @@ function summarise(site: any) {
               <td>
                 <span class={`pill ${site.status}`}>{site.status}</span>
               </td>
+              <td class="linkcell">
+                {site.edit_token ? (
+                  <>
+                    <a
+                      href={`https://${site.slug}.garage.co.nz/admin?k=${site.edit_token}`}
+                      target="_blank"
+                      rel="noopener"
+                      class="inbox-link"
+                    >{`https://${site.slug}.garage.co.nz/admin?k=${site.edit_token}`}</a>
+                    <button
+                      class="copy"
+                      data-link={`https://${site.slug}.garage.co.nz/admin?k=${site.edit_token}`}
+                    >Copy</button>
+                  </>
+                ) : (
+                  <span class="muted small">no key yet</span>
+                )}
+              </td>
               <td class="right nowrap">
                 <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="act">View</a>
                 <a
                   href={`/ai?edit=${encodeURIComponent(site.slug)}${site.edit_token ? `&t=${encodeURIComponent(site.edit_token)}` : ''}`}
                   class="act edit"
                 >Edit</a>
-                {site.edit_token && (
-                  <a
-                    href={`https://${site.slug}.garage.co.nz/admin?k=${encodeURIComponent(site.edit_token)}`}
-                    target="_blank"
-                    rel="noopener"
-                    class="act"
-                    title="The owner's message inbox — this is the link to send them"
-                  >Messages</a>
-                )}
                 {site.edit_token && (
                   <button
                     class:list={['act', 'chat', site.chat_on ? 'on' : '']}
@@ -108,6 +118,16 @@ function summarise(site: any) {
 </Layout>
 
 <script>
+  document.querySelectorAll('button.copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const el = btn as HTMLButtonElement;
+      await navigator.clipboard.writeText(el.dataset.link || '');
+      const was = el.textContent;
+      el.textContent = 'Copied';
+      setTimeout(() => { el.textContent = was; }, 1200);
+    });
+  });
+
   document.querySelectorAll('button.chat').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const el = btn as HTMLButtonElement;
@@ -129,6 +149,25 @@ function summarise(site: any) {
 
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  .linkcell { max-width: 340px; }
+  .inbox-link {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    word-break: break-all;
+    color: var(--color-accent, #2563eb);
+  }
+  button.copy {
+    display: inline-block;
+    margin-left: 0.4rem;
+    font: inherit;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--color-border, #e5e5e5);
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+  }
   button.act.chat { cursor: pointer; font: inherit; }
   button.act.chat.on { background: #16a34a; border-color: #16a34a; color: #fff; }
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
