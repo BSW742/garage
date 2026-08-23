@@ -3,7 +3,7 @@ import PostalMime from 'postal-mime';
 import { EmailMessage } from 'cloudflare:email';
 import {
   mailboxSlug, bareAddress, authVerdict, isAutomated, buildReplyMime,
-  MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, setVideo, usablePhotos,
+  MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, addVideo, usablePhotos,
 } from '../../src/lib/site-mail';
 
 // Declared here rather than pulled in wholesale, matching how the API routes
@@ -138,7 +138,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
   const done: string[] = [];
 
   if (video) {
-    setVideo(config, video, (record.subject || '').trim());
+    addVideo(config, video, (record.subject || '').trim());
     done.push('Your video is up');
   }
 

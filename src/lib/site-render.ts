@@ -14,6 +14,7 @@ export interface SiteSection {
   quote?: string;
   who?: string;
   videoId?: string;
+  videos?: string[];
 }
 export interface SiteConfig {
   name?: string;
@@ -142,15 +143,28 @@ h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:7
 .socials a:hover{border-bottom-color:var(--primary);color:var(--primary)}
 footer{padding:1.8rem 1.6rem;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:.6rem;font-size:.82rem;color:var(--soft)}
 footer a{border-bottom:1px solid var(--line)}
-.video{position:relative;max-width:860px;margin:0 auto;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;cursor:pointer}
-.video img{width:100%;height:100%;object-fit:cover;display:block}
-.video button{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(0,0,0,.18);cursor:pointer;display:grid;place-items:center;transition:background .2s}
-.video:hover button{background:rgba(0,0,0,.3)}
-.video button span{width:72px;height:50px;border-radius:12px;background:rgba(18,18,18,.82);position:relative;display:block;transition:background .2s}
-.video:hover button span{background:#f00}
-.video button span::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-42%,-50%);border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}
-.video iframe{width:100%;height:100%;border:0;display:block}
-.st-brutal .video{border-radius:0;border:2px solid var(--ink)}
+.reel{position:relative;max-width:900px;margin:0 auto}
+.reel-track{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scrollbar-width:none;border-radius:14px}
+.reel-track::-webkit-scrollbar{display:none}
+.reel-slide{position:relative;flex:0 0 100%;scroll-snap-align:center;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.reel.many .reel-slide{flex-basis:88%}
+.reel-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.reel-play{position:absolute;inset:0;width:100%;height:100%;border:0;background:rgba(0,0,0,.18);cursor:pointer;display:grid;place-items:center;transition:background .2s}
+.reel-slide:hover .reel-play{background:rgba(0,0,0,.3)}
+.reel-play span{width:72px;height:50px;border-radius:12px;background:rgba(18,18,18,.82);position:relative;display:block;transition:background .2s,transform .2s}
+.reel-slide:hover .reel-play span{background:#f00;transform:scale(1.06)}
+.reel-play span::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-42%,-50%);border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}
+.reel-slide iframe{width:100%;height:100%;border:0;display:block}
+.reel-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);font-size:26px;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.14);transition:transform .18s,opacity .18s;z-index:2}
+.reel-nav:hover{transform:translateY(-50%) scale(1.08)}
+.reel-nav[disabled]{opacity:.3;cursor:default;transform:translateY(-50%)}
+.reel-nav.prev{left:-10px}
+.reel-nav.next{right:-10px}
+.reel-count{text-align:center;margin:.9rem 0 0;font-size:.85rem;color:var(--soft)}
+@media(max-width:720px){.reel-nav{display:none}.reel.many .reel-slide{flex-basis:92%}}
+@media(prefers-reduced-motion:reduce){.reel-track{scroll-behavior:auto}}
+.st-brutal .reel-slide{border-radius:0;border:2px solid var(--ink)}
+.st-brutal .reel-nav{border-radius:0;border-width:2px}
 .faq{max-width:760px;margin:0 auto;text-align:left}
 .faq details{border:1px solid var(--line);border-radius:12px;background:var(--card,#fff);margin-bottom:.6rem;overflow:hidden}
 .faq summary{cursor:pointer;padding:.9rem 1.1rem;font-weight:600;list-style:none}
@@ -233,14 +247,32 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
           .map((i) => `<details><summary>${esc(i[0])}</summary><p>${esc(i[1])}</p></details>`)
           .join('')}</div></div></section>`;
     case 'video': {
-      const id = String(section.videoId || '').match(/^[A-Za-z0-9_-]{11}$/)?.[0];
-      if (!id) return '';
+      const ids = (Array.isArray(section.videos) ? section.videos : section.videoId ? [section.videoId] : [])
+        .map((v) => String(v).match(/^[A-Za-z0-9_-]{11}$/)?.[0])
+        .filter(Boolean) as string[];
+      if (!ids.length) return '';
+      const many = ids.length > 1;
+      const slides = ids
+        .map(
+          (id, i) => `<div class="reel-slide" data-yt="${esc(id)}">
+            <img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="Video ${i + 1} of ${ids.length}" loading="lazy" />
+            <button type="button" class="reel-play" aria-label="Play video ${i + 1}"><span></span></button>
+          </div>`
+        )
+        .join('');
+      // With one video the arrows would be furniture, so it just reads as a
+      // single framed film.
+      const controls = many
+        ? `<button class="reel-nav prev" type="button" aria-label="Previous video">&#8249;</button>
+           <button class="reel-nav next" type="button" aria-label="Next video">&#8250;</button>`
+        : '';
+      const count = many ? `<p class="reel-count"><span>1</span> / ${ids.length}</p>` : '';
       return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Watch')}</p>
         <h2>${esc(section.title || 'See us at work')}</h2>
-        <div class="video" data-yt="${esc(id)}">
-          <img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="${esc(section.title || 'Play video')}" loading="lazy" />
-          <button type="button" aria-label="Play video"><span></span></button>
-        </div></div></section>`;
+        <div class="reel${many ? ' many' : ''}">
+          <div class="reel-track">${slides}</div>
+          ${controls}
+        </div>${count}</div></section>`;
     }
     case 'testimonial':
       return `<section><div class="wrap quote"><p>&ldquo;${esc(section.quote)}&rdquo;</p><span>&mdash; ${esc(section.who)}</span></div></section>`;
@@ -525,7 +557,26 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}<script>document.querySelectorAll('.video').forEach(function(v){v.addEventListener('click',function(){var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/'+v.dataset.yt+'?autoplay=1&rel=0';f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture';f.allowFullscreen=true;f.title='Video';v.innerHTML='';v.appendChild(f);});});</script></body>
+<body class="st-${esc(site.style || 'modern')}">${body}${site.chat ? chatWidget(site, slug) : ''}<script>document.querySelectorAll('.reel').forEach(function(r){
+var track=r.querySelector('.reel-track'),slides=[].slice.call(r.querySelectorAll('.reel-slide'));
+slides.forEach(function(s){s.querySelector('.reel-play').addEventListener('click',function(){
+slides.forEach(function(o){if(o!==s&&o.querySelector('iframe'))o.innerHTML=o.dataset.poster;});
+s.dataset.poster=s.innerHTML;
+var f=document.createElement('iframe');
+f.src='https://www.youtube-nocookie.com/embed/'+s.dataset.yt+'?autoplay=1&rel=0';
+f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;picture-in-picture';
+f.allowFullscreen=true;f.title='Video';s.innerHTML='';s.appendChild(f);});});
+var prev=r.querySelector('.reel-nav.prev'),next=r.querySelector('.reel-nav.next');
+if(!prev)return;
+function go(d){track.scrollBy({left:d*track.clientWidth*.9,behavior:'smooth'});}
+prev.addEventListener('click',function(){go(-1);});
+next.addEventListener('click',function(){go(1);});
+var count=r.parentNode.querySelector('.reel-count span');
+function sync(){var i=Math.round(track.scrollLeft/(track.scrollWidth/slides.length));
+if(count)count.textContent=Math.min(slides.length,i+1);
+prev.disabled=track.scrollLeft<8;
+next.disabled=track.scrollLeft+track.clientWidth>=track.scrollWidth-8;}
+track.addEventListener('scroll',sync);sync();});</script></body>
 </html>`;
 }
 

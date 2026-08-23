@@ -172,23 +172,27 @@ export function youtubeId(text: unknown): string | null {
 }
 
 /**
- * Put the video at the top of the page's own section, replacing whatever was
- * there before — a business has one film they are proud of at a time, and a
- * growing pile of half-finished clips is not what anyone wants.
+ * Videos live together in one reel. A second link joins the first rather than
+ * replacing it, which is the whole point of having somewhere to put them.
  */
-export function setVideo(config: any, videoId: string, title: string): void {
+export function addVideo(config: any, videoId: string, title: string): void {
   config.sections = Array.isArray(config.sections) ? config.sections : [];
-  let video = config.sections.find((s: any) => s && s.type === 'video');
-  if (!video) {
-    video = { type: 'video' };
+  let reel = config.sections.find((s: any) => s && s.type === 'video');
+  if (!reel) {
+    reel = { type: 'video', videos: [] };
     const galleryAt = config.sections.findIndex((s: any) => s && s.type === 'gallery');
-    if (galleryAt >= 0) config.sections.splice(galleryAt, 0, video);
-    else {
-      const contactAt = config.sections.findIndex((s: any) => s && s.type === 'contact');
-      if (contactAt >= 0) config.sections.splice(contactAt, 0, video);
-      else config.sections.push(video);
-    }
+    const contactAt = config.sections.findIndex((s: any) => s && s.type === 'contact');
+    const at = galleryAt >= 0 ? galleryAt : contactAt;
+    if (at >= 0) config.sections.splice(at, 0, reel);
+    else config.sections.push(reel);
   }
-  video.videoId = videoId;
-  if (title) video.title = title;
+
+  // Older sites carried a single videoId before the reel existed.
+  const existing: string[] = Array.isArray(reel.videos)
+    ? reel.videos
+    : reel.videoId ? [reel.videoId] : [];
+  delete reel.videoId;
+
+  reel.videos = [videoId, ...existing.filter((v) => v !== videoId)].slice(0, 12);
+  if (title) reel.title = title;
 }
