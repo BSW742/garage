@@ -639,6 +639,20 @@
       .typing i:nth-child(3) { animation-delay: 0.3s; }
       @keyframes blink { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 
+      .logo-preview { padding: 0.5rem; background: transparent; border: 0; }
+      .logo-tiles { display: flex; gap: 6px; }
+      .logo-tile {
+        flex: 1;
+        aspect-ratio: 1;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        padding: 10px;
+      }
+      .logo-tile.light { background: #fff; border: 1px solid var(--work-3); }
+      .logo-tile.dark { background: #16181d; }
+      .logo-tile img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
       .agent-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0 1.2rem 0.8rem; }
       .chip {
         border: 1px solid var(--work-3);
@@ -1537,6 +1551,21 @@
         bubble(text, 'msg-agent');
       }
 
+      // The logo slot on the page is a favicon-sized square, which is no place
+      // to decide whether a logo is any good. Show it in the thread instead,
+      // on both a light and a dark tile since that is what it has to survive.
+      function showLogo(url) {
+        const wrap = document.createElement('div');
+        wrap.className = 'msg msg-agent logo-preview';
+        wrap.innerHTML =
+          '<div class="logo-tiles">' +
+          '<div class="logo-tile light"><img src="' + esc(url) + '" alt="Logo on white" /></div>' +
+          '<div class="logo-tile dark"><img src="' + esc(url) + '" alt="Logo on dark" /></div>' +
+          '</div>';
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+      }
+
       function did(text) {
         const el = document.createElement('div');
         el.className = 'msg msg-do';
@@ -1724,6 +1753,8 @@
           return;
         }
 
+        // Cut the background out before showing it, so what you are judging is
+        // what would actually go on the site.
         try {
           const cut = await cutOutWhite(url);
           const up = await fetch('/api/upload', {
@@ -1737,11 +1768,37 @@
           // Keep the version with the white background rather than nothing.
         }
 
-        snapshot();
-        S.site.logo = url;
-        render();
-        did('New logo');
-        await say('There you go. Say "new logo" again for a different take, or undo to put the old one back.');
+        // Nothing touches the page until it has been looked at.
+        showLogo(url);
+        await say('Here it is. Want it?');
+        chips([
+          { label: 'Use it', yes: true },
+          { label: 'Try again' },
+          { label: 'Leave it' },
+        ]);
+        S.awaiting = 'logoverdict';
+        S.pendingLogo = { url: url, style: style };
+      }
+
+      async function logoVerdict(text) {
+        const pending = S.pendingLogo || {};
+        S.awaiting = null;
+        S.pendingLogo = null;
+
+        if (/try again|another|different|again/i.test(text)) {
+          await drawLogo(pending.style || 'mark');
+          return;
+        }
+        if (/use it|yes|keep|yep|good|love/i.test(text)) {
+          snapshot();
+          S.site.logo = pending.url;
+          render();
+          did('New logo');
+          await say('On it goes. Undo puts the old one back.');
+          chips(IDLE_CHIPS);
+          return;
+        }
+        await say('Left it as it was.');
         chips(IDLE_CHIPS);
       }
 
@@ -2421,6 +2478,11 @@
         }
 
         // — drawing a logo —
+        if (S.awaiting === 'logoverdict') {
+          await logoVerdict(text);
+          return;
+        }
+
         if (S.awaiting === 'logostyle') {
           const styles = { simple: 'mark', badge: 'badge', letter: 'letter', picture: 'illustration' };
           const pick = Object.keys(styles).find((k) => new RegExp(k, 'i').test(text)) || 'simple';
