@@ -1,5 +1,5 @@
 import { renderSite, renderTeam, renderCases, renderAvailable, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
-import { renderInbox } from '../../src/lib/chat-admin';
+import { renderInbox, inboxManifest } from '../../src/lib/chat-admin';
 
 // Hostnames that belong to the main app, not to a claimed site
 const RESERVED_HOSTS = new Set([
@@ -38,6 +38,18 @@ export default {
     // shows needs the site's edit_token, which it asks for as ?k=.
     if (url.pathname === '/admin' || url.pathname === '/admin/') {
       return html(renderInbox(slug), 200);
+    }
+
+    // Installing the inbox on a phone only helps if the icon opens it unlocked,
+    // so the key travels in the manifest's start_url.
+    if (url.pathname === '/admin/manifest.webmanifest') {
+      const key = url.searchParams.get('k') || '';
+      return new Response(inboxManifest(slug, key), {
+        headers: {
+          'Content-Type': 'application/manifest+json; charset=utf-8',
+          'Cache-Control': 'no-store',
+        },
+      });
     }
 
     if (url.pathname === '/robots.txt') {

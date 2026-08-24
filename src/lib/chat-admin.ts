@@ -2,6 +2,33 @@
 // Authorised by the site's edit_token, passed as ?k= once and then remembered,
 // so there is nothing to log into.
 
+
+/**
+ * The manifest that makes the inbox installable. start_url keeps the key,
+ * because an icon on someone's home screen that opens to "who are you" is
+ * worse than no icon at all.
+ */
+export function inboxManifest(slug: string, key: string): string {
+  return JSON.stringify(
+    {
+      name: 'Messages — ' + slug + '.garage.co.nz',
+      short_name: 'Messages',
+      description: 'Customer messages and orders for ' + slug + '.garage.co.nz',
+      start_url: '/admin?k=' + encodeURIComponent(key),
+      scope: '/admin',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#ffffff',
+      theme_color: '#0a0a0a',
+      icons: [
+        { src: 'https://garage.co.nz/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      ],
+    },
+    null,
+    2
+  );
+}
+
 export function renderInbox(slug: string): string {
   const s = JSON.stringify(slug);
   return `<!doctype html>
@@ -11,6 +38,14 @@ export function renderInbox(slug: string): string {
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="robots" content="noindex" />
 <title>Messages</title>
+<link rel="manifest" id="mf" href="/admin/manifest.webmanifest" />
+<script>(function(){var k=new URLSearchParams(location.search).get('k');if(k){document.getElementById('mf').href='/admin/manifest.webmanifest?k='+encodeURIComponent(k);}})();</script>
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Messages" />
+<link rel="apple-touch-icon" href="https://garage.co.nz/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>

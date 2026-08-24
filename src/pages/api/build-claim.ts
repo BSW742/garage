@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sendPushToAll } from '../../lib/web-push';
+import { sendMail, keysEmail } from '../../lib/mail';
 
 export const prerender = false;
 
@@ -59,7 +60,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const url = `https://${slug}.garage.co.nz`;
-    const db = (locals.runtime?.env as any)?.DB;
+    const env = (locals.runtime?.env as any) || {};
+    const db = env.DB;
     if (!db) {
       console.log('Site claim (no DB):', slug, email || '(no email yet)');
       return json({ success: true, url, token: 'no-db' });
@@ -104,6 +106,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
         } catch (pushError) {
           console.error('Push notification error:', pushError);
         }
+        // The screen has always said "keys on their way" — now they are.
+        await mailKeys(env, db, slug, email, site);
       }
 
       return json({ success: true, url, token });
@@ -125,9 +129,37 @@ export const POST: APIRoute = async ({ request, locals }) => {
       console.error('Push notification error:', pushError);
     }
 
+    if (email) await mailKeys(env, db, slug, email, site, editToken);
+
     return json({ success: true, url, token: editToken });
   } catch (error) {
     console.error('Site claim error:', error);
     return json({ error: 'Failed to claim site' }, 500);
   }
 };
+
+/**
+ * Post the owner their keys. Never allowed to fail the publish — the site being
+ * live matters more than the receipt, and they can always ask again.
+ */
+async function mailKeys(env: any, db: any, slug: string, email: string, site: any, token?: string) {
+  try {
+    let key = token;
+    if (!key) {
+      const row = await db.prepare('SELECT edit_token FROM site_claims WHERE slug = ?').bind(slug).first();
+      key = row?.edit_token;
+    }
+    if (!key) return;
+    const mail = keysEmail(slug, key, site?.name);
+    const sent = await sendMail(env, {
+      to: email,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
+      replyTo: `${slug}@garage.co.nz`,
+    });
+    if (!sent.ok) console.error('keys email failed:', sent.error);
+  } catch (error) {
+    console.error('keys email threw:', error);
+  }
+}
