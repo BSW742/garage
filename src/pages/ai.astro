@@ -1259,6 +1259,13 @@ if (cameFromOffer && openedSlug) {
       .pv-buy p { margin: 0.2rem 0.6rem 0; font-size: 0.75rem; color: var(--pv-soft); line-height: 1.45; }
       .pv-buy-price { display: block; margin: 0.35rem 0.6rem 0; font-weight: 700; color: var(--pv-primary); font-size: 0.82rem; }
 
+      .pv-add {
+        border: 1px dashed var(--pv-line); border-radius: 10px; background: transparent;
+        color: var(--pv-soft); font: inherit; font-size: 0.85rem; cursor: pointer;
+        min-height: 5rem; display: flex; align-items: center; justify-content: center;
+      }
+      .pv-add:hover { border-color: var(--pv-primary); color: var(--pv-primary); }
+
       .pv-rates { max-width: 460px; margin: 0 auto; text-align: left; }
       .pv-rates > div {
         display: flex;
@@ -2616,16 +2623,21 @@ if (cameFromOffer && openedSlug) {
           }
 
           case 'shop':
+            // Products were the one list on the page you could not touch: no
+            // block to select, so nothing to delete, and plain text rather
+            // than editable fields. Everything else here has both.
             return '<section class="pv-section">' +
               ed(p + '.label', 'pv-label', 'p', section.label || 'Shop') +
               ed(p + '.title', 'pv-h2', 'h2', section.title || 'Have a look') +
               '<div class="pv-shop">' +
-              (s.products || []).map((prod, j) => '<div class="pv-buy">' +
+              (s.products || []).map((prod, j) => '<div class="pv-buy" data-block="products.' + j + '">' +
                 '<div class="pv-buy-shot" data-photo="products.' + j + '.image"' +
                 (prod.image ? ' style="background-image:url(' + esc(prod.image) + ')"' : '') + '></div>' +
-                '<strong>' + esc(prod.name || '') + '</strong>' +
-                (prod.text ? '<p>' + esc(prod.text) + '</p>' : '') +
-                '<span class="pv-buy-price">' + esc(prod.price || '') + '</span></div>').join('') +
+                ed('products.' + j + '.name', '', 'strong', prod.name || 'Untitled') +
+                (prod.text ? ed('products.' + j + '.text', '', 'p', prod.text) : '') +
+                ed('products.' + j + '.price', 'pv-buy-price', 'span', prod.price || '—') +
+                '</div>').join('') +
+              '<button type="button" class="pv-add" data-add="products">+ Add item</button>' +
               '</div></section>';
 
           case 'specs':
@@ -3648,6 +3660,13 @@ if (cameFromOffer && openedSlug) {
       function setByPath(path, value) { const r = resolvePath(path); if (r) r.obj[r.key] = value; }
 
       const LABELS = [
+        // Ahead of the generic rules below — products.0.text would otherwise
+        // match /\.text$/ and come back as "Body text".
+        [/^products\.\d+$/, 'Shop item'],
+        [/^products\.\d+\.name$/, 'Item name'],
+        [/^products\.\d+\.price$/, 'Price'],
+        [/^products\.\d+\.text$/, 'Item description'],
+        [/^products\.\d+\.image$/, 'Item photo'],
         [/^name$/, 'Business name'], [/^headline$/, 'Headline'], [/^lede$/, 'Intro line'],
         [/^eyebrow$/, 'Eyebrow line'], [/^cta$/, 'Button text'], [/^logo$/, 'Logo'],
         [/^heroImage$/, 'Hero photo'], [/^contact\.phone$/, 'Phone number'],
@@ -3660,7 +3679,11 @@ if (cameFromOffer && openedSlug) {
       ];
       const SECTION_NAMES = {
         services: 'Services section', about: 'About section', gallery: 'Photo gallery',
-        hours: 'Opening hours', testimonial: 'Review', contact: 'Contact section', band: 'Call-to-action band',
+        hours: 'Opening hours', testimonial: 'Review', contact: 'Contact section',
+        band: 'Call-to-action band', shop: 'Shop', menu: 'Menu', faq: 'FAQ',
+        pricing: 'Pricing', video: 'Video', specs: 'Details', included: "What's included",
+        honest: 'Known faults', area: 'Areas covered', credentials: 'Licences',
+        conditions: 'What we treat', steps: 'How it works', acc: 'ACC',
       };
       function labelFor(path) {
         const m = /^sec\.(\d+)$/.exec(path);
@@ -3807,6 +3830,69 @@ if (cameFromOffer && openedSlug) {
       }
 
       /**
+       * Every block path names a slot in some list: "sec.2" is a section,
+       * "sec.2.items.0" a card inside one, "sec.1.menu.0.items.3" a dish, and
+       * "products.4" a thing in the shop. Resolve them all the same way — the
+       * last number is the index, everything before it is the list — because
+       * the alternative is what was here before, which read the number after
+       * "sec." no matter what the rest of the path said and deleted a whole
+       * section when somebody removed one card from it.
+       */
+      /**
+       * Add an empty one and put the cursor in its name with the placeholder
+       * already selected, so adding an item is: click, type, click, type.
+       */
+      function addTo(what) {
+        if (what !== 'products') return;
+        snapshot();
+        if (!Array.isArray(S.site.products)) S.site.products = [];
+        S.site.products.push({ name: 'New item', price: '' });
+        const j = S.site.products.length - 1;
+        renderedKeys = new Set();
+        render();
+        did('Added an item');
+        const el = canvas().querySelector('[data-edit="products.' + j + '.name"]');
+        if (!el) return;
+        select(el, 'text', 'products.' + j + '.name');
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (e) { /* the field is still there to type in */ }
+      }
+
+      function blockAt(path) {
+        const parts = String(path).split('.');
+        const index = Number(parts[parts.length - 1]);
+        if (!Number.isInteger(index) || index < 0) return null;
+
+        let list;
+        if (parts.length === 2) {
+          list = parts[0] === 'sec' ? S.site.sections : S.site[parts[0]];
+        } else if (parts[0] === 'sec') {
+          let obj = (S.site.sections || [])[Number(parts[1])];
+          for (let i = 2; i < parts.length - 1 && obj; i++) obj = obj[parts[i]];
+          list = obj;
+        }
+        if (!Array.isArray(list) || index >= list.length) return null;
+        return { list: list, index: index };
+      }
+
+      // What to call the thing that just went, so the confirmation says
+      // something the person recognises rather than "block".
+      function blockName(path, gone) {
+        if (/^sec\.\d+$/.test(path)) {
+          return (SECTION_NAMES[gone && gone.type] || 'section').toLowerCase();
+        }
+        if (Array.isArray(gone) && gone[0]) return '\u201c' + gone[0] + '\u201d';
+        if (gone && gone.name) return '\u201c' + gone.name + '\u201d';
+        if (gone && gone.heading) return '\u201c' + gone.heading + '\u201d';
+        return labelFor(path).toLowerCase();
+      }
+
+      /**
        * Delete whatever is selected. Local and instant — asking the agent to
        * remove something means a round trip and a bill for a decision the
        * click already made. snapshot() first, so undo puts it straight back.
@@ -3821,13 +3907,14 @@ if (cameFromOffer && openedSlug) {
         clearSelection(false);
 
         if (sel.kind === 'block') {
-          const i = Number(String(sel.path).split('.')[1]);
-          const sec = S.site.sections[i];
-          if (!sec) return;
-          S.site.sections.splice(i, 1);
+          const spot = blockAt(sel.path);
+          if (!spot) { did('Could not remove that', true); return; }
+          const was = spot.list.length;
+          const [gone] = spot.list.splice(spot.index, 1);
           renderedKeys = new Set();
           render();
-          did('Removed the ' + (SECTION_NAMES[sec.type] || 'section').toLowerCase());
+          if (spot.list.length === was) { did('Could not remove that', true); return; }
+          did('Removed ' + blockName(sel.path, gone));
           return;
         }
 
@@ -3912,17 +3999,22 @@ if (cameFromOffer && openedSlug) {
       }
 
       function moveSection(path, delta) {
-        const i = Number(String(path).split('.')[1]);
-        const list = S.site.sections;
-        const j = i + delta;
-        if (j < 0 || j >= list.length) return;
+        const spot = blockAt(path);
+        if (!spot) return;
+        const j = spot.index + delta;
+        if (j < 0 || j >= spot.list.length) return;
         snapshot();
-        const [sec] = list.splice(i, 1);
-        list.splice(j, 0, sec);
-        S.sel = { kind: 'block', path: 'sec.' + j, label: labelFor('sec.' + j) };
+        const [moved] = spot.list.splice(spot.index, 1);
+        spot.list.splice(j, 0, moved);
+        // Follow it, so a second click moves the same thing again instead of
+        // whatever has just slid into its place.
+        const parts = String(path).split('.');
+        parts[parts.length - 1] = String(j);
+        const now = parts.join('.');
+        S.sel = { kind: 'block', path: now, label: labelFor(now) };
         renderedKeys = new Set();
         render();
-        did('Moved the ' + (SECTION_NAMES[sec.type] || 'section').toLowerCase());
+        did('Moved ' + blockName(path, moved));
       }
 
       // A section is nearly impossible to click — every click inside one lands
@@ -3955,6 +4047,11 @@ if (cameFromOffer && openedSlug) {
         const c = canvas();
         if (!c || !c.contains(e.target)) return;
         if (pickBar && pickBar.contains(e.target)) return;
+
+        // "+ Add item" sits inside the canvas, so it has to be caught before
+        // the click turns into a selection.
+        const add = e.target.closest('[data-add]');
+        if (add) { addTo(add.getAttribute('data-add')); return; }
 
         const text = e.target.closest('[data-edit]');
         const photo = e.target.closest('[data-photo]');
