@@ -175,6 +175,20 @@ if (cameFromOffer && openedSlug) {
     </section>
 
     <!-- ══ MEDIA LIBRARY ══ -->
+    <div class="meter-back" id="meter-back" hidden>
+      <div class="meter-card" role="dialog" aria-modal="true" aria-labelledby="meter-title">
+        <p class="meter-eyebrow" id="meter-eyebrow">Free while you build</p>
+        <h2 id="meter-title">Nice work</h2>
+        <div class="meter-bar"><i id="meter-fill"></i></div>
+        <p class="meter-count" id="meter-count"></p>
+        <p class="meter-say" id="meter-say"></p>
+        <div class="meter-do">
+          <button type="button" class="meter-go" id="meter-go">Keep going</button>
+          <a class="meter-ask" id="meter-ask" href="mailto:admin@garage.co.nz?subject=More%20tokens" hidden>Ask for more</a>
+        </div>
+      </div>
+    </div>
+
     <div class="media-back" id="media-back" hidden>
       <div class="media-modal">
         <div class="media-head">
@@ -925,6 +939,52 @@ if (cameFromOffer && openedSlug) {
 
     <style is:global>
       /* ── Media library ─────────────────────────── */
+      .meter-back {
+        position: fixed; inset: 0; z-index: 70;
+        background: rgba(16, 19, 26, 0.5); backdrop-filter: blur(3px);
+        display: grid; place-items: center; padding: 2rem 1rem;
+        animation: fade 0.18s ease;
+      }
+      .meter-back[hidden] { display: none; }
+      .meter-card {
+        background: var(--surface); border-radius: 20px; padding: 2rem 1.8rem 1.6rem;
+        width: min(400px, 100%); text-align: center;
+        box-shadow: 0 30px 70px -30px rgba(10, 10, 10, 0.45);
+      }
+      .meter-eyebrow {
+        font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+        font-weight: 700; color: var(--accent); margin-bottom: 0.7rem;
+      }
+      .meter-card h2 { font-size: 1.5rem; letter-spacing: -0.02em; margin-bottom: 1.2rem; }
+      .meter-bar {
+        height: 10px; background: var(--border); border-radius: 99px; overflow: hidden;
+      }
+      .meter-bar i {
+        display: block; height: 100%; width: 0; border-radius: 99px;
+        background: var(--accent); transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .meter-back.full .meter-bar i { background: var(--bad); }
+      .meter-back.full .meter-eyebrow { color: var(--bad); }
+      .meter-count {
+        margin-top: 0.8rem; font-size: 0.95rem; font-weight: 600; color: var(--text);
+      }
+      .meter-count span { color: var(--text-muted); font-weight: 400; }
+      .meter-say {
+        margin-top: 0.6rem; font-size: 0.92rem; color: var(--text-muted); line-height: 1.6;
+      }
+      .meter-do { margin-top: 1.5rem; display: flex; gap: 0.6rem; justify-content: center; }
+      .meter-go {
+        background: var(--text); color: var(--surface); border: 0; border-radius: 999px;
+        padding: 0.75rem 1.6rem; font: inherit; font-weight: 600; cursor: pointer;
+      }
+      .meter-go:hover { background: var(--accent); }
+      .meter-ask {
+        background: var(--accent); color: #fff; border-radius: 999px;
+        padding: 0.75rem 1.6rem; font-weight: 600; text-decoration: none;
+      }
+      .meter-ask[hidden] { display: none; }
+      @media (prefers-reduced-motion: reduce) { .meter-bar i { transition: none; } }
+
       .media-back {
         position: fixed;
         inset: 0;
@@ -3685,6 +3745,70 @@ if (cameFromOffer && openedSlug) {
         honest: 'Known faults', area: 'Areas covered', credentials: 'Licences',
         conditions: 'What we treat', steps: 'How it works', acc: 'ACC',
       };
+      /**
+       * The free-use meter. A site gets a million tokens before we ask for
+       * anything, and every hundred thousand is worth saying out loud: it
+       * shows the allowance is real and being spent, without a running counter
+       * nagging in the corner the whole time.
+       *
+       * The milestone is remembered per site, so reloading the page does not
+       * replay a modal somebody has already dismissed.
+       */
+      const FREE_TOKENS = 1000000;
+      const METER_STEP = 100000;
+
+      function meterKey() { return 'garage-meter:' + (S.slug || 'draft'); }
+
+      function meterSeen() {
+        try { return Number(localStorage.getItem(meterKey()) || 0); } catch (e) { return 0; }
+      }
+      function meterRemember(step) {
+        try { localStorage.setItem(meterKey(), String(step)); } catch (e) {}
+      }
+
+      // "340,000" reads better than 340000 in a sentence about generosity.
+      function commas(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+      // Tokens mean nothing to somebody building a cafe website, so say it in
+      // the thing they have actually been doing.
+      function inChanges(tokens) {
+        const each = 25000;              // measured: about one message to the agent
+        return Math.max(1, Math.round(tokens / each));
+      }
+
+      function showMeter(used, free) {
+        const full = used >= free;
+        const back = $('meter-back');
+        const pct = Math.min(100, Math.round((used / free) * 100));
+
+        back.classList.toggle('full', full);
+        $('meter-eyebrow').textContent = full ? 'That is the free million' : 'Free while you build';
+        $('meter-title').textContent = full
+          ? 'You have used it all'
+          : commas(used) + ' tokens in';
+        $('meter-count').innerHTML = commas(used) + ' <span>of ' + commas(free) + '</span>';
+        $('meter-say').textContent = full
+          ? 'Your site stays live and everything on it is yours — nothing switches off. ' +
+            'To keep building with the agent, get in touch and we will sort more out.'
+          : 'That is roughly ' + inChanges(used) + ' changes so far. ' +
+            commas(free - used) + ' left, which is plenty.';
+        $('meter-go').textContent = full ? 'Not now' : 'Keep going';
+        $('meter-ask').hidden = !full;
+
+        back.hidden = false;
+        // Let the bar animate from empty rather than appearing already full.
+        $('meter-fill').style.width = '0%';
+        requestAnimationFrame(() => { $('meter-fill').style.width = pct + '%'; });
+      }
+
+      function checkMeter(usage) {
+        if (!usage || !usage.free) return;
+        const step = Math.floor(usage.used / METER_STEP);
+        if (step < 1 || step <= meterSeen()) return;
+        meterRemember(step);
+        showMeter(usage.used, usage.free);
+      }
+
       function labelFor(path) {
         const m = /^sec\.(\d+)$/.exec(path);
         if (m) {
@@ -4082,6 +4206,11 @@ if (cameFromOffer && openedSlug) {
       });
 
       $('target-clear').addEventListener('click', () => { clearSelection(); $('agent-text').focus(); });
+
+      $('meter-go').addEventListener('click', () => { $('meter-back').hidden = true; });
+      $('meter-back').addEventListener('click', (e) => {
+        if (e.target === $('meter-back')) $('meter-back').hidden = true;
+      });
 
       // ══════════════════════════════════════════════
       //  Colour: swatches and tone
@@ -4565,6 +4694,10 @@ if (cameFromOffer && openedSlug) {
           } else {
             chips(IDLE_CHIPS);
           }
+
+          // After the reply lands, not before — the modal should feel like a
+          // note on what just happened, not an interruption of it.
+          checkMeter(data.usage);
         } catch (error) {
           dots.remove();
           console.error(error);

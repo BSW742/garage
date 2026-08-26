@@ -7,6 +7,12 @@ import type { SiteConfig } from '../../lib/site-render';
 export const prerender = false;
 
 const MODEL = 'claude-opus-5';
+
+// What a site gets for free before we ask for anything. Counted across every
+// call the agent makes, not just the ones a person can see — one message is
+// often several trips to the model, and pretending otherwise would make the
+// number in the modal a lie.
+const FREE_TOKENS = 1_000_000;
 const MAX_STEPS = 8;
 
 // Anthropic runs this one — we declare it and results come back in the same
@@ -342,14 +348,29 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // turn has to name it.
     let containerId: string | null = null;
 
+    // The tools and the system prompt are the same ~7,300 tokens on every call,
+    // and one message from a person is several calls. Two breakpoints: the
+    // tools alone, which are identical whether or not web search is declared,
+    // and then everything up to the end of the system prompt. If the search
+    // declaration flips mid-conversation the second prefix misses and the
+    // first still hits.
+    const cached = <T>(list: T[]): T[] =>
+      list.map((item, i) =>
+        i === list.length - 1 ? { ...item, cache_control: { type: 'ephemeral' } } : item
+      );
+    const CACHED_TOOLS = cached(TOOLS as any[]);
+    const CACHED_SYSTEM = [
+      { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
+    ];
+
     const callModel = async () => {
       const send = (withSearch: boolean) =>
         client.messages.create({
           model: MODEL,
           max_tokens: 8000,
-          system: SYSTEM,
+          system: CACHED_SYSTEM as any,
           output_config: { effort: 'medium' },
-          tools: (withSearch ? [...TOOLS, WEB_SEARCH] : TOOLS) as any,
+          tools: (withSearch ? [...CACHED_TOOLS, WEB_SEARCH] : CACHED_TOOLS) as any,
           ...(containerId ? { container: containerId } : {}),
           messages,
         } as any);
@@ -462,6 +483,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
       console.error('Usage log failed:', usageError);
     }
 
+    // The running total for this site, read back after the row above so it
+    // counts the turn that just happened. A failure here must never cost
+    // somebody their reply, so it falls back to no meter at all.
+    let meter: { used: number; free: number; turn: number } | null = null;
+    try {
+      const db = (locals.runtime?.env as any)?.DB;
+      if (db && slug) {
+        const row = await db
+          .prepare(
+            `SELECT COALESCE(SUM(input_tokens + output_tokens + cache_read + cache_write), 0) AS n
+               FROM agent_usage WHERE slug = ?`
+          )
+          .bind(slug)
+          .first();
+        meter = {
+          used: Number(row?.n || 0),
+          free: FREE_TOKENS,
+          turn: spend.input + spend.output + spend.cacheRead + spend.cacheWrite,
+        };
+      }
+    } catch (meterError) {
+      console.error('Meter read failed:', meterError);
+    }
+
     return new Response(
       JSON.stringify({
         reply: reply || 'Done.',
@@ -471,6 +516,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         askPhotos,
         searches: spend.searches,
         searchNote: searchNote || undefined,
+        usage: meter,
         // Trimmed history for the next turn: the exchange without the page dump
         history: [
           ...history.slice(-12),
