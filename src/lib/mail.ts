@@ -154,3 +154,76 @@ function esc(v: string): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c]
   );
 }
+
+
+/**
+ * First contact. This goes to somebody who has never heard of us, about a
+ * website they did not ask for, so it does two things and stops: shows them
+ * the page, and makes clear it is theirs to take or ignore.
+ *
+ * No pitch. The page is the pitch — that is the whole reason for building it
+ * properly before sending anything.
+ *
+ * The unsubscribe is not decoration. A commercial email in New Zealand needs
+ * accurate sender details and a working unsubscribe, and the address we are
+ * writing to is one the business published themselves.
+ */
+export function offerEmail(
+  slug: string,
+  token: string,
+  name: string | undefined,
+  unsubToken: string,
+  viewToken: string
+) {
+  // The ?v= is how we know they looked. It is a token only this email carries,
+  // so a visit through it is the owner rather than passing traffic.
+  const site = `https://${slug}.garage.co.nz/?v=${encodeURIComponent(viewToken)}`;
+  const editor = `https://garage.co.nz/ai?edit=${encodeURIComponent(slug)}&t=${encodeURIComponent(token)}&src=owner`;
+  // Not /u/ — that path already belongs to car listing codes, and the two
+  // dynamic routes silently collide.
+  const unsub = `https://garage.co.nz/unsubscribe/${encodeURIComponent(slug)}?t=${encodeURIComponent(unsubToken)}`;
+  const label = name || slug;
+
+  const text = [
+    `Kia ora,`,
+    '',
+    `I have rebuilt ${label}'s website. It is sitting here:`,
+    '',
+    `    ${site}`,
+    '',
+    'Have a look before you decide anything. Everything on it came off your own',
+    'website and public listings, so if something is wrong it is my mistake and',
+    'I will fix it.',
+    '',
+    'If you want it, it is yours — no charge to look, and you can change any of',
+    'it by typing what you want in plain words here:',
+    '',
+    `    ${editor}`,
+    '',
+    'If you would rather I did not, ignore this and it comes down. No hard',
+    'feelings and I will not chase you.',
+    '',
+    'Ben',
+    'garage.co.nz',
+    '',
+    '—',
+    `Not interested in hearing from us again? ${unsub}`,
+  ].join('\n');
+
+  const esc = (v: string) =>
+    String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+
+  const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.65;color:#14161a;max-width:34rem">
+<p>Kia ora,</p>
+<p>I have rebuilt <b>${esc(label)}</b>'s website. It is sitting here:</p>
+<p><a href="${esc(site)}" style="display:inline-block;background:#1f6feb;color:#fff;text-decoration:none;padding:.75rem 1.4rem;border-radius:8px;font-weight:600">${esc(slug)}.garage.co.nz</a></p>
+<p>Have a look before you decide anything. Everything on it came off your own website and public listings, so if something is wrong it is my mistake and I will fix it.</p>
+<p>If you want it, it is yours — no charge to look, and you can change any of it by typing what you want in plain words: <a href="${esc(editor)}">edit your site</a>.</p>
+<p>If you would rather I did not, ignore this and it comes down. No hard feelings and I will not chase you.</p>
+<p>Ben<br/>garage.co.nz</p>
+<hr style="border:0;border-top:1px solid #e4e7ec;margin:1.6rem 0"/>
+<p style="font-size:12px;color:#697184">Not interested in hearing from us again? <a href="${esc(unsub)}" style="color:#697184">Unsubscribe</a>.</p>
+</div>`;
+
+  return { subject: `I rebuilt ${label}'s website — have a look`, text, html };
+}

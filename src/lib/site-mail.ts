@@ -164,6 +164,16 @@ export function buildReplyMime(parts: ReplyParts): string {
  * section so the page still ends on a call to action.
  */
 export function addToGallery(config: any, urls: string[], caption: string): void {
+  // A tribute page is a wall, not a page with a gallery on it — it has no
+  // sections at all and reads config.images. Photos emailed in were landing in
+  // a gallery section nothing renders, so they arrived and vanished. The cap
+  // is high because filling the wall is the entire point of that template.
+  if (config.style === 'tribute') {
+    const existing = Array.isArray(config.images) ? config.images : [];
+    config.images = [...urls, ...existing].slice(0, 400);
+    return;
+  }
+
   config.sections = Array.isArray(config.sections) ? config.sections : [];
   let gallery = config.sections.find((s: any) => s && s.type === 'gallery');
   if (!gallery) {

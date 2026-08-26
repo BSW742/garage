@@ -1,0 +1,81 @@
+---
+// One-click unsubscribe. Reached from a link in a cold email, so it has to
+// work with no JavaScript, no login and no second step — somebody who wants
+// out should be out by the time the page finishes loading.
+//
+// The token here is deliberately not the edit token: unsubscribe links get
+// forwarded and pasted about, and the edit token opens the whole site.
+export const prerender = false;
+
+const slug = Astro.params.slug || '';
+const token = Astro.url.searchParams.get('t') || '';
+const db = (Astro.locals.runtime?.env as any)?.DB;
+
+let state: 'done' | 'bad' | 'error' = 'bad';
+let name = slug;
+
+if (db && slug && token) {
+  try {
+    const row = await db
+      .prepare("SELECT unsub_token, config, unsubscribed_at FROM site_claims WHERE slug = ?")
+      .bind(slug)
+      .first();
+    try { name = JSON.parse(row?.config || '{}')?.name || slug; } catch { /* slug will do */ }
+
+    if (row?.unsub_token && String(row.unsub_token) === token) {
+      if (!row.unsubscribed_at) {
+        await db
+          .prepare('UPDATE site_claims SET unsubscribed_at = ? WHERE slug = ?')
+          .bind(new Date().toISOString(), slug)
+          .run();
+      }
+      state = 'done';
+    }
+  } catch {
+    state = 'error';
+  }
+}
+---
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Unsubscribed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    body { margin:0; min-height:100dvh; display:grid; place-items:center; padding:2rem;
+      font-family:Inter,system-ui,sans-serif; background:#f4f5f7; color:#14161a; line-height:1.65; }
+    .card { background:#fff; border:1px solid #e4e7ec; border-radius:16px; padding:2.4rem 2rem;
+      max-width:32rem; text-align:center; }
+    h1 { font-size:1.4rem; margin:0 0 .8rem; }
+    p { color:#4d565a; margin:.4rem 0; }
+    .small { font-size:.86rem; color:#697184; margin-top:1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {state === 'done' && (
+      <>
+        <h1>Done — you're unsubscribed</h1>
+        <p>We won't email you about {name} again.</p>
+        <p class="small">The page we built will come down on its own. Nothing else to do.</p>
+      </>
+    )}
+    {state === 'bad' && (
+      <>
+        <h1>That link didn't work</h1>
+        <p>It may have already been used, or been cut short by an email app.</p>
+        <p class="small">Reply to the email you got and we'll take you off by hand.</p>
+      </>
+    )}
+    {state === 'error' && (
+      <>
+        <h1>Something went wrong</h1>
+        <p class="small">Reply to the email you got and we'll take you off by hand.</p>
+      </>
+    )}
+  </div>
+</body>
+</html>
