@@ -1,5 +1,6 @@
-import { renderSite, renderTeam, renderCases, renderAvailable, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
+import { renderSite, renderTeam, renderCases, renderAvailable, renderRallyPage, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
 import { renderInbox, inboxManifest } from '../../src/lib/chat-admin';
+import { renderPhotoQueue } from '../../src/lib/tribute-admin';
 
 // Hostnames that belong to the main app, not to a claimed site
 const RESERVED_HOSTS = new Set([
@@ -9,6 +10,11 @@ const RESERVED_HOSTS = new Set([
 
 interface Env {
   DB: D1Database;
+}
+
+// The worker types are not pulled in here, and only waitUntil is needed.
+interface ExecutionContext {
+  waitUntil(promise: Promise<unknown>): void;
 }
 
 const html = (body: string, status: number) =>
@@ -22,7 +28,7 @@ const html = (body: string, status: number) =>
   });
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     const match = host.match(/^([a-z0-9-]{1,63})\.garage\.co\.nz$/);
@@ -50,6 +56,12 @@ export default {
           'Cache-Control': 'no-store',
         },
       });
+    }
+
+    // Where the family reviews what people have sent in. Public page, but it
+    // shows nothing without the edit token in ?k=.
+    if (url.pathname === '/photos' || url.pathname === '/photos/') {
+      return html(renderPhotoQueue(slug), 200);
     }
 
     if (url.pathname === '/robots.txt') {
@@ -89,6 +101,10 @@ export default {
       const paths = ['/'];
       if ((config?.team || []).length) paths.push('/team');
       if ((config?.cases || []).length) paths.push('/case-studies');
+      for (const campaign of config?.campaigns || []) {
+        const at = String(campaign?.path || '').replace(/^\/+|\/+$/g, '');
+        if (at) paths.push('/' + at);
+      }
       const body =
         `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
         paths.map((path) => `  <url><loc>${base}${path}</loc></url>`).join('\n') +
@@ -105,14 +121,46 @@ export default {
 
     try {
       const row = await env.DB
-        .prepare('SELECT config FROM site_claims WHERE slug = ? AND status != ?')
+        .prepare('SELECT config, unlocked_at FROM site_claims WHERE slug = ? AND status != ?')
         .bind(slug, 'disabled')
-        .first<{ config: string }>();
+        .first<{ config: string; unlocked_at: string | null }>();
 
       if (!row || !row.config) return html(renderAvailable(slug), 404);
 
       const config = JSON.parse(row.config) as SiteConfig;
       const path = url.pathname.replace(/\/+$/, '') || '/';
+
+      // A campaign hanging off this site. It is looked up before the fixed
+      // pages below so a business can call theirs whatever they like.
+      if (path !== '/') {
+        const wanted = path.replace(/^\/+/, '').toLowerCase();
+        const campaign = (config.campaigns || []).find(
+          (c) => String(c?.path || '').replace(/^\/+|\/+$/g, '').toLowerCase() === wanted
+        );
+        if (campaign) {
+          let count = 0;
+          let names: string[] = [];
+          let latest: string | undefined;
+          try {
+            // First names only. The email addresses never come near the HTML.
+            const { results } = await env.DB
+              .prepare(
+                `SELECT name, created_at FROM rally_signups
+                  WHERE slug = ? AND path = ? AND status = 'live'
+                  ORDER BY created_at ASC LIMIT 500`
+              )
+              .bind(slug, wanted)
+              .all<{ name: string; created_at: string }>();
+            const rows = results || [];
+            count = rows.length;
+            names = rows.map((r) => String(r.name || '').split(/\s+/)[0]).filter(Boolean);
+            latest = rows.length ? rows[rows.length - 1].created_at : undefined;
+          } catch {
+            // An empty rally still beats a page that 500s
+          }
+          return html(renderRallyPage(config, slug, campaign, { count, names, latest }), 200);
+        }
+      }
 
       // These are real pages, but only for sites that have something to put on
       // them. Everywhere else still falls through to the single page.
@@ -123,7 +171,92 @@ export default {
         return html(renderCases(config, slug), 200);
       }
 
-      return html(renderSite(config, slug), 200);
+      // A tribute page also carries whatever people have sent in and the
+      // family has approved. Never the pending ones.
+      let sent: any[] = [];
+      if (config.style === 'tribute') {
+        try {
+          const { results } = await env.DB
+            .prepare(
+              `SELECT url, caption, who FROM tribute_photos
+                WHERE slug = ? AND status = 'approved' ORDER BY created_at ASC LIMIT 300`
+            )
+            .bind(slug)
+            .all();
+          sent = results || [];
+        } catch {
+          // A page that loses the sent-in photos still beats a page that 500s
+        }
+      }
+      // A diary page carries every day posted so far. Ordered oldest first so
+      // the renderer's day map and streak walk read naturally.
+      if (config.style === 'diet') {
+        try {
+          const { results } = await env.DB
+            .prepare(
+              `SELECT url, kind, verdict, caption, who, created_at FROM diary_posts
+                WHERE slug = ? AND status = 'live' ORDER BY created_at ASC LIMIT 400`
+            )
+            .bind(slug)
+            .all();
+          sent = results || [];
+        } catch {
+          // A page that loses the feed still beats a page that 500s
+        }
+      }
+
+      // A chain page. While it is still filling up the bodies are never
+      // selected — hiding them in CSS would not be hiding them at all — so a
+      // locked page only ever learns who has added, and how many.
+      let unlocked = false;
+      if (config.style === 'chain') {
+        try {
+          const tally = await env.DB
+            .prepare("SELECT COUNT(*) AS n FROM chain_notes WHERE slug = ? AND status = 'live'")
+            .bind(slug)
+            .first<{ n: number }>();
+          const count = Number(tally?.n || 0);
+          const asked = Math.round(Number((config as any).target));
+          const target = Number.isFinite(asked) && asked >= 1 ? Math.min(500, asked) : Math.max(10, count);
+          unlocked = !!row.unlocked_at || count >= target;
+
+          const { results } = await env.DB
+            .prepare(
+              unlocked
+                ? `SELECT body, who, url, created_at FROM chain_notes
+                    WHERE slug = ? AND status = 'live' ORDER BY created_at ASC LIMIT 500`
+                : `SELECT who, created_at FROM chain_notes
+                    WHERE slug = ? AND status = 'live' ORDER BY created_at ASC LIMIT 500`
+            )
+            .bind(slug)
+            .all();
+          sent = results || [];
+        } catch {
+          // An empty chain still beats a page that 500s
+        }
+      }
+
+      // A visit carrying the token from the offer email is the owner looking at
+      // what we sent. Recorded after the response goes out — knowing they
+      // looked is never worth making them wait.
+      const seen = url.searchParams.get('v');
+      if (seen) {
+        ctx.waitUntil(
+          env.DB
+            .prepare(
+              `UPDATE site_claims
+                  SET owner_seen_at = COALESCE(owner_seen_at, ?),
+                      owner_seen_last = ?,
+                      owner_seen_count = owner_seen_count + 1
+                WHERE slug = ? AND view_token = ?`
+            )
+            .bind(new Date().toISOString(), new Date().toISOString(), slug, seen)
+            .run()
+            .catch(() => {})
+        );
+      }
+
+      return html(renderSite(config, slug, sent, { unlocked }), 200);
     } catch (error) {
       console.error('Site render error:', slug, error);
       return html(renderAvailable(slug), 404);

@@ -2,6 +2,27 @@
 // GARAGE AI — the builder with a real agent behind it.
 // The chat goes to Claude with tools rather than a local intent engine.
 // Falls back to the local engine if the key is missing.
+
+// Someone arriving here from the offer email has gone a step past looking —
+// they have opened the thing that changes their site. Worth knowing, and
+// distinguishable from us opening it from the admin list by the src marker.
+const cameFromOffer = Astro.url.searchParams.get('src') === 'owner';
+const openedSlug = Astro.url.searchParams.get('edit') || '';
+if (cameFromOffer && openedSlug) {
+  const trackDb = (Astro.locals.runtime?.env as any)?.DB;
+  if (trackDb) {
+    try {
+      await trackDb
+        .prepare(
+          `UPDATE site_claims SET editor_opened_at = COALESCE(editor_opened_at, ?) WHERE slug = ?`
+        )
+        .bind(new Date().toISOString(), openedSlug)
+        .run();
+    } catch {
+      // never let a metric stop the builder loading
+    }
+  }
+}
 ---
 
 <!doctype html>
@@ -14,7 +35,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
 
   <body>
@@ -117,6 +138,13 @@
                 <button class="tone style" data-style="modern">Modern</button>
                 <button class="tone style" data-style="brutal">Brutal</button>
                 <button class="tone style" data-style="classic">Classic</button>
+                <button class="tone style" data-style="cafe">Cafe</button>
+                <button class="tone style" data-style="physio">Clinic</button>
+                <button class="tone style" data-style="trade">Trade</button>
+                <button class="tone style" data-style="tribute">Tribute</button>
+                <button class="tone style" data-style="listing">Listing</button>
+                <button class="tone style" data-style="diet">Diary</button>
+                <button class="tone style" data-style="chain">Chain</button>
               </div>
               <div class="paint-row" id="swatches"></div>
               <div class="paint-row tones">
@@ -659,6 +687,22 @@
         background: transparent;
       }
 
+      /* A photo pasted into the thread reads as something you said, not as a
+         system notice, so it sits in a user bubble with the chrome stripped. */
+      .msg-shot { padding: 4px; background: transparent; border: 0; max-width: 190px; }
+      .msg-shot img { width: 100%; display: block; border-radius: 12px; }
+      .msg-shot.pending { position: relative; }
+      .msg-shot.pending img { opacity: 0.4; }
+      .msg-shot.pending::after {
+        content: '';
+        position: absolute; inset: 0; margin: auto;
+        width: 22px; height: 22px; border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
+        animation: spin 0.7s linear infinite;
+      }
+
+      .msg-do.msg-nope { color: #b4443a; }
+
       .logo-preview { padding: 0.5rem; background: transparent; border: 0; }
       .logo-tiles { display: flex; gap: 6px; }
       .logo-tile {
@@ -973,14 +1017,36 @@
         text-transform: uppercase;
         color: var(--work-soft);
       }
+      /* A picker card is a button: pointer, hover state, focus ring, and a
+         hit area you cannot miss. It was a 64x21px label with a default
+         cursor, which is why nothing appeared to happen. */
+      .media-item.is-picker { cursor: pointer; transition: border-color 0.18s ease, box-shadow 0.18s ease; }
+      .media-item.is-picker:hover,
+      .media-item.is-picker:focus-visible {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+        outline: none;
+      }
+      .media-item.is-picker .media-shot { cursor: pointer; }
+      .media-item.is-picker .media-act {
+        flex: 1 1 100%;
+        padding: 0.55rem 0.5rem;
+        font-size: 0.8rem;
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .media-item.is-picker:hover .media-act { background: var(--accent-deep); border-color: var(--accent-deep); }
+
       .media-act {
         flex: 1;
+        cursor: pointer;
         border: 1px solid var(--work-3);
         background: #fff;
         font-family: var(--font-sans);
         font-size: 0.72rem;
         font-weight: 600;
-        padding: 0.25rem 0.5rem;
+        padding: 0.4rem 0.5rem;
         border-radius: 6px;
         cursor: pointer;
       }
@@ -1343,6 +1409,230 @@
       .st-classic .pv-shot { border-radius: 2px; }
       .st-classic .pv-section { padding-top: 4.2rem; padding-bottom: 4.2rem; }
       .st-classic .pv-section.alt { background: var(--pv-wash); }
+
+      /* ── Cafe: not a restyle of the house page, a different one ── */
+      .pv.st-cafe {
+        --pv-display: 'Fraunces', Georgia, serif;
+        --pv-ink: #2b1e15;
+        --pv-soft: #7c6852;
+        --pv-line: #e2d4bf;
+        --pv-wash: #f4ebdd;
+      }
+      .st-cafe #site-root, .pv.st-cafe { background: #fbf6ee; }
+      .st-cafe .pv-h1, .st-cafe .pv-h2, .st-cafe .pv-group-h,
+      .st-cafe .pv-dish-price, .st-cafe .pv-quote p { font-weight: 600; letter-spacing: -0.015em; }
+      .st-cafe .pv-nav { border-bottom: 0; padding: 1rem 2.2rem; }
+      .st-cafe .pv-brand { font-family: var(--pv-display); font-weight: 700; }
+      .st-cafe .pv-brand .pv-glyph { border-radius: 50%; background: transparent; color: var(--pv-ink); border: 1px solid var(--pv-ink); }
+      .st-cafe .pv-links { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; }
+      .st-cafe .pv-cta { background: transparent; color: var(--pv-ink); border: 1px solid var(--pv-ink);
+        font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.55rem 1.1rem; }
+      .st-cafe .pv-hero { text-align: left; padding: 6.5rem 2.2rem 3.2rem; background: #231a13; color: #fff; }
+      .st-cafe .pv-hero-inner { max-width: 46rem; margin: 0; }
+      .st-cafe .pv-hero-photo::after { background: linear-gradient(180deg, rgba(20,13,8,0.5) 0%, rgba(20,13,8,0.2) 35%, rgba(20,13,8,0.85) 100%); }
+      .st-cafe .pv-h1 { font-size: clamp(2.4rem, 6.4vw, 4.2rem); line-height: 0.98; font-weight: 700; letter-spacing: -0.02em; }
+      .st-cafe .pv-hero .pv-eyebrow { color: rgba(255,255,255,0.82); letter-spacing: 0.28em; }
+      .st-cafe .pv-lede { margin-left: 0; }
+      .st-cafe .pv-btn { border-radius: 999px; padding: 0.7rem 1.5rem; font-size: 0.7rem;
+        letter-spacing: 0.16em; text-transform: uppercase; }
+      .st-cafe .pv-btn-2 { border-color: rgba(255,255,255,0.5); }
+      .st-cafe .pv-label { letter-spacing: 0.28em; font-weight: 600; }
+      .st-cafe .pv-section { padding: 4.4rem 2.2rem; }
+      .st-cafe .pv-section.alt { background: var(--pv-wash); }
+      .st-cafe .pv-card { border-radius: 2px; border: 1px solid var(--pv-line); background: #fbf6ee; }
+      .st-cafe .pv-shot { border-radius: 2px; }
+      .st-cafe .pv-pill { border-radius: 999px; }
+
+      /* The menu board — the whole reason this template exists */
+      .st-cafe .pv-menu { text-align: center; }
+      .pv-board { max-width: 56rem; margin: 2.2rem auto 0; text-align: left; display: grid; gap: 2.6rem; }
+      .pv-board.two { grid-template-columns: 1fr 1fr; gap: 2.6rem 3.4rem; }
+      .pv-group-h { font-family: var(--pv-display); font-size: 1.15rem; font-weight: 600;
+        display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.3rem; }
+      .pv-group-h::after { content: ''; flex: 1; height: 1px; background: var(--pv-line); }
+      .pv-group-note { font-size: 0.82rem; font-style: italic; color: var(--pv-soft); margin-bottom: 1rem; }
+      .pv-dish { display: grid; grid-template-columns: 1fr auto; column-gap: 0.6rem;
+        padding: 0.7rem 0; border-bottom: 1px dotted var(--pv-line); }
+      .pv-dish:last-child { border-bottom: 0; }
+      .pv-dish-name { font-weight: 600; font-size: 0.95rem; }
+      .pv-dish-price { font-family: var(--pv-display); color: var(--pv-primary); font-size: 0.95rem; white-space: nowrap; }
+      .pv-dish-text { grid-column: 1 / -1; font-size: 0.85rem; color: var(--pv-soft); margin-top: 0.2rem; line-height: 1.55; }
+      @media (max-width: 700px) { .pv-board.two { grid-template-columns: 1fr; } }
+
+      /* Find us reads as a dark room you are looking into */
+      .st-cafe .pv-section:has(.pv-contact) { background: #231a13; }
+      .st-cafe .pv-section:has(.pv-contact) .pv-h2 { color: #fbf6ee; }
+      .st-cafe .pv-section:has(.pv-contact) .pv-label { color: #e9b98f; }
+      .st-cafe .pv-pill { background: rgba(251,246,238,0.08); border-color: rgba(251,246,238,0.28); color: #f4ebdd; }
+      .st-cafe .pv-pill b { color: #e9b98f; }
+      .st-cafe .pv-foot { background: #231a13; color: rgba(244,235,221,0.7); border-top: 0; }
+
+      /* ── Clinic: light and airy, the counterweight to cafe ── */
+      .pv.st-physio {
+        --pv-display: 'Instrument Serif', Georgia, serif;
+        --pv-ink: #26302a;
+        --pv-soft: #6b7668;
+        --pv-line: #e2e7dc;
+        --pv-wash: #eef1e8;
+      }
+      .st-physio #site-root, .pv.st-physio { background: #fbfbf6; }
+      .st-physio .pv-h1, .st-physio .pv-h2 { font-weight: 400; letter-spacing: -0.01em; }
+      .st-physio .pv-h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.08; }
+      .st-physio .pv-nav { border-bottom: 0; }
+      .st-physio .pv-brand .pv-glyph { border-radius: 12px; background: var(--pv-wash); color: var(--pv-ink); }
+      .st-physio .pv-cta { border-radius: 999px; }
+      .st-physio .pv-hero {
+        text-align: left;
+        background: radial-gradient(40rem 20rem at 78% -10%, var(--pv-wash), transparent 70%), #fbfbf6;
+        padding: 4rem 2.2rem 4.5rem;
+      }
+      .st-physio .pv-hero-inner { margin: 0; max-width: 42rem; }
+      .st-physio .pv-lede { margin-left: 0; }
+      .st-physio .pv-btn { border-radius: 999px; padding: 0.75rem 1.6rem; }
+      .st-physio .pv-btn-2 { border-radius: 999px; }
+      .st-physio .pv-label { letter-spacing: 0.22em; font-weight: 600; }
+      .st-physio .pv-section { padding: 4rem 2.2rem; }
+      .st-physio .pv-section.alt { background: var(--pv-wash); }
+      .st-physio .pv-card {
+        border-radius: 20px; border: 1px solid var(--pv-line); background: #fbfbf6; padding: 1.5rem 1.4rem;
+      }
+      .st-physio .pv-shot, .st-physio .pv-map { border-radius: 20px; }
+      .st-physio .pv-pill { border-radius: 999px; }
+      .st-physio .pv-foot { background: #fbfbf6; border-top: 1px solid var(--pv-line); }
+      /* The ACC block is the one dark moment on an otherwise pale page */
+      .st-physio .pv-acc { background: #2f3d2c; border-radius: 28px; margin: 0 2.2rem; }
+      .st-physio .pv-acc .pv-h2 { color: #fff; }
+      .st-physio .pv-acc .pv-label { color: #a8c49b; }
+      .st-physio .pv-acc .pv-prose { color: rgba(232,237,228,0.75); }
+      .st-physio .pv-acc .pv-card {
+        background: rgba(255,255,255,0.06); border-color: rgba(232,237,228,0.18); color: #e8ede4;
+      }
+      .st-physio .pv-acc .pv-card p { color: rgba(232,237,228,0.72); }
+
+      /* ── Trade: dark, dense, phone-first ── */
+      .pv.st-trade {
+        --pv-display: 'Barlow Condensed', Oswald, Impact, sans-serif;
+        --pv-ink: #eef1f2;
+        --pv-soft: #a2aaad;
+        --pv-line: #2b3034;
+        --pv-wash: #1e2225;
+      }
+      .st-trade #site-root, .pv.st-trade { background: #141719; }
+      .st-trade .pv-h1, .st-trade .pv-h2, .st-trade .pv-card h4 {
+        text-transform: uppercase; font-weight: 700; letter-spacing: -0.005em; line-height: 0.98;
+      }
+      .st-trade .pv-h1 { font-size: clamp(2.2rem, 6vw, 4rem); }
+      .st-trade .pv-nav { border-bottom: 1px solid var(--pv-line); }
+      .st-trade .pv-brand { font-family: var(--pv-display); text-transform: uppercase; font-size: 1.2rem; }
+      .st-trade .pv-brand .pv-glyph { border-radius: 0; }
+      .st-trade .pv-links { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; font-weight: 600; }
+      .st-trade .pv-cta {
+        border-radius: 0; font-family: var(--pv-display); font-size: 1.1rem; text-transform: uppercase;
+      }
+      .st-trade .pv-hero { text-align: left; background: #1e2225; padding: 4rem 2.2rem; }
+      .st-trade .pv-hero-inner { margin: 0; max-width: 44rem; }
+      .st-trade .pv-hero-photo::after { background: linear-gradient(100deg, rgba(20,23,25,0.95) 20%, rgba(20,23,25,0.55)); }
+      .st-trade .pv-lede { margin-left: 0; color: #cfd6d8; }
+      .st-trade .pv-btn, .st-trade .pv-btn-2 { border-radius: 0; font-weight: 600; }
+      .st-trade .pv-label { letter-spacing: 0.2em; font-weight: 700; }
+      .st-trade .pv-section { padding: 4rem 2.2rem; }
+      .st-trade .pv-section.alt { background: #1e2225; }
+      .st-trade .pv-grid { gap: 1px; background: var(--pv-line); border: 1px solid var(--pv-line); }
+      .st-trade .pv-card { border-radius: 0; border: 0; background: #141719; padding: 1.6rem 1.4rem; }
+      .st-trade .pv-shot, .st-trade .pv-map, .st-trade .pv-pill { border-radius: 0; }
+      .st-trade .pv-gallery { gap: 2px; }
+      .st-trade .pv-foot { background: #141719; border-top: 1px solid var(--pv-line); }
+      .st-trade .pv-hours div, .st-trade .pv-rates > div { border-color: var(--pv-line); }
+
+      /* ── Tribute: a name, two dates, and photographs ── */
+      .pv.st-tribute { --pv-display: 'Cormorant Garamond', Georgia, serif; --pv-ink: #f2efe9; }
+      .st-tribute #site-root, .pv.st-tribute { background: #0d0d0e; color: #f2efe9; }
+      .pv-trib-head { padding: 3.5rem 1.5rem 2rem; text-align: center; }
+      .pv-trib-face {
+        width: 7rem; aspect-ratio: 1; border-radius: 50%; margin: 0 auto 1.6rem;
+        background: #17171a center/cover; box-shadow: 0 0 0 1px #26262a;
+      }
+      .st-tribute .pv-h1 {
+        font-family: var(--pv-display); font-weight: 300; text-transform: none;
+        font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: 0.005em; margin-bottom: 0;
+      }
+      .pv-trib-dates {
+        font-family: var(--pv-display); color: #9a958c; margin-top: 0.7rem;
+        font-size: 1.05rem; letter-spacing: 0.06em;
+      }
+      .pv-trib-note { color: #9a958c; font-size: 0.92rem; max-width: 30rem; margin: 1.2rem auto 0; }
+      .pv-trib-wall { column-count: 3; column-gap: 0.5rem; padding: 1.5rem 0.5rem 3rem; }
+      .pv-trib-wall img {
+        width: 100%; height: auto; display: block; break-inside: avoid;
+        margin-bottom: 0.5rem; background: #17171a;
+      }
+      .pv-trib-empty { color: #9a958c; text-align: center; padding: 3rem 1.5rem 5rem; font-size: 0.92rem; }
+
+      /* ── Listing: photos, a price, the numbers ── */
+      /* Chain preview. The count is the page, so the preview is the count. */
+      .pv.st-chain { --pv-display: 'Newsreader', Georgia, serif; }
+      .st-chain #site-root, .pv.st-chain { background: #f6f2ea; color: #1c1a16; }
+      .pv-ch-head { padding: 2.6rem 1.5rem 1rem; text-align: center; }
+      .pv-ch-occ { font-family: var(--pv-display); font-style: italic; color: #7a7266;
+        font-size: 0.95rem; margin-bottom: 0.5rem; }
+      .st-chain .pv-h1 {
+        font-family: var(--pv-display); font-weight: 400; text-transform: none;
+        font-size: clamp(1.9rem, 5vw, 3rem); letter-spacing: -0.01em; margin-bottom: 0;
+      }
+      .pv-ch-lede { color: #7a7266; font-size: 0.92rem; margin: 0.9rem auto 0; max-width: 26rem; }
+      .pv-ch-lock { margin: 1.4rem 1.5rem 0; background: #fffdf8; border: 1px solid #e2dacb;
+        border-radius: 16px; padding: 1.8rem 1.3rem; text-align: center; }
+      .pv-ch-count { font-family: var(--pv-display); font-size: 2.8rem; line-height: 0.9; }
+      .pv-ch-count small { font-size: 0.36em; color: #7a7266; }
+      .pv-ch-bar { height: 8px; background: #e2dacb; border-radius: 99px; margin: 1.1rem 0 1rem;
+        overflow: hidden; }
+      .pv-ch-bar i { display: block; height: 100%; width: 20%; border-radius: 99px;
+        background: var(--pv-primary, #b4763a); }
+      .pv-ch-seal { color: #7a7266; font-size: 0.87rem; }
+      .pv-ch-note { margin: 1.3rem 1.5rem 2.5rem; color: #7a7266; font-size: 0.84rem;
+        text-align: center; }
+      /* Diary preview. It is a list of days, so the preview is a list of
+         days — with nothing in it yet, which is what day zero looks like. */
+      .pv.st-diet { --pv-display: 'Anton', Impact, sans-serif; }
+      .st-diet #site-root, .pv.st-diet { background: #faf9f5; color: #1a1915; }
+      .pv-dt-head { padding: 1.8rem 1.5rem 0.6rem; display: flex; flex-wrap: wrap;
+        align-items: baseline; gap: 0.4rem 0.9rem; }
+      .st-diet .pv-h1 {
+        font-family: var(--pv-display); font-weight: 400; text-transform: uppercase;
+        text-align: left; font-size: clamp(1.3rem, 3.6vw, 1.9rem); line-height: 1; margin-bottom: 0;
+      }
+      .pv-dt-sub { color: #7d786e; font-size: 0.84rem; }
+      .pv-dt-lede { color: #7d786e; font-size: 0.88rem; padding: 0 1.5rem 0.9rem; }
+      .pv-dt-strip { display: flex; gap: 2px; margin: 0 1.5rem 1.2rem; }
+      .pv-dt-strip i { flex: 1; height: 1rem; background: #e4e0d6; border-radius: 2px; }
+      .pv-dt-days { margin: 0 1.5rem; border-top: 1px solid #e4e0d6; }
+      .pv-dt-row { display: grid; grid-template-columns: 6.5rem 1fr; gap: 1rem;
+        padding: 0.85rem 0; border-bottom: 1px solid #e4e0d6; align-items: start; }
+      .pv-dt-when { font-size: 0.68rem; letter-spacing: 0.11em; text-transform: uppercase;
+        font-weight: 700; color: #7d786e; }
+      .pv-dt-mark { display: inline-block; margin-top: 0.35rem; font-size: 0.6rem;
+        letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
+        padding: 0.1rem 0.38rem; border-radius: 3px; color: #fff; }
+      .pv-dt-mark.g { background: #1f8a4c; }
+      .pv-dt-mark.b { background: #cf3626; }
+      .pv-dt-shot { width: 4.5rem; aspect-ratio: 1; background: #ece8de; border-radius: 4px; }
+      .pv-dt-say { margin-top: 0.4rem; font-size: 0.86rem; color: #7d786e; }
+      .pv-dt-note { margin: 1.2rem 1.5rem 2.5rem; color: #7d786e; font-size: 0.83rem; }
+      .pv.st-listing { --pv-display: 'Space Grotesk', system-ui, sans-serif; --pv-wash: #f4f5f7; }
+      .st-listing #site-root, .pv.st-listing { background: #fff; }
+      .st-listing .pv-h1 { font-weight: 700; letter-spacing: -0.02em; font-size: clamp(1.6rem, 4vw, 2.6rem); }
+      .st-listing .pv-hero { text-align: left; padding: 2.5rem 2.2rem; background: #fff; }
+      .st-listing .pv-hero-inner { margin: 0; max-width: 44rem; }
+      .st-listing .pv-eyebrow {
+        font-family: var(--pv-display); font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 700;
+        letter-spacing: -0.02em; text-transform: none; color: var(--pv-primary); margin-bottom: 0.4rem;
+      }
+      .st-listing .pv-lede { margin-left: 0; }
+      .st-listing .pv-btn, .st-listing .pv-cta { border-radius: 9px; }
+      .st-listing .pv-card { border-radius: 10px; }
+      .st-listing .pv-shot { border-radius: 8px; }
+      .st-listing .pv-honest .pv-card { border-color: #e7c3bd; background: #fdf7f6; }
+      .st-listing .pv-honest .pv-card h4 { color: #b4443a; }
 
       .pv-socials { display: flex; gap: 0.9rem; }
       .pv-socials span { border-bottom: 1px solid var(--pv-line); }
@@ -1756,10 +2046,10 @@
         return wrap;
       }
 
-      function did(text) {
+      function did(text, failed) {
         const el = document.createElement('div');
-        el.className = 'msg msg-do';
-        el.textContent = '✓ ' + text;
+        el.className = 'msg msg-do' + (failed ? ' msg-nope' : '');
+        el.textContent = (failed ? '✕ ' : '✓ ') + text;
         log.appendChild(el);
         log.scrollTop = log.scrollHeight;
       }
@@ -2338,6 +2628,60 @@
                 '<span class="pv-buy-price">' + esc(prod.price || '') + '</span></div>').join('') +
               '</div></section>';
 
+          case 'specs':
+          case 'included':
+          case 'honest':
+          case 'area':
+          case 'credentials':
+          case 'conditions':
+          case 'steps':
+          case 'acc': {
+            const heads = { conditions: ['What we treat', 'Come in with this'],
+                            steps: ['How it works', 'What happens when you come in'],
+                            acc: ['ACC', 'Hurt yourself? ACC covers most of it.'],
+                            area: ['Where we work', 'Areas we cover'],
+                            credentials: ['Licences', 'Licensed and accountable'],
+                            specs: ['Details', 'The numbers'],
+                            included: ["What's included", 'Comes with it'],
+                            honest: ['Known faults', 'What is wrong with it'] }[section.type];
+            return '<section class="pv-section' + (section.type === 'conditions' || section.type === 'included' ? ' alt' : '') +
+              (section.type === 'acc' ? ' pv-acc' : '') + (section.type === 'honest' ? ' pv-honest' : '') + '">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || heads[0]) +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || heads[1]) +
+              (section.text ? ed(p + '.text', 'pv-prose', 'p', section.text) : '') +
+              '<div class="pv-grid">' +
+              (section.items || []).map((it, j) =>
+                '<div class="pv-card" data-block="' + p + '.items.' + j + '">' +
+                ed(p + '.items.' + j + '.0', '', 'h4', it[0]) +
+                ed(p + '.items.' + j + '.1', '', 'p', it[1]) + '</div>').join('') +
+              '</div></section>';
+          }
+
+          case 'menu': {
+            const groups = section.menu || [];
+            if (!groups.length) return '<section class="pv-section alt">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'The menu') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'What we are serving') +
+              '<p class="pv-prose">Nothing on the menu yet — tell me what you serve.</p></section>';
+            return '<section class="pv-section pv-menu">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'The menu') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'What we are serving') +
+              '<div class="pv-board' + (groups.length > 1 ? ' two' : '') + '">' +
+              groups.map((g, gi) => '<div class="pv-group" data-block="' + p + '.menu.' + gi + '">' +
+                ed(p + '.menu.' + gi + '.heading', 'pv-group-h', 'h4', g.heading || '') +
+                (g.note ? ed(p + '.menu.' + gi + '.note', 'pv-group-note', 'p', g.note) : '') +
+                (g.items || []).map((it, ii) => {
+                  const q = p + '.menu.' + gi + '.items.' + ii;
+                  return '<div class="pv-dish" data-block="' + q + '">' +
+                    ed(q + '.name', 'pv-dish-name', 'strong', it.name || '') +
+                    (it.price ? ed(q + '.price', 'pv-dish-price', 'span', it.price) : '<span></span>') +
+                    (it.text ? ed(q + '.text', 'pv-dish-text', 'p', it.text) : '') +
+                    '</div>';
+                }).join('') +
+                '</div>').join('') +
+              '</div></section>';
+          }
+
           case 'pricing':
             return '<section class="pv-section alt">' +
               ed(p + '.label', 'pv-label', 'p', section.label || 'Pricing') +
@@ -2400,16 +2744,111 @@
         if (S.editing) { S.renderQueued = true; return; }  // never yank the caret away
         const s = S.site;
         const root = $('site-root');
+
+        // Neither is a diary. What it shows is a tally of posts that live in
+        // the database, not in the config, so the preview is the scoreboard
+        // with nothing in it yet — which is honestly what day zero looks like.
+        if (s.style === 'chain') {
+          const target = Math.max(1, Math.round(Number(s.target)) || 30);
+          root.innerHTML =
+            '<div class="pv-ch-head">' +
+            (s.eyebrow ? '<p class="pv-ch-occ" data-edit="eyebrow">' + esc(s.eyebrow) + '</p>' : '') +
+            '<h1 class="pv-h1" data-edit="name">' + esc(s.name) + '</h1>' +
+            (s.lede ? '<p class="pv-ch-lede" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
+            '</div>' +
+            '<div class="pv-ch-lock">' +
+            '<div class="pv-ch-count">0<small> of <span data-edit="target">' + target + '</span></small></div>' +
+            '<div class="pv-ch-bar"><i></i></div>' +
+            '<p class="pv-ch-seal">Every message stays sealed until it is full.</p>' +
+            '</div>' +
+            '<p class="pv-ch-note">Messages arrive from the page itself. Nothing to write here — ' +
+            'send the link and watch the count.</p>';
+          $('canvas-empty').classList.toggle('gone', true);
+          renderedKeys = new Set(['chain']);
+          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          root.parentElement.classList.add('pv');
+          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet');
+          root.parentElement.classList.add('st-chain');
+          applyTone();
+          restoreSelection();
+          return;
+        }
+
+        if (s.style === 'diet') {
+          const pair = String(s.cta || '').split('/');
+          const good = esc((pair[0] || 'Good').trim() || 'Good');
+          const bad = esc((pair[1] || 'Bad').trim() || 'Bad');
+          const row = (when, mark, cls) =>
+            '<div class="pv-dt-row"><div><span class="pv-dt-when">' + when + '</span>' +
+            (mark ? '<br /><span class="pv-dt-mark ' + cls + '">' + mark + '</span>' : '') +
+            '</div><div><div class="pv-dt-shot"></div></div></div>';
+          root.innerHTML =
+            '<div class="pv-dt-head">' +
+            '<h1 class="pv-h1" data-edit="name">' + esc(s.name) + '</h1>' +
+            (s.eyebrow ? '<span class="pv-dt-sub" data-edit="eyebrow">' + esc(s.eyebrow) + '</span>' : '') +
+            '</div>' +
+            (s.lede ? '<p class="pv-dt-lede" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
+            '<div class="pv-dt-strip">' + Array(31).join('<i></i>') + '</div>' +
+            '<div class="pv-dt-days">' +
+            row('Today', good, 'g') + row('Yesterday', bad, 'b') + row('Mon', good, 'g') +
+            '</div>' +
+            '<p class="pv-dt-note">A row a day, newest first, filled in as things are posted. ' +
+            'The two words on every day are <b data-edit="cta">' + esc(s.cta || 'Good / Bad') + '</b>.</p>';
+          $('canvas-empty').classList.toggle('gone', true);
+          renderedKeys = new Set(['diet']);
+          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          root.parentElement.classList.add('pv');
+          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-chain');
+          root.parentElement.classList.add('st-diet');
+          applyTone();
+          restoreSelection();
+          return;
+        }
+
+        // A tribute is not built out of sections, so the ordinary block loop
+        // has nothing to walk. It gets its own two-part shape instead.
+        if (s.style === 'tribute') {
+          const shots = (s.images || []).filter(Boolean);
+          root.innerHTML =
+            '<div class="pv-trib-head">' +
+            (s.heroImage ? '<div class="pv-trib-face" data-photo="heroImage" style="background-image:url(' + esc(s.heroImage) + ')"></div>' : '') +
+            '<h1 class="pv-h1" data-edit="name">' + esc(s.name) + '</h1>' +
+            (s.eyebrow ? '<p class="pv-trib-dates" data-edit="eyebrow">' + esc(s.eyebrow) + '</p>' : '') +
+            (s.lede ? '<p class="pv-trib-note" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
+            '</div>' +
+            (shots.length
+              ? '<div class="pv-trib-wall">' + shots.map((u, i) =>
+                  '<img src="' + esc(u) + '" alt="" data-photo="images.' + i + '" />').join('') + '</div>'
+              : '<p class="pv-trib-empty">No photographs yet — add some and they will fill the page.</p>');
+          $('canvas-empty').classList.toggle('gone', true);
+          renderedKeys = new Set(['tribute']);
+          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          root.parentElement.classList.add('pv');
+          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain');
+          root.parentElement.classList.add('st-tribute');
+          applyTone();
+          restoreSelection();
+          return;
+        }
+
         const hasContent = !!(s.headline || s.sections.length);
         $('canvas-empty').classList.toggle('gone', hasContent);
         if (!hasContent) { root.innerHTML = ''; renderedKeys = new Set(); return; }
 
         // Mirrors navLinks() in site-render.ts so the nav here matches the
         // one that actually publishes.
-        const NAV_LABELS = {
-          services: 'Services', about: 'About', gallery: 'Gallery',
-          hours: 'Hours', faq: 'FAQ', contact: 'Contact',
-        };
+        const NAV_LABELS = s.style === 'trade'
+          ? { services: 'What we do', area: 'Areas', gallery: 'Recent jobs', credentials: 'Licences',
+              about: 'About', pricing: 'Pricing', hours: 'Hours', faq: 'FAQ', contact: 'Contact' }
+          : s.style === 'physio'
+          ? { conditions: 'What we treat', services: 'Services', steps: 'How it works', acc: 'ACC',
+              about: 'About', gallery: 'The clinic', pricing: 'Fees', hours: 'Hours',
+              faq: 'Questions', contact: 'Find us' }
+          : s.style === 'cafe'
+          ? { menu: 'Menu', pricing: 'Menu', services: 'What we do', about: 'Our story',
+              gallery: 'Gallery', hours: 'Hours', faq: 'Questions', contact: 'Find us' }
+          : { services: 'Services', about: 'About', gallery: 'Gallery',
+              hours: 'Hours', faq: 'FAQ', contact: 'Contact' };
         function navLinks(site) {
           const seen = {};
           const out = ['<span>Home</span>'];
@@ -2506,7 +2945,7 @@
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -2994,7 +3433,21 @@
         // — the agent asked for a name —
         if (S.awaiting === 'name') {
           S.awaiting = null;
-          const industry = startFresh(text.replace(/^(it'?s|we'?re|called|the)\s+/i, '').trim().slice(0, 40));
+          const given = text.replace(/^(it'?s|we'?re|called|the)\s+/i, '').trim().slice(0, 40);
+          // A page that already has content is not waiting to be born. Answering
+          // "what is it called?" over the top of it must fill the name back in,
+          // never rebuild the site out from under everything already on it.
+          const built = (S.site.sections || []).length || (S.site.images || []).length;
+          if (built) {
+            snapshot();
+            S.site.name = given;
+            if (!S.site.headline) S.site.headline = given;
+            render();
+            did('Business name updated');
+            await say('Got it — ' + given + '. Publishing now.');
+            return publish();
+          }
+          const industry = startFresh(given);
           await say("Nice one. I've put a starter page up — " + (industry === 'default' ? 'generic for now' : 'shaped for ' + industry) + ", your colours and words next.");
           if (S.scrapeBlocked) {
             await say("Since I couldn't get your photos off the old site, put a few in here and I'll build the page around them — they beat anything I can find.");
@@ -3149,7 +3602,7 @@
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal" or "classic" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary" or "chain" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -3257,6 +3710,13 @@
         if (!value) { el.textContent = before; return; }  // refuse to leave it empty
         snapshot();
         setByPath(path, value);
+        // Confirming a change that did not happen is worse than no message at
+        // all — it sends people off to publish something that was never edited.
+        if (getByPath(path) !== value) {
+          el.textContent = before;
+          did('Could not change ' + labelFor(path).toLowerCase(), true);
+          return;
+        }
         did(labelFor(path) + ' updated');
         S.renderQueued = true;
       }
@@ -3355,13 +3815,16 @@
         const sel = target || S.sel;
         if (!sel) return;
         snapshot();
+        // Drop the selection without committing first. The element still holds
+        // the old text in the DOM, so a commit here would write the very thing
+        // we are deleting straight back into the model.
+        clearSelection(false);
 
         if (sel.kind === 'block') {
           const i = Number(String(sel.path).split('.')[1]);
           const sec = S.site.sections[i];
           if (!sec) return;
           S.site.sections.splice(i, 1);
-          clearSelection();
           renderedKeys = new Set();
           render();
           did('Removed the ' + (SECTION_NAMES[sec.type] || 'section').toLowerCase());
@@ -3369,18 +3832,19 @@
         }
 
         if (sel.kind === 'photo') {
+          const was = getByPath(sel.path);
           setAtPath(sel.path, null);
-          clearSelection();
           renderedKeys = new Set();
           render();
+          if (getByPath(sel.path) === was && was) { did('Could not remove that photo', true); return; }
           did('Removed a photo');
           return;
         }
 
         setAtPath(sel.path, '');
-        clearSelection();
         renderedKeys = new Set();
         render();
+        if (getByPath(sel.path)) { did('Could not remove the ' + sel.label.toLowerCase(), true); return; }
         did('Removed the ' + sel.label.toLowerCase());
       }
 
@@ -3575,6 +4039,13 @@
         modern: 'Clean and current — rounded, soft shadows, plenty of air.',
         brutal: 'Loud and blocky — heavy type, hard edges, black borders. People remember it.',
         classic: 'Quiet and serif — hairlines, wide letter-spacing, an established look.',
+        cafe: 'For places that serve food — full-bleed photo, warm cream and espresso, and the menu doing the talking.',
+        physio: 'Light and airy for clinics — pale paper, deep sage, a fine serif, and what you treat leading the page.',
+        trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
+        tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
+        listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
+        chain: 'A collective message for one person — it collects until it hits a target, and nobody can read a word until it does.',
+        diet: 'A food diary in public — a row a day with what you ate, marked good or bad, and a plain line for every day you skipped.',
       };
 
       function setStyle(style, quiet) {
@@ -3645,7 +4116,11 @@
 
         S.media.forEach((item) => {
           const card = document.createElement('div');
-          card.className = 'media-item' + (mediaInUse(item.url) ? ' in-use' : '');
+          // Picking a photo means clicking the photo. The small button below it
+          // stays for keyboard and for clarity, but nobody should have to find
+          // it — the obvious target was doing nothing at all.
+          card.className = 'media-item' + (mediaInUse(item.url) ? ' in-use' : '')
+            + (S.mediaTarget ? ' is-picker' : '');
 
           const shot = document.createElement('span');
           shot.className = 'media-shot';
@@ -3672,25 +4147,40 @@
                 }],
                ['Logo', () => { snapshot(); S.site.logo = item.url; }]];
 
+          const run = (label, apply) => {
+            apply();
+            renderedKeys = new Set();
+            render();
+            if (S.mediaTarget) {
+              $('media-back').hidden = true;
+              S.mediaTarget = null;
+              did('Photo swapped');
+              return;
+            }
+            renderMedia();
+            did(label === 'Gallery' ? 'Added a photo to the gallery' : label + ' photo set');
+          };
+
           acts.forEach(([label, apply]) => {
             const b = document.createElement('button');
             b.className = 'media-act';
             b.textContent = label;
-            b.addEventListener('click', () => {
-              apply();
-              renderedKeys = new Set();
-              render();
-              if (S.mediaTarget) {
-                $('media-back').hidden = true;
-                S.mediaTarget = null;
-                did('Photo swapped');
-                return;
-              }
-              renderMedia();
-              did(label === 'Gallery' ? 'Added a photo to the gallery' : label + ' photo set');
-            });
+            b.addEventListener('click', (e) => { e.stopPropagation(); run(label, apply); });
             meta.appendChild(b);
           });
+
+          // Clicking anywhere on the card picks it, when the library was opened
+          // to fill a slot. The × has its own stopPropagation already.
+          if (S.mediaTarget) {
+            const [label, apply] = acts[0];
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', 'Use this photo');
+            card.addEventListener('click', () => run(label, apply));
+            card.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); run(label, apply); }
+            });
+          }
 
           // There was no way to get rid of anything at all.
           const drop = document.createElement('button');
@@ -3770,13 +4260,46 @@
         if (e.key === 'Escape' && !$('media-back').hidden) $('media-back').hidden = true;
       });
 
-      $('media-file').addEventListener('change', async (e) => {
-        const files = [...(e.target.files || [])].slice(0, 12);
-        if (!files.length) return;
-        $('media-count').textContent = 'Uploading ' + files.length + '…';
+      // A screenshot off a retina display is a 10MB PNG, and base64 makes it
+      // 13MB on the wire before the worker has to walk it a byte at a time.
+      // Nothing on a web page needs to be wider than this, so shrink first and
+      // let the original go. Falls back to the untouched file if anything in
+      // here fails — a slow upload beats no upload.
+      const MAX_EDGE = 2000;
+      function shrink(file) {
+        return new Promise((resolve) => {
+          if (!/^image\//.test(file.type) || /svg|gif/.test(file.type)) return resolve(file);
+          const img = new Image();
+          const src = URL.createObjectURL(file);
+          img.onload = () => {
+            URL.revokeObjectURL(src);
+            const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+            if (scale === 1 && file.size < 1.5e6) return resolve(file);
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.round(img.width * scale);
+              canvas.height = Math.round(img.height * scale);
+              canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+              canvas.toBlob(
+                (blob) => resolve(blob && blob.size < file.size ? blob : file),
+                'image/jpeg',
+                0.9
+              );
+            } catch (err) { resolve(file); }
+          };
+          img.onerror = () => { URL.revokeObjectURL(src); resolve(file); };
+          img.src = src;
+        });
+      }
 
-        for (const file of files) {
+      // One upload path, whether the file arrived through the picker or off the
+      // clipboard. Returns the URLs that made it.
+      async function ingestImages(files) {
+        const list = [...files].slice(0, 12);
+        const urls = [];
+        for (const raw of list) {
           try {
+            const file = await shrink(raw);
             const dataUrl = await new Promise((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(reader.result);
@@ -3789,15 +4312,80 @@
               body: JSON.stringify({ image: dataUrl }),
             });
             const data = await res.json();
-            if (data.url) addMedia(data.url, 'yours');
+            if (data.url) { addMedia(data.url, 'yours'); urls.push(data.url); }
           } catch (err) {
             console.error('upload failed', err);
           }
         }
-
-        e.target.value = '';
         renderMedia();
-        did(files.length + (files.length === 1 ? ' photo uploaded' : ' photos uploaded'));
+        return urls;
+      }
+
+      $('media-file').addEventListener('change', async (e) => {
+        const files = [...(e.target.files || [])].slice(0, 12);
+        if (!files.length) return;
+        $('media-count').textContent = 'Uploading ' + files.length + '…';
+        const urls = await ingestImages(files);
+        e.target.value = '';
+        if (urls.length) did(urls.length + (urls.length === 1 ? ' photo uploaded' : ' photos uploaded'));
+      });
+
+      // ── Paste ────────────────────────────────────
+      // A screenshot on the clipboard is the fastest a photo ever gets from
+      // someone's screen into their site. It should not need a file picker.
+      document.addEventListener('paste', async (e) => {
+        const items = [...((e.clipboardData && e.clipboardData.items) || [])];
+        const files = items
+          .filter((i) => i.kind === 'file' && /^image\//.test(i.type))
+          .map((i) => i.getAsFile())
+          .filter(Boolean);
+        // No image on the clipboard means this is an ordinary text paste, and
+        // the field it landed in should get it untouched.
+        if (!files.length) return;
+        e.preventDefault();
+
+        // Show it straight away off the local file, so the thread reacts at
+        // clipboard speed rather than at upload speed.
+        const holders = files.map((file) => {
+          const el = document.createElement('div');
+          el.className = 'msg msg-user msg-shot pending';
+          const img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          img.alt = 'Pasted photo';
+          el.appendChild(img);
+          document.getElementById('agent-log').appendChild(el);
+          return { el, img };
+        });
+        document.getElementById('agent-log').scrollTop = 999999;
+
+        const urls = await ingestImages(files);
+
+        holders.forEach((h, i) => {
+          URL.revokeObjectURL(h.img.src);
+          if (urls[i]) { h.img.src = urls[i]; h.el.classList.remove('pending'); }
+          else { h.el.remove(); }
+        });
+
+        if (!urls.length) { say('That one would not upload, sorry — try the photos panel.'); return; }
+
+        // If a slot in the media panel is waiting on a photo, the paste was an
+        // answer to that question. Put it where it was asked for.
+        if (S.mediaTarget) {
+          const target = S.mediaTarget;
+          snapshot();
+          setByPath(target.path, urls[0]);
+          S.mediaTarget = null;
+          $('media-back').hidden = true;
+          render();
+          did('Used the pasted photo for ' + labelFor(target.path).toLowerCase());
+          say('In it goes.');
+          return;
+        }
+
+        did(urls.length + (urls.length === 1 ? ' photo pasted' : ' photos pasted'));
+        say(urls.length === 1
+          ? 'Got it. Tell me where you want it — hero, gallery, anywhere.'
+          : 'Got all ' + urls.length + '. Tell me where you want them.');
       });
     </script>
 

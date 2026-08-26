@@ -16,7 +16,7 @@ export interface ToolContext {
   ownImages: string[];
 }
 
-const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop'];
+const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop', 'menu', 'conditions', 'steps', 'acc', 'area', 'credentials', 'specs', 'included', 'honest'];
 
 export const TOOLS = [
   {
@@ -25,7 +25,10 @@ export const TOOLS = [
       'Change any single piece of text on the page. Paths: name, headline, lede, eyebrow, cta, ' +
       'contact.phone, contact.email, contact.address, sec.<i>.label, sec.<i>.title, sec.<i>.text, ' +
       'sec.<i>.quote, sec.<i>.who, sec.<i>.items.<j>.0 (service name), sec.<i>.items.<j>.1 ' +
-      '(service description), sec.<i>.rows.<j>.0 (day), sec.<i>.rows.<j>.1 (hours). ' +
+      '(service description), sec.<i>.rows.<j>.0 (day), sec.<i>.rows.<j>.1 (hours), ' +
+      'sec.<i>.menu.<g>.heading (a menu course), sec.<i>.menu.<g>.items.<j>.name, ' +
+      'sec.<i>.menu.<g>.items.<j>.price and sec.<i>.menu.<g>.items.<j>.text (a dish). ' +
+      'On a chain page, target is how many messages it takes to unlock it. ' +
       'Section indexes are the positions in the sections array you were given.',
     input_schema: {
       type: 'object',
@@ -40,16 +43,98 @@ export const TOOLS = [
     name: 'set_style',
     description:
       'Change the look of the whole site. style: modern (rounded, soft shadows), brutal (heavy ' +
-      'type, hard black borders, left-aligned), classic (serif, hairlines, wide letter-spacing). ' +
+      'type, hard black borders, left-aligned), classic (serif, hairlines, wide letter-spacing), ' +
+      'cafe (a different page altogether: full-bleed photo hero, an open-now line worked out from ' +
+      'the hours, a proper menu board, warm cream and espresso — for cafes, restaurants, bakeries, ' +
+      'bars and food trucks), physio (light and airy: pale paper, deep sage, a fine serif, a framed ' +
+      'hero rather than a full-bleed one, conditions you treat, a numbered how-it-works, and an ACC ' +
+      'block — for physios, chiros, osteos, podiatrists, massage and dental). Never switch to cafe or ' +
+      'physio without asking first; both rearrange the page. trade (dark and blunt: the phone number ' +
+      'in the nav, the hero, a bar pinned to the bottom of every phone screen and the footer, plus ' +
+      'areas covered, recent jobs and licence numbers — for builders, sparkies, plumbers, roofers, ' +
+      'painters, landscapers and diggers). Ask before switching to trade too. tribute is a memorial ' +
+      'page: a name, two dates and a wall of photographs, nothing else — no nav, no sections, no ' +
+      'shop, no chat. Visitors can send photos in from the page itself. listing is one thing for ' +
+      'sale privately — a house or a car: big photos, the price, a strip of the numbers a buyer ' +
+      'checks, and a plain list of what is wrong with it. ' +
+      'diet is a public food diary for people who want somebody watching: a scoreboard of good ' +
+      'and bad days, a strip of the last thirty days with visible gaps, and a photo or clip for ' +
+      'every day posted. No nav, no sections, no shop, no chat. ' +
       'tone is the background: light, warm or dark. primary_colour is a hex like #16a34a and ' +
       'recolours buttons, links and accents.',
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },
+    },
+  },
+  {
+    name: 'set_rally',
+    description:
+      'Put a campaign page on this site at its own path — <slug>.garage.co.nz/<path>. A rally is ' +
+      'a thing the business will only run if enough people want it: a workshop, a class, a supper ' +
+      'club, a group rate on a street. Nobody is asked to pay, only whether it should happen, and ' +
+      'the page collects names and emails until it reaches the target. Use it when they want to ' +
+      'test interest, fill a session, collect emails, or promote something without selling. ' +
+      'path is a short slug like "spring" or "running-clinic". title is the thing itself. blurb is ' +
+      'a sentence or two on what it is. detail is the practical part — when, where, how long. ' +
+      'target is how many people it takes to go ahead. closes is free text like "Closes 12 ' +
+      'September". cta is the button, default "Count me in". Calling it again with the same path ' +
+      'edits that campaign; a new path adds another.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Short url slug, letters numbers and dashes' },
+        title: { type: 'string' },
+        blurb: { type: 'string' },
+        detail: { type: 'string' },
+        target: { type: 'number', description: 'How many people it takes to go ahead' },
+        closes: { type: 'string' },
+        cta: { type: 'string' },
+      },
+      required: ['path', 'title', 'target'],
+    },
+  },
+  {
+    name: 'set_menu',
+    description:
+      'Write the food and drink menu. Groups are courses — Breakfast, All day, Coffee, Sweet — ' +
+      'each holding items with a name, a price and an optional one-line description. Replaces the ' +
+      'whole menu. Adds a menu section to the page if there is not one already. This is what a ' +
+      'cafe site is for, so it belongs on the cafe template — offer to switch if they are not on it.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        groups: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              heading: { type: 'string', description: 'Course name, e.g. Breakfast' },
+              note: { type: 'string', description: 'Optional line under the heading, e.g. until 11am' },
+              items: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    price: { type: 'string', description: 'e.g. $12 or $12.50' },
+                    text: { type: 'string', description: 'One short line. Ingredients, not adjectives.' },
+                  },
+                  required: ['name'],
+                },
+              },
+            },
+            required: ['heading', 'items'],
+          },
+        },
+        label: { type: 'string', description: 'Small line above the heading, default "The menu"' },
+        title: { type: 'string', description: 'Section heading, default "What we are serving"' },
+      },
+      required: ['groups'],
     },
   },
   {
@@ -402,6 +487,71 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to change' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'set_rally': {
+      const path = String(input.path || '')
+        .toLowerCase().trim().replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 40);
+      if (!path) return { ok: false, message: 'A campaign needs a short url' };
+      // These are real routes on the site, so they cannot sit on top of the
+      // pages the template already owns.
+      if (['team', 'case-studies', 'cases', 'admin', 'photos', 'llms.txt'].includes(path)) {
+        return { ok: false, message: `${path} is already a page on this site — pick another word` };
+      }
+      const title = String(input.title || '').slice(0, 90);
+      if (!title) return { ok: false, message: 'A campaign needs a title' };
+      const target = Math.max(1, Math.min(500, Math.round(Number(input.target)) || 10));
+
+      const campaign = {
+        path,
+        title,
+        blurb: String(input.blurb || '').slice(0, 300) || undefined,
+        detail: String(input.detail || '').slice(0, 900) || undefined,
+        target,
+        closes: String(input.closes || '').slice(0, 60) || undefined,
+        cta: String(input.cta || '').slice(0, 30) || undefined,
+      };
+      const list = site.campaigns || (site.campaigns = []);
+      const at = list.findIndex((c) => c && c.path === path);
+      if (at >= 0) list[at] = campaign;
+      else list.push(campaign);
+      return {
+        ok: true,
+        message: `${title} at /${path}, going ahead at ${target}`,
+        data: { url: `/${path}` },
+      };
+    }
+
+    case 'set_menu': {
+      const groups = (input.groups || []).slice(0, 12).map((g: any) => ({
+        heading: String(g?.heading ?? '').slice(0, 80),
+        note: String(g?.note ?? '').slice(0, 160),
+        items: (g?.items || []).slice(0, 40).map((i: any) => ({
+          name: String(i?.name ?? '').slice(0, 120),
+          price: String(i?.price ?? '').slice(0, 24),
+          text: String(i?.text ?? '').slice(0, 240),
+        })).filter((i: any) => i.name),
+      })).filter((g: any) => g.items.length);
+
+      if (!groups.length) return { ok: false, message: 'A menu needs at least one item' };
+
+      const existing = site.sections.find((s) => s.type === 'menu');
+      if (existing) {
+        existing.menu = groups;
+        if (input.label) existing.label = String(input.label).slice(0, 60);
+        if (input.title) existing.title = String(input.title).slice(0, 120);
+      } else {
+        // Straight after the hero is where a menu belongs — it is the reason
+        // anyone opened the page.
+        site.sections.unshift({
+          type: 'menu',
+          label: String(input.label || 'The menu').slice(0, 60),
+          title: String(input.title || 'What we are serving').slice(0, 120),
+          menu: groups,
+        });
+      }
+      const count = groups.reduce((n: number, g: any) => n + g.items.length, 0);
+      return { ok: true, message: `Menu set: ${count} items across ${groups.length} groups` };
     }
 
     case 'set_products': {

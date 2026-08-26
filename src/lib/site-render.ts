@@ -1,7 +1,19 @@
+import { LISTING_CSS, LISTING_FONT_QUERY, renderListingBody } from './listing-render';
+import { TRIBUTE_CSS, TRIBUTE_FONT_QUERY, renderTributeBody, type TributePhoto } from './tribute-render';
+import { DIET_CSS, DIET_FONT_QUERY, renderDietBody, type DietPost } from './diet-render';
+import { CHAIN_CSS, CHAIN_FONT_QUERY, renderChainBody, type ChainNote } from './chain-render';
+import { RALLY_CSS, renderRallyBody, type RallyCampaign, type RallyState } from './rally-render';
+import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
+import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
+import { CAFE_CSS, CAFE_FONT_QUERY, renderCafeBody } from './cafe-render';
+
 // Renders a site claimed at <slug>.garage.co.nz from the config the
 // builder stored in D1. Mirrors the live preview in /ai.
 
 export interface SiteContact { phone?: string; email?: string; address?: string }
+export interface MenuItem { name?: string; price?: string; text?: string }
+export interface MenuGroup { heading?: string; note?: string; items?: MenuItem[] }
+
 export interface SiteSection {
   type: string;
   label?: string;
@@ -15,6 +27,7 @@ export interface SiteSection {
   who?: string;
   videoId?: string;
   videos?: string[];
+  menu?: MenuGroup[];   // a cafe menu: courses, each with priced items
 }
 export interface TeamMember {
   name?: string;
@@ -40,7 +53,11 @@ export interface CaseStudy {
 export interface SiteConfig {
   name?: string;
   tone?: 'light' | 'warm' | 'dark';
-  style?: 'modern' | 'brutal' | 'classic';
+  // Campaign pages hanging off this site at /<path>. They are part of the
+  // config so the owner writes them the same way as everything else, and they
+  // publish with the page — only the sign-ups need a table.
+  campaigns?: RallyCampaign[];
+  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -400,6 +417,28 @@ ${pageFoot(site, name)}`;
   });
 }
 
+/**
+ * A campaign page at a path on the business's own site. It borrows the parent's
+ * nav, colours and type on purpose: the share link should look like them, not
+ * like a landing page somebody bolted on.
+ */
+export function renderRallyPage(
+  site: SiteConfig,
+  slug: string,
+  campaign: RallyCampaign,
+  state: RallyState
+): string {
+  const name = site.name || slug;
+  const path = '/' + String(campaign.path).replace(/^\/+/, '');
+  return shell(site, slug, {
+    title: `${campaign.title} — ${name}`,
+    description: (campaign.blurb || `${campaign.title}. It runs if enough people are in.`).slice(0, 155),
+    path,
+    body: renderRallyBody(site, slug, campaign, state, pageNav(site, slug, path), pageFoot(site, name)),
+    extraCss: RALLY_CSS,
+  });
+}
+
 export function renderCases(site: SiteConfig, slug: string): string {
   const name = site.name || slug;
   const studies = (site.cases || []).filter(Boolean);
@@ -458,6 +497,8 @@ interface PageMeta {
   description: string;
   path: string;
   body: string;
+  // Styles only this page needs, kept off every other page in the site
+  extraCss?: string;
 }
 
 function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): string {
@@ -939,7 +980,128 @@ poll();
 })();</script>`;
 }
 
-export function renderSite(site: SiteConfig, slug: string): string {
+export function renderSite(
+  site: SiteConfig,
+  slug: string,
+  sent: TributePhoto[] | DietPost[] | ChainNote[] = [],
+  state: { unlocked?: boolean } = {}
+): string {
+  // Messages for one person, sealed until enough of them have come in. No nav,
+  // no sections, no cart — a counter and a reason to pass it on.
+  if (site.style === 'chain') {
+    const gift: SiteConfig = {
+      ...site,
+      shop: false,
+      chat: false,
+      palette: { primary: '#b4763a', deep: '#1c1a16', wash: '#f6f2ea', ...(site.palette || {}) },
+    };
+    const forWhom = gift.name || slug;
+    return shell(gift, slug, {
+      title: gift.eyebrow ? `${forWhom} — ${gift.eyebrow}` : forWhom,
+      description: (gift.lede || `Add a message for ${forWhom}.`).slice(0, 155),
+      path: '/',
+      body: renderChainBody(gift, slug, sent as ChainNote[], !!state.unlocked),
+    });
+  }
+
+  // A food diary in public: a scoreboard, then every day so far. No nav, no
+  // sections, no cart — the tally is the site.
+  if (site.style === 'diet') {
+    const log: SiteConfig = {
+      ...site,
+      shop: false,
+      chat: false,
+      palette: { primary: '#cf3626', deep: '#16150f', wash: '#f7f5f0', ...(site.palette || {}) },
+    };
+    const eater = log.name || slug;
+    return shell(log, slug, {
+      title: eater,
+      description: (log.lede || `Everything ${eater} eats, in public.`).slice(0, 155),
+      path: '/',
+      body: renderDietBody(log, slug, sent as DietPost[]),
+    });
+  }
+
+  // A memorial: a name, two dates, and a wall of photographs. No nav, no
+  // sections, no cart, no chat widget.
+  if (site.style === 'tribute') {
+    const quiet: SiteConfig = {
+      ...site,
+      shop: false,
+      chat: false,
+      palette: { primary: '#c9c3b8', deep: '#0d0d0e', wash: '#17171a', ...(site.palette || {}) },
+    };
+    const who = quiet.name || slug;
+    return shell(quiet, slug, {
+      title: who,
+      description: (quiet.eyebrow ? `${who}, ${quiet.eyebrow}. ` : '') + 'In memory.',
+      path: '/',
+      body: renderTributeBody(quiet, slug, sent as TributePhoto[]),
+    });
+  }
+
+  // The cafe template is its own page from the nav down — a different skeleton,
+  // not a restyle of this one — so it only borrows the shell.
+  if (site.style === 'cafe') {
+    const warm: SiteConfig = {
+      ...site,
+      palette: { primary: '#a8442a', deep: '#7a2f1d', wash: '#f4ebdd', ...(site.palette || {}) },
+    };
+    const cafeName = warm.name || slug;
+    return shell(warm, slug, {
+      title: cafeName,
+      description: (warm.lede || warm.headline || cafeName).slice(0, 155),
+      path: '/',
+      body: renderCafeBody(warm, slug),
+    });
+  }
+
+  // One thing for sale: photos, a price, the numbers, and the honest bit.
+  if (site.style === 'listing') {
+    const sale: SiteConfig = {
+      ...site,
+      shop: false,
+      palette: { primary: '#1f6feb', deep: '#14161a', wash: '#f4f5f7', ...(site.palette || {}) },
+    };
+    const what = sale.headline || sale.name || slug;
+    return shell(sale, slug, {
+      title: sale.eyebrow ? `${what} — ${sale.eyebrow}` : what,
+      description: (sale.lede || what).slice(0, 155),
+      path: '/',
+      body: renderListingBody(sale, slug),
+    });
+  }
+
+  // Dark, dense, phone-first. Its own skeleton too.
+  if (site.style === 'trade') {
+    const bold: SiteConfig = {
+      ...site,
+      palette: { primary: '#f2591f', deep: '#1e2225', wash: '#f4f5f3', ...(site.palette || {}) },
+    };
+    const tradeName = bold.name || slug;
+    return shell(bold, slug, {
+      title: tradeName,
+      description: (bold.lede || bold.headline || tradeName).slice(0, 155),
+      path: '/',
+      body: renderTradeBody(bold, slug),
+    });
+  }
+
+  // Light and airy, and its own skeleton — the shell is all it borrows.
+  if (site.style === 'physio') {
+    const calm: SiteConfig = {
+      ...site,
+      palette: { primary: '#4f6b52', deep: '#2f3d2c', wash: '#eef1e8', ...(site.palette || {}) },
+    };
+    const clinicName = calm.name || slug;
+    return shell(calm, slug, {
+      title: clinicName,
+      description: (calm.lede || calm.headline || clinicName).slice(0, 155),
+      path: '/',
+      body: renderClinicBody(calm, slug),
+    });
+  }
+
   const palette = site.palette || {};
   const tone = TONES[site.tone || 'light'] || TONES.light;
   const primary = palette.primary || '#2563eb';
@@ -1003,9 +1165,15 @@ export function businessSchema(site: SiteConfig, slug: string): Record<string, u
     .filter(Boolean);
   const hourRows = (site.sections || []).find((s) => s.type === 'hours')?.rows || [];
 
+  const menuSections = (site.sections || []).filter((s) => s.type === 'menu');
+
   const data: Record<string, unknown> = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    // A cafe that says it is a cafe gets read as one. The menu below only
+    // means anything under this type.
+    '@type': site.style === 'cafe' ? 'CafeOrCoffeeShop'
+      : site.style === 'physio' ? 'Physiotherapy'
+      : 'LocalBusiness',
     name: site.name || slug,
     url: base,
     description: site.lede || site.headline || '',
@@ -1027,6 +1195,32 @@ export function businessSchema(site: SiteConfig, slug: string): Record<string, u
       itemOffered: { '@type': 'Service', name },
     }));
   }
+  // The menu, in the shape an assistant already knows how to read, so "what
+  // does this place do for breakfast" can be answered without the page.
+  if (menuSections.length) {
+    const groups = menuSections.flatMap((section) => section.menu || []);
+    if (groups.length) {
+      data.hasMenu = {
+        '@type': 'Menu',
+        hasMenuSection: groups.map((group) => ({
+          '@type': 'MenuSection',
+          name: group.heading || '',
+          hasMenuItem: (group.items || []).map((item) => {
+            const entry: Record<string, unknown> = { '@type': 'MenuItem', name: item.name || '' };
+            if (item.text) entry.description = item.text;
+            if (item.price) {
+              entry.offers = {
+                '@type': 'Offer',
+                price: String(item.price).replace(/[^0-9.]/g, ''),
+                priceCurrency: 'NZD',
+              };
+            }
+            return entry;
+          }),
+        })),
+      };
+    }
+  }
   return data;
 }
 
@@ -1042,6 +1236,48 @@ export function llmsTxt(site: SiteConfig, slug: string): string {
       lines.push('## What we do', '');
       for (const item of section.items as any[]) {
         lines.push(`- **${item[0]}** — ${item[1] || ''}`.trim());
+      }
+      lines.push('');
+    }
+    if (section.type === 'menu' && (section.menu || []).length) {
+      lines.push('## Menu', '');
+      for (const group of section.menu as any[]) {
+        if (group.heading) lines.push(`### ${group.heading}`, '');
+        for (const item of group.items || []) {
+          const price = item.price ? ` — ${item.price}` : '';
+          const note = item.text ? `. ${item.text}` : '';
+          lines.push(`- **${item.name}**${price}${note}`);
+        }
+        lines.push('');
+      }
+    }
+    if ((section.type === 'specs' || section.type === 'included' || section.type === 'honest')
+        && (section.items || []).length) {
+      lines.push(
+        section.type === 'specs' ? '## Details'
+          : section.type === 'included' ? "## What's included"
+          : '## Known faults',
+        ''
+      );
+      if (section.text) lines.push(String(section.text), '');
+      for (const item of section.items as any[]) lines.push(`- **${item[0]}** ${item[1] || ''}`.trim());
+      lines.push('');
+    }
+    if ((section.type === 'area' || section.type === 'credentials') && (section.items || []).length) {
+      lines.push(section.type === 'area' ? '## Areas we cover' : '## Licences and memberships', '');
+      if (section.text) lines.push(String(section.text), '');
+      for (const item of section.items as any[]) lines.push(`- **${item[0]}** ${item[1] || ''}`.trim());
+      lines.push('');
+    }
+    if ((section.type === 'conditions' || section.type === 'steps' || section.type === 'acc')
+        && (section.items || []).length) {
+      const heading = section.type === 'conditions' ? '## What we treat'
+        : section.type === 'steps' ? '## How it works'
+        : '## ACC';
+      lines.push(heading, '');
+      if (section.text) lines.push(String(section.text), '');
+      for (const item of section.items as any[]) {
+        lines.push(`- **${item[0]}** ${item[1] || ''}`.trim());
       }
       lines.push('');
     }
@@ -1092,6 +1328,17 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
   const name = site.name || slug;
   const body = page.body;
   const description = page.description;
+  const extraFonts =
+    site.style === 'brutal' ? '&family=Archivo+Black'
+    : site.style === 'classic' ? '&family=Playfair+Display:wght@600;700'
+    : site.style === 'cafe' ? CAFE_FONT_QUERY
+    : site.style === 'physio' ? CLINIC_FONT_QUERY
+    : site.style === 'trade' ? TRADE_FONT_QUERY
+    : site.style === 'tribute' ? TRIBUTE_FONT_QUERY
+    : site.style === 'listing' ? LISTING_FONT_QUERY
+    : site.style === 'diet' ? DIET_FONT_QUERY
+    : site.style === 'chain' ? CHAIN_FONT_QUERY
+    : '';
 
   return `<!doctype html>
 <html lang="en-NZ">
@@ -1109,14 +1356,14 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
 ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${site.style === 'brutal' ? '&family=Archivo+Black' : site.style === 'classic' ? '&family=Playfair+Display:wght@600;700' : ''}&display=swap" rel="stylesheet" />
-<style>${CSS}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;

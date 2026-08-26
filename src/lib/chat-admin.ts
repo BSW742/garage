@@ -68,6 +68,9 @@ main{flex:1;overflow-y:auto}
 .them{align-self:flex-start;background:#fff;border:1px solid var(--line)}
 .me{align-self:flex-end;background:var(--accent);color:#fff}
 form{display:flex;gap:.5rem;padding:.75rem;background:#fff;border-top:1px solid var(--line)}
+/* display:flex on the element beats the browser's own [hidden] rule, so the
+   reply box was showing on views with nothing to reply to. */
+form[hidden]{display:none}
 input{flex:1;font:inherit;padding:.6rem .8rem;border:1px solid var(--line);border-radius:12px;outline:none}
 input:focus{border-color:var(--accent)}
 button.send{border:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:0 1.1rem;border-radius:12px;cursor:pointer}
@@ -79,7 +82,21 @@ button.send{border:0;background:var(--accent);color:#fff;font:inherit;font-weigh
 .order ul{margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem}
 .order .total{display:block;margin-top:.4rem;font-weight:700;color:var(--accent)}
 .order .note-text{margin:.4rem 0 0;font-size:.82rem;color:var(--soft);font-style:italic}
-#orders-tab{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+#signups-tab{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
+.camp{border-bottom:1px solid var(--line);background:#fff;padding:.9rem 1rem}
+.camp b{font-size:.95rem;display:block}
+.camp .at{font-size:.78rem;color:var(--soft);word-break:break-all}
+.camp .bar{height:6px;background:var(--line);border-radius:99px;margin:.6rem 0 .5rem;overflow:hidden}
+.camp .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.camp .num{font-size:.82rem;color:var(--soft)}
+.camp .num b{display:inline;color:var(--ink)}
+.camp textarea{width:100%;margin-top:.6rem;min-height:6.5rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+font-size:.78rem;border:1px solid var(--line);border-radius:10px;padding:.6rem;color:var(--ink);
+background:#fafbfd;resize:vertical;line-height:1.55}
+.camp .copy{margin-top:.5rem;border:0;background:var(--accent);color:#fff;font:inherit;font-size:.8rem;
+font-weight:600;padding:.4rem .8rem;border-radius:999px;cursor:pointer}
+#orders-tab{border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
 font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 .note code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:.15rem .4rem;font-size:.85rem}
 </style>
@@ -87,6 +104,7 @@ font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 <body>
 <header>
   <div><b id="title">Messages</b><br /><span id="sub">${slug}.garage.co.nz</span></div>
+  <button id="signups-tab">Sign-ups</button>
   <button id="orders-tab">Orders</button>
   <button id="back" hidden>All messages</button>
 </header>
@@ -210,6 +228,54 @@ document.getElementById('orders-tab').addEventListener('click', async function()
   });
 });
 
+document.getElementById('signups-tab').addEventListener('click', async function(){
+  if (!key) return noKey();
+  var res = await fetch(API + '/api/rally/list', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug: SLUG, key: key })
+  });
+  var data = await res.json();
+  if (!res.ok) { main.innerHTML = '<p class="note">' + (data.error || 'Could not load sign-ups') + '</p>'; return; }
+  form.hidden = true; back.hidden = false; openThread = null; title.textContent = 'Sign-ups';
+  var camps = data.campaigns || [];
+  if (!camps.length) {
+    main.innerHTML = '<p class="note">No campaign pages yet.<br />' +
+      'Ask for one in the editor — something you would only run if enough people were keen — ' +
+      'and whoever puts their hand up shows here.</p>';
+    return;
+  }
+  main.innerHTML = '';
+  camps.forEach(function(c){
+    var pct = Math.min(100, Math.round(c.rows.length / c.target * 100));
+    var el = document.createElement('div');
+    el.className = 'camp';
+    el.innerHTML = '<b>' + escapeHtml(c.title) + '</b>' +
+      '<span class="at">' + escapeHtml(SLUG + '.garage.co.nz/' + c.path) + '</span>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<span class="num"><b>' + c.rows.length + '</b> of ' + c.target +
+        (c.rows.length >= c.target ? ' — it is on' : ' needed') + '</span>';
+    if (c.rows.length) {
+      var box = document.createElement('textarea');
+      box.readOnly = true;
+      box.value = c.rows.map(function(r){ return r.name + ',' + r.email; }).join('\\n');
+      var btn = document.createElement('button');
+      btn.className = 'copy';
+      btn.textContent = 'Copy the list';
+      btn.addEventListener('click', function(){
+        try { box.select(); box.setSelectionRange(0, 99999); } catch (e) {}
+        var done = function(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy the list'; }, 1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(box.value).then(done, function(){
+            try { document.execCommand('copy'); done(); } catch (e) {} });
+        } else { try { document.execCommand('copy'); done(); } catch (e) {} }
+      });
+      el.appendChild(box);
+      el.appendChild(btn);
+    }
+    main.appendChild(el);
+  });
+});
+
 back.addEventListener('click', function(){
   document.getElementById('sub').textContent = SLUG + '.garage.co.nz';
   list();
@@ -229,7 +295,10 @@ form.addEventListener('submit', async function(e){
 });
 
 list();
-timer = setInterval(function(){ if (openThread) { show({ id: openThread, visitor_name: title.textContent }); } else { list(); } }, 8000);
+timer = setInterval(function(){
+  if (openThread) { show({ id: openThread, visitor_name: title.textContent }); }
+  else if (title.textContent === 'Messages') { list(); }
+}, 8000);
 })();
 </script>
 </body>
