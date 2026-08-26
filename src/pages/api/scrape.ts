@@ -33,6 +33,15 @@ export interface ScrapedData {
   /** Their logo vanishes unless what sits behind it is dark */
   logoNeedsDark: boolean;
   salvageNote?: string;
+  /** How the HTML was obtained — plain fetch, or a real browser. Null when unremarkable. */
+  renderNote?: string;
+}
+
+/** What scrapeWebsite needs from the environment. Everything here is optional:
+ *  without it the scrape behaves exactly as it did before. */
+export interface ScrapeEnv {
+  CF_ACCOUNT_ID?: string;
+  CF_BROWSER_TOKEN?: string;
 }
 
 // Industry detection with weighted keywords
@@ -117,9 +126,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
       });
     }
 
+    const env = (locals.runtime?.env as any) || {};
+
     let scraped: ScrapedData;
     try {
-      scraped = await scrapeWebsite(url);
+      scraped = await scrapeWebsite(url, env);
     } catch (readError) {
       // The page is unreadable, which is not the same as there being nothing to
       // have. Salvage the mark and the colours off the well-known icon path and
@@ -138,7 +149,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
         salvageNote: salvage.note,
       } as ScrapedData;
 
-      const key = (locals.runtime?.env as any)?.ANTHROPIC_API_KEY;
+      const key = env.ANTHROPIC_API_KEY;
       if (key && icon) {
         // Inline it: this icon often comes from a source the model cannot fetch.
         const seen = await lookAtImages(key, [icon], { inline: true });
@@ -161,7 +172,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Look at the images instead of guessing from their filenames. This is
     // allowed to fail: if it does we keep the heuristic result, because a
     // degraded scrape beats no scrape.
-    const apiKey = (locals.runtime?.env as any)?.ANTHROPIC_API_KEY;
+    const apiKey = env.ANTHROPIC_API_KEY;
     if (apiKey && scraped.candidateImages.length) {
       const seen = await lookAtImages(apiKey, scraped.candidateImages);
       if (seen.ok) {
@@ -301,22 +312,125 @@ async function fetchPage(url: string): Promise<string> {
   return html;
 }
 
-export async function scrapeWebsite(url: string): Promise<ScrapedData> {
+// A page can answer 200 and still be empty of words: Wix, Squarespace and
+// anything React-shaped ship a shell and draw the site with JavaScript. Counting
+// the visible text is the cheapest way to tell that apart from a real page,
+// because a shell has almost none of it however much markup it carries.
+function looksUnrendered(html: string): boolean {
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length < 400;
+}
+
+// Cloudflare Browser Rendering: real Chrome, run by them, returning the DOM
+// after the JavaScript has had its turn. Costs a round trip and a little money,
+// so it is the third thing we try rather than the first. Returns null whenever
+// it is not configured, which keeps every existing deployment on the old path.
+async function renderViaBrowser(
+  url: string,
+  env?: ScrapeEnv
+): Promise<{ html: string | null; why: string }> {
+  const account = env?.CF_ACCOUNT_ID;
+  const token = env?.CF_BROWSER_TOKEN;
+  if (!account || !token) return { html: null, why: 'no renderer configured' };
+
+  try {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${account}/browser-rendering/content`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url,
+          // Images are the slowest part of a page and we only want its words and
+          // its markup — the image URLs survive in the HTML either way.
+          rejectResourceTypes: ['image', 'media', 'font'],
+          // networkidle0 waits for zero in-flight requests, which never
+          // happens on a site that polls or holds a socket open — it timed out
+          // every time. networkidle2 tolerates a couple of stragglers, which is
+          // what "the page has finished drawing" actually looks like.
+          gotoOptions: { waitUntil: 'networkidle2', timeout: 15000 },
+        }),
+      }
+    );
+
+    const raw = await response.text();
+    if (!response.ok) {
+      // Say which way it failed. Swallowing this silently is what made a bad
+      // token look identical to a missing one.
+      console.error('Browser render HTTP', response.status, raw.slice(0, 300));
+      return { html: null, why: `renderer said ${response.status}: ${raw.slice(0, 120)}` };
+    }
+
+    let body: any = null;
+    try { body = JSON.parse(raw); } catch { /* fall through */ }
+    // The content endpoint has been seen returning both a JSON envelope and
+    // bare HTML, so take whichever arrived.
+    const html =
+      typeof body?.result === 'string' ? body.result
+      : typeof body?.result?.html === 'string' ? body.result.html
+      : raw.trim().startsWith('<') ? raw
+      : null;
+
+    if (!html) {
+      console.error('Browser render: no html in response', raw.slice(0, 300));
+      return { html: null, why: 'renderer returned no html' };
+    }
+    if (html.trim().length < 500) return { html: null, why: 'renderer returned an empty page' };
+    return { html, why: 'rendered in a browser' };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('Browser render threw:', detail);
+    return { html: null, why: `renderer failed: ${detail}` };
+  }
+}
+
+/** The page, by whatever means works: two plain attempts, then a real browser. */
+async function pageHtml(url: string, env?: ScrapeEnv): Promise<{ html: string; note?: string }> {
   // Hosts like SiteGround challenge by source address, and a Worker does not
   // always leave from the same one. The same request a moment later often lands
   // on an address they have no quarrel with, so one refusal is not an answer.
   // Two attempts, no more — their server is not ours to lean on.
-  let html: string;
+  let plain: string | null = null;
+  let refusal: unknown = null;
   try {
-    html = await fetchPage(url);
+    plain = await fetchPage(url);
   } catch (firstTry) {
+    refusal = firstTry;
     await new Promise((resolve) => setTimeout(resolve, 400));
     try {
-      html = await fetchPage(url);
+      plain = await fetchPage(url);
     } catch {
-      throw firstTry;
+      // keep the first refusal — it carries the better evidence
     }
   }
+
+  if (plain && !looksUnrendered(plain)) return { html: plain };
+
+  // Either nothing came back, or what came back has no words in it. Both are
+  // cases a browser can answer and a fetch cannot.
+  const rendered = await renderViaBrowser(url, env);
+  if (rendered.html) {
+    return {
+      html: rendered.html,
+      note: plain ? 'JS shell, rendered in a browser' : 'unreadable by fetch, rendered in a browser',
+    };
+  }
+
+  // No usable render. A thin page still beats no page — but say why the
+  // browser did not save us, so a bad token is distinguishable from no token.
+  if (plain) return { html: plain, note: `thin page, ${rendered.why}` };
+  throw refusal || new Error(`unreadable, ${rendered.why}`);
+}
+
+export async function scrapeWebsite(url: string, env?: ScrapeEnv): Promise<ScrapedData> {
+  const page = await pageHtml(url, env);
+  const html = page.html;
 
   const baseUrl = new URL(url).origin;
 
@@ -370,6 +484,7 @@ export async function scrapeWebsite(url: string): Promise<ScrapedData> {
     blocked: false,
     blockedReason: '',
     logoNeedsDark: false,
+    renderNote: page.note,
   };
 }
 
