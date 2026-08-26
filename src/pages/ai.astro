@@ -189,6 +189,22 @@ if (cameFromOffer && openedSlug) {
       </div>
     </div>
 
+    <div class="meter-back" id="along-back" hidden>
+      <div class="meter-card" role="dialog" aria-modal="true" aria-labelledby="along-title">
+        <p class="meter-eyebrow">Who you work alongside</p>
+        <h2 id="along-title">Add a business</h2>
+        <p class="meter-say">Your sparkie, your roofer, whoever is on site with you. We make
+          them a page with your name on it and let them know you put them there.</p>
+        <input type="text" id="along-name" maxlength="60" placeholder="Business name" />
+        <input type="text" id="along-contact" maxlength="120" placeholder="Phone, email or website" />
+        <div class="meter-do">
+          <button type="button" class="meter-go" id="along-save" disabled>Add them</button>
+          <button type="button" class="meter-quiet" id="along-cancel">Not now</button>
+        </div>
+        <p class="meter-msg" id="along-msg"></p>
+      </div>
+    </div>
+
     <div class="meter-back" id="refer-back" hidden>
       <div class="meter-card" role="dialog" aria-modal="true" aria-labelledby="refer-title">
         <div id="refer-form">
@@ -1359,6 +1375,19 @@ if (cameFromOffer && openedSlug) {
       .pv-buy strong { display: block; font-size: 0.85rem; margin: 0.5rem 0.6rem 0; }
       .pv-buy p { margin: 0.2rem 0.6rem 0; font-size: 0.75rem; color: var(--pv-soft); line-height: 1.45; }
       .pv-buy-price { display: block; margin: 0.35rem 0.6rem 0; font-weight: 700; color: var(--pv-primary); font-size: 0.82rem; }
+
+      .pv-along { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 0.9rem; }
+      .pv-along-one {
+        border: 1px solid var(--pv-line); border-radius: 999px; padding: 0.4rem 0.95rem;
+        font-size: 0.87rem; background: #fff;
+      }
+      .pv-along-add {
+        display: block; margin: 0 auto;
+        border: 1px dashed var(--pv-line); border-radius: 999px; background: transparent;
+        color: var(--pv-soft); font: inherit; font-size: 0.85rem; padding: 0.45rem 1.1rem;
+        cursor: pointer;
+      }
+      .pv-along-add:hover { border-color: var(--pv-primary); color: var(--pv-primary); }
 
       .pv-add {
         border: 1px dashed var(--pv-line); border-radius: 10px; background: transparent;
@@ -2728,6 +2757,21 @@ if (cameFromOffer && openedSlug) {
               '</section>';
           }
 
+          case 'alongside': {
+            const list = section.partners || [];
+            return '<section class="pv-section">' +
+              ed(p + '.label', 'pv-label', 'p', section.label || 'Who we work with') +
+              ed(p + '.title', 'pv-h2', 'h2', section.title || 'We work alongside') +
+              (list.length
+                ? '<div class="pv-along">' + list.map((who, j) =>
+                    '<span class="pv-along-one" data-block="' + p + '.partners.' + j + '">' +
+                    esc(who.name || '') + '</span>').join('') + '</div>'
+                : '') +
+              '<button type="button" class="pv-along-add" data-add="' + p + '.partners">' +
+              (list.length ? '+ Add another' : '+ Add the first one') + '</button>' +
+              '</section>';
+          }
+
           case 'shop':
             // Products were the one list on the page you could not touch: no
             // block to select, so nothing to delete, and plain text rather
@@ -2862,6 +2906,9 @@ if (cameFromOffer && openedSlug) {
         if (S.editing) { S.renderQueued = true; return; }  // never yank the caret away
         const s = S.site;
         const root = $('site-root');
+
+        // Templates that are not built out of sections have no slot to show.
+        if (!['tribute', 'diet', 'chain', 'listing'].includes(s.style)) ensureAlongSlot();
 
         // Neither is a diary. What it shows is a tally of posts that live in
         // the database, not in the config, so the preview is the scoreboard
@@ -4114,6 +4161,95 @@ if (cameFromOffer && openedSlug) {
         } catch (e) { /* the field is still there to type in */ }
       }
 
+      /**
+       * "We work alongside". The slot always shows in the editor, even when
+       * the section is empty — the gap is the whole nudge. The public page
+       * only renders it once there is somebody in it.
+       */
+      let alongTarget = null;
+
+      function openAlong(path) {
+        alongTarget = path;
+        $('along-name').value = '';
+        $('along-contact').value = '';
+        $('along-msg').textContent = '';
+        $('along-save').disabled = true;
+        $('along-back').hidden = false;
+        setTimeout(() => $('along-name').focus(), 60);
+      }
+
+      function alongReady() {
+        $('along-save').disabled = !$('along-name').value.trim();
+      }
+
+      function saveAlong() {
+        const name = $('along-name').value.trim().slice(0, 60);
+        if (!name) return;
+        const spot = String(alongTarget || '').split('.');
+        const sec = S.site.sections[Number(spot[1])];
+        if (!sec) return;
+        snapshot();
+        if (!Array.isArray(sec.partners)) sec.partners = [];
+        sec.partners.push({ name: name, contact: $('along-contact').value.trim().slice(0, 120) });
+        renderedKeys = new Set();
+        render();
+        $('along-back').hidden = true;
+        // Future tense on purpose: nothing is sent until they publish.
+        did('Added ' + name);
+        say('Added. When you publish, we will make ' + name +
+            ' a page and let them know you put them there.');
+      }
+
+      /**
+       * Every site gets the slot whether or not the agent thought to add one.
+       * Kept out of the config until somebody uses it, so an untouched site
+       * never publishes an empty section.
+       */
+      function ensureAlongSlot() {
+        const list = S.site.sections || (S.site.sections = []);
+        if (list.some((x) => x && x.type === 'alongside')) return;
+        list.push({ type: 'alongside', label: 'Who we work with', title: 'We work alongside', partners: [] });
+      }
+
+      /**
+       * On publish, and only on publish: make a page for everybody they named
+       * and tell them about it. Typing a name into a site that never goes up
+       * must not put an email in somebody's inbox.
+       */
+      async function sendAlongside() {
+        if (!S.slug || !S.token) return;
+        const waiting = [];
+        (S.site.sections || []).forEach((sec) => {
+          if (sec && sec.type === 'alongside') {
+            (sec.partners || []).forEach((p) => { if (p && p.name && !p.slug) waiting.push(p); });
+          }
+        });
+        if (!waiting.length) return;
+        try {
+          const res = await fetch('/api/alongside', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: S.slug, key: S.token, partners: waiting }),
+          });
+          const data = await res.json();
+          if (!data || !data.ok) return;
+          // Fold the new addresses back in so the links work straight away.
+          (S.site.sections || []).forEach((sec) => {
+            if (!sec || sec.type !== 'alongside') return;
+            sec.partners = (sec.partners || []).map((p) => {
+              const found = data.partners.find((o) => o.name === p.name);
+              return found && found.slug ? { ...p, slug: found.slug, sent: !!found.sent } : p;
+            });
+          });
+          const told = data.partners.filter((p) => p.sent && p.slug).length;
+          if (told) {
+            say(told === 1
+              ? 'Told them they are on your page.'
+              : 'Told all ' + told + ' of them they are on your page.');
+          }
+        } catch (e) { /* their site is up; this can wait for the next publish */ }
+      }
+
       function blockAt(path) {
         const parts = String(path).split('.');
         const index = Number(parts[parts.length - 1]);
@@ -4302,7 +4438,12 @@ if (cameFromOffer && openedSlug) {
         // "+ Add item" sits inside the canvas, so it has to be caught before
         // the click turns into a selection.
         const add = e.target.closest('[data-add]');
-        if (add) { addTo(add.getAttribute('data-add')); return; }
+        if (add) {
+          const what = add.getAttribute('data-add');
+          if (/\.partners$/.test(what)) openAlong(what);
+          else addTo(what);
+          return;
+        }
 
         const text = e.target.closest('[data-edit]');
         const photo = e.target.closest('[data-photo]');
@@ -4336,6 +4477,13 @@ if (cameFromOffer && openedSlug) {
 
       $('meter-go').addEventListener('click', () => { $('meter-back').hidden = true; });
       $('meter-ask').addEventListener('click', openRefer);
+      $('along-cancel').addEventListener('click', () => { $('along-back').hidden = true; });
+      $('along-save').addEventListener('click', saveAlong);
+      $('along-name').addEventListener('input', alongReady);
+      $('along-contact').addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAlong(); });
+      $('along-back').addEventListener('click', (e) => {
+        if (e.target === $('along-back')) $('along-back').hidden = true;
+      });
       $('refer-cancel').addEventListener('click', () => { $('refer-back').hidden = true; });
       $('refer-close').addEventListener('click', () => { $('refer-back').hidden = true; });
       $('refer-again').addEventListener('click', openRefer);
@@ -4899,6 +5047,7 @@ if (cameFromOffer && openedSlug) {
         S.token = result.token;
         // Publishing is the other way somebody says a page is theirs.
         claimSite();
+        sendAlongside();
         try { localStorage.setItem('garage-build:' + S.slug, result.token); } catch (e) {}
 
         const url = result.url || ('https://' + S.slug + '.garage.co.nz');

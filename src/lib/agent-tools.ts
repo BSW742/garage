@@ -16,7 +16,7 @@ export interface ToolContext {
   ownImages: string[];
 }
 
-const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop', 'menu', 'conditions', 'steps', 'acc', 'area', 'credentials', 'specs', 'included', 'honest'];
+const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop', 'menu', 'conditions', 'steps', 'acc', 'area', 'credentials', 'specs', 'included', 'honest', 'alongside'];
 
 export const TOOLS = [
   {

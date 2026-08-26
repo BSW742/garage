@@ -28,6 +28,19 @@ export interface SiteSection {
   videoId?: string;
   videos?: string[];
   menu?: MenuGroup[];   // a cafe menu: courses, each with priced items
+  partners?: Partner[]; // "we work alongside" — other businesses they work with
+}
+
+/**
+ * Somebody they work with. The slug is filled in once we have made that
+ * business a page of their own, which happens on publish rather than on typing
+ * — nobody should be emailed about a site that was never put up.
+ */
+export interface Partner {
+  name: string;
+  contact?: string;    // phone, email or website — whatever they had to hand
+  slug?: string;       // their page here, once it exists
+  sent?: boolean;      // whether they have been told
 }
 export interface TeamMember {
   name?: string;
@@ -140,6 +153,12 @@ header.hero.photo .lede{color:rgba(255,255,255,.88)}
 header.hero.photo .btn.alt{color:#fff;border-color:rgba(255,255,255,.45)}
 section{padding:3.8rem 1.6rem}
 section.alt{background:var(--wash)}
+.alongside{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;list-style:none;
+margin-top:1.6rem}
+.alongside li{border:1px solid var(--line);border-radius:999px;padding:.5rem 1.1rem;
+background:var(--card);font-size:.93rem}
+.alongside a{color:var(--ink);border-bottom:0}
+.alongside a:hover{color:var(--primary)}
 .label{font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--primary);text-align:center;margin-bottom:.7rem}
 h2{font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.2rem);font-weight:700;letter-spacing:-.03em;text-align:center;margin-bottom:2rem}
 .grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
@@ -541,6 +560,22 @@ function sectionHtml(section: SiteSection, site: SiteConfig, anchor: string): st
             </div>`;
           })
           .join('')}</div></div></section>`;
+    case 'alongside': {
+      // Deliberately absent when empty. The builder sees the gap in the
+      // editor; a visitor should never see a hollow block on a live page.
+      const partners = (section.partners || []).filter((p) => p && p.name);
+      if (!partners.length) return '';
+      return `<section${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Who we work with')}</p>
+        <h2>${esc(section.title || 'We work alongside')}</h2>
+        <ul class="alongside">${partners
+          .map((p) => {
+            const inner = `<span>${esc(p.name)}</span>`;
+            return p.slug
+              ? `<li><a href="https://${esc(p.slug)}.garage.co.nz">${inner}</a></li>`
+              : `<li>${inner}</li>`;
+          })
+          .join('')}</ul></div></section>`;
+    }
     case 'pricing':
       return `<section class="alt"${anchor}><div class="wrap"><p class="label">${esc(section.label || 'Pricing')}</p>
         <h2>${esc(section.title || 'What it costs')}</h2><div class="rates">${(section.rows || [])
