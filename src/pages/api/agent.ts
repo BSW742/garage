@@ -486,7 +486,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // The running total for this site, read back after the row above so it
     // counts the turn that just happened. A failure here must never cost
     // somebody their reply, so it falls back to no meter at all.
-    let meter: { used: number; free: number; turn: number } | null = null;
+    let meter:
+      | { used: number; free: number; earned: number; pending: number; turn: number }
+      | null = null;
     try {
       const db = (locals.runtime?.env as any)?.DB;
       if (db && slug) {
@@ -497,9 +499,26 @@ export const POST: APIRoute = async ({ request, locals }) => {
           )
           .bind(slug)
           .first();
+        // Anything earned sits on top of the standing allowance, so putting a
+        // business forward visibly moves the number they are watching.
+        const extra = await db
+          .prepare('SELECT COALESCE(SUM(tokens), 0) AS n FROM token_grants WHERE slug = ?')
+          .bind(slug)
+          .first();
+        // Sent but not yet taken up. Worth showing: it is the reason to send
+        // another one, and it is honest about why nothing has landed yet.
+        const waiting = await db
+          .prepare(
+            `SELECT COUNT(*) AS n FROM site_claims
+              WHERE referred_by = ? AND referral_paid_at IS NULL`
+          )
+          .bind(slug)
+          .first();
         meter = {
           used: Number(row?.n || 0),
-          free: FREE_TOKENS,
+          free: FREE_TOKENS + Number(extra?.n || 0),
+          earned: Number(extra?.n || 0),
+          pending: Number(waiting?.n || 0),
           turn: spend.input + spend.output + spend.cacheRead + spend.cacheWrite,
         };
       }

@@ -227,3 +227,71 @@ export function offerEmail(
 
   return { subject: `I rebuilt ${label}'s website — have a look`, text, html };
 }
+
+
+/**
+ * A business putting another business forward. The important difference from
+ * offerEmail is whose name is at the top: somebody they know said this, and we
+ * only built the page. Lead with us and it reads as a cold pitch, which is
+ * exactly what it is not.
+ */
+export function referralEmail(
+  slug: string,
+  token: string,
+  name: string | undefined,
+  fromName: string,
+  unsubToken: string,
+  viewToken: string,
+  bonus: number
+) {
+  const site = `https://${slug}.garage.co.nz/?v=${encodeURIComponent(viewToken)}`;
+  const editor = `https://garage.co.nz/ai?edit=${encodeURIComponent(slug)}&t=${encodeURIComponent(token)}&src=owner`;
+  const unsub = `https://garage.co.nz/unsubscribe/${encodeURIComponent(slug)}?t=${encodeURIComponent(unsubToken)}`;
+  const label = name || slug;
+  const tidy = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  const text = [
+    `Kia ora,`,
+    '',
+    `${fromName} put ${label} forward, so we have made you a start of a website.`,
+    'It is here:',
+    '',
+    `    ${site}`,
+    '',
+    'It is yours if you want it. Nothing to install, nothing to pay, and you',
+    'change it by typing what you want in plain words:',
+    '',
+    `    ${editor}`,
+    '',
+    `Because ${fromName} vouched for you, there is ${tidy(bonus)} of free use on it`,
+    'rather than the usual amount.',
+    '',
+    'If you would rather it did not exist, say so with the link at the bottom',
+    'and it comes down. We will not chase you.',
+    '',
+    'Ben',
+    'garage.co.nz',
+    '',
+    '—',
+    `${fromName} put you forward. We only built the page.`,
+    `Not interested in hearing from us again? ${unsub}`,
+  ].join('\n');
+
+  const esc = (v: string) =>
+    String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+
+  const html = `<div style="font-family:-apple-system,Segoe UI,Inter,sans-serif;font-size:15px;line-height:1.65;color:#14161a;max-width:34rem">
+<p>Kia ora,</p>
+<p><b>${esc(fromName)}</b> put <b>${esc(label)}</b> forward, so we have made you a start of a website. It is here:</p>
+<p><a href="${esc(site)}" style="display:inline-block;background:#1f6feb;color:#fff;text-decoration:none;padding:.75rem 1.4rem;border-radius:8px;font-weight:600">${esc(slug)}.garage.co.nz</a></p>
+<p>It is yours if you want it. Nothing to install, nothing to pay, and you change it by typing what you want in plain words: <a href="${esc(editor)}">edit your site</a>.</p>
+<p>Because ${esc(fromName)} vouched for you, there is <b>${esc(tidy(bonus))}</b> of free use on it rather than the usual amount.</p>
+<p>If you would rather it did not exist, say so with the link below and it comes down. We will not chase you.</p>
+<p>Ben<br />garage.co.nz</p>
+<hr style="border:0;border-top:1px solid #e6e8ec;margin:1.5rem 0" />
+<p style="font-size:12px;color:#6b7280">${esc(fromName)} put you forward. We only built the page.<br />
+Not interested in hearing from us again? <a href="${esc(unsub)}">unsubscribe</a>.</p>
+</div>`;
+
+  return { subject: `${fromName} put ${label} forward`, text, html };
+}

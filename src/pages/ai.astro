@@ -184,7 +184,35 @@ if (cameFromOffer && openedSlug) {
         <p class="meter-say" id="meter-say"></p>
         <div class="meter-do">
           <button type="button" class="meter-go" id="meter-go">Keep going</button>
-          <a class="meter-ask" id="meter-ask" href="mailto:admin@garage.co.nz?subject=More%20tokens" hidden>Ask for more</a>
+          <button type="button" class="meter-ask" id="meter-ask">Earn more</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="meter-back" id="refer-back" hidden>
+      <div class="meter-card" role="dialog" aria-modal="true" aria-labelledby="refer-title">
+        <div id="refer-form">
+          <p class="meter-eyebrow">Earn more</p>
+          <h2 id="refer-title">Put a business forward</h2>
+          <p class="meter-say">Somebody you actually use — your sparkie, your supplier, the
+            cafe you get your coffee from. We build them a page with your name on it and tell
+            them you said so. When they take it, you get 250,000 tokens.</p>
+          <input type="text" id="refer-name" maxlength="60" placeholder="Their business name" />
+          <input type="email" id="refer-email" maxlength="120" placeholder="Their email" />
+          <div class="meter-do">
+            <button type="button" class="meter-go" id="refer-send" disabled>Send it</button>
+            <button type="button" class="meter-quiet" id="refer-cancel">Not now</button>
+          </div>
+          <p class="meter-msg" id="refer-msg"></p>
+        </div>
+        <div id="refer-done" class="meter-hide">
+          <p class="meter-eyebrow">Sent</p>
+          <h2 id="refer-done-title">On its way</h2>
+          <p class="meter-say" id="refer-done-say"></p>
+          <div class="meter-do">
+            <button type="button" class="meter-go" id="refer-again">Put another forward</button>
+            <button type="button" class="meter-quiet" id="refer-close">Done</button>
+          </div>
         </div>
       </div>
     </div>
@@ -983,6 +1011,19 @@ if (cameFromOffer && openedSlug) {
         padding: 0.75rem 1.6rem; font-weight: 600; text-decoration: none;
       }
       .meter-ask[hidden] { display: none; }
+      .meter-quiet {
+        background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+        border-radius: 999px; padding: 0.75rem 1.4rem; font: inherit; font-weight: 600;
+        cursor: pointer;
+      }
+      .meter-quiet:hover { color: var(--text); border-color: var(--text-muted); }
+      .meter-card input[type=text], .meter-card input[type=email] {
+        width: 100%; margin-top: 0.6rem; background: var(--bg); border: 1px solid var(--border);
+        border-radius: 12px; padding: 0.75rem 0.9rem; font: inherit; font-size: 0.95rem;
+        color: var(--text);
+      }
+      .meter-card input::placeholder { color: var(--text-muted); }
+      .meter-hide { display: none; }
       @media (prefers-reduced-motion: reduce) { .meter-bar i { transition: none; } }
 
       .media-back {
@@ -1948,6 +1989,11 @@ if (cameFromOffer && openedSlug) {
             $('chrome-url').textContent = S.slug + '.garage.co.nz';
             renderedKeys = new Set();
             render();
+
+            // Arriving on their private link is the owner. The token only ever
+            // went to their address, so holding it is the claim — and it is
+            // what pays whoever put them forward.
+            if (S.token && params.get('src') === 'owner') claimSite();
 
             await wait(300);
             await say(
@@ -3787,13 +3833,22 @@ if (cameFromOffer && openedSlug) {
           ? 'You have used it all'
           : commas(used) + ' tokens in';
         $('meter-count').innerHTML = commas(used) + ' <span>of ' + commas(free) + '</span>';
+        const earned = (S.usage && S.usage.earned) || 0;
+        const pending = (S.usage && S.usage.pending) || 0;
+        const waiting = pending
+          ? ' ' + pending + (pending === 1 ? ' business you put forward has' : ' businesses you put forward have') +
+            ' not taken their page yet.'
+          : '';
+
         $('meter-say').textContent = full
           ? 'Your site stays live and everything on it is yours — nothing switches off. ' +
-            'To keep building with the agent, get in touch and we will sort more out.'
+            'To keep building, put a business you use forward: 250,000 tokens when they take their page.' + waiting
           : 'That is roughly ' + inChanges(used) + ' changes so far. ' +
-            commas(free - used) + ' left, which is plenty.';
+            commas(free - used) + ' left' +
+            (earned ? ', including ' + commas(earned) + ' you have earned.' : ', which is plenty.') +
+            waiting;
         $('meter-go').textContent = full ? 'Not now' : 'Keep going';
-        $('meter-ask').hidden = !full;
+        $('meter-ask').textContent = full ? 'Put a business forward' : 'Earn more';
 
         back.hidden = false;
         // Let the bar animate from empty rather than appearing already full.
@@ -3803,10 +3858,82 @@ if (cameFromOffer && openedSlug) {
 
       function checkMeter(usage) {
         if (!usage || !usage.free) return;
+        S.usage = usage;
         const step = Math.floor(usage.used / METER_STEP);
         if (step < 1 || step <= meterSeen()) return;
         meterRemember(step);
         showMeter(usage.used, usage.free);
+      }
+
+      /**
+       * Quietly mark the site as theirs. Idempotent server-side, so calling it
+       * on every owner visit and again on publish costs nothing.
+       */
+      function claimSite() {
+        if (!S.slug || !S.token) return;
+        fetch('/api/site/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: S.slug, key: S.token }),
+        }).catch(() => {});
+      }
+
+      // ── Putting a business forward ──────────────────────────────────────
+      function openRefer() {
+        $('meter-back').hidden = true;
+        if (!S.slug || !S.token) {
+          say('Publish this one first — then you can put other businesses forward from it.');
+          return;
+        }
+        $('refer-form').classList.remove('meter-hide');
+        $('refer-done').classList.add('meter-hide');
+        $('refer-msg').textContent = '';
+        $('refer-name').value = '';
+        $('refer-email').value = '';
+        $('refer-send').disabled = true;
+        $('refer-back').hidden = false;
+        setTimeout(() => $('refer-name').focus(), 60);
+      }
+
+      function referReady() {
+        const name = $('refer-name').value.trim();
+        const email = $('refer-email').value.trim();
+        $('refer-send').disabled = !(name && /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email));
+      }
+
+      async function sendRefer() {
+        const btn = $('refer-send');
+        if (btn.disabled) return;
+        btn.disabled = true;
+        $('refer-msg').textContent = 'Sending…';
+        try {
+          const res = await fetch('/api/refer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              slug: S.slug,
+              key: S.token,
+              name: $('refer-name').value,
+              email: $('refer-email').value,
+            }),
+          });
+          const data = await res.json();
+          if (!data || !data.ok) {
+            $('refer-msg').textContent = (data && data.error) || 'That did not send, sorry.';
+            btn.disabled = false;
+            return;
+          }
+          $('refer-form').classList.add('meter-hide');
+          $('refer-done').classList.remove('meter-hide');
+          $('refer-done-title').textContent = 'Sent to ' + data.name;
+          $('refer-done-say').textContent =
+            commas(data.reward) + ' tokens land the moment they take their page. ' +
+            'Nothing to chase — we will tell you when it happens.';
+          did('Put ' + data.name + ' forward');
+        } catch (e) {
+          $('refer-msg').textContent = 'That did not send, sorry.';
+          btn.disabled = false;
+        }
       }
 
       function labelFor(path) {
@@ -4208,6 +4335,19 @@ if (cameFromOffer && openedSlug) {
       $('target-clear').addEventListener('click', () => { clearSelection(); $('agent-text').focus(); });
 
       $('meter-go').addEventListener('click', () => { $('meter-back').hidden = true; });
+      $('meter-ask').addEventListener('click', openRefer);
+      $('refer-cancel').addEventListener('click', () => { $('refer-back').hidden = true; });
+      $('refer-close').addEventListener('click', () => { $('refer-back').hidden = true; });
+      $('refer-again').addEventListener('click', openRefer);
+      $('refer-send').addEventListener('click', sendRefer);
+      $('refer-name').addEventListener('input', referReady);
+      $('refer-email').addEventListener('input', referReady);
+      $('refer-email').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') sendRefer();
+      });
+      $('refer-back').addEventListener('click', (e) => {
+        if (e.target === $('refer-back')) $('refer-back').hidden = true;
+      });
       $('meter-back').addEventListener('click', (e) => {
         if (e.target === $('meter-back')) $('meter-back').hidden = true;
       });
@@ -4757,6 +4897,8 @@ if (cameFromOffer && openedSlug) {
         }
 
         S.token = result.token;
+        // Publishing is the other way somebody says a page is theirs.
+        claimSite();
         try { localStorage.setItem('garage-build:' + S.slug, result.token); } catch (e) {}
 
         const url = result.url || ('https://' + S.slug + '.garage.co.nz');
