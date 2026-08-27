@@ -57,8 +57,15 @@ header b{font-size:1rem}
 header span{font-size:.8rem;color:var(--soft)}
 header button{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 main{flex:1;overflow-y:auto}
-.row{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:.85rem 1rem;cursor:pointer;font:inherit}
-.row:hover{background:#fafbfd}
+.row-wrap{position:relative;border-bottom:1px solid var(--line);background:#fff}
+.row{display:block;width:100%;text-align:left;border:0;background:transparent;padding:.85rem 3rem .85rem 1rem;cursor:pointer;font:inherit}
+.bin{position:absolute;right:.55rem;top:50%;transform:translateY(-50%);border:0;background:none;
+color:var(--soft);cursor:pointer;padding:.4rem .5rem;border-radius:8px;font:inherit;font-size:.78rem;
+display:inline-flex;align-items:center;line-height:1}
+.bin:hover{color:#dc2626;background:#fef2f2}
+.bin.armed{color:#fff;background:#dc2626}
+.bin[disabled]{opacity:.6;cursor:default}
+.row-wrap:hover{background:#fafbfd}
 .row b{display:block;font-size:.92rem}
 .row p{margin:.2rem 0 0;font-size:.85rem;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .ago{float:right;font-size:.72rem;color:var(--soft);font-weight:400}
@@ -163,6 +170,9 @@ async function list(){
   }
   main.innerHTML = '';
   data.threads.forEach(function(t){
+    var wrap = document.createElement('div');
+    wrap.className = 'row-wrap';
+
     var b = document.createElement('button');
     b.className = 'row';
     var waiting = t.last_sender === 'visitor';
@@ -173,9 +183,47 @@ async function list(){
     p.textContent = t.last_body || '';
     b.appendChild(p);
     b.addEventListener('click', function(){ show(t); });
-    main.appendChild(b);
+    wrap.appendChild(b);
+
+    // Two taps, not one. A bin on a phone is easy to catch by accident, and
+    // behind it is somebody's phone number.
+    var bin = document.createElement('button');
+    bin.className = 'bin';
+    bin.title = 'Delete this conversation';
+    bin.setAttribute('aria-label', 'Delete this conversation');
+    bin.innerHTML = TRASH;
+    var armed = false, timer = null;
+    bin.addEventListener('click', async function(e){
+      e.stopPropagation();
+      if (!armed) {
+        armed = true;
+        bin.classList.add('armed');
+        bin.textContent = 'Delete?';
+        timer = setTimeout(function(){
+          armed = false; bin.classList.remove('armed'); bin.innerHTML = TRASH;
+        }, 3000);
+        return;
+      }
+      clearTimeout(timer);
+      bin.disabled = true;
+      bin.textContent = '…';
+      var res = await fetch(API + '/api/chat/delete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: SLUG, key: key, threadId: t.id })
+      });
+      if (res.ok) { wrap.remove(); if (!main.querySelector('.row-wrap')) list(); }
+      else { bin.disabled = false; bin.innerHTML = TRASH; bin.classList.remove('armed'); armed = false; }
+    });
+    wrap.appendChild(bin);
+
+    main.appendChild(wrap);
   });
 }
+
+var TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+  '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/>' +
+  '<path d="M10 11v6M14 11v6"/></svg>';
 
 function escapeHtml(v){ var d = document.createElement('div'); d.textContent = v; return d.innerHTML; }
 

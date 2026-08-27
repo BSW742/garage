@@ -56,7 +56,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
                 (SELECT body FROM chat_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_body,
                 (SELECT sender FROM chat_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender
            FROM chat_threads t
-          WHERE t.slug = ?
+          WHERE t.slug = ? AND t.status != 'deleted'
           ORDER BY t.last_message_at DESC
           LIMIT 50`
       )
