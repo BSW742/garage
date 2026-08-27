@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { json, preflight, cleanSlug, nowIso, replyTimeLabel } from '../../../lib/chat';
 import { sendPushToAll } from '../../../lib/web-push';
 import { sendMail, ownerContact } from '../../../lib/mail';
+import { askBot, briefFor, withinCaps, BOT_SENDER, BOT_MODEL } from '../../../lib/chat-bot';
+import { ONLINE_WINDOW_MS } from './presence';
 
 const MAX_BODY = 2000;
 
@@ -35,6 +37,81 @@ async function notifyOwner(
   } catch {
     // Same again: the message is already saved.
   }
+}
+
+/**
+ * Answer the visitor, if we are allowed to spend anything on it.
+ *
+ * The order matters. Caps are checked before the config is even loaded, so a
+ * site that has run out costs one cheap COUNT and nothing else.
+ */
+async function maybeAnswer(
+  db: any, env: any, slug: string, threadId: string
+): Promise<{ body: string; handOver: boolean } | null> {
+  const allowed = await withinCaps(db, slug, threadId);
+  if (!allowed.ok) return null;
+
+  const site = await db
+    .prepare("SELECT config, chat_online_at FROM site_claims WHERE slug = ? AND status != 'disabled'")
+    .bind(slug)
+    .first();
+  if (!site?.config) return null;
+
+  let config: any;
+  try { config = JSON.parse(String(site.config)); } catch { return null; }
+  // The owner turned the widget off; nothing here should be running.
+  if (!config.chat) return null;
+
+  const stamp = Date.parse(String(site.chat_online_at || ''));
+  const online = Number.isFinite(stamp) && Date.now() - stamp < ONLINE_WINDOW_MS;
+
+  const { results } = await db
+    .prepare(
+      'SELECT sender, body FROM chat_messages WHERE thread_id = ? ORDER BY id DESC LIMIT 8'
+    )
+    .bind(threadId)
+    .all();
+  const history = (results || []).reverse();
+
+  const turn = await askBot(env, briefFor(config, slug, online), history);
+  if (!turn) return null;
+
+  // What happens next is a fact about this site, not a guess. The owner has
+  // already been notified above, so saying so is true either way.
+  const tail = turn.handOver
+    ? online
+      ? ' They are online now, so should pick this up shortly.'
+      : ' I have passed this to them and they will come back to you.'
+    : '';
+
+  const body = (turn.reply + tail).slice(0, 900);
+  const now = nowIso();
+
+  // Logged beside the builder's spend so both show up in one place. Failing to
+  // record it must not cost the visitor their answer.
+  try {
+    await db
+      .prepare(
+        `INSERT INTO agent_usage
+           (id, slug, model, steps, input_tokens, output_tokens, cache_read, cache_write,
+            message_chars, created_at)
+         VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        crypto.randomUUID(), slug, BOT_MODEL,
+        turn.usage.input, turn.usage.output, turn.usage.cacheRead, turn.usage.cacheWrite,
+        body.length, now
+      )
+      .run();
+  } catch (error) {
+    console.error('Assistant usage log failed:', error);
+  }
+  await db
+    .prepare('INSERT INTO chat_messages (thread_id, sender, body, created_at) VALUES (?, ?, ?, ?)')
+    .bind(threadId, BOT_SENDER, body, now)
+    .run();
+
+  return { body, handOver: turn.handOver };
 }
 
 export const OPTIONS: APIRoute = async () => preflight();
@@ -106,7 +183,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     await notifyOwner(db, (locals.runtime?.env as any) || {}, slug, text, startedNow);
 
-    return json({ threadId: id, replyTime: await replyTimeLabel(db, slug) });
+    // Everything above has already happened: the message is stored and the
+    // owner has been told. The assistant is a bonus on top, so every failure
+    // from here down is swallowed — a visitor must never lose a message
+    // because a model was slow.
+    let bot: { body: string; handOver: boolean } | null = null;
+    try {
+      bot = await maybeAnswer(db, (locals.runtime?.env as any) || {}, slug, id);
+    } catch (error) {
+      console.error('Assistant skipped:', error);
+    }
+
+    return json({
+      threadId: id,
+      replyTime: await replyTimeLabel(db, slug),
+      bot: bot ? { body: bot.body, handOver: bot.handOver } : undefined,
+    });
   } catch (error) {
     console.error('Chat send error:', error);
     return json({ error: 'Could not send that message' }, 500);

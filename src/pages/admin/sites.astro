@@ -32,33 +32,59 @@ if (db) {
 // What the builder agent has cost lately. Prices are per million tokens for
 // the model in use; they are here so the number means something at a glance,
 // and they will need editing if the model or its pricing changes.
-const PER_MILLION_IN = 5;
-const PER_MILLION_OUT = 25;
+// Priced per model, because two different models write to this table now: the
+// builder on Opus and the site assistant on Sonnet. One flat rate quietly
+// overstated the chat by two thirds.
+const RATES: Record<string, { in: number; out: number; cacheRead: number }> = {
+  'claude-opus-5': { in: 5, out: 25, cacheRead: 0.5 },
+  'claude-sonnet-5': { in: 3, out: 15, cacheRead: 0.3 },
+};
+const RATE_FALLBACK = { in: 5, out: 25, cacheRead: 0.5 };
 
 let spend: any = null;
 if (db) {
   try {
     const row = await db.prepare(`
-      SELECT COUNT(*) AS turns,
+      SELECT model,
+             COUNT(*) AS turns,
              COALESCE(SUM(steps), 0) AS steps,
              COALESCE(SUM(input_tokens), 0) AS input,
-             COALESCE(SUM(output_tokens), 0) AS output
+             COALESCE(SUM(output_tokens), 0) AS output,
+             COALESCE(SUM(cache_read), 0) AS cache_read
       FROM agent_usage
       WHERE created_at > datetime('now', '-7 days')
-    `).first();
+      GROUP BY model
+    `).all();
     const today = await db.prepare(`
-      SELECT COUNT(*) AS turns,
+      SELECT model,
+             COUNT(*) AS turns,
              COALESCE(SUM(input_tokens), 0) AS input,
-             COALESCE(SUM(output_tokens), 0) AS output
+             COALESCE(SUM(output_tokens), 0) AS output,
+             COALESCE(SUM(cache_read), 0) AS cache_read
       FROM agent_usage
       WHERE created_at > datetime('now', '-1 day')
-    `).first();
-    const cost = (r: any) =>
-      ((r?.input || 0) / 1e6) * PER_MILLION_IN + ((r?.output || 0) / 1e6) * PER_MILLION_OUT;
-    spend = {
-      week: { ...(row as any), cost: cost(row) },
-      today: { ...(today as any), cost: cost(today) },
+      GROUP BY model
+    `).all();
+    const cost = (rows: any) => {
+      const list = Array.isArray(rows) ? rows : [rows];
+      return list.reduce((sum, r) => {
+        const rate = RATES[String(r?.model || '')] || RATE_FALLBACK;
+        return sum
+          + ((r?.input || 0) / 1e6) * rate.in
+          + ((r?.output || 0) / 1e6) * rate.out
+          + ((r?.cache_read || 0) / 1e6) * rate.cacheRead;
+      }, 0);
     };
+    const roll = (r: any) => {
+      const rows = (r?.results || []) as any[];
+      const sum = (k: string) => rows.reduce((n, x) => n + Number(x[k] || 0), 0);
+      return {
+        turns: sum('turns'), steps: sum('steps'), input: sum('input'), output: sum('output'),
+        cost: cost(rows),
+        chat: rows.filter((x) => x.model === 'claude-sonnet-5').reduce((n, x) => n + Number(x.turns || 0), 0),
+      };
+    };
+    spend = { week: roll(row), today: roll(today) };
   } catch (e) {
     spend = null;
   }
@@ -111,7 +137,8 @@ function summarise(site: any) {
 
     {spend && spend.week.turns > 0 && (
       <div class="spend">
-        <span><b>{spend.today.turns}</b> agent messages today · <b>${spend.today.cost.toFixed(2)}</b></span>
+        <span><b>{spend.today.turns}</b> messages today · <b>${spend.today.cost.toFixed(2)}</b>
+          {spend.today.chat > 0 && <span class="muted"> ({spend.today.chat} from site chat)</span>}</span>
         <span><b>{spend.week.turns}</b> this week · <b>${spend.week.cost.toFixed(2)}</b></span>
         <span class="muted small">
           {spend.week.turns > 0 && (

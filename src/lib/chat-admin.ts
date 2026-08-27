@@ -74,6 +74,9 @@ display:inline-flex;align-items:center;line-height:1}
 .m{max-width:78%;padding:.6rem .85rem;border-radius:14px;font-size:.95rem;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
 .them{align-self:flex-start;background:#fff;border:1px solid var(--line)}
 .me{align-self:flex-end;background:var(--accent);color:#fff}
+.m.bot{align-self:flex-end;background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+.m.bot:before{content:'Assistant';display:block;font-size:.62rem;letter-spacing:.1em;
+text-transform:uppercase;font-weight:700;opacity:.65;margin-bottom:.2rem}
 form{display:flex;gap:.5rem;padding:.75rem;background:#fff;border-top:1px solid var(--line)}
 /* display:flex on the element beats the browser's own [hidden] rule, so the
    reply box was showing on views with nothing to reply to. */
@@ -89,7 +92,13 @@ button.send{border:0;background:var(--accent);color:#fff;font:inherit;font-weigh
 .order ul{margin:.5rem 0 0;padding-left:1.1rem;font-size:.85rem}
 .order .total{display:block;margin-top:.4rem;font-weight:700;color:var(--accent)}
 .order .note-text{margin:.4rem 0 0;font-size:.82rem;color:var(--soft);font-style:italic}
-#signups-tab{margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+#here-tab{margin-left:auto;display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--line);
+background:#fff;color:var(--soft);font:inherit;font-size:.8rem;padding:.35rem .7rem;border-radius:999px;
+cursor:pointer}
+#here-tab i{width:.5rem;height:.5rem;border-radius:50%;background:#cbd5e1;display:block}
+#here-tab.on{border-color:#16a34a;color:#166534;background:#f0fdf4}
+#here-tab.on i{background:#16a34a}
+#signups-tab{margin-left:.4rem;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
 font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 .camp{border-bottom:1px solid var(--line);background:#fff;padding:.9rem 1rem}
 .camp b{font-size:.95rem;display:block}
@@ -111,6 +120,8 @@ font-size:.8rem;padding:.35rem .7rem;border-radius:999px;cursor:pointer}
 <body>
 <header>
   <div><b id="title">Messages</b><br /><span id="sub">${slug}.garage.co.nz</span></div>
+  <button id="here-tab" title="While this is on, visitors are told you are here">
+    <i></i><span>Away</span></button>
   <button id="signups-tab">Sign-ups</button>
   <button id="orders-tab">Orders</button>
   <button id="back" hidden>All messages</button>
@@ -241,7 +252,10 @@ async function show(t){
   log.className = 'log';
   data.messages.forEach(function(m){
     var d = document.createElement('div');
-    d.className = 'm ' + (m.sender === 'owner' ? 'me' : 'them');
+    // Three senders now, not two. An owner scanning a thread has to be able to
+    // see at a glance which lines were theirs, which were the visitor's, and
+    // which the assistant sent on their behalf.
+    d.className = 'm ' + (m.sender === 'owner' ? 'me' : m.sender === 'bot' ? 'bot' : 'them');
     d.textContent = m.body;
     log.appendChild(d);
   });
@@ -275,6 +289,50 @@ document.getElementById('orders-tab').addEventListener('click', async function()
     main.appendChild(el);
   });
 });
+
+// Presence is a heartbeat, not a flag. If the tab is closed or the laptop is
+// shut the stamp goes stale on its own within ninety seconds, so nobody is
+// ever promised a person who walked away.
+(function(){
+  var here = document.getElementById('here-tab');
+  var label = here.querySelector('span');
+  var beating = null;
+  var on = false;
+
+  async function beat(state){
+    if (!key) return;
+    try {
+      await fetch(API + '/api/chat/presence', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: SLUG, key: key, on: state })
+      });
+    } catch (e) { /* the next beat will do */ }
+  }
+
+  function set(next){
+    on = next;
+    here.classList.toggle('on', on);
+    label.textContent = on ? 'Here' : 'Away';
+    try { localStorage.setItem('garage-here:' + SLUG, on ? '1' : ''); } catch (e) {}
+    if (beating) { clearInterval(beating); beating = null; }
+    if (on) { beat(true); beating = setInterval(function(){ beat(true); }, 30000); }
+    else beat(false);
+  }
+
+  here.addEventListener('click', function(){ set(!on); });
+  try { if (localStorage.getItem('garage-here:' + SLUG)) set(true); } catch (e) {}
+
+  // Leaving the page stands somebody down straight away rather than waiting
+  // for the stamp to rot.
+  window.addEventListener('pagehide', function(){
+    if (!on || !key) return;
+    try {
+      navigator.sendBeacon(API + '/api/chat/presence',
+        new Blob([JSON.stringify({ slug: SLUG, key: key, on: false })],
+          { type: 'application/json' }));
+    } catch (e) {}
+  });
+})();
 
 document.getElementById('signups-tab').addEventListener('click', async function(){
   if (!key) return noKey();

@@ -987,11 +987,19 @@ form.addEventListener('submit', async function(e){
       threadId = data.threadId;
       try { localStorage.setItem(KEY, threadId); } catch (e) {}
       if (data.replyTime) { replyTime = data.replyTime; setSub(); }
-      if (isNew && !asked) {
+      // Straight in rather than waiting for the next poll. The whole point of
+      // answering is that it is immediate.
+      if (data.bot && data.bot.body) {
+        setTimeout(function(){ say(data.bot.body, false); }, 350);
+      }
+      // Only ask for a phone number when a person will actually need it. If
+      // the assistant answered and did not hand over, they have what they came
+      // for and being asked for contact details is just a form appearing.
+      if (isNew && !asked && !(data.bot && !data.bot.handOver)) {
         asked = true;
         setTimeout(function(){
           say('Thanks — what is the best phone or email to reach you on, in case we miss you here?', false);
-        }, 400);
+        }, data.bot ? 1400 : 400);
       }
     }
   } catch (e) {
