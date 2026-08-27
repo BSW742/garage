@@ -219,6 +219,13 @@ function summarise(site: any) {
                   class="act edit"
                 >Edit</a>
                 {site.edit_token && (
+                  <button
+                    class="act copy"
+                    data-link={`https://garage.co.nz/ai?edit=${encodeURIComponent(site.slug)}&t=${encodeURIComponent(site.edit_token)}&src=owner`}
+                    title="Copy the link that lets the owner edit this site"
+                  >Copy link</button>
+                )}
+                {site.edit_token && (
                   <a
                     href={`https://${site.slug}.garage.co.nz/admin?k=${site.edit_token}`}
                     target="_blank"
@@ -308,6 +315,34 @@ function summarise(site: any) {
 
   // Sending is one click, but never a silent one — it asks first, because this
   // goes to a real business who has not heard of us.
+  // The owner's own editor link. It carries the edit token and src=owner, so
+  // opening it both lets them in and marks the site as claimed — which is also
+  // what pays out a referral. Copying the Edit href by hand loses the src.
+  document.querySelectorAll('button.act.copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const link = btn.getAttribute('data-link') || '';
+      const said = btn.textContent;
+      const done = () => {
+        btn.textContent = 'Copied';
+        btn.classList.add('done');
+        setTimeout(() => { btn.textContent = said; btn.classList.remove('done'); }, 1600);
+      };
+      try {
+        await navigator.clipboard.writeText(link);
+        done();
+      } catch (e) {
+        // Clipboard is blocked without https or a user gesture in some setups;
+        // fall back to selecting it so cmd-C still works.
+        const box = document.createElement('input');
+        box.value = link;
+        document.body.appendChild(box);
+        box.select();
+        try { document.execCommand('copy'); done(); } catch (e2) { box.focus(); }
+        setTimeout(() => box.remove(), 100);
+      }
+    });
+  });
+
   document.querySelectorAll('button.act.send').forEach((el) => {
     const btn = el as HTMLButtonElement;
     btn.addEventListener('click', async () => {
@@ -423,6 +458,8 @@ function summarise(site: any) {
   .act.icon { display: inline-flex; align-items: center; padding: 0.3rem 0.5rem; }
   .act.icon svg { display: block; }
   button.act.chat { cursor: pointer; font: inherit; }
+  button.act.copy { cursor: pointer; font: inherit; }
+  button.act.copy.done { background: #16a34a; border-color: #16a34a; color: #fff; }
   button.act.chat.on { background: #16a34a; border-color: #16a34a; color: #fff; }
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
   h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
