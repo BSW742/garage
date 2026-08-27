@@ -147,6 +147,7 @@ if (cameFromOffer && openedSlug) {
                 <button class="tone style" data-style="chain">Chain</button>
                 <button class="tone style" data-style="bubbles">Bubbles</button>
                 <button class="tone style" data-style="game">Game</button>
+                <button class="tone style" data-style="eggs">Producer</button>
               </div>
               <div class="paint-row" id="swatches"></div>
               <div class="paint-row tones">
@@ -3227,7 +3228,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -3884,7 +3885,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles" or "game" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game" or "producer" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4675,6 +4676,7 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
         listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
+        eggs: 'For people who make a thing rather than do a job — the range, the certifications, the numbers, and where to buy it. Cream and warm orange.',
         game: 'Space Invaders, where the invaders are what you do — shoot one and it tells you what it was. Everything is written out plainly underneath.',
         bubbles: 'A gallery that floats — every picture is a bubble, and bursting one tells you what it is. For makers, artists and anyone whose work is the pitch.',
         chain: 'A collective message for one person — it collects until it hits a target, and nobody can read a word until it does.',

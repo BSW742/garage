@@ -117,6 +117,19 @@ Campaign pages (set_rally):
 - Sign-ups are a name and an email. The page shows first names only and never shows an email, and
   that promise is printed on the page — do not write copy that contradicts it.
 
+The producer template:
+- Style "eggs" is for businesses that make a thing rather than do a job: orchards, honey,
+  free-range eggs, cheese, olive oil, brewers, growers, anyone whose product sits on somebody
+  else's shelf. Cream and warm orange, a headline broken over three lines, the range as cards.
+- Nobody is ringing a producer for a quote, so the page answers three things in order: what is
+  it, why is it better than the one next to it, and where do I get it.
+- Each thing they make goes in products with a photo, a name, a line and a price. Certifications
+  go in a credentials section, the numbers in a specs section, and the stockists in the "who we
+  work alongside" section — on this template it renders as "Where to find us".
+- Be careful with certifications. In New Zealand "organic", "free range" and "Blue Tick" are
+  claims with legal weight, so write the certifying body and never invent one. If they have not
+  said who certifies them, ask rather than guess.
+
 The game template:
 - Style "game" turns the page into Space Invaders where every invader is one thing the business
   does. Shoot one and it tells you what it was. It suits arcades, game studios, escape rooms,
