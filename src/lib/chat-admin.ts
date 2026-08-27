@@ -189,7 +189,7 @@ async function list(){
     var waiting = t.last_sender === 'visitor';
     b.innerHTML = '<span class="ago">' + ago(t.last_message_at) + '</span><b>' +
       (waiting ? '<span class="dot"></span>' : '') +
-      escapeHtml(t.visitor_name || 'Someone on your site') + '</b>';
+      escapeHtml(t.visitor_name || 'Name not given') + '</b>';
     var p = document.createElement('p');
     p.textContent = t.last_body || '';
     b.appendChild(p);

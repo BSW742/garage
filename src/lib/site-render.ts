@@ -998,7 +998,7 @@ form.addEventListener('submit', async function(e){
       if (isNew && !asked && !(data.bot && !data.bot.handOver)) {
         asked = true;
         setTimeout(function(){
-          say('Thanks — what is the best phone or email to reach you on, in case we miss you here?', false);
+          say('Thanks — who am I speaking with, and what is the best phone or email to reach you on?', false);
         }, data.bot ? 1400 : 400);
       }
     }

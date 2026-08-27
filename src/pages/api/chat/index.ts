@@ -73,8 +73,28 @@ async function maybeAnswer(
     .all();
   const history = (results || []).reverse();
 
-  const turn = await askBot(env, briefFor(config, slug, online), history);
+  const thread = await db
+    .prepare('SELECT visitor_name FROM chat_threads WHERE id = ?')
+    .bind(threadId)
+    .first();
+  const known = String(thread?.visitor_name || '').trim() || null;
+
+  const turn = await askBot(env, briefFor(config, slug, online), history, known);
   if (!turn) return null;
+
+  // A name, asked for in conversation rather than in a form. "Someone on your
+  // site" is a poor thing to greet an owner with when the person is right
+  // there and happy to say who they are.
+  if (turn.name && !known) {
+    try {
+      await db
+        .prepare('UPDATE chat_threads SET visitor_name = ? WHERE id = ? AND visitor_name IS NULL')
+        .bind(turn.name, threadId)
+        .run();
+    } catch (error) {
+      console.error('Could not save the visitor name:', error);
+    }
+  }
 
   // What happens next is a fact about this site, not a guess. The owner has
   // already been notified above, so saying so is true either way.

@@ -44,6 +44,7 @@ const MAX_BRIEF = 2400;
 export interface BotTurn {
   reply: string;
   handOver: boolean;      // stop answering, this needs the owner
+  name?: string;          // what they said they are called, if they said
   // Returned so the caller can log it. A cap you cannot see the cost of is
   // only half an answer to "no unknown token costs".
   usage: { input: number; output: number; cacheRead: number; cacheWrite: number };
@@ -110,6 +111,11 @@ Hand over to the owner when: they ask for a person, they want to book or buy or 
 are upset, they have asked something twice, or you simply do not know. To hand over, end your
 reply with the single token [HANDOVER] on its own. Do not mention that token otherwise.
 
+If you have not been told their name yet, ask for it once, in your first reply, as part of a
+normal sentence — "I'm the assistant here, who am I speaking with?" — and never ask twice. The
+moment they tell you, put it on its own line at the very end as [NAME:Ben]. First name is plenty.
+If they would rather not say, drop it and carry on; nobody gets nagged for a name.
+
 Be short. Two sentences is usually right, three is the limit. Write like a New Zealander:
 plain, warm, no exclamation marks, no "I'd be happy to", no sales patter.`;
 
@@ -124,7 +130,8 @@ export const BOT_SENDER = 'bot';
 export async function askBot(
   env: any,
   brief: string,
-  history: { sender: string; body: string }[]
+  history: { sender: string; body: string }[],
+  known?: string | null
 ): Promise<BotTurn | null> {
   const apiKey = env?.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
@@ -152,7 +159,12 @@ export async function askBot(
           // The rules are identical on every call for every site, so they are
           // worth caching; the brief is not.
           { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
-          { type: 'text', text: `Notes about this business:\n${brief}` },
+          {
+            type: 'text',
+            text:
+              `Notes about this business:\n${brief}\n\n` +
+              (known ? `You are speaking with ${known}.` : 'You do not know their name yet.'),
+          },
         ],
         messages,
       }),
@@ -172,12 +184,24 @@ export async function askBot(
 
     const handOver = reply.includes('[HANDOVER]');
     reply = reply.replace(/\[HANDOVER\]/g, '').trim();
+
+    // A first name, if they offered one. Letters, spaces, hyphens and
+    // apostrophes only — this ends up as a label in somebody's inbox, not in
+    // a query.
+    let name: string | undefined;
+    const said = reply.match(/\[NAME:\s*([^\]]{1,40})\]/i);
+    if (said) {
+      const clean = said[1].trim().replace(/[^\p{L}\p{M}\s'-]/gu, '').trim().slice(0, 40);
+      if (clean.length > 1) name = clean;
+    }
+    reply = reply.replace(/\[NAME:[^\]]*\]/gi, '').trim();
     if (!reply) return null;
 
     const used = data?.usage || {};
     return {
       reply: reply.slice(0, 700),
       handOver,
+      name,
       usage: {
         input: used.input_tokens || 0,
         output: used.output_tokens || 0,
