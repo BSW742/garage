@@ -64,6 +64,30 @@ if (db) {
   }
 }
 
+// What the left rail is counting.
+//
+// Recent is the last dozen touched, not the last seven days. A time window
+// looked right until it was pointed at real data and returned 38 of 40 — every
+// site had been edited that week, so the view filtered nothing. A fixed count
+// means "the ones I was just working on" regardless of how busy the week was.
+const RECENT = 12;
+const stamp = (x: any) =>
+  Date.parse(String(x.updated_at || x.created_at || '').replace(' ', 'T') + 'Z') || 0;
+const recentSlugs = new Set(
+  [...sites].sort((a, b) => stamp(b) - stamp(a)).slice(0, RECENT).map((x: any) => x.slug)
+);
+const isRecent = (x: any) => recentSlugs.has(x.slug);
+const recentCount = recentSlugs.size;
+const themes = Object.entries(
+  sites.reduce((acc: Record<string, number>, x: any) => {
+    const style = x.style || 'modern';
+    acc[style] = (acc[style] || 0) + 1;
+    return acc;
+  }, {})
+)
+  .map(([style, n]) => ({ style, n: n as number }))
+  .sort((a, b) => b.n - a.n);
+
 function summarise(site: any) {
   const bits = [];
   if (site.source_url) bits.push(site.source_url);
@@ -117,6 +141,21 @@ function summarise(site: any) {
       );
     })()}
 
+    <div class="board">
+    {sites.length > 0 && (
+      <aside class="rail">
+        <button class="view on" data-view="all">All <i>{sites.length}</i></button>
+        <button class="view" data-view="recent">Recent <i>{recentCount}</i></button>
+        <p class="rail-head">Themes</p>
+        {themes.map((t) => (
+          <button class="view theme" data-view={`style:${t.style}`}>
+            <span class={`dot t-${t.style}`}></span>{t.style} <i>{t.n}</i>
+          </button>
+        ))}
+      </aside>
+    )}
+
+    <div class="main">
     {sites.length > 0 && (
       <div class="search">
         <input
@@ -138,11 +177,10 @@ function summarise(site: any) {
       <table>
         <thead>
           <tr>
-            <th>Address</th>
+            <th>Site</th>
             <th>Owner</th>
-            <th>Business &amp; template</th>
-            <th>Owner</th>
-            <th class="right">Open</th>
+            <th>Progress</th>
+            <th class="right"></th>
           </tr>
         </thead>
         <tbody>
@@ -158,27 +196,28 @@ function summarise(site: any) {
                 site.style || 'modern',
                 site.status,
               ].filter(Boolean).join(' ').toLowerCase()}
+              data-style={site.style || 'modern'}
+              data-recent={isRecent(site) ? '1' : ''}
             >
-              <td>
+              <td class="site-cell">
                 <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="slug">
                   {site.slug}<span>.garage.co.nz</span>
                 </a>
+                <span class="under">
+                  <span class={`pill tpl t-${site.style || 'modern'}`}>{site.style || 'modern'}</span>
+                  {site.biz_name && <span class="biz" title={summarise(site) || ''}>{site.biz_name}</span>}
+                </span>
               </td>
               <td class="muted">
                 <input
                   class="owner-email"
                   type="email"
                   value={site.email || ''}
-                  placeholder="no address — email-in disabled"
+                  placeholder="none"
                   data-slug={site.slug}
                   data-key={site.edit_token}
                   data-was={site.email || ''}
                 />
-              </td>
-              <td class="muted small">
-                {site.biz_name && <span class="biz">{site.biz_name}</span>}
-                <span class={`pill tpl t-${site.style || 'modern'}`}>{site.style || 'modern'}</span>
-                {summarise(site) && <span class="src">{summarise(site)}</span>}
               </td>
               <td class="nowrap send-cell">
                 {!site.edit_token ? (
@@ -220,10 +259,16 @@ function summarise(site: any) {
                 >Edit</a>
                 {site.edit_token && (
                   <button
-                    class="act copy"
+                    class="act icon copy"
                     data-link={`https://garage.co.nz/ai?edit=${encodeURIComponent(site.slug)}&t=${encodeURIComponent(site.edit_token)}&src=owner`}
-                    title="Copy the link that lets the owner edit this site"
-                  >Copy link</button>
+                    title="Copy the owner's edit link"
+                    aria-label="Copy the owner's edit link"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="12" height="12" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
                 )}
                 {site.edit_token && (
                   <a
@@ -241,12 +286,17 @@ function summarise(site: any) {
                 )}
                 {site.edit_token && (
                   <button
-                    class:list={['act', 'chat', site.chat_on ? 'on' : '']}
+                    class:list={['act', 'icon', 'chat', site.chat_on ? 'on' : '']}
                     data-slug={site.slug}
                     data-key={site.edit_token}
                     data-on={site.chat_on ? '1' : ''}
-                    title="Show the chat widget on this site"
-                  >{site.chat_on ? 'Chat on' : 'Chat off'}</button>
+                    title={site.chat_on ? 'Chat widget is on — click to hide it' : 'Chat widget is off — click to show it'}
+                    aria-label="Toggle the chat widget"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                    </svg>
+                  </button>
                 )}
               </td>
             </tr>
@@ -256,6 +306,8 @@ function summarise(site: any) {
     )}
 
     {sites.length > 0 && <p class="empty" id="no-hits" hidden>Nothing matches that.</p>}
+    </div>
+    </div>
   </div>
 </Layout>
 
@@ -279,22 +331,45 @@ function summarise(site: any) {
 
     const index = rows.map((row) => flatten(row.dataset.find || ''));
 
+    // The rail narrows the set, the box searches inside it. Two filters that
+    // fight each other is the usual way this goes wrong, so there is one apply
+    // and both feed it.
+    let view = 'all';
+
+    const inView = (row: HTMLElement) => {
+      if (view === 'all') return true;
+      if (view === 'recent') return row.dataset.recent === '1';
+      if (view.startsWith('style:')) return row.dataset.style === view.slice(6);
+      return true;
+    };
+
     const apply = () => {
       const terms = flatten(search.value).split(/\s+/).filter(Boolean);
       let shown = 0;
+      let inSet = 0;
       rows.forEach((row, i) => {
+        const scoped = inView(row);
+        if (scoped) inSet++;
         const hay = index[i];
-        const hit = terms.every((t) => hay.includes(t));
+        const hit = scoped && terms.every((t) => hay.includes(t));
         row.hidden = !hit;
         if (hit) shown++;
       });
       if (count) {
-        count.textContent = terms.length
+        count.textContent = terms.length || view !== 'all'
           ? `${shown} of ${rows.length}`
           : `${rows.length} sites`;
       }
       if (none) none.hidden = shown > 0;
     };
+
+    document.querySelectorAll<HTMLElement>('.view').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        view = btn.dataset.view || 'all';
+        document.querySelectorAll('.view').forEach((b) => b.classList.toggle('on', b === btn));
+        apply();
+      });
+    });
 
     search.addEventListener('input', apply);
     // Escape clears rather than closing anything, which is what a search field
@@ -321,11 +396,11 @@ function summarise(site: any) {
   document.querySelectorAll('button.act.copy').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const link = btn.getAttribute('data-link') || '';
-      const said = btn.textContent;
+      const said = btn.innerHTML;
       const done = () => {
         btn.textContent = 'Copied';
         btn.classList.add('done');
-        setTimeout(() => { btn.textContent = said; btn.classList.remove('done'); }, 1600);
+        setTimeout(() => { btn.innerHTML = said; btn.classList.remove('done'); }, 1600);
       };
       try {
         await navigator.clipboard.writeText(link);
@@ -418,7 +493,50 @@ function summarise(site: any) {
 </script>
 
 <style>
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 6rem; }
+  /* Was 1100px, which wasted half a laptop screen on a table with five
+     columns in it. */
+  .wrap { max-width: 1600px; margin: 0 auto; padding: 2.2rem 1.6rem 5rem; }
+
+  /* Views down the left, the table taking the rest. */
+  .board { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: start; }
+  @media (min-width: 900px) { .board { grid-template-columns: 12.5rem 1fr; gap: 2rem; } }
+  .main { min-width: 0; }
+
+  .rail { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+  @media (min-width: 900px) {
+    .rail {
+      display: block; position: sticky; top: 1.5rem;
+      border-right: 1px solid var(--color-border, #e5e5e5); padding-right: 1rem;
+    }
+  }
+  .rail-head {
+    font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--color-text-muted); font-weight: 700; margin: 1.1rem 0 0.4rem; padding-left: 0.5rem;
+  }
+  @media (max-width: 899px) { .rail-head { display: none; } }
+  .view {
+    display: flex; align-items: center; gap: 0.45rem; width: 100%;
+    border: 0; background: none; font: inherit; font-size: 0.88rem; cursor: pointer;
+    padding: 0.4rem 0.55rem; border-radius: 8px; color: inherit; text-align: left;
+    text-transform: capitalize;
+  }
+  @media (max-width: 899px) {
+    .view { width: auto; border: 1px solid var(--color-border, #e5e5e5); border-radius: 999px; }
+  }
+  .view:hover { background: #f4f5f7; }
+  .view.on { background: #eef2ff; color: #1e40af; font-weight: 600; }
+  .view i { margin-left: auto; font-style: normal; font-size: 0.78rem; color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums; }
+  .view.on i { color: #1e40af; }
+  .view .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #94a3b8; flex: none; }
+
+  /* One line per site, and the second line quiet. */
+  .site-cell .under { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; }
+  .site-cell .biz {
+    font-size: 0.8rem; color: var(--color-text-muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 18rem;
+  }
+
   .spend {
     display: flex;
     flex-wrap: wrap;
@@ -439,11 +557,13 @@ function summarise(site: any) {
     border: 1px solid #f3c4c0;
     margin-left: 0.3rem;
   }
+  table { font-size: 0.9rem; }
+  td, th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
   .owner-email {
     font: inherit;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     width: 100%;
-    min-width: 12rem;
+    min-width: 9rem;
     padding: 0.3rem 0.45rem;
     border: 1px solid transparent;
     border-radius: 6px;
