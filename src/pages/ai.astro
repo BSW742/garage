@@ -145,6 +145,7 @@ if (cameFromOffer && openedSlug) {
                 <button class="tone style" data-style="listing">Listing</button>
                 <button class="tone style" data-style="diet">Diary</button>
                 <button class="tone style" data-style="chain">Chain</button>
+                <button class="tone style" data-style="bubbles">Bubbles</button>
               </div>
               <div class="paint-row" id="swatches"></div>
               <div class="paint-row tones">
@@ -1706,6 +1707,29 @@ if (cameFromOffer && openedSlug) {
       .pv-trib-empty { color: #9a958c; text-align: center; padding: 3rem 1.5rem 5rem; font-size: 0.92rem; }
 
       /* ── Listing: photos, a price, the numbers ── */
+      /* Bubbles preview. Circles, a drift, and the same instruction the real
+         page gives — the whole idea is that you click one. */
+      .pv.st-bubbles { --pv-display: 'Syne', system-ui, sans-serif; }
+      .st-bubbles #site-root, .pv.st-bubbles { background: #fbfaff; }
+      .pv-bb-head { padding: 2.4rem 1.5rem 0.6rem; text-align: center; }
+      .pv-bb-eyebrow { font-family: var(--pv-display); font-weight: 600; font-size: 0.7rem;
+        letter-spacing: 0.22em; text-transform: uppercase; color: var(--pv-primary);
+        margin-bottom: 0.7rem; }
+      .st-bubbles .pv-h1 {
+        font-family: var(--pv-display); font-weight: 800; text-transform: none;
+        font-size: clamp(1.8rem, 5vw, 2.8rem); letter-spacing: -0.02em; margin-bottom: 0;
+      }
+      .pv-bb-lede { color: #6f6a7d; font-size: 0.9rem; margin: 0.8rem auto 0; max-width: 24rem; }
+      .pv-bb-hint { margin-top: 0.9rem; font-size: 0.78rem; color: #6f6a7d; font-style: italic; }
+      .pv-bb-field { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.9rem;
+        padding: 1.6rem 1.5rem 2.5rem; place-items: center; }
+      .pv-bb-bub { width: 100%; aspect-ratio: 1; border-radius: 50%; position: relative;
+        background: #e6e2ef center/cover; overflow: hidden;
+        box-shadow: 0 14px 28px -18px rgba(25,23,32,0.7), inset 0 0 0 1px rgba(255,255,255,0.5); }
+      .pv-bb-bub::after { content: ''; position: absolute; top: 10%; left: 14%; width: 26%;
+        height: 19%; border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(255,255,255,0.62), rgba(255,255,255,0)); }
+      .pv-bb-note { margin: 0 1.5rem 2.5rem; color: #6f6a7d; font-size: 0.83rem; text-align: center; }
       /* Chain preview. The count is the page, so the preview is the count. */
       .pv.st-chain { --pv-display: 'Newsreader', Georgia, serif; }
       .st-chain #site-root, .pv.st-chain { background: #f6f2ea; color: #1c1a16; }
@@ -2908,11 +2932,44 @@ if (cameFromOffer && openedSlug) {
         const root = $('site-root');
 
         // Templates that are not built out of sections have no slot to show.
-        if (!['tribute', 'diet', 'chain', 'listing'].includes(s.style)) ensureAlongSlot();
+        if (!['tribute', 'diet', 'chain', 'listing', 'bubbles'].includes(s.style)) ensureAlongSlot();
 
         // Neither is a diary. What it shows is a tally of posts that live in
         // the database, not in the config, so the preview is the scoreboard
         // with nothing in it yet — which is honestly what day zero looks like.
+        if (s.style === 'bubbles') {
+          const shots = [];
+          (s.products || []).forEach((p, j) => {
+            if (p && p.image) shots.push({ url: p.image, path: 'products.' + j + '.image' });
+          });
+          (s.images || []).forEach((u, j) => {
+            if (u && shots.length < 12) shots.push({ url: u, path: 'images.' + j });
+          });
+          root.innerHTML =
+            '<div class="pv-bb-head">' +
+            (s.eyebrow ? '<p class="pv-bb-eyebrow" data-edit="eyebrow">' + esc(s.eyebrow) + '</p>' : '') +
+            '<h1 class="pv-h1" data-edit="name">' + esc(s.name) + '</h1>' +
+            (s.lede ? '<p class="pv-bb-lede" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
+            (shots.length ? '<p class="pv-bb-hint" data-edit="cta">' +
+              esc(s.cta || 'Burst one to see what it is') + '</p>' : '') +
+            '</div>' +
+            (shots.length
+              ? '<div class="pv-bb-field">' + shots.map((sh) =>
+                  '<div class="pv-bb-bub" data-photo="' + sh.path + '" style="background-image:url(' +
+                  esc(sh.url) + ')"></div>').join('') + '</div>'
+              : '<p class="pv-bb-note">Add some photographs — each one becomes a bubble, ' +
+                'and what you write about it is what shows when somebody bursts it.</p>');
+          $('canvas-empty').classList.toggle('gone', true);
+          renderedKeys = new Set(['bubbles']);
+          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          root.parentElement.classList.add('pv');
+          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain');
+          root.parentElement.classList.add('st-bubbles');
+          applyTone();
+          restoreSelection();
+          return;
+        }
+
         if (s.style === 'chain') {
           const target = Math.max(1, Math.round(Number(s.target)) || 30);
           root.innerHTML =
@@ -3110,7 +3167,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -3767,7 +3824,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary" or "chain" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain" or "bubbles" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4558,6 +4615,7 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
         listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
+        bubbles: 'A gallery that floats — every picture is a bubble, and bursting one tells you what it is. For makers, artists and anyone whose work is the pitch.',
         chain: 'A collective message for one person — it collects until it hits a target, and nobody can read a word until it does.',
         diet: 'A food diary in public — a row a day with what you ate, marked good or bad, and a plain line for every day you skipped.',
       };

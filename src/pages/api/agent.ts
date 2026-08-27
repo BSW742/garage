@@ -117,6 +117,19 @@ Campaign pages (set_rally):
 - Sign-ups are a name and an email. The page shows first names only and never shows an email, and
   that promise is printed on the page — do not write copy that contradicts it.
 
+The bubbles template:
+- Style "bubbles" is a gallery for people whose work is the pitch: potters, painters, florists,
+  jewellers, tattooists, photographers, bakers who decorate. Every picture floats on the page as
+  a bubble, and bursting one shows what it is.
+- If they make things, sell things they made, or talk about their work in pictures rather than
+  services — ask in one line whether they want it. Never switch on your own.
+- Each piece goes in products: an image, a name, one line about it, and a price if it is for
+  sale. The line is what somebody reads when they burst it, so make it about the thing — what it
+  is made of, how big, what happened while making it — never marketing copy.
+- Loose photos with nothing written about them still become bubbles. That is fine; a picture
+  with no words beats no picture.
+- Keep name, eyebrow and lede short. The work is doing the talking.
+
 The chain template:
 - Style "chain" is a collective message for one person: a farewell, a milestone birthday, a new
   baby, someone leaving after years. It collects short messages from everybody who knows them,

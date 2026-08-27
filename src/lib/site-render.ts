@@ -3,6 +3,7 @@ import { TRIBUTE_CSS, TRIBUTE_FONT_QUERY, renderTributeBody, type TributePhoto }
 import { DIET_CSS, DIET_FONT_QUERY, renderDietBody, type DietPost } from './diet-render';
 import { CHAIN_CSS, CHAIN_FONT_QUERY, renderChainBody, type ChainNote } from './chain-render';
 import { RALLY_CSS, renderRallyBody, type RallyCampaign, type RallyState } from './rally-render';
+import { BUBBLE_CSS, BUBBLE_FONT_QUERY, renderBubbleBody } from './bubble-render';
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
 import { CAFE_CSS, CAFE_FONT_QUERY, renderCafeBody } from './cafe-render';
@@ -70,7 +71,7 @@ export interface SiteConfig {
   // config so the owner writes them the same way as everything else, and they
   // publish with the page — only the sign-ups need a table.
   campaigns?: RallyCampaign[];
-  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain';
+  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1021,6 +1022,23 @@ export function renderSite(
   sent: TributePhoto[] | DietPost[] | ChainNote[] = [],
   state: { unlocked?: boolean } = {}
 ): string {
+  // The work, floating, with the words tucked inside it. No nav, no sections
+  // — a gallery where the pictures are the whole page.
+  if (site.style === 'bubbles') {
+    const art: SiteConfig = {
+      ...site,
+      chat: false,
+      palette: { primary: '#7c5cff', deep: '#2bb3c0', wash: '#fbfaff', ...(site.palette || {}) },
+    };
+    const maker = art.name || slug;
+    return shell(art, slug, {
+      title: maker,
+      description: (art.lede || `The work of ${maker}.`).slice(0, 155),
+      path: '/',
+      body: renderBubbleBody(art, slug),
+    });
+  }
+
   // Messages for one person, sealed until enough of them have come in. No nav,
   // no sections, no cart — a counter and a reason to pass it on.
   if (site.style === 'chain') {
@@ -1373,6 +1391,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'listing' ? LISTING_FONT_QUERY
     : site.style === 'diet' ? DIET_FONT_QUERY
     : site.style === 'chain' ? CHAIN_FONT_QUERY
+    : site.style === 'bubbles' ? BUBBLE_FONT_QUERY
     : '';
 
   return `<!doctype html>
@@ -1392,13 +1411,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
