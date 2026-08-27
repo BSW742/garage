@@ -117,6 +117,19 @@ Campaign pages (set_rally):
 - Sign-ups are a name and an email. The page shows first names only and never shows an email, and
   that promise is printed on the page — do not write copy that contradicts it.
 
+The game template:
+- Style "game" turns the page into Space Invaders where every invader is one thing the business
+  does. Shoot one and it tells you what it was. It suits arcades, game studios, escape rooms,
+  party hire, skate shops, anywhere that trades on being fun.
+- If they are playful, or ask for a game, ask in one line whether they want it. Never switch on
+  your own, and say plainly what it does: the page is a game, and everything in the game is also
+  written out underneath in plain text.
+- The invaders come from whatever they have filled in — services, opening hours, menu dishes,
+  products. So fill those in as normal; the game builds itself out of them. Keep each name short
+  enough to read in a hurry.
+- Do not put anything important only in the game. The list underneath, the phone number and the
+  address are the real page.
+
 The bubbles template:
 - Style "bubbles" is a gallery for people whose work is the pitch: potters, painters, florists,
   jewellers, tattooists, photographers, bakers who decorate. Every picture floats on the page as
