@@ -16,7 +16,7 @@ export interface ToolContext {
   ownImages: string[];
 }
 
-const SECTION_TYPES = ['services', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop', 'menu', 'conditions', 'steps', 'acc', 'area', 'credentials', 'specs', 'included', 'honest', 'alongside'];
+const SECTION_TYPES = ['services', 'define', 'about', 'gallery', 'hours', 'testimonial', 'contact', 'band', 'faq', 'pricing', 'shop', 'menu', 'conditions', 'steps', 'acc', 'area', 'credentials', 'specs', 'included', 'honest', 'alongside'];
 
 export const TOOLS = [
   {
@@ -65,7 +65,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },

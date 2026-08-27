@@ -117,6 +117,21 @@ Campaign pages (set_rally):
 - Sign-ups are a name and an email. The page shows first names only and never shows an email, and
   that promise is printed on the page — do not write copy that contradicts it.
 
+The agency template:
+- Style "mogged" is confident and sales-led, for people who sell expertise rather than a product:
+  agencies, consultants, accountants, brokers, coaches, photographers who pitch on results.
+- The headline carries one word in italic. Put asterisks around the word you want emphasised
+  (*ordinary*) or leave it and the last word is used. One word only — the italic works because
+  nothing else on the page is competing with it.
+- Three tick points go under the buttons, in an "included" section. Three, never four: a fourth
+  turns a proof into a list. Keep each to about four words.
+- Client names go in the "who we work alongside" section; on this template it renders as a wall
+  of names under "Trusted by".
+- The memorable part is the definition block, a "define" section: label is the word, title is the
+  part of speech ("verb."), text is the meaning, and quote is somebody using it in a sentence.
+  Only write one if they have a word worth defining — a forced one is embarrassing, so ask what
+  they want people saying about them and use their answer.
+
 The producer template:
 - Style "eggs" is for businesses that make a thing rather than do a job: orchards, honey,
   free-range eggs, cheese, olive oil, brewers, growers, anyone whose product sits on somebody

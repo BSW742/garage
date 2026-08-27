@@ -148,8 +148,14 @@ if (cameFromOffer && openedSlug) {
                 <button class="tone style" data-style="bubbles">Bubbles</button>
                 <button class="tone style" data-style="game">Game</button>
                 <button class="tone style" data-style="eggs">Producer</button>
+                <button class="tone style" data-style="mogged">Agency</button>
               </div>
-              <div class="paint-row" id="swatches"></div>
+              <div class="paint-row colour-line">
+                <button class="tone colour-open" id="colour-open" aria-expanded="false">
+                  <i id="colour-now"></i><span>Colour</span>
+                </button>
+              </div>
+              <div class="paint-row swatches" id="swatches" hidden></div>
               <div class="paint-row tones">
                 <button class="tone" data-tone="light">Light</button>
                 <button class="tone" data-tone="warm">Warm</button>
@@ -812,6 +818,14 @@ if (cameFromOffer && openedSlug) {
       }
       .agent-paint[hidden] { display: none; }
       .paint-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+      .paint-row[hidden] { display: none; }
+      /* Eleven swatches on show made the panel feel like a control surface.
+         Most of the time somebody wants the style, not the colour. */
+      .colour-open { display: inline-flex; align-items: center; gap: 0.45rem; }
+      .colour-open i {
+        width: 0.85rem; height: 0.85rem; border-radius: 50%; display: block;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+      }
       .swatch {
         width: 24px; height: 24px;
         border-radius: 7px;
@@ -3228,7 +3242,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -3885,7 +3899,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game" or "producer" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer" or "agency" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4676,6 +4690,7 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
         listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
+        mogged: 'Confident and sales-led for people who sell expertise — a heavy headline with one word in italic, three proofs, a wall of client names, and a definition of what you want to be known for.',
         eggs: 'For people who make a thing rather than do a job — the range, the certifications, the numbers, and where to buy it. Cream and warm orange.',
         game: 'Space Invaders, where the invaders are what you do — shoot one and it tells you what it was. Everything is written out plainly underneath.',
         bubbles: 'A gallery that floats — every picture is a bubble, and bursting one tells you what it is. For makers, artists and anyone whose work is the pitch.',
@@ -4693,16 +4708,30 @@ if (cameFromOffer && openedSlug) {
         return true;
       }
 
+      // Keep the little disc on the Colour button showing what is actually on.
+      function markColour() {
+        const dot = $('colour-now');
+        if (dot) dot.style.background = (S.site.palette || {}).primary || '#2563eb';
+      }
+
       function buildSwatches() {
         const row = $('swatches');
         if (!row || row.childElementCount) return;
+
+        const open = $('colour-open');
+        open.addEventListener('click', () => {
+          const shut = row.hidden;
+          row.hidden = !shut;
+          open.setAttribute('aria-expanded', String(shut));
+        });
+        markColour();
         SWATCHES.forEach((c) => {
           const b = document.createElement('button');
           b.className = 'swatch';
           b.dataset.colour = c;
           b.style.background = c;
           b.title = c;
-          b.addEventListener('click', () => { paint(c); });
+          b.addEventListener('click', () => { paint(c); markColour(); });
           row.appendChild(b);
         });
         document.querySelectorAll('.style[data-style]').forEach((b) =>
@@ -4717,6 +4746,7 @@ if (cameFromOffer && openedSlug) {
         $('roll-colour').addEventListener('click', () => {
           const next = SWATCHES[Math.floor(Math.random() * SWATCHES.length)];
           paint(next, true);
+          markColour();
           did('Rolled a new colour');
         });
       }

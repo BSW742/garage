@@ -6,6 +6,7 @@ import { RALLY_CSS, renderRallyBody, type RallyCampaign, type RallyState } from 
 import { BUBBLE_CSS, BUBBLE_FONT_QUERY, renderBubbleBody } from './bubble-render';
 import { GAME_CSS, GAME_FONT_QUERY, renderGameBody } from './game-render';
 import { EGGS_CSS, EGGS_FONT_QUERY, renderEggsBody } from './eggs-render';
+import { MOGGED_CSS, MOGGED_FONT_QUERY, renderMoggedBody } from './mogged-render';
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
 import { CAFE_CSS, CAFE_FONT_QUERY, renderCafeBody } from './cafe-render';
@@ -73,7 +74,7 @@ export interface SiteConfig {
   // config so the owner writes them the same way as everything else, and they
   // publish with the page — only the sign-ups need a table.
   campaigns?: RallyCampaign[];
-  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs';
+  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1024,6 +1025,23 @@ export function renderSite(
   sent: TributePhoto[] | DietPost[] | ChainNote[] = [],
   state: { unlocked?: boolean } = {}
 ): string {
+  // Selling expertise: a heavy headline with one italic word, three ticks, a
+  // wall of clients, and a definition of the thing they want to be known for.
+  if (site.style === 'mogged') {
+    const agency: SiteConfig = {
+      ...site,
+      shop: false,
+      palette: { primary: '#2f4fff', deep: '#0d1836', wash: '#f6f8fd', ...(site.palette || {}) },
+    };
+    const firm = agency.name || slug;
+    return shell(agency, slug, {
+      title: firm,
+      description: (agency.lede || agency.headline || firm).slice(0, 155),
+      path: '/',
+      body: renderMoggedBody(agency, slug),
+    });
+  }
+
   // A producer rather than a service: the range, the proof, the stockists.
   if (site.style === 'eggs') {
     const farm: SiteConfig = {
@@ -1430,6 +1448,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'bubbles' ? BUBBLE_FONT_QUERY
     : site.style === 'game' ? GAME_FONT_QUERY
     : site.style === 'eggs' ? EGGS_FONT_QUERY
+    : site.style === 'mogged' ? MOGGED_FONT_QUERY
     : '';
 
   return `<!doctype html>
@@ -1449,13 +1468,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
