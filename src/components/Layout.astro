@@ -866,16 +866,21 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     }
   });
 
-  var seen = 0;
+  // threadId, not thread — the endpoint reads threadId and quietly returns an
+  // empty list for anything else, so replies never arrived. And "after" is the
+  // last message id we have, which is what stops the same reply appearing
+  // twice when the panel is reopened.
+  var after = 0;
   async function pull(){
     if (!thread) return;
     try {
-      var res = await fetch('/api/chat?thread=' + encodeURIComponent(thread) +
-        '&slug=' + encodeURIComponent(SLUG));
+      var res = await fetch('/api/chat?threadId=' + encodeURIComponent(thread) +
+        '&slug=' + encodeURIComponent(SLUG) + '&after=' + after);
       var data = await res.json();
-      var msgs = (data.messages || []).filter(function(m){ return m.sender !== 'visitor'; });
-      for (var i = seen; i < msgs.length; i++) add(msgs[i].body, false);
-      seen = msgs.length;
+      (data.messages || []).forEach(function(m){
+        if (m.id > after) after = m.id;
+        if (m.sender !== 'visitor') add(m.body, false);
+      });
     } catch (e) {}
   }
   setInterval(function(){ if (panel.classList.contains('on')) pull(); }, 5000);
