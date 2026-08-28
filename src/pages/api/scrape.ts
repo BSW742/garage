@@ -668,14 +668,36 @@ function cleanPhone(phone: string): string {
   return phone.replace(/[^\d\s\-\+\(\)]/g, '').trim();
 }
 
+// The bare-text fallback will happily return the first thing on the page shaped
+// like an address, and on a Wix site that is a Sentry error-reporting key —
+// 605a7ba...@sentry-next.wixpress.com went out as a rugby club's contact email.
+// A tracking address published as somebody's own is worse than no email.
+const NOT_A_PERSON =
+  /@(sentry|sentry-next|sentry\.io|wixpress|wix\.com|example|test|localhost|domain|email|yourdomain|sentry-cdn)/i;
+
+function usableEmail(value: string): string {
+  const email = String(value || '').trim();
+  if (!email || email.length > 120) return '';
+  if (NOT_A_PERSON.test(email)) return '';
+  // A 32-character hex local part is a machine, not a person.
+  if (/^[0-9a-f]{24,}@/i.test(email)) return '';
+  return email;
+}
+
 function extractEmail(html: string): string {
   const mailtoMatch = html.match(/href=["']mailto:([^"'?]+)/i);
   if (mailtoMatch) {
-    return mailtoMatch[1];
+    const clean = usableEmail(mailtoMatch[1]);
+    if (clean) return clean;
   }
 
-  const emailMatch = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  return emailMatch ? emailMatch[0] : '';
+  // Every candidate, not just the first — the first is frequently a tracker.
+  const all = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+  for (const candidate of all) {
+    const clean = usableEmail(candidate);
+    if (clean) return clean;
+  }
+  return '';
 }
 
 function extractAddress(html: string): string {

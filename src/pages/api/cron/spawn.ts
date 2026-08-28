@@ -230,6 +230,55 @@ Rules. It must be the business's own website, not a directory, a Facebook page, 
 franchise head office or a review site. It must currently exist. If you cannot find one you are
 confident about, return {"url": null}.`;
 
+// The real path used to skip this entirely. It read the scrape, mapped a name,
+// a lede, a phone number and a pile of photographs into a shell, and held that
+// — so a basketball club came out with no grades, no subs and no training
+// nights, because nothing had ever been asked to write them. It looked like the
+// invented sites had been made carefully and the real ones had not, which is
+// exactly what happened.
+//
+// The hard part is that this is somebody's actual business. The invented prompt
+// is told to make up prices; this one is told the opposite, in the strongest
+// terms available, because a made-up subscription on a real rugby club's page
+// is a lie with their name on it.
+const REWRITE = `You are given the text of a real business's own website. Write their page from it.
+
+Everything you write must come from what you are given. This is a real organisation and the page
+carries their name.
+
+NEVER invent: a price, a fee, an opening hour, a date, a phone number, an email, a staff member, a
+qualification, an award, a year they were founded, or a number of members. If their site does not
+say it, it does not go on the page. An empty section is correct; an invented one is not.
+
+You may tidy their words — fix a typo, cut a sentence in half, drop the marketing padding. You may
+not add a fact.
+
+Return ONLY a JSON object, no prose around it:
+
+{
+  "name": "their actual business name, not the page title — 'Home' and 'Welcome' are not names",
+  "eyebrow": "the town, or the trade and the town",
+  "headline": "six words or so, from their own words where you can",
+  "lede": "two sentences describing them, from their own copy",
+  "cta": "two or three words",
+  "sections": [ ... ]
+}
+
+Sections, using only these shapes, and only where their site gave you the content:
+  {"type":"services","title":"","items":[["name","one line"], ...]}
+  {"type":"menu","label":"","title":"","menu":[{"heading":"","items":[{"name":"","price":"","text":""}]}]}
+  {"type":"pricing","title":"","items":[["name","$price|note"], ...]}
+  {"type":"specs","title":"","items":[["label","value"], ...]}
+  {"type":"credentials","title":"","items":[["name","one line"], ...]}
+  {"type":"hours","rows":[["Monday","8am - 5pm"], ...]}
+  {"type":"steps","title":"","items":[["step","one line"], ...]}
+  {"type":"faq","title":"","items":[["question","answer"], ...]}
+  {"type":"about","title":"","text":"a short paragraph"}
+  {"type":"testimonial","quote":"","who":""}
+
+New Zealand and Australian English. No exclamation marks, no marketing gloss, nothing about AI or
+websites.`;
+
 const WRITE = `You invent a small business and write its website content, for a demo.
 
 You will be given a town and a kind of business. Invent one that would be unremarkable in that
@@ -317,14 +366,23 @@ async function spawn(
   try {
     const apiKey = env.ANTHROPIC_API_KEY;
 
+    if (!apiKey) return json({ error: 'no key' }, 503);
+
+    const wantReal = body?.real ?? Math.random() < REAL_ODDS;
+
     // Work out what pictures are left before spending anything on words. A
     // style whose pool is used up cannot produce a site worth publishing, and
     // finding that out after the model has written one wastes the run.
+    //
+    // Only the invented path draws on the pool. A real business brings its own
+    // photographs, so gating it on our stock was turning away the runs that
+    // needed no stock at all — a Masterton physio was refused for want of
+    // physio pictures it was never going to use.
     const claimedPhotos = await spokenFor(db);
     const spare = (s: string) =>
       (PHOTOS[s] || []).filter((id) => !claimedPhotos.has(id)).length;
 
-    if (spare(style) < MIN_PHOTOS) {
+    if (!wantReal && spare(style) < MIN_PHOTOS) {
       // The caller pinned this style, so tell them plainly rather than quietly
       // building something else.
       if (body?.style) {
@@ -338,14 +396,14 @@ async function spawn(
       }
       style = pick(open);
     }
-    if (!apiKey) return json({ error: 'no key' }, 503);
-
-    const wantReal = body?.real ?? Math.random() < REAL_ODDS;
 
     // ── The real path ──────────────────────────────────────────────────
     if (wantReal) {
       try {
-        const found = await fetch('https://api.anthropic.com/v1/messages', {
+        // Given a url, skip the search: this is a rebuild of one we already
+        // know about, usually because the first attempt produced a shell.
+        const pinned = String(body?.url || '').trim();
+        const found = pinned ? null : await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
                      'anthropic-version': '2023-06-01' },
@@ -358,16 +416,19 @@ async function spawn(
               content: `Find ${WHAT[style] || 'a small business'} in ${town}. Its own website only.` }],
           }),
         });
-        if (found.ok) {
-          const fd = (await found.json()) as any;
+        if (pinned || (found && found.ok)) {
+          const fd = found ? ((await found.json()) as any) : {};
           const said = (fd?.content || []).filter((c: any) => c?.type === 'text')
             .map((c: any) => c.text).join('');
-          const hit = said.match(/\{[\s\S]*?\}/);
-          const url = hit ? (JSON.parse(hit[0])?.url || null) : null;
+          const hit = said ? said.match(/\{[\s\S]*?\}/) : null;
+          const url = pinned || (hit ? (JSON.parse(hit[0])?.url || null) : null);
 
           if (url && /^https?:\/\//.test(url)) {
-            const already = await db
-              .prepare('SELECT slug FROM site_claims WHERE source_url = ?').bind(url).first();
+            const rebuilding = String(body?.rebuild || '').trim();
+            const already = rebuilding
+              ? null
+              : await db.prepare('SELECT slug FROM site_claims WHERE source_url = ?')
+                  .bind(url).first();
             if (!already) {
               const sc = await fetch('https://garage.co.nz/api/scrape', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -383,25 +444,81 @@ async function spawn(
               // Only worth taking if it is actually richer than what we would
               // have written. Four photographs and a phone number is the bar.
               if (photos.length >= 4 && d?.phone) {
-                const real: any = {
-                  name: d.title && d.title.length > 3 ? String(d.title).slice(0, 60) : String(fd?.name || town),
-                  eyebrow: town,
-                  headline: d.title || '',
-                  lede: String(d.description || d.tagline || '').slice(0, 220),
-                  cta: 'Get in touch',
-                  style, tone: style === 'trade' ? 'dark' : 'light',
-                  shop: false, chat: false, products: [],
-                  contact: { phone: d.phone || '', email: d.email || '', address: d.address || '' },
-                  heroImage: photos[0], images: photos.slice(1),
-                  sections: [{ type: 'gallery', label: 'Gallery', title: 'Have a look',
-                               images: photos.slice(1) }],
-                };
+                // Hand the scrape to the model and let it write the page, the
+                // same as the invented path does. Mapping fields by hand is
+                // what produced the shells.
+                const source = [
+                  `Business name from the page title: ${d.title || ''}`,
+                  d.description ? `Description: ${d.description}` : '',
+                  d.tagline ? `Tagline: ${d.tagline}` : '',
+                  d.address ? `Address: ${d.address}` : '',
+                  (d.services || []).length ? `Services listed:\n${(d.services || []).slice(0, 20).map((x: any) => `  - ${String(x).slice(0, 160)}`).join('\n')}` : '',
+                  d.aboutText ? `About, in their words:\n${String(d.aboutText).slice(0, 3000)}` : '',
+                ].filter(Boolean).join('\n\n').slice(0, 8000);
+
+                const wrote = await fetch('https://api.anthropic.com/v1/messages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
+                             'anthropic-version': '2023-06-01' },
+                  body: JSON.stringify({
+                    model: MODEL, max_tokens: outFor(style),
+                    system: [{ type: 'text', text: REWRITE, cache_control: { type: 'ephemeral' } }],
+                    messages: [{ role: 'user',
+                      content: `This is ${WHAT[style] || 'a small business'} in ${town}.\n\n${source}` }],
+                  }),
+                });
+                if (!wrote.ok) {
+                  await note(db, 'error', { style, town, detail: `rewrite HTTP ${wrote.status}` });
+                  throw new Error('rewrite failed');
+                }
+                const wd = (await wrote.json()) as any;
+                const wtext = (wd?.content || []).filter((c: any) => c?.type === 'text')
+                  .map((c: any) => c.text).join('');
+                const wmatch = wtext.match(/\{[\s\S]*\}/);
+                if (!wmatch) {
+                  await note(db, 'error', { style, town, detail: 'rewrite returned no json' });
+                  throw new Error('no json');
+                }
+                const real: any = JSON.parse(wmatch[0]);
+
+                // Their real details win over anything the model produced, and
+                // a page title of "Home" is not a business name.
+                const junk = /^(home|welcome|index|untitled|home page)$/i;
+                if (!real.name || junk.test(String(real.name).trim())) {
+                  real.name = String(fd?.name || '').trim()
+                    || new URL(url).hostname.replace(/^www\./, '').split('.')[0];
+                }
+                real.style = style;
+                real.tone = style === 'trade' ? 'dark' : 'light';
+                real.shop = false; real.chat = false; real.products = [];
+                real.contact = { phone: d.phone || '', email: d.email || '', address: d.address || '' };
+                real.heroImage = photos[0];
+                real.images = photos.slice(1);
+                real.sections = [...(Array.isArray(real.sections) ? real.sections : []),
+                  { type: 'gallery', label: 'Gallery', title: 'Have a look', images: photos.slice(1) }];
+
+                // The same bar the invented ones clear. A held shell is worse
+                // than no site: it wastes the review it is waiting for.
+                const rscore = quality(real);
+                if (rscore < 14) {
+                  await note(db, 'rejected', { style, town,
+                    detail: `real page too thin, score ${rscore} — ${url}` });
+                  throw new Error('too thin');
+                }
+
                 let rslug = slugify(real.name) || slugify(new URL(url).hostname.split('.')[0]);
-                for (let i = 0; i < 25; i++) {
-                  const taken = await db.prepare('SELECT 1 FROM site_claims WHERE slug = ?')
-                    .bind(rslug).first();
-                  if (!taken) break;
-                  rslug = (slugify(real.name) || 'biz').slice(0, 30) + (i + 2);
+                if (rebuilding) {
+                  // Replace the shell in place, and keep whatever address it
+                  // already had so nothing that points at it breaks.
+                  await db.prepare('DELETE FROM site_claims WHERE slug = ?').bind(rebuilding).run();
+                  rslug = rebuilding;
+                } else {
+                  for (let i = 0; i < 25; i++) {
+                    const taken = await db.prepare('SELECT 1 FROM site_claims WHERE slug = ?')
+                      .bind(rslug).first();
+                    if (!taken) break;
+                    rslug = (slugify(real.name) || 'biz').slice(0, 30) + (i + 2);
+                  }
                 }
                 // Disabled and unstarred. Nothing of theirs is visible anywhere
                 // until somebody looks at it and stars it.

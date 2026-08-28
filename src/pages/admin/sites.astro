@@ -304,6 +304,10 @@ function summarise(site: any) {
                 )}
               </td>
               <td class="right nowrap">
+                {isHeld(site) && (
+                  <button class="act pub" data-slug={site.slug}
+                    title="Put this live and show it on the work page">Publish</button>
+                )}
                 <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="act">View</a>
                 <a
                   href={`/ai?edit=${encodeURIComponent(site.slug)}${site.edit_token ? `&t=${encodeURIComponent(site.edit_token)}` : ''}`}
@@ -489,6 +493,31 @@ function summarise(site: any) {
 
   // Which sites appear on the work page. Off by default — it is public and
   // carries garage's name, so a site is chosen rather than merely present.
+  document.querySelectorAll<HTMLElement>('button.act.pub').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug;
+      if (!slug) return;
+      btn.setAttribute('disabled', '');
+      btn.textContent = 'Publishing…';
+      try {
+        const res = await fetch('/api/site/feature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: ADMIN_KEY, slug, on: 1 }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data?.ok) throw new Error(data?.error || 'failed');
+        btn.textContent = 'Live';
+        const row = btn.closest('tr');
+        row?.classList.remove('held');
+        row?.querySelector('.held-pill')?.remove();
+      } catch {
+        btn.removeAttribute('disabled');
+        btn.textContent = 'Try again';
+      }
+    });
+  });
+
   document.querySelectorAll<HTMLElement>('button.act.feat').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const on = !btn.dataset.on;
@@ -727,6 +756,9 @@ function summarise(site: any) {
   tr.held { background: #fffdf5; }
   tr.held td { border-top-color: #f4e3b8; }
   .pill.held-pill { background: #fef3c7; color: #92400e; font-weight: 600; }
+  .act.pub { background: #15803d; color: #fff; border-color: #15803d; font-weight: 600; }
+  .act.pub:hover { background: #166534; }
+  .act.pub[disabled] { opacity: 0.6; cursor: default; }
   .view.held-view { color: #92400e; }
   .view.held-view i { background: #fef3c7; color: #92400e; }
 
