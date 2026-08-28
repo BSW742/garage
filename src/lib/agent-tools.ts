@@ -56,7 +56,10 @@ export const TOOLS = [
       'page: a name, two dates and a wall of photographs, nothing else — no nav, no sections, no ' +
       'shop, no chat. Visitors can send photos in from the page itself. montage is the same wall ' +
       'without the mourning \u2014 a title and then nothing but pictures, no dates and no portrait, ' +
-      'for a trip, a season, a build, a club, a wedding. Anyone can add one. listing is one thing for ' +
+      'for a trip, a season, a build, a club, a wedding. Anyone can add one. beauty is for salons, ' +
+      'spas, skin clinics, brow and lash studios, nail bars and massage: a full-bleed photograph, ' +
+      'treatments listed with duration and price like a menu, and a booking button pinned to the ' +
+      'bottom of every phone screen. listing is one thing for ' +
       'sale privately — a house or a car: big photos, the price, a strip of the numbers a buyer ' +
       'checks, and a plain list of what is wrong with it. ' +
       'diet is a public food diary for people who want somebody watching: a scoreboard of good ' +
@@ -67,7 +70,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },

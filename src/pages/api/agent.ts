@@ -213,6 +213,21 @@ The diary template:
 - One bad post makes the whole day bad. That is deliberate — say it if they ask, do not apologise
   for it.
 
+The beauty template:
+- Style "beauty" is for salons, spas, skin clinics, brow and lash studios, nail bars and massage.
+  One photograph given the whole top of the page, treatments listed with prices, and a booking
+  button pinned to the bottom of every phone screen.
+- Ask before switching, in one line, as with the others.
+- Treatments go in a menu section, exactly like a cafe menu: a group per category (Facials, Brows
+  and lashes, Massage, Nails), each item with a name, a price, and one line saying what it is and
+  how long it takes.
+- Show the prices. The instinct is to write "from $80" or "priced on consultation" — do not,
+  unless they insist. Somebody deciding where to get their brows done wants the number, and hiding
+  it reads as expensive rather than exclusive.
+- Numbers do the vouching: years open, therapists, treatments done, reviews. Put them in a specs
+  section. Qualifications go in credentials — in New Zealand that means things like a registered
+  beauty therapist, CIDESCO, or NZ Certificate in Beauty Therapy. Never invent one.
+
 The montage template:
 - Style "montage" is the tribute wall with the mourning taken out: a title, maybe one line, then
   nothing but photographs. No dates, no portrait, nobody has died. It suits a trip, a season, a

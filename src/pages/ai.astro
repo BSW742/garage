@@ -140,6 +140,7 @@ if (cameFromOffer && openedSlug) {
                 <button class="tone style" data-style="classic">Classic</button>
                 <button class="tone style" data-style="cafe">Cafe</button>
                 <button class="tone style" data-style="physio">Clinic</button>
+                <button class="tone style" data-style="beauty">Beauty</button>
                 <button class="tone style" data-style="trade">Trade</button>
                 <button class="tone style" data-style="tribute">Tribute</button>
                 <button class="tone style" data-style="montage">Montage</button>
@@ -3480,7 +3481,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -4137,7 +4138,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency" or "montage" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage" or "beauty" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4951,6 +4952,7 @@ if (cameFromOffer && openedSlug) {
         cafe: 'For places that serve food — full-bleed photo, warm cream and espresso, and the menu doing the talking.',
         physio: 'Light and airy for clinics — pale paper, deep sage, a fine serif, and what you treat leading the page.',
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
+        beauty: 'For salons and spas — one photograph given room, treatments priced in the open, and a booking button that follows you down the page.',
         montage: 'A title and then nothing but pictures — a wall of them, and anyone can add one. No dates, no portrait, no words to speak of.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
         listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
