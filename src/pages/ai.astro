@@ -144,7 +144,7 @@ if (cameFromOffer && openedSlug) {
                     <span class="widget-face">&#127920;</span>
                     <span>
                       <b>Spin to win</b>
-                      <i>A tab on the edge. Pick three prizes; they spin for one and leave a name, email and phone.</i>
+                      <i>A tab on the edge. Pick three prizes; every spin wins one, and they leave a name, email and phone.</i>
                     </span>
                   </button>
                   <button class="widget-card off" data-widget="spinner-off">
@@ -825,25 +825,26 @@ if (cameFromOffer && openedSlug) {
         border: 1.5px solid var(--work-3); background: #fff; border-radius: 14px;
         font-family: var(--font-sans); transition: all 0.15s;
       }
-      .prize-sq em { font-style: normal; font-size: 1.5rem; line-height: 1; }
+      .prize-sq svg { width: 1.45rem; height: 1.45rem; color: #16294a; }
       .prize-sq b { font-size: 0.72rem; font-weight: 700; color: var(--work-ink); text-align: center; }
-      .prize-sq:hover { border-color: #f7c521; transform: translateY(-1px); }
-      .prize-sq.on { border-color: #f7c521; background: #fffdf2; box-shadow: 0 0 0 3px rgba(247,197,33,0.25); }
+      .prize-sq:hover { border-color: #16294a; transform: translateY(-1px); }
+      .prize-sq.on { border-color: #a81f2d; background: #fdf7f7; box-shadow: 0 0 0 3px rgba(168,31,45,0.14); }
+      .prize-sq.on svg { color: #a81f2d; }
       .prize-sq .pick-no {
         position: absolute; top: 0.3rem; right: 0.35rem; width: 1.2rem; height: 1.2rem;
-        border-radius: 50%; background: #0d0d0f; color: #f7c521; font-size: 0.7rem;
+        border-radius: 50%; background: #0e111a; color: #fff; font-size: 0.7rem;
         font-weight: 800; display: none; align-items: center; justify-content: center;
       }
       .prize-sq.on .pick-no { display: flex; }
-      .prize-sq.top .pick-no { background: #f7c521; color: #0d0d0f; }
+      .prize-sq.top .pick-no { background: #a81f2d; color: #fff; }
       .prize-foot { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
       .prize-foot span { font-size: 0.76rem; color: var(--work-dim, #6b7383); }
       .prize-go {
         margin-left: auto; border: 0; border-radius: 999px; cursor: pointer;
-        background: #f7c521; color: #0d0d0f; font-family: var(--font-sans);
-        font-size: 0.82rem; font-weight: 800; padding: 0.5rem 1rem; transition: all 0.15s;
+        background: #a81f2d; color: #fff; font-family: var(--font-sans);
+        font-size: 0.82rem; font-weight: 700; padding: 0.5rem 1rem; transition: all 0.15s;
       }
-      .prize-go:hover:not(:disabled) { background: #ffd633; }
+      .prize-go:hover:not(:disabled) { background: #c0242f; }
       .prize-go:disabled { opacity: 0.45; cursor: default; }
       .agent-done.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
@@ -5551,13 +5552,81 @@ if (cameFromOffer && openedSlug) {
       });
       // The six that suit this trade. Same list the agent is told about, so the
       // panel and the conversation never disagree about what is on offer.
+      // Icon paths lifted from prizes.ts, so a tile and a wedge always show
+      // the same drawing.
       const PRIZE_BOOK = {
-        gift: ['🎁', 'Free gift'], off10: ['🏷️', '10% off'], off20: ['💰', '20% off'],
-        half: ['✂️', 'Half price'], bogof: ['🎟️', '2 for 1'], vip: ['⭐', 'VIP upgrade'],
-        coffee: ['☕', 'Free coffee'], drink: ['🥤', 'Free drink'], dessert: ['🍰', 'Free dessert'],
-        ten: ['💵', '$10 off'], twenty: ['💸', '$20 off'], fifty: ['🤑', '$50 off'],
-        delivery: ['🚚', 'Free delivery'], session: ['🎯', 'Free session'], class: ['🧘', 'Free class'],
-        merch: ['👕', 'Free merch'], sticker: ['💫', 'Free sticker'], upgrade: ['🚀', 'Free upgrade'],
+              "gift": [
+                      "<path d=\"M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z\"/>",
+                      "Free gift"
+              ],
+              "off10": [
+                      "<path d=\"M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>",
+                      "10% off"
+              ],
+              "off20": [
+                      "<path d=\"M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>",
+                      "20% off"
+              ],
+              "half": [
+                      "<circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12\"/>",
+                      "Half price"
+              ],
+              "bogof": [
+                      "<path d=\"M3 9V6a1 1 0 011-1h16a1 1 0 011 1v3a3 3 0 000 6v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a3 3 0 000-6zM13 5v2M13 11v2M13 17v2\"/>",
+                      "2 for 1"
+              ],
+              "vip": [
+                      "<path d=\"M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z\"/>",
+                      "VIP upgrade"
+              ],
+              "coffee": [
+                      "<path d=\"M4 8h13v6a5 5 0 01-5 5H9a5 5 0 01-5-5zM17 9h1.5a2.5 2.5 0 010 5H17M3 22h15\"/>",
+                      "Free coffee"
+              ],
+              "drink": [
+                      "<path d=\"M5 4h14l-1.5 6.5A4 4 0 0113.6 14h-3.2a4 4 0 01-3.9-3.5zM12 14v6M8.5 20h7\"/>",
+                      "Free drink"
+              ],
+              "dessert": [
+                      "<path d=\"M6 10h12l-1 10H7zM8.5 10L9 4M15.5 10L15 4M12 10V4M4 20h16\"/>",
+                      "Free dessert"
+              ],
+              "ten": [
+                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
+                      "$10 off"
+              ],
+              "twenty": [
+                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
+                      "$20 off"
+              ],
+              "fifty": [
+                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
+                      "$50 off"
+              ],
+              "delivery": [
+                      "<path d=\"M2 7h11v10H2zM13 10h4.5l3.5 3.5V17h-8z\"/><circle cx=\"6.5\" cy=\"18.5\" r=\"1.8\"/><circle cx=\"17\" cy=\"18.5\" r=\"1.8\"/>",
+                      "Free delivery"
+              ],
+              "session": [
+                      "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/>",
+                      "Free session"
+              ],
+              "class": [
+                      "<circle cx=\"12\" cy=\"5\" r=\"2.4\"/><path d=\"M12 8v6M8 21l4-7 4 7M6 11l6-2 6 2\"/>",
+                      "Free class"
+              ],
+              "merch": [
+                      "<path d=\"M8 3l4 2 4-2 5 3-2.5 4L17 9v12H7V9l-1.5 1L3 6z\"/>",
+                      "Free merch"
+              ],
+              "sticker": [
+                      "<path d=\"M12 2.5l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9zM18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z\"/>",
+                      "Free sticker"
+              ],
+              "upgrade": [
+                      "<path d=\"M12 20V5M6 11l6-6 6 6M6 21h12\"/>",
+                      "Free upgrade"
+              ]
       };
       const SHORTLISTS = {
         cafe: ['coffee','dessert','off10','bogof','drink','gift'],
@@ -5587,7 +5656,10 @@ if (cameFromOffer && openedSlug) {
           const b = document.createElement('button');
           b.className = 'prize-sq';
           b.dataset.id = id;
-          b.innerHTML = '<span class="pick-no"></span><em>' + icon + '</em><b>' + label + '</b>';
+          b.innerHTML = '<span class="pick-no"></span>'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" '
+            + 'stroke-linecap="round" stroke-linejoin="round">' + icon + '</svg>'
+            + '<b>' + label + '</b>';
           b.addEventListener('click', () => {
             const at = picked.indexOf(id);
             if (at >= 0) picked.splice(at, 1);

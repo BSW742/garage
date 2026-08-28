@@ -387,9 +387,11 @@ export const TOOLS = [
     description:
       'Turn the spin-to-win wheel on or off, and set what is on it. A tab sits on the edge of ' +
       'every page; a visitor opens it, gives their name, email and phone, and spins. The wheel ' +
-      'has eight equal slots and is genuinely random — the first offer is the top prize and comes ' +
-      'up one spin in eight, so tell the owner that plainly before switching it on and make sure ' +
-      'they are happy to honour it at that rate. Prizes come from a fixed catalogue by id, never ' +
+      'has eight equal slots and is genuinely random — the top prize is on two of them so it ' +
+      'comes up one spin in four, so tell the owner that plainly before switching it on and make sure ' +
+      'they are happy to honour it at that rate. Every slot is a prize — there are no losing ' +
+      'slots — so the three prizes fill all eight: the top one twice, the other two three times ' +
+      'each. Prizes come from a fixed catalogue by id, never ' +
       'free text — every label in it is short enough to sit in a wedge, which is what keeps the ' +
       'wheel readable. Pass exactly three ids, best first. The catalogue: gift, off10, off20, ' +
       'half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, ' +
@@ -793,9 +795,8 @@ export async function runTool(
       return {
         ok: true,
         message:
-          `Wheel is on. Top prize is ${won[0].note}, which lands one spin in eight. ` +
-          `${won[1].label} and ${won[2].label} are on there too, and the other five slots ` +
-          `say "Not this time".`,
+          `Wheel is on. Every slot is a prize: ${won[0].note} on two of the eight, ` +
+          `${won[1].label} and ${won[2].label} on three each. Nobody leaves with nothing.`,
         data: { spinner: spin },
       };
     }
