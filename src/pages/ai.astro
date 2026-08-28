@@ -108,6 +108,7 @@ if (cameFromOffer && openedSlug) {
             <span class="chrome-dots"><i></i><i></i><i></i></span>
             <span class="chrome-url" id="chrome-url">yoursite.garage.co.nz</span>
             <span class="chrome-live"><i class="pulse"></i> live</span>
+            <button class="chrome-publish" id="done-btn">Publish</button>
           </div>
           <div class="canvas" id="canvas">
             <div class="canvas-empty" id="canvas-empty">
@@ -129,7 +130,30 @@ if (cameFromOffer && openedSlug) {
             </div>
             <button class="agent-done" id="style-btn" aria-expanded="false">Style</button>
             <button class="agent-done" id="media-btn">Media</button>
-            <button class="agent-done" id="done-btn">Publish</button>
+            <button class="agent-done" id="widget-btn" aria-expanded="false">Widget</button>
+
+            <!-- Widgets: things that sit on top of the site rather than in
+                 it. Setting one up is a conversation — the wheel needs offers
+                 in the owner's own words — so these hand off to the agent
+                 rather than trying to be a form. -->
+            <div class="agent-paint agent-widgets" id="agent-widgets" hidden>
+              <div class="paint-group">
+                <p>Capture</p>
+                <div class="widget-list">
+                  <button class="widget-card" data-widget="spinner">
+                    <span class="widget-face">&#127920;</span>
+                    <span>
+                      <b>Spin to win</b>
+                      <i>A tab on the edge. They spin a wheel for one of your offers and leave a name, email and phone.</i>
+                    </span>
+                  </button>
+                  <button class="widget-card off" data-widget="spinner-off">
+                    <span class="widget-face">&#9723;</span>
+                    <span><b>Turn the wheel off</b><i>Keeps your offers for next time.</i></span>
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <!-- Style controls live behind the Style button, anchored to the
                  head, so they stay out of the conversation. -->
@@ -658,6 +682,22 @@ if (cameFromOffer && openedSlug) {
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      .chrome-publish {
+        border: 1px solid #16a34a;
+        background: #16a34a;
+        color: #fff;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.38rem 0.95rem;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .chrome-publish:hover { background: #15803d; border-color: #15803d; }
+      .chrome-publish:disabled { opacity: 0.55; cursor: default; }
+
       .chrome-live {
         display: flex;
         align-items: center;
@@ -746,6 +786,23 @@ if (cameFromOffer && openedSlug) {
         transition: all 0.15s;
       }
       .agent-done:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+      .agent-widgets { width: min(24rem, 82vw); }
+      .widget-list { display: grid; gap: 0.5rem; }
+      .widget-card {
+        display: flex; gap: 0.7rem; align-items: flex-start; text-align: left;
+        border: 1px solid var(--work-3); background: #fff; border-radius: 12px;
+        padding: 0.75rem 0.85rem; cursor: pointer; font-family: var(--font-sans);
+        transition: border-color 0.15s, background 0.15s;
+      }
+      .widget-card:hover { border-color: var(--accent); background: #fbfaff; }
+      .widget-face { font-size: 1.3rem; line-height: 1.1; flex: none; }
+      .widget-card b { display: block; font-size: 0.9rem; color: var(--work-ink); }
+      .widget-card i {
+        display: block; font-style: normal; font-size: 0.78rem;
+        color: var(--work-dim, #6b7383); margin-top: 0.15rem; line-height: 1.4;
+      }
+      .widget-card.off .widget-face { opacity: 0.5; }
       .agent-done.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
       .agent-log {
@@ -5434,6 +5491,30 @@ if (cameFromOffer && openedSlug) {
       document.addEventListener('click', () => { if (!paintPanel.hidden) setPaint(false); });
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !paintPanel.hidden) setPaint(false);
+      });
+
+      // Widget panel, same dropdown behaviour as Style.
+      const widgetPanel = $('agent-widgets');
+      const widgetBtn = $('widget-btn');
+      function setWidgets(open) {
+        widgetPanel.hidden = !open;
+        widgetBtn.classList.toggle('on', open);
+        widgetBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+      widgetBtn.addEventListener('click', (e) => { e.stopPropagation(); setWidgets(widgetPanel.hidden); });
+      widgetPanel.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => { if (!widgetPanel.hidden) setWidgets(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !widgetPanel.hidden) setWidgets(false);
+      });
+      widgetPanel.querySelectorAll('[data-widget]').forEach((card) => {
+        card.addEventListener('click', () => {
+          setWidgets(false);
+          const which = card.dataset.widget;
+          route(which === 'spinner-off'
+            ? 'turn the spin to win wheel off'
+            : 'set up the spin to win wheel on my site');
+        });
       });
 
       $('media-btn').addEventListener('click', () => openMedia(null));

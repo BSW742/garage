@@ -382,6 +382,32 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_spinner',
+    description:
+      'Turn the spin-to-win wheel on or off, and set what is on it. A tab sits on the edge of ' +
+      'every page; a visitor opens it, gives their name, email and phone, and spins. The wheel ' +
+      'has eight equal slots and is genuinely random — the first offer is the top prize and comes ' +
+      'up one spin in eight, so tell the owner that plainly before switching it on and make sure ' +
+      'they are happy to honour it at that rate. You need at least three real offers, in their ' +
+      'words, and the first one is the big one. Empty slots become "Not this time". Nothing is ' +
+      'ever emailed to the visitor — the details go to the owner, and the form says so.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the wheel on the site.' },
+        offers: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'At least three, best first. Real things: "A free coffee", "20% off your next cut".',
+        },
+        title: { type: 'string', description: 'The tab and the heading, e.g. "Spin to win".' },
+        blurb: { type: 'string', description: 'One line under the heading.' },
+        terms: { type: 'string', description: 'Any conditions, e.g. "One spin per person, in store only."' },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'add_clips',
     description:
       'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
@@ -717,6 +743,41 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to set' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'set_spinner': {
+      const spin: any = site.spinner || {};
+      if (input.offers !== undefined) {
+        const offers = (input.offers || [])
+          .map((o: any) => String(o || '').trim())
+          .filter(Boolean)
+          .slice(0, 8);
+        if (input.on && offers.length < 3) {
+          return {
+            ok: false,
+            message: `The wheel needs at least three offers and I have ${offers.length}. Ask them what else they can put on it.`,
+          };
+        }
+        spin.offers = offers;
+      }
+      if (input.on && (spin.offers || []).length < 3) {
+        return { ok: false, message: 'No offers on the wheel yet — ask them for three, best one first.' };
+      }
+      if (input.title !== undefined) spin.title = String(input.title).slice(0, 40);
+      if (input.blurb !== undefined) spin.blurb = String(input.blurb).slice(0, 140);
+      if (input.terms !== undefined) spin.terms = String(input.terms).slice(0, 200);
+      spin.on = !!input.on;
+      site.spinner = spin;
+
+      if (!spin.on) return { ok: true, message: 'Wheel is off.' };
+      return {
+        ok: true,
+        message:
+          `Wheel is on with ${spin.offers.length} offers. Top prize is "${spin.offers[0]}", ` +
+          `which lands one spin in eight. The other ${spin.offers.length - 1} are scattered and ` +
+          `the remaining ${8 - spin.offers.length} slots say "Not this time".`,
+        data: { spinner: spin },
+      };
     }
 
     case 'add_clips': {
