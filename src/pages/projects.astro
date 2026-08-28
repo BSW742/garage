@@ -20,7 +20,7 @@ interface Row {
 let sites: {
   slug: string; name: string; lede: string; style: string;
   hero: string | null; primary: string; deep: string;
-  touched: string | null; fresh: boolean;
+  touched: string | null; fresh: boolean; bubbles: string[];
 }[] = [];
 let entries: { id: number; title: string; body: string | null; created_at: string }[] = [];
 let liveCount = 0;
@@ -89,6 +89,14 @@ try {
           // — a badge on everything is a badge on nothing. The date underneath
           // does the honest work.
           fresh: age < 2 * 86400000,
+          // A bubbles site gets its own card treatment, so it needs several
+          // pictures rather than one. Same scoring — logos are no better as a
+          // bubble than they are as a hero.
+          bubbles:
+            (c.style || '') === 'bubbles'
+              ? candidates.map((u) => ({ u, s: score(u) })).filter((x) => x.s >= 0)
+                  .sort((a, b) => b.s - a.s).slice(0, 5).map((x) => x.u)
+              : [],
           slug: row.slug,
           name: c.name || row.slug,
           lede: String(c.lede || c.headline || '').slice(0, 110),
@@ -178,10 +186,18 @@ const when = (iso: string) => {
           >
             <span class="card-frame">
               <span class="card-bar"><i></i><i></i><i></i><b>{s.slug}.garage.co.nz</b></span>
-              <span
-                class="card-shot"
-                style={s.hero ? `background-image:url(${s.hero})` : ''}
-              >{!s.hero && <span class="card-initial">{s.name.slice(0, 1).toUpperCase()}</span>}</span>
+              {s.bubbles.length >= 3 ? (
+                <span class="card-shot card-bub">
+                  {s.bubbles.slice(0, 5).map((u, i) => (
+                    <span class={`bub b${i + 1}`} style={`background-image:url(${u})`}></span>
+                  ))}
+                </span>
+              ) : (
+                <span
+                  class="card-shot"
+                  style={s.hero ? `background-image:url(${s.hero})` : ''}
+                >{!s.hero && <span class="card-initial">{s.name.slice(0, 1).toUpperCase()}</span>}</span>
+              )}
             </span>
             <span class="card-say">
               <b>{s.name}</b>
@@ -302,6 +318,35 @@ const when = (iso: string) => {
     background-size: cover; background-position: center;
     background-color: color-mix(in srgb, var(--card-primary) 14%, #fff);
   }
+  /* A bubbles site gets bubbles on its card. A single cropped photograph tells
+     you nothing about what that template does; five circles floating tell you
+     immediately, and they are the site's own pictures. Positions are fixed
+     rather than random so the card looks the same on every render. */
+  .card-bub {
+    position: relative; overflow: hidden;
+    background:
+      radial-gradient(22rem 14rem at 18% 8%, color-mix(in srgb, var(--card-primary) 22%, transparent), transparent 62%),
+      radial-gradient(18rem 12rem at 88% 78%, color-mix(in srgb, var(--card-deep) 18%, transparent), transparent 62%),
+      #fbfaff;
+  }
+  .card-bub .bub {
+    position: absolute; border-radius: 50%; background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 22px -12px rgba(25, 23, 32, 0.6),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+      inset 0 8px 14px -10px rgba(255, 255, 255, 0.55);
+  }
+  .card-bub .bub:after {
+    content: ''; position: absolute; top: 10%; left: 14%; width: 26%; height: 19%;
+    border-radius: 50%; filter: blur(2px);
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
+  }
+  .card-bub .b1 { width: 46%; padding-bottom: 46%; left: 4%;  top: 16%; }
+  .card-bub .b2 { width: 30%; padding-bottom: 30%; left: 44%; top: 4%; }
+  .card-bub .b3 { width: 34%; padding-bottom: 34%; left: 62%; top: 40%; }
+  .card-bub .b4 { width: 22%; padding-bottom: 22%; left: 38%; top: 52%; }
+  .card-bub .b5 { width: 17%; padding-bottom: 17%; left: 20%; top: 68%; }
+
   .card-initial {
     font-family: var(--font-display); font-size: 2.6rem; font-weight: 800;
     color: var(--card-primary); opacity: 0.55;
