@@ -2377,7 +2377,7 @@ if (cameFromOffer && openedSlug) {
             const data = await res.json();
 
             S.slug = data.slug;
-            S.site = data.site;
+            S.site = adopt(data.site);
             S.sourceUrl = data.sourceUrl || '';
             S.token = params.get('t') || (() => {
               try { return localStorage.getItem('garage-build:' + data.slug); } catch (e) { return null; }
@@ -3286,6 +3286,26 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-primary', pal.primary || '#2563eb');
         root.parentElement.style.setProperty('--pv-deep', pal.deep || '#1e40af');
         root.parentElement.style.setProperty('--pv-wash', pal.wash || '#f6f8fb');
+      }
+
+      // Anything the builder did not write may be missing the shapes the
+      // builder assumes. The cron writes no palette; the reel script wrote no
+      // contact; an import may have neither. Every one of those was a
+      // TypeError inside render(), which the caller reports as "couldn't load
+      // that one" — the same sentence as a wrong address, so it looked like a
+      // bad slug rather than a crash.
+      //
+      // Filling the gaps once on the way in beats guarding forty reads.
+      function adopt(site) {
+        const s = site || {};
+        if (!Array.isArray(s.sections)) s.sections = [];
+        if (!s.contact || typeof s.contact !== 'object') s.contact = {};
+        if (!Array.isArray(s.products)) s.products = [];
+        if (!s.palette || typeof s.palette !== 'object') s.palette = {};
+        s.palette.primary = s.palette.primary || '#2563eb';
+        s.palette.deep = s.palette.deep || '#1e40af';
+        s.palette.wash = s.palette.wash || '#f6f8fb';
+        return s;
       }
 
       function render() {
@@ -4233,7 +4253,7 @@ if (cameFromOffer && openedSlug) {
         if (wants(t, ['undo', 'go back', 'revert'])) {
           const prev = S.history.pop();
           if (!prev) { await say('Nothing to undo yet.'); chips(IDLE_CHIPS); return; }
-          S.site = JSON.parse(prev);
+          S.site = adopt(JSON.parse(prev));
           renderedKeys = new Set();
           render();
           await say('Rolled that back.');
@@ -5611,7 +5631,7 @@ if (cameFromOffer && openedSlug) {
           const data = await res.json();
 
           snapshot();
-          S.site = data.site;
+          S.site = adopt(data.site);
           S.chat = data.history || S.chat;
           renderedKeys = new Set();
           clearSelection(false);
