@@ -1,613 +1,413 @@
 ---
 import Layout from '../components/Layout.astro';
+
+// The work page. Two thirds of it is the sites, in two columns; the last third
+// is what has shipped. Both come from the database rather than a list somebody
+// has to remember to edit, because a stale work page is worse than none.
+//
+// The cards are not screenshots. A screenshot service is a running cost and a
+// thing that breaks quietly; instead each card is built from the site's own
+// hero image, name and palette, framed like a browser window. It is honest —
+// every pixel came off the actual site — and it stays right when they edit it.
+
+interface Row {
+  slug: string;
+  config: string;
+  touched: string | null;
+  created_at: string | null;
+}
+
+let sites: {
+  slug: string; name: string; lede: string; style: string;
+  hero: string | null; primary: string; deep: string;
+  touched: string | null; fresh: boolean; bubbles: string[];
+}[] = [];
+let entries: { id: number; title: string; body: string | null; created_at: string }[] = [];
+let liveCount = 0;
+let todayCount = 0;
+
+try {
+  const db = (Astro.locals as any)?.runtime?.env?.DB;
+  if (db) {
+    const { results } = await db
+      .prepare(
+        `SELECT slug, config, COALESCE(updated_at, created_at) AS touched, created_at
+           FROM site_claims
+          WHERE in_projects = 1 AND status != 'disabled'
+          ORDER BY COALESCE(updated_at, created_at) DESC LIMIT 60`
+      )
+      .all();
+
+    sites = ((results || []) as Row[])
+      .map((row) => {
+        let c: any = {};
+        try { c = JSON.parse(row.config || '{}'); } catch { return null; }
+        const pal = c.palette || {};
+        // Pick a photograph, not a logo.
+        //
+        // The first version simply took heroImage, and Tees St's hero is a PNG
+        // wordmark — so the card cropped it into two enormous letters. A card
+        // that shows "ees s" is worse than a card showing nothing.
+        //
+        // No image is downloaded to work this out; the URL is enough. Logos are
+        // PNG or SVG almost without exception, photographs are JPEG, WebP or
+        // AVIF almost without exception, and anything calling itself a logo,
+        // icon or badge says so in its path.
+        const candidates: string[] = [
+          c.heroImage,
+          ...(c.images || []),
+          ...(c.sections || [])
+            .filter((x: any) => x?.type === 'gallery')
+            .flatMap((x: any) => x.images || []),
+          ...(c.products || []).map((p: any) => p?.image),
+        ].filter((u: any) => typeof u === 'string' && /^https?:\/\//.test(u));
+
+        const logoUrl = String(c.logo || '');
+        const score = (u: string) => {
+          const path = u.split('?')[0].toLowerCase();
+          if (logoUrl && u === logoUrl) return -100;
+          if (/logo|favicon|icon|sprite|badge|placeholder|filler|spacer/.test(path)) return -100;
+          if (/\.(jpe?g|webp|avif)(\/|$)/.test(path) || /\.(jpe?g|webp|avif)\//.test(path)) return 2;
+          if (/\.(png|svg)(\/|$)/.test(path) || /\.(png|svg)\//.test(path)) return -1;
+          return 0;   // no extension to go on — a CDN URL, probably fine
+        };
+
+        // Only a picture we are reasonably sure is a picture. Shaws' six
+        // "images" are white SVG category icons — best of a bad lot is still a
+        // blank white card, and the branded initial at least looks deliberate.
+        const hero =
+          candidates
+            .map((u) => ({ u, s: score(u) }))
+            .filter((x) => x.s >= 0)
+            .sort((a, b) => b.s - a.s)[0]?.u || null;
+        const t = Date.parse(String(row.touched || '').replace(' ', 'T') + 'Z');
+        const age = Number.isFinite(t) ? Date.now() - t : Infinity;
+        return {
+          touched: row.touched,
+          // Only one badge, and only when it means something. A "New" flag was
+          // landing on every card, because these were all seeded the same week
+          // — a badge on everything is a badge on nothing. The date underneath
+          // does the honest work.
+          fresh: age < 2 * 86400000,
+          // A bubbles site gets its own card treatment, so it needs several
+          // pictures rather than one. Same scoring — logos are no better as a
+          // bubble than they are as a hero.
+          bubbles:
+            (c.style || '') === 'bubbles'
+              ? candidates.map((u) => ({ u, s: score(u) })).filter((x) => x.s >= 0)
+                  .sort((a, b) => b.s - a.s).slice(0, 5).map((x) => x.u)
+              : [],
+          slug: row.slug,
+          name: c.name || row.slug,
+          lede: String(c.lede || c.headline || '').slice(0, 110),
+          style: c.style || 'modern',
+          hero: typeof hero === 'string' && /^https?:\/\//.test(hero) ? hero : null,
+          primary: pal.primary || '#2563eb',
+          deep: pal.deep || '#1e40af',
+        };
+      })
+      .filter(Boolean) as typeof sites;
+
+    // The whole estate, not just what is starred — that is the number worth
+    // putting on a wall.
+    const tally = await db
+      .prepare(
+        `SELECT COUNT(*) AS live,
+                SUM(CASE WHEN COALESCE(updated_at, created_at) > datetime('now','-1 day')
+                         THEN 1 ELSE 0 END) AS today
+           FROM site_claims WHERE status != 'disabled'`
+      )
+      .first();
+    liveCount = Number(tally?.live || 0);
+    todayCount = Number(tally?.today || 0);
+
+    const log = await db
+      .prepare('SELECT id, title, body, created_at FROM changelog ORDER BY created_at DESC LIMIT 30')
+      .all();
+    entries = (log.results || []) as typeof entries;
+  }
+} catch {
+  // A work page that renders empty beats one that 500s.
+}
+
+/** How long since somebody last worked on it. */
+const touchedAgo = (iso: string) => {
+  const t = Date.parse(String(iso).replace(' ', 'T') + 'Z');
+  if (!Number.isFinite(t)) return '';
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days < 1) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  const months = Math.round(days / 30);
+  return months <= 1 ? 'last month' : `${months} months ago`;
+};
+
+const when = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isFinite(d.getTime())
+    ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })
+    : '';
+};
 ---
 
-<Layout title="Home">
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero-bg"></div>
-
-    <!-- Projects Overlay (hidden by default) -->
-    <div class="projects-grid" id="projects-overlay">
-      <a href="https://bridgepoint.co.nz" target="_blank" class="project-tile size-a pos-2">
-        <div class="tile-preview" style="background-image: url('/projects/bridgepoint.jpg')"></div>
-        <div class="tile-info">
-          <span class="tile-domain">bridgepoint.co.nz</span>
-        </div>
-      </a>
-      <a href="https://waltonboxing.pages.dev" target="_blank" class="project-tile size-a pos-3">
-        <video class="tile-video" autoplay muted loop playsinline>
-          <source src="/waltonboxing.mp4" type="video/mp4" />
-        </video>
-        <div class="tile-info">
-          <span class="tile-domain">waltonboxing.pages.dev</span>
-        </div>
-      </a>
-    </div>
-
-    <img src="/lean.png" alt="Garage mascot" class="hero-mascot" />
-
-    <div class="hero-content">
-      <p class="hero-eyebrow">For NZ charities & community projects</p>
-      <h1><span class="hit-letter">W</span><span class="hit-letter">e</span><span class="hit-letter">b</span><span class="hit-letter">s</span><span class="hit-letter">i</span><span class="hit-letter">t</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.<br/><span class="hero-accent"><span class="hit-letter hit-first">B</span><span class="hit-letter hit-first">e</span><span class="hit-letter hit-first">a</span><span class="hit-letter hit-first">u</span><span class="hit-letter hit-first">t</span><span class="hit-letter hit-first">i</span><span class="hit-letter hit-first">f</span><span class="hit-letter hit-first">u</span><span class="hit-letter hit-first">l</span></span> <span class="hit-letter">o</span><span class="hit-letter">n</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.</h1>
-      <p class="hero-sub">We build professional websites for organisations doing good in Aotearoa. No cost, no catch — just people helping people.</p>
-      <a href="/apply" class="hero-cta">
-        <span>Tell us about your project</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
-    </div>
-  </section>
-
-  <!-- How it works -->
-  <section class="how">
-    <div class="how-content">
-      <h2 class="section-label">How it works</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <h3>Share your story</h3>
-          <p>Tell us about your organisation and what you're trying to achieve. Takes about 5 minutes.</p>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <h3>We design & build</h3>
-          <p>Our team creates a custom website that captures your mission and connects with your community.</p>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <h3>You go live</h3>
-          <p>Review, refine, and launch. We handle hosting forever. You focus on your mission.</p>
-        </div>
+<Layout title="Work — garage.co.nz" description="Sites built on garage.co.nz, and what has shipped lately.">
+  <div class="work">
+    <header class="work-head">
+      <p class="work-eyebrow">The work</p>
+      <h1>Real sites, built by talking.</h1>
+      <div class="work-doing">
+        <a class="work-btn" href="/ai">Build yours</a>
+        <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
+        <span class="work-btn tag"><i></i>1 Million free tokens</span>
       </div>
-    </div>
-  </section>
 
-  <!-- CTA -->
-  <section class="cta">
-    <div class="cta-bg"></div>
-    <div class="cta-content">
-      <h2>Doing good in<br/>your community?</h2>
-      <p>If you're a registered charity, community group, or working on a project that helps others — we'd love to hear from you.</p>
-      <a href="/apply" class="cta-btn">
-        <span>Apply for a website</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
+      <p class="work-meta">Free for any NZ business.</p>
+
+      <div class="how" id="how" hidden>
+        <ol>
+          <li><b>Say what you do.</b> No forms, no templates to pick through — you describe the business in plain words and it builds the page while you watch.</li>
+          <li><b>Change anything by asking.</b> Type over the words on the page, or tell it what to move. It is your site from the first minute.</li>
+          <li><b>Publish to yours.garage.co.nz.</b> Free, and a million tokens of building goes with it — enough to make a site and keep changing it.</li>
+          <li><b>Keep it fresh and you stay top of this page.</b> Newest first, always.</li>
+        </ol>
+      </div>
+    </header>
+
+    <div class="work-body">
+      <section class="work-grid" aria-label="Sites built on garage.co.nz">
+        {sites.length === 0 && <p class="work-none">Nothing published yet.</p>}
+        {sites.map((s) => (
+          <a
+            class="card"
+            href={`https://${s.slug}.garage.co.nz`}
+            target="_blank"
+            rel="noopener"
+            style={`--card-primary:${s.primary};--card-deep:${s.deep}`}
+          >
+            <span class="card-frame">
+              <span class="card-bar"><i></i><i></i><i></i><b>{s.slug}.garage.co.nz</b></span>
+              {s.bubbles.length >= 3 ? (
+                <span class="card-shot card-bub">
+                  {s.bubbles.slice(0, 5).map((u, i) => (
+                    <span class={`bub b${i + 1}`} style={`background-image:url(${u})`}></span>
+                  ))}
+                </span>
+              ) : (
+                <span
+                  class="card-shot"
+                  style={s.hero ? `background-image:url(${s.hero})` : ''}
+                >{!s.hero && <span class="card-initial">{s.name.slice(0, 1).toUpperCase()}</span>}</span>
+              )}
+            </span>
+            <span class="card-say">
+              <b>{s.name}</b>
+              {s.lede && <span>{s.lede}</span>}
+              <span class="card-foot">
+                <i class="card-tpl">{s.style}</i>
+                {s.fresh && <i class="card-flag">Just updated</i>}
+                {s.touched && <i class="card-when">{touchedAgo(s.touched)}</i>}
+              </span>
+            </span>
+          </a>
+        ))}
+      </section>
+
+      <aside class="work-log" aria-label="What has shipped">
+        <h2>Shipped</h2>
+        {entries.length === 0 && <p class="work-none small">Nothing logged yet.</p>}
+        <ol>
+          {entries.map((e) => (
+            <li>
+              <span class="log-when">{when(e.created_at)}</span>
+              <b>{e.title}</b>
+              {e.body && <p>{e.body}</p>}
+            </li>
+          ))}
+        </ol>
+      </aside>
     </div>
-  </section>
+  </div>
 </Layout>
 
 <style>
-  /* Hero */
-  .hero {
-    min-height: 85vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 6rem 2rem;
-    position: relative;
-    overflow: hidden;
+  .work { max-width: 1500px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+  .work-head { max-width: 46rem; margin-bottom: 3rem; }
+  .work-eyebrow {
+    font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; color: var(--color-accent, #2563eb); margin-bottom: 1rem;
+  }
+  .work h1 {
+    font-family: var(--font-display); font-size: clamp(2.2rem, 6vw, 3.6rem);
+    font-weight: 800; letter-spacing: -0.035em; line-height: 1.02;
+  }
+  .work-doing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 2rem; }
+  .work-btn {
+    display: inline-block; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--color-accent, #2563eb); color: #fff;
+    font: inherit; font-size: 0.95rem; font-weight: 600;
+    padding: 0.7rem 1.5rem; text-decoration: none;
+  }
+  .work-btn.ghost {
+    background: transparent; color: inherit;
+    border: 1px solid var(--color-border, #e5e5e5);
+  }
+  .work-btn.ghost:hover { border-color: var(--color-text-muted); }
+  /* A third bubble, sitting with the buttons but not pretending to be one —
+     no pointer, no hover. It reads as a fact on the shelf beside the actions,
+     which is quieter than a banner and easier to believe. */
+  .work-btn.tag {
+    display: inline-flex; align-items: center; gap: 0.5rem; cursor: default;
+    background: color-mix(in srgb, var(--color-accent, #2563eb) 8%, transparent);
+    color: var(--color-accent, #2563eb);
+    border: 1px solid color-mix(in srgb, var(--color-accent, #2563eb) 20%, transparent);
+    font-weight: 600;
+  }
+  .work-btn.tag i {
+    width: 0.4rem; height: 0.4rem; border-radius: 50%; flex: none;
+    background: currentColor; opacity: 0.7;
+  }
+  /* A line of fact, not a banner. The offer is more convincing said quietly
+     next to a real number than shouted out of a coloured box — the box read as
+     a discount sticker and cheapened the thing it sat above. */
+  .work-meta {
+    margin-top: 0.8rem; font-size: 0.95rem; line-height: 1.6;
+    color: var(--color-text-muted); font-variant-numeric: tabular-nums;
+    max-width: 34rem;
+  }
+  .work-meta b { color: var(--color-text, inherit); font-weight: 700; }
+
+  .how { margin-top: 1.2rem; }
+  .how[hidden] { display: none; }
+  .how ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.7rem; }
+  .how li { font-size: 0.95rem; line-height: 1.6; color: var(--color-text-muted); }
+  .how li b { color: var(--color-text, inherit); }
+
+  /* Two thirds sites, one third log. */
+  .work-body { display: grid; grid-template-columns: 1fr; gap: 3rem; align-items: start; }
+  @media (min-width: 1000px) {
+    .work-body { grid-template-columns: 2fr 1fr; gap: 3.5rem; }
   }
 
-  .hero-bg {
-    position: absolute;
-    inset: 0;
+  .work-grid { display: grid; grid-template-columns: 1fr; gap: 1.4rem; }
+  @media (min-width: 620px) { .work-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .card { display: block; text-decoration: none; color: inherit; }
+  .card-frame {
+    display: block; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--color-border, #e5e5e5); background: #fff;
+    box-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.5);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  }
+  .card:hover .card-frame {
+    transform: translateY(-4px);
+    box-shadow: 0 28px 55px -28px rgba(15, 23, 42, 0.55);
+  }
+  .card-bar {
+    display: flex; align-items: center; gap: 5px; padding: 8px 12px;
+    background: #f6f7f9; border-bottom: 1px solid var(--color-border, #e5e5e5);
+  }
+  .card-bar i { width: 8px; height: 8px; border-radius: 50%; background: #d7dae0; }
+  .card-bar b {
+    margin-left: 8px; font-size: 11px; font-weight: 500; color: #8b91a1;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card-shot {
+    display: grid; place-items: center; aspect-ratio: 16 / 10;
+    background-size: cover; background-position: center;
+    background-color: color-mix(in srgb, var(--card-primary) 14%, #fff);
+  }
+  /* A bubbles site gets bubbles on its card. A single cropped photograph tells
+     you nothing about what that template does; five circles floating tell you
+     immediately, and they are the site's own pictures. Positions are fixed
+     rather than random so the card looks the same on every render. */
+  .card-bub {
+    position: relative; overflow: hidden;
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
-      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    z-index: 0;
+      radial-gradient(22rem 14rem at 18% 8%, color-mix(in srgb, var(--card-primary) 22%, transparent), transparent 62%),
+      radial-gradient(18rem 12rem at 88% 78%, color-mix(in srgb, var(--card-deep) 18%, transparent), transparent 62%),
+      #fbfaff;
+  }
+  .card-bub .bub {
+    position: absolute; border-radius: 50%; background-size: cover;
+    background-position: center;
+    box-shadow: 0 10px 22px -12px rgba(25, 23, 32, 0.6),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+      inset 0 8px 14px -10px rgba(255, 255, 255, 0.55);
+  }
+  .card-bub .bub:after {
+    content: ''; position: absolute; top: 10%; left: 14%; width: 26%; height: 19%;
+    border-radius: 50%; filter: blur(2px);
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
+  }
+  .card-bub .b1 { width: 46%; padding-bottom: 46%; left: 4%;  top: 16%; }
+  .card-bub .b2 { width: 30%; padding-bottom: 30%; left: 44%; top: 4%; }
+  .card-bub .b3 { width: 34%; padding-bottom: 34%; left: 62%; top: 40%; }
+  .card-bub .b4 { width: 22%; padding-bottom: 22%; left: 38%; top: 52%; }
+  .card-bub .b5 { width: 17%; padding-bottom: 17%; left: 20%; top: 68%; }
+
+  .card-initial {
+    font-family: var(--font-display); font-size: 2.6rem; font-weight: 800;
+    color: var(--card-primary); opacity: 0.55;
+  }
+  .card-say { display: block; padding: 0.9rem 0.2rem 0; }
+  .card-say b { display: block; font-size: 1.02rem; font-weight: 700; letter-spacing: -0.01em; }
+  .card-say span {
+    display: block; margin-top: 0.25rem; color: var(--color-text-muted);
+    font-size: 0.88rem; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
+  .card-flag {
+    font-style: normal; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 700; border-radius: 999px; padding: 0.22rem 0.6rem;
+    background: #ecfdf5; color: #047857;
+  }
+  .card-when { font-style: normal; font-size: 0.75rem; color: var(--color-text-muted); }
+  .card-tpl {
+    display: inline-block; font-style: normal; font-size: 0.68rem;
+    letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
+    color: var(--card-primary);
+    background: color-mix(in srgb, var(--card-primary) 12%, transparent);
+    border-radius: 999px; padding: 0.22rem 0.6rem;
   }
 
-  .hero-content {
-    max-width: 800px;
-    position: relative;
-    z-index: 1;
+  .work-log { position: sticky; top: 2rem; }
+  .work-log h2 {
+    font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; color: var(--color-text-muted); margin-bottom: 1.4rem;
   }
-
-  .hero-mascot {
-    position: absolute;
-    right: calc(50% + 180px);
-    top: 50%;
-    transform: translateY(-45%);
-    height: 380px;
-    width: auto;
-    z-index: 3;
-    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.15));
-    cursor: grab;
-    user-select: none;
+  .work-log ol { list-style: none; margin: 0; padding: 0; position: relative; }
+  .work-log ol:before {
+    content: ''; position: absolute; left: 4px; top: 6px; bottom: 6px;
+    width: 1px; background: var(--color-border, #e5e5e5);
   }
-
-  .hero-mascot.dragging {
-    cursor: grabbing;
-    filter: drop-shadow(0 20px 50px rgba(0,0,0,0.25));
+  .work-log li { position: relative; padding: 0 0 1.5rem 1.6rem; }
+  .work-log li:before {
+    content: ''; position: absolute; left: 0; top: 6px; width: 9px; height: 9px;
+    border-radius: 50%; background: var(--color-accent, #2563eb);
+    box-shadow: 0 0 0 3px var(--color-bg, #fff);
   }
-
-  @media (max-width: 1200px) {
-    .hero-mascot {
-      display: none;
-    }
+  .log-when {
+    display: block; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-text-muted); font-weight: 600; margin-bottom: 0.2rem;
   }
+  .work-log b { font-size: 0.98rem; font-weight: 700; }
+  .work-log p { margin-top: 0.3rem; color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.55; }
 
-  /* Hit letters that swing when stick hits */
-  .hit-letter {
-    display: inline-block;
-    transform-origin: bottom center;
-    transition: transform 0.1s;
-  }
-  .hit-letter.hit {
-    animation: swingDown 2s ease-out forwards;
-  }
-  @keyframes swingDown {
-    0% { transform: rotate(0deg); }
-    15% { transform: rotate(85deg); }
-    30% { transform: rotate(70deg); }
-    45% { transform: rotate(80deg); }
-    60% { transform: rotate(75deg); }
-    100% { transform: rotate(90deg); }
-  }
-
-  .hero-eyebrow {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--color-accent);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 2rem;
-  }
-
-  .hero h1 {
-    font-family: var(--font-display);
-    font-size: clamp(3rem, 10vw, 5rem);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    margin-bottom: 1.5rem;
-    color: var(--color-text);
-  }
-
-  .hero-accent {
-    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-accent .hit-letter {
-    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-sub {
-    font-size: 1.25rem;
-    color: var(--color-text-soft);
-    margin-bottom: 3rem;
-    line-height: 1.7;
-    max-width: 560px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: var(--color-text);
-    color: white;
-    padding: 1.125rem 2rem;
-    border-radius: 100px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .hero-cta:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
-  }
-
-  .hero-cta svg {
-    transition: transform 0.3s;
-  }
-
-  .hero-cta:hover svg {
-    transform: translateX(4px);
-  }
-
-  /* Projects Bento Grid */
-  .projects-grid {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
-  }
-
-  .projects-grid.visible {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .projects-grid.visible .project-tile {
-    pointer-events: auto;
-  }
-
-  .project-tile {
-    position: absolute;
-    border-radius: 12px;
-    overflow: hidden;
-    pointer-events: auto;
-    text-decoration: none;
-    background: #000;
-    box-shadow:
-      0 2px 8px rgba(0,0,0,0.1),
-      0 12px 40px rgba(0,0,0,0.15);
-    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1),
-                box-shadow 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-  }
-
-  .project-tile:hover {
-    transform: scale(1.08) rotate(0deg) !important;
-    box-shadow:
-      0 4px 16px rgba(0,0,0,0.15),
-      0 24px 80px rgba(0,0,0,0.25);
-    z-index: 20;
-  }
-
-  .tile-preview {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: left top;
-    background-color: #1a1a1a;
-    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-  }
-
-  .project-tile:hover .tile-preview {
-    transform: scale(1.05);
-  }
-
-  .tile-video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top center;
-  }
-
-  .tile-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1rem 0.75rem 0.6rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
-    opacity: 0;
-    transform: translateY(4px);
-    transition: all 0.3s ease;
-  }
-
-  .project-tile:hover .tile-info {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .tile-domain {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: rgba(255,255,255,0.9);
-    letter-spacing: 0.02em;
-  }
-
-  /* CTA tiles */
-  .tile-cta {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(0,0,0,0.06);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .tile-cta:hover {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-
-  .cta-text {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    transition: color 0.3s;
-  }
-
-  .tile-cta:hover .cta-text {
-    color: white;
-  }
-
-  /* Varied sizes */
-  .size-a { width: 420px; height: 260px; }
-  .size-b { width: 270px; height: 195px; }
-  .size-c { width: 300px; height: 218px; }
-  .size-d { width: 150px; height: 105px; }
-  .size-e { width: 90px; height: 68px; }
-
-  /* Positions with subtle rotations */
-  .pos-1 { top: 6%; left: 2%; transform: rotate(-2deg); }
-  .pos-2 { top: 20%; right: 2%; transform: rotate(1.5deg); }
-  .pos-3 { top: 20%; left: 2%; transform: rotate(-3deg); }
-  .pos-4 { top: 8%; right: 2%; transform: rotate(3deg); }
-  .pos-5 { bottom: 5%; left: 30%; transform: rotate(1deg); }
-
-  @media (max-width: 1200px) {
-    .projects-grid { display: none; }
-  }
-
-  /* Section labels */
-  .section-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 3.5rem;
-    text-align: center;
-  }
-
-  /* How */
-  .how {
-    padding: 7rem 2rem;
-    background: var(--color-surface);
-  }
-
-  .how-content {
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 3rem;
-  }
-
-  .step {
-    text-align: center;
-    padding: 2rem;
-  }
-
-  .step-num {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
-    color: white;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.25rem;
-    margin-bottom: 1.75rem;
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
-  }
-
-  .step h3 {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    font-weight: 700;
-    margin-bottom: 0.875rem;
-    color: var(--color-text);
-  }
-
-  .step p {
-    color: var(--color-text-soft);
-    font-size: 1rem;
-    line-height: 1.7;
-  }
-
-  /* CTA */
-  .cta {
-    padding: 8rem 2rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cta-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, #0a0a0a 0%, #171717 50%, #1e293b 100%);
-    z-index: 0;
-  }
-
-  .cta-bg::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 60% 40% at 50% 120%, rgba(37, 99, 235, 0.15) 0%, transparent 60%);
-  }
-
-  .cta-content {
-    max-width: 650px;
-    margin: 0 auto;
-    text-align: center;
-    position: relative;
-    z-index: 1;
-  }
-
-  .cta h2 {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 6vw, 3.25rem);
-    font-weight: 800;
-    color: white;
-    margin-bottom: 1.25rem;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-  }
-
-  .cta p {
-    color: rgba(255,255,255,0.65);
-    font-size: 1.15rem;
-    margin-bottom: 2.5rem;
-    line-height: 1.7;
-  }
-
-  .cta-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: white;
-    color: var(--color-text);
-    padding: 1.125rem 2rem;
-    border-radius: 100px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  }
-
-  .cta-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-  }
-
-  .cta-btn svg {
-    transition: transform 0.3s;
-  }
-
-  .cta-btn:hover svg {
-    transform: translateX(4px);
-  }
-
-  @media (max-width: 768px) {
-    .hero {
-      min-height: 75vh;
-      padding: 4rem 1.5rem;
-    }
-
-    .cta {
-      padding: 5rem 1.5rem;
-    }
-  }
+  .work-none { color: var(--color-text-muted); }
+  .work-none.small { font-size: 0.9rem; }
+  @media (prefers-reduced-motion: reduce) { .card:hover .card-frame { transform: none; } }
 </style>
 
 <script>
-  // Projects overlay toggle
-  const toggle = document.getElementById('projects-toggle');
-  const overlay = document.getElementById('projects-overlay');
-
-  function toggleOverlay() {
-    overlay?.classList.toggle('visible');
-    // Clean up URL when hiding
-    if (!overlay?.classList.contains('visible') && window.location.search.includes('projects')) {
-      history.replaceState({}, '', '/');
-    }
-  }
-
-  // Show overlay if ?projects in URL
-  if (window.location.search.includes('projects')) {
-    overlay?.classList.add('visible');
-  }
-
-  // Toggle on click
-  toggle?.addEventListener('click', (e) => {
-    if (window.location.pathname === '/') {
-      e.preventDefault();
-      toggleOverlay();
-    }
+  const how = document.getElementById('how');
+  const btn = document.getElementById('how-open');
+  btn?.addEventListener('click', () => {
+    if (!how) return;
+    how.hidden = !how.hidden;
+    btn.setAttribute('aria-expanded', String(!how.hidden));
+    btn.textContent = how.hidden ? 'How it works' : 'Hide';
   });
-
-  // Draggable mascot easter egg
-  const mascot = document.querySelector('.hero-mascot') as HTMLElement;
-  if (mascot) {
-    let isDragging = false;
-    let startX = 0, startY = 0;
-    let initialX = 0, initialY = 0;
-
-    // Get initial position from CSS
-    const rect = mascot.getBoundingClientRect();
-    const heroRect = mascot.parentElement?.getBoundingClientRect();
-    if (heroRect) {
-      initialX = rect.left - heroRect.left;
-      initialY = rect.top - heroRect.top;
-    }
-
-    // Check for saved position
-    const saved = localStorage.getItem('mascot-pos');
-    if (saved) {
-      const pos = JSON.parse(saved);
-      mascot.style.right = 'auto';
-      mascot.style.top = 'auto';
-      mascot.style.transform = 'none';
-      mascot.style.left = pos.x + 'px';
-      mascot.style.top = pos.y + 'px';
-    }
-
-    function startDrag(e: MouseEvent | TouchEvent) {
-      isDragging = true;
-      mascot.classList.add('dragging');
-
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-      const rect = mascot.getBoundingClientRect();
-      startX = clientX - rect.left;
-      startY = clientY - rect.top;
-    }
-
-    function doDrag(e: MouseEvent | TouchEvent) {
-      if (!isDragging) return;
-      e.preventDefault();
-
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-      const heroRect = mascot.parentElement?.getBoundingClientRect();
-      if (!heroRect) return;
-
-      const x = clientX - heroRect.left - startX;
-      const y = clientY - heroRect.top - startY;
-
-      mascot.style.right = 'auto';
-      mascot.style.top = 'auto';
-      mascot.style.transform = 'none';
-      mascot.style.left = x + 'px';
-      mascot.style.top = y + 'px';
-    }
-
-    function endDrag() {
-      if (!isDragging) return;
-      isDragging = false;
-      mascot.classList.remove('dragging');
-
-      // Save position
-      const heroRect = mascot.parentElement?.getBoundingClientRect();
-      const rect = mascot.getBoundingClientRect();
-      if (heroRect) {
-        localStorage.setItem('mascot-pos', JSON.stringify({
-          x: rect.left - heroRect.left,
-          y: rect.top - heroRect.top
-        }));
-      }
-    }
-
-    mascot.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', doDrag);
-    document.addEventListener('mouseup', endDrag);
-
-    mascot.addEventListener('touchstart', startDrag, { passive: false });
-    document.addEventListener('touchmove', doDrag, { passive: false });
-    document.addEventListener('touchend', endDrag);
-  }
 </script>

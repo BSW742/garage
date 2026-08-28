@@ -2232,10 +2232,23 @@ if (cameFromOffer && openedSlug) {
       // ══════════════════════════════════════════════
       //  1. Hero
       // ══════════════════════════════════════════════
-      $('start-btn').addEventListener('click', () => {
+      function toAddress() {
         show('name');
         setTimeout(() => $('slug-input').focus(), 350);
-      });
+      }
+
+      $('start-btn').addEventListener('click', toAddress);
+
+      // Arriving from Claim in the nav, which is a decision already made — the
+      // hero exists to talk somebody into starting, and they have started. Drop
+      // them on the address step with the cursor already in the field.
+      const entry = new URLSearchParams(location.search);
+      if (entry.has('start') || location.hash === '#start') {
+        toAddress();
+        // Leave a clean URL behind so a refresh or a back button does not
+        // replay the jump.
+        history.replaceState(null, '', location.pathname);
+      }
 
       // ══════════════════════════════════════════════
       //  2. Subdomain

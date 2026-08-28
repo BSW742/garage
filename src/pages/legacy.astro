@@ -1,0 +1,613 @@
+---
+import Layout from '../components/Layout.astro';
+---
+
+<Layout title="Home">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+
+    <!-- Projects Overlay (hidden by default) -->
+    <div class="projects-grid" id="projects-overlay">
+      <a href="https://bridgepoint.co.nz" target="_blank" class="project-tile size-a pos-2">
+        <div class="tile-preview" style="background-image: url('/projects/bridgepoint.jpg')"></div>
+        <div class="tile-info">
+          <span class="tile-domain">bridgepoint.co.nz</span>
+        </div>
+      </a>
+      <a href="https://waltonboxing.pages.dev" target="_blank" class="project-tile size-a pos-3">
+        <video class="tile-video" autoplay muted loop playsinline>
+          <source src="/waltonboxing.mp4" type="video/mp4" />
+        </video>
+        <div class="tile-info">
+          <span class="tile-domain">waltonboxing.pages.dev</span>
+        </div>
+      </a>
+    </div>
+
+    <img src="/lean.png" alt="Garage mascot" class="hero-mascot" />
+
+    <div class="hero-content">
+      <p class="hero-eyebrow">For NZ charities & community projects</p>
+      <h1><span class="hit-letter">W</span><span class="hit-letter">e</span><span class="hit-letter">b</span><span class="hit-letter">s</span><span class="hit-letter">i</span><span class="hit-letter">t</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.<br/><span class="hero-accent"><span class="hit-letter hit-first">B</span><span class="hit-letter hit-first">e</span><span class="hit-letter hit-first">a</span><span class="hit-letter hit-first">u</span><span class="hit-letter hit-first">t</span><span class="hit-letter hit-first">i</span><span class="hit-letter hit-first">f</span><span class="hit-letter hit-first">u</span><span class="hit-letter hit-first">l</span></span> <span class="hit-letter">o</span><span class="hit-letter">n</span><span class="hit-letter">e</span><span class="hit-letter">s</span>.</h1>
+      <p class="hero-sub">We build professional websites for organisations doing good in Aotearoa. No cost, no catch — just people helping people.</p>
+      <a href="/apply" class="hero-cta">
+        <span>Tell us about your project</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <div class="how-content">
+      <h2 class="section-label">How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Share your story</h3>
+          <p>Tell us about your organisation and what you're trying to achieve. Takes about 5 minutes.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>We design & build</h3>
+          <p>Our team creates a custom website that captures your mission and connects with your community.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>You go live</h3>
+          <p>Review, refine, and launch. We handle hosting forever. You focus on your mission.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-bg"></div>
+    <div class="cta-content">
+      <h2>Doing good in<br/>your community?</h2>
+      <p>If you're a registered charity, community group, or working on a project that helps others — we'd love to hear from you.</p>
+      <a href="/apply" class="cta-btn">
+        <span>Apply for a website</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* Hero */
+  .hero {
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+      linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    z-index: 0;
+  }
+
+  .hero-content {
+    max-width: 800px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-mascot {
+    position: absolute;
+    right: calc(50% + 180px);
+    top: 50%;
+    transform: translateY(-45%);
+    height: 380px;
+    width: auto;
+    z-index: 3;
+    filter: drop-shadow(0 10px 30px rgba(0,0,0,0.15));
+    cursor: grab;
+    user-select: none;
+  }
+
+  .hero-mascot.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 20px 50px rgba(0,0,0,0.25));
+  }
+
+  @media (max-width: 1200px) {
+    .hero-mascot {
+      display: none;
+    }
+  }
+
+  /* Hit letters that swing when stick hits */
+  .hit-letter {
+    display: inline-block;
+    transform-origin: bottom center;
+    transition: transform 0.1s;
+  }
+  .hit-letter.hit {
+    animation: swingDown 2s ease-out forwards;
+  }
+  @keyframes swingDown {
+    0% { transform: rotate(0deg); }
+    15% { transform: rotate(85deg); }
+    30% { transform: rotate(70deg); }
+    45% { transform: rotate(80deg); }
+    60% { transform: rotate(75deg); }
+    100% { transform: rotate(90deg); }
+  }
+
+  .hero-eyebrow {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2rem;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 10vw, 5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+  }
+
+  .hero-accent {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-accent .hit-letter {
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.25rem;
+    color: var(--color-text-soft);
+    margin-bottom: 3rem;
+    line-height: 1.7;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--color-text);
+    color: white;
+    padding: 1.125rem 2rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hero-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .hero-cta svg {
+    transition: transform 0.3s;
+  }
+
+  .hero-cta:hover svg {
+    transform: translateX(4px);
+  }
+
+  /* Projects Bento Grid */
+  .projects-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+
+  .projects-grid.visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .projects-grid.visible .project-tile {
+    pointer-events: auto;
+  }
+
+  .project-tile {
+    position: absolute;
+    border-radius: 12px;
+    overflow: hidden;
+    pointer-events: auto;
+    text-decoration: none;
+    background: #000;
+    box-shadow:
+      0 2px 8px rgba(0,0,0,0.1),
+      0 12px 40px rgba(0,0,0,0.15);
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1),
+                box-shadow 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .project-tile:hover {
+    transform: scale(1.08) rotate(0deg) !important;
+    box-shadow:
+      0 4px 16px rgba(0,0,0,0.15),
+      0 24px 80px rgba(0,0,0,0.25);
+    z-index: 20;
+  }
+
+  .tile-preview {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: left top;
+    background-color: #1a1a1a;
+    transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .project-tile:hover .tile-preview {
+    transform: scale(1.05);
+  }
+
+  .tile-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+
+  .tile-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 0.75rem 0.6rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all 0.3s ease;
+  }
+
+  .project-tile:hover .tile-info {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .tile-domain {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.02em;
+  }
+
+  /* CTA tiles */
+  .tile-cta {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(0,0,0,0.06);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tile-cta:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+
+  .cta-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    transition: color 0.3s;
+  }
+
+  .tile-cta:hover .cta-text {
+    color: white;
+  }
+
+  /* Varied sizes */
+  .size-a { width: 420px; height: 260px; }
+  .size-b { width: 270px; height: 195px; }
+  .size-c { width: 300px; height: 218px; }
+  .size-d { width: 150px; height: 105px; }
+  .size-e { width: 90px; height: 68px; }
+
+  /* Positions with subtle rotations */
+  .pos-1 { top: 6%; left: 2%; transform: rotate(-2deg); }
+  .pos-2 { top: 20%; right: 2%; transform: rotate(1.5deg); }
+  .pos-3 { top: 20%; left: 2%; transform: rotate(-3deg); }
+  .pos-4 { top: 8%; right: 2%; transform: rotate(3deg); }
+  .pos-5 { bottom: 5%; left: 30%; transform: rotate(1deg); }
+
+  @media (max-width: 1200px) {
+    .projects-grid { display: none; }
+  }
+
+  /* Section labels */
+  .section-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 3.5rem;
+    text-align: center;
+  }
+
+  /* How */
+  .how {
+    padding: 7rem 2rem;
+    background: var(--color-surface);
+  }
+
+  .how-content {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem;
+  }
+
+  .step {
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .step-num {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+  }
+
+  .step h3 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .step p {
+    color: var(--color-text-soft);
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  /* CTA */
+  .cta {
+    padding: 8rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #0a0a0a 0%, #171717 50%, #1e293b 100%);
+    z-index: 0;
+  }
+
+  .cta-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 120%, rgba(37, 99, 235, 0.15) 0%, transparent 60%);
+  }
+
+  .cta-content {
+    max-width: 650px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.25rem);
+    font-weight: 800;
+    color: white;
+    margin-bottom: 1.25rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .cta p {
+    color: rgba(255,255,255,0.65);
+    font-size: 1.15rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
+    color: var(--color-text);
+    padding: 1.125rem 2rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  .cta-btn svg {
+    transition: transform 0.3s;
+  }
+
+  .cta-btn:hover svg {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      min-height: 75vh;
+      padding: 4rem 1.5rem;
+    }
+
+    .cta {
+      padding: 5rem 1.5rem;
+    }
+  }
+</style>
+
+<script>
+  // Projects overlay toggle
+  const toggle = document.getElementById('projects-toggle');
+  const overlay = document.getElementById('projects-overlay');
+
+  function toggleOverlay() {
+    overlay?.classList.toggle('visible');
+    // Clean up URL when hiding
+    if (!overlay?.classList.contains('visible') && window.location.search.includes('projects')) {
+      history.replaceState({}, '', '/');
+    }
+  }
+
+  // Show overlay if ?projects in URL
+  if (window.location.search.includes('projects')) {
+    overlay?.classList.add('visible');
+  }
+
+  // Toggle on click
+  toggle?.addEventListener('click', (e) => {
+    if (window.location.pathname === '/') {
+      e.preventDefault();
+      toggleOverlay();
+    }
+  });
+
+  // Draggable mascot easter egg
+  const mascot = document.querySelector('.hero-mascot') as HTMLElement;
+  if (mascot) {
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialX = 0, initialY = 0;
+
+    // Get initial position from CSS
+    const rect = mascot.getBoundingClientRect();
+    const heroRect = mascot.parentElement?.getBoundingClientRect();
+    if (heroRect) {
+      initialX = rect.left - heroRect.left;
+      initialY = rect.top - heroRect.top;
+    }
+
+    // Check for saved position
+    const saved = localStorage.getItem('mascot-pos');
+    if (saved) {
+      const pos = JSON.parse(saved);
+      mascot.style.right = 'auto';
+      mascot.style.top = 'auto';
+      mascot.style.transform = 'none';
+      mascot.style.left = pos.x + 'px';
+      mascot.style.top = pos.y + 'px';
+    }
+
+    function startDrag(e: MouseEvent | TouchEvent) {
+      isDragging = true;
+      mascot.classList.add('dragging');
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const rect = mascot.getBoundingClientRect();
+      startX = clientX - rect.left;
+      startY = clientY - rect.top;
+    }
+
+    function doDrag(e: MouseEvent | TouchEvent) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const heroRect = mascot.parentElement?.getBoundingClientRect();
+      if (!heroRect) return;
+
+      const x = clientX - heroRect.left - startX;
+      const y = clientY - heroRect.top - startY;
+
+      mascot.style.right = 'auto';
+      mascot.style.top = 'auto';
+      mascot.style.transform = 'none';
+      mascot.style.left = x + 'px';
+      mascot.style.top = y + 'px';
+    }
+
+    function endDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+      mascot.classList.remove('dragging');
+
+      // Save position
+      const heroRect = mascot.parentElement?.getBoundingClientRect();
+      const rect = mascot.getBoundingClientRect();
+      if (heroRect) {
+        localStorage.setItem('mascot-pos', JSON.stringify({
+          x: rect.left - heroRect.left,
+          y: rect.top - heroRect.top
+        }));
+      }
+    }
+
+    mascot.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    mascot.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', doDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+  }
+</script>
