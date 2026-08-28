@@ -154,6 +154,73 @@
     .btn-green { background: #34c759; color: #fff; }
     .btn-gray { background: rgba(118,118,128,0.12); color: #000; }
     .btn-red { background: #ff3b30; color: #fff; }
+  /* ── Messages ─────────────────────────────────────────────────────────
+     A conversation list and a thread, laid out the way every phone
+     messaging app lays them out. Nothing clever — the point is that it
+     needs no explaining. */
+  .msg-list { background: #fff; }
+  .msg-row {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    border: 0; background: none; font: inherit; text-align: left;
+    padding: 10px 16px 10px 8px; cursor: pointer;
+    border-bottom: 0.5px solid rgba(60,60,67,0.14);
+  }
+  .msg-row:active { background: #d1d1d6; }
+  .msg-dot { width: 8px; height: 8px; border-radius: 4px; background: transparent; flex: none; }
+  .msg-dot.on { background: #007aff; }
+  .msg-av {
+    width: 44px; height: 44px; border-radius: 22px; background: #c7c7cc; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; flex: none;
+  }
+  .msg-mid { flex: 1; min-width: 0; display: block; }
+  .msg-top { display: flex; align-items: baseline; gap: 8px; }
+  .msg-top b { font-size: 17px; font-weight: 600; flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg-top i { font-style: normal; font-size: 13px; color: #8e8e93; flex: none; }
+  .msg-prev { display: block; font-size: 15px; color: #8e8e93; margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg-chev { color: #c7c7cc; font-size: 22px; flex: none; }
+
+  .thread-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+    border-bottom: 0.5px solid rgba(60,60,67,0.2); background: rgba(249,249,249,0.94);
+    position: sticky; top: 0; backdrop-filter: blur(20px); z-index: 5;
+  }
+  .thread-head b { font-size: 17px; font-weight: 600; }
+  .thread-back { border: 0; background: none; color: #007aff; font: inherit;
+    font-size: 17px; cursor: pointer; padding: 0; }
+
+  .thread-log {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 12px 16px 90px; overflow-y: auto;
+  }
+  .bub {
+    max-width: 76%; padding: 8px 13px; border-radius: 19px; font-size: 16px;
+    line-height: 1.35; word-wrap: break-word; white-space: pre-wrap;
+  }
+  .bub.them { align-self: flex-start; background: #e9e9eb; color: #000;
+    border-bottom-left-radius: 6px; }
+  .bub.me { align-self: flex-end; background: #007aff; color: #fff;
+    border-bottom-right-radius: 6px; }
+  .bub.bot { align-self: flex-end; background: #e5e5ea; color: #3a3a3c;
+    border-bottom-right-radius: 6px; }
+
+  .thread-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(249,249,249,0.94); backdrop-filter: blur(20px);
+    border-top: 0.5px solid rgba(60,60,67,0.2); z-index: 6;
+  }
+  .thread-bar input {
+    flex: 1; min-width: 0; border: 1px solid #d1d1d6; border-radius: 18px;
+    padding: 8px 14px; font: inherit; font-size: 16px; background: #fff;
+  }
+  .thread-bar button {
+    width: 34px; height: 34px; border: 0; border-radius: 17px; background: #007aff;
+    color: #fff; font-size: 18px; cursor: pointer; align-self: flex-end; flex: none;
+  }
+
 
     .empty {
       text-align: center;
@@ -228,7 +295,6 @@
     const CHAT_SLUG = 'garage';
     const CHAT_KEY = '83f0dd5f1e8b5b512b68fd95f564a827';
     let chatData = [];
-    let openThread = null;
 
     async function loadBookings() {
       try {
@@ -259,48 +325,107 @@
       updateCount();
     }
 
+    // A messages app, not a list of cards with a text box on each. Two views:
+    // the conversation list, and one conversation full screen with a sticky
+    // composer. Same shape as every phone messaging app, because that is what
+    // people already know how to use.
+    let openThread = null;
+    let openName = '';
+    let threadMsgs = [];
+
     function renderChat() {
       const el = document.getElementById('chat');
+      if (openThread) return renderThread(el);
+
       if (!chatData.length) {
         el.innerHTML = '<div class="empty">No one has messaged yet</div>';
         return;
       }
-      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:10px">' +
-        chatData.map(t => {
-          const waiting = t.last_sender === 'visitor';
-          const when = new Date(t.last_message_at).toLocaleDateString('en-NZ',
-            { day: 'numeric', month: 'short' });
-          const who = t.visitor_name || 'Name not given';
-          return `
-          <div style="background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-            <div style="display:flex;align-items:center;gap:8px">
-              ${waiting ? '<span style="width:8px;height:8px;border-radius:4px;background:#007aff;flex-shrink:0"></span>' : ''}
-              <div style="font-size:16px;font-weight:${waiting ? '600' : '400'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(who)}</div>
-              <span style="margin-left:auto;font-size:13px;color:#8e8e93;flex-shrink:0">${when}</span>
-            </div>
-            <div style="font-size:14px;color:#8e8e93;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.last_body || '')}</div>
-            <form onsubmit="return sendReply(event,'${t.id}')" style="display:flex;gap:8px;margin-top:10px">
-              <input name="body" placeholder="Reply" autocomplete="off" style="flex:1;min-width:0;border:1px solid #e5e5ea;border-radius:8px;padding:8px 10px;font-size:15px" />
-              <button type="submit" style="border:0;background:#007aff;color:#fff;border-radius:8px;padding:8px 14px;font-size:15px;font-weight:500">Send</button>
-            </form>
-          </div>`;
-        }).join('') + '</div>';
+      el.innerHTML = '<div class="msg-list">' + chatData.map(t => {
+        const waiting = t.last_sender === 'visitor';
+        const who = t.visitor_name || 'Name not given';
+        const when = shortWhen(t.last_message_at);
+        return `
+          <button class="msg-row" onclick="openChat('${t.id}', ${JSON.stringify(who)})">
+            <span class="msg-dot${waiting ? ' on' : ''}"></span>
+            <span class="msg-av">${esc(who[0].toUpperCase())}</span>
+            <span class="msg-mid">
+              <span class="msg-top"><b>${esc(who)}</b><i>${when}</i></span>
+              <span class="msg-prev">${esc(t.last_body || '')}</span>
+            </span>
+            <span class="msg-chev">&rsaquo;</span>
+          </button>`;
+      }).join('') + '</div>';
     }
 
-    async function sendReply(e, threadId) {
+    function renderThread(el) {
+      el.innerHTML = `
+        <div class="thread-head">
+          <button class="thread-back" onclick="closeChat()">&lsaquo; Messages</button>
+          <b>${esc(openName)}</b>
+        </div>
+        <div class="thread-log" id="thread-log">${threadMsgs.map(m => `
+          <div class="bub ${m.sender === 'visitor' ? 'them' : m.sender === 'bot' ? 'bot' : 'me'}">${esc(m.body)}</div>
+        `).join('')}</div>
+        <form class="thread-bar" onsubmit="return sendReply(event)">
+          <input name="body" placeholder="Message" autocomplete="off" />
+          <button type="submit" aria-label="Send">&uarr;</button>
+        </form>`;
+      const log = document.getElementById('thread-log');
+      if (log) log.scrollTop = log.scrollHeight;
+    }
+
+    function shortWhen(iso) {
+      const d = new Date(iso);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      return sameDay
+        ? d.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' })
+        : d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+    }
+
+    async function openChat(id, who) {
+      openThread = id;
+      openName = who;
+      await pullThread();
+    }
+    window.openChat = openChat;
+
+    function closeChat() {
+      openThread = null;
+      threadMsgs = [];
+      loadBookings();
+    }
+    window.closeChat = closeChat;
+
+    async function pullThread() {
+      if (!openThread) return;
+      try {
+        const r = await fetch('/api/chat/inbox?slug=' + CHAT_SLUG + '&key=' + CHAT_KEY +
+          '&threadId=' + encodeURIComponent(openThread));
+        if (r.ok) threadMsgs = (await r.json()).messages || [];
+      } catch (e) {}
+      renderChat();
+    }
+
+    async function sendReply(e) {
       e.preventDefault();
       const input = e.target.body;
       const body = input.value.trim();
-      if (!body) return false;
+      if (!body || !openThread) return false;
       input.value = '';
+      // Straight on screen, then confirmed by the next pull. Waiting on the
+      // network before showing your own message is what makes a chat feel slow.
+      threadMsgs.push({ sender: 'owner', body });
+      renderChat();
       try {
         await fetch('/api/chat/reply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: CHAT_SLUG, key: CHAT_KEY, threadId, body })
+          body: JSON.stringify({ slug: CHAT_SLUG, key: CHAT_KEY, threadId: openThread, body })
         });
       } catch (err) {}
-      loadBookings();
+      pullThread();
       return false;
     }
     window.sendReply = sendReply;

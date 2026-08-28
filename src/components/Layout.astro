@@ -197,7 +197,10 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       /* Kennel */
       .kennel {
         position: fixed;
-        bottom: 40px;
+        /* Lifted clear of the chat launcher, which sits at bottom 18px and is
+           about 44px tall. The dog and his bone keep their old relationship to
+           each other, just 52px further up. */
+        bottom: 92px;
         right: 20px;
         width: 50px;
         height: 45px;
@@ -232,7 +235,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       /* Throwable stick */
       .throw-stick {
         position: fixed;
-        bottom: 30px;
+        bottom: 82px;
         right: 80px;
         width: 50px;
         height: 70px;
@@ -794,6 +797,11 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     font:inherit;font-size:.92rem}
   .gg-form button{border:0;background:#111;color:#fff;border-radius:10px;padding:0 .95rem;
     font:inherit;font-weight:600;cursor:pointer}
+  /* The dog and his bone live in the same corner. Moving them above the
+     launcher was enough until the panel opens, which is far taller and lands
+     right on top of them. They step aside while you are chatting. */
+  .kennel,.throw-stick{transition:opacity .2s ease}
+  body.gg-open .kennel,body.gg-open .throw-stick{opacity:0;pointer-events:none}
 </style>
 <script is:inline>
 (function(){
@@ -824,6 +832,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
   document.getElementById('gg-launch').addEventListener('click', function(){
     panel.classList.add('on');
+    document.body.classList.add('gg-open');
     document.getElementById('gg-launch').style.display = 'none';
     if (!log.childElementCount) add('Kia ora — what can I help with?', false);
     document.getElementById('gg-in').focus();
@@ -831,6 +840,7 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   });
   document.getElementById('gg-x').addEventListener('click', function(){
     panel.classList.remove('on');
+    document.body.classList.remove('gg-open');
     document.getElementById('gg-launch').style.display = '';
   });
 
