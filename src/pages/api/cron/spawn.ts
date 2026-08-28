@@ -23,7 +23,7 @@ const MAX_OUT = 2000;
 
 // Business styles only. Nobody wants a memorial or a food diary spawned at 3am.
 const STYLES = ['modern', 'classic', 'cafe', 'physio', 'trade', 'beauty', 'yoga',
-                'pilates', 'eggs', 'mogged', 'bubbles'];
+                'pilates', 'eggs', 'mogged', 'bubbles', 'workshop', 'sauna'];
 
 const TOWNS = [
   // Aotearoa
@@ -44,6 +44,8 @@ const MUST: Record<string, { sections: string[]; say: string }> = {
   physio:  { sections: ['services', 'hours'], say: 'what you treat, and opening hours' },
   trade:   { sections: ['services'], say: 'the work you do, and the areas you cover' },
   beauty:  { sections: ['menu', 'hours'], say: 'treatments with durations and prices, and opening hours' },
+  workshop:{ sections: ['menu', 'faq'], say: 'the classes with prices, how long each runs, how many at the bench, and what the person takes home' },
+  sauna:   { sections: ['menu', 'steps', 'conditions', 'specs'], say: 'the round explained step by step with times a beginner can follow, sessions and passes with prices, how hot and how cold it runs, and a plain safety note' },
   yoga:    { sections: ['menu', 'pricing'], say: 'a full weekly timetable and the passes with prices' },
   pilates: { sections: ['menu', 'pricing'], say: 'a full weekly timetable and the passes with prices' },
   eggs:    { sections: ['credentials', 'specs'], say: 'certifications and the numbers' },
@@ -56,7 +58,7 @@ const MUST: Record<string, { sections: string[]; say: string }> = {
 const WHAT: Record<string, string> = {
   modern: 'a small service business', classic: 'a long-established local firm',
   cafe: 'a cafe', physio: 'a physiotherapy clinic', trade: 'a building or trades business',
-  beauty: 'a beauty salon or day spa', yoga: 'a yoga studio', pilates: 'a reformer pilates studio',
+  beauty: 'a beauty salon or day spa', workshop: 'a pottery or jewellery studio that teaches classes', sauna: 'a sauna and ice bath studio', yoga: 'a yoga studio', pilates: 'a reformer pilates studio',
   eggs: 'a food producer or grower', mogged: 'a small creative agency or consultancy',
   bubbles: 'an artist, maker or gallery',
 };
@@ -68,6 +70,10 @@ const PHOTOS: Record<string, string[]> = {
   yoga: ['photo-1761971975724-31001b4de0bf', 'photo-1761971975962-9cc397e2ba2a', 'photo-1676496962536-d8ef110ff6f0', 'photo-1599447421430-976c0f776d43', 'photo-1599447421338-2d21d3530aeb', 'photo-1636990628724-cb59f83326d7'],
   pilates: ['photo-1717500252297-b09508db7ceb', 'photo-1747238415033-b74eec07eb59', 'photo-1747239685045-fcbcf98985db', 'photo-1747239202356-764770773c9a', 'photo-1747240031720-dced770be260'],
   eggs: ['photo-1518569656558-1f25e69d93d7', 'photo-1582722872445-44dc5f7e3c8f', 'photo-1607690424560-35d967d6ad7c', 'photo-1612170153139-6f881ff067e0', 'photo-1519710164239-da123dc03ef4'],
+  // Every id below was fetched from the CDN before it went in — a pool that
+  // silently 404s produces a page of grey boxes and nobody notices for a week.
+  workshop: ['photo-1753164725860-ffcd260b7b32', 'photo-1753164726043-31e583f8a9b8', 'photo-1753164725896-f0a39315ff8a', 'photo-1753164725849-54c0698969e5', 'photo-1624585179018-25699030cb8f', 'photo-1609619742069-f5e18afeef17', 'photo-1628058494685-6c2f796ac24a', 'photo-1715374033196-0ff662284a7e', 'photo-1608508644127-ba99d7732fee'],
+  sauna: ['photo-1759216852954-88e547b8e01f', 'photo-1741601272577-fc2c46f87d9f', 'photo-1712659606957-b7395ba9ebb2', 'photo-1745894118353-88e64617e064', 'photo-1702285229572-8aa35e6e3f5d', 'photo-1734117928667-c7f943a27e80', 'photo-1712161321522-c24f686e4ace'],
   bubbles: ['photo-1578749556568-bc2c40e68b61', 'photo-1514228742587-6b1558fcca3d', 'photo-1610701596007-11502861dcfa', 'photo-1493106641515-6b5631de4bb9', 'photo-1565193566173-7a0ee3dbe261'],
 };
 
@@ -152,28 +158,55 @@ Sections, using only these shapes and only the ones that suit the business:
 Fill it properly. A page with four services and no hours is a worse page than one with both.
 Prices should be real numbers in local currency, not "from $X". Nothing about AI or websites.`;
 
+// Building a page takes the model twenty to thirty seconds, and the richer
+// templates take the longest — a workshop or a sauna has more required sections
+// than a salon, so it writes more. That is well past what a request in front of
+// Cloudflare is allowed to live for, and the first two runs of both new styles
+// came back 502 at twenty-two seconds while beauty finished at fourteen.
+//
+// Nothing is waiting on the answer. The cron fires and forgets; the result of a
+// run is a row in the database, not a response body. So the request checks the
+// things that are cheap and must be right — the key, and the daily ceiling —
+// and then hands the slow part to waitUntil and returns.
+//
+// Pass wait: true to get the old blocking behaviour. It is only useful for the
+// leaner styles, and only for testing by hand.
 export const POST: APIRoute = async ({ request, locals }) => {
+  const env = (locals.runtime?.env as any) || {};
+  const ctx = (locals.runtime as any)?.ctx;
+  const db = env.DB;
+  if (!db) return json({ error: 'not-configured' }, 503);
+
+  const body = (await request.json().catch(() => null)) as any;
+  const key = String(body?.key || '').trim();
+  const allowed = await db
+    .prepare("SELECT slug FROM site_claims WHERE slug = 'garage' AND edit_token = ?")
+    .bind(key).first();
+  if (!allowed) return json({ error: 'Not allowed' }, 403);
+
+  // Ceiling first, before a cent is spent.
+  const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
+  const spent = await db
+    .prepare("SELECT COUNT(*) AS n FROM agent_usage WHERE model = ? AND message_chars = -1 AND created_at > ?")
+    .bind(MODEL, midnight.toISOString()).first();
+  if (Number(spent?.n || 0) >= MAX_PER_DAY) return json({ ok: false, why: 'daily cap' });
+
+  const style = String(body?.style || pick(STYLES));
+  const town = String(body?.town || pick(TOWNS));
+
+  if (body?.wait) return spawn(env, db, body, style, town);
+
+  const work = spawn(env, db, body, style, town)
+    .then(async (r) => console.log('Spawn finished:', style, town, (await r.clone().text()).slice(0, 200)))
+    .catch((e) => console.error('Spawn failed:', e));
+  if (ctx?.waitUntil) ctx.waitUntil(work);
+  return json({ ok: true, queued: true, style, town });
+};
+
+async function spawn(
+  env: any, db: any, body: any, style: string, town: string
+): Promise<Response> {
   try {
-    const env = (locals.runtime?.env as any) || {};
-    const db = env.DB;
-    if (!db) return json({ error: 'not-configured' }, 503);
-
-    const body = (await request.json().catch(() => null)) as any;
-    const key = String(body?.key || '').trim();
-    const allowed = await db
-      .prepare("SELECT slug FROM site_claims WHERE slug = 'garage' AND edit_token = ?")
-      .bind(key).first();
-    if (!allowed) return json({ error: 'Not allowed' }, 403);
-
-    // Ceiling first, before a cent is spent.
-    const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
-    const spent = await db
-      .prepare("SELECT COUNT(*) AS n FROM agent_usage WHERE model = ? AND message_chars = -1 AND created_at > ?")
-      .bind(MODEL, midnight.toISOString()).first();
-    if (Number(spent?.n || 0) >= MAX_PER_DAY) return json({ ok: false, why: 'daily cap' });
-
-    const style = String(body?.style || pick(STYLES));
-    const town = String(body?.town || pick(TOWNS));
     const apiKey = env.ANTHROPIC_API_KEY;
     if (!apiKey) return json({ error: 'no key' }, 503);
 
@@ -288,6 +321,22 @@ export const POST: APIRoute = async ({ request, locals }) => {
             (style === 'yoga' || style === 'pilates'
               ? ' The timetable goes in a menu section: one group per day of the week, each item' +
                 ' a class with the time in "price", the class name in "name" and the teacher in "text".'
+              : '') +
+            (style === 'workshop'
+              ? ' Classes go in a menu section. Write each "text" as parts split by a middle dot,' +
+                ' like "3 hours \u00b7 max 6 \u00b7 you take home a textured silver ring" — the last' +
+                ' part must always say what the person carries out of the door. Put the firing or' +
+                ' collection wait in specs and again in faq. A spec value is a number or a' +
+                ' couple of words — "3–4 weeks", "6" — never a sentence.'
+              : '') +
+            (style === 'sauna'
+              ? ' The round goes in a steps section, in order, with times a first-timer can follow' +
+                ' and both numbers (beginner and seasoned). Name the sauna or the ice in each step' +
+                ' so it reads as hot or cold. Prices go in a menu section grouped into sessions' +
+                ' priced per person, packs, and memberships. The conditions section is a plain' +
+                ' safety note — get out if dizzy, do not get in unwell — never dressed up.' +
+                ' Specs are four short numbers and nothing else: how hot the sauna runs,' +
+                ' how cold the plunge is, how long a session lasts, how many fit.'
               : ''),
         }],
       }),
@@ -353,4 +402,4 @@ export const POST: APIRoute = async ({ request, locals }) => {
     console.error('Spawn failed:', error);
     return json({ error: String((error as Error)?.message || error).slice(0, 160) }, 500);
   }
-};
+}

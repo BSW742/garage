@@ -1292,6 +1292,9 @@ function getServiceIcon(service: string, industry: string): string {
     // Lifestyle
     fitness: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12H2v-2h4V7h2v10H6v-5zm16 0h-4v5h-2V7h2v3h4v2z"/><path d="M8 10h8v4H8z"/></svg>',
     salon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>',
+    // Heat rising off the stones, and a bowl thrown on the wheel.
+    sauna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3c0 2 1.5 2.5 1.5 4S7 9.5 7 11M12 2c0 2 1.5 2.5 1.5 4S12 8.5 12 10.5M17 3c0 2 1.5 2.5 1.5 4S17 9.5 17 11"/><path d="M3 15h18M4 15a8 8 0 0 1 16 0M6 15v5m12-5v5"/></svg>',
+    craft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1.2 7.5A3 3 0 0 1 13.85 18h-3.7a3 3 0 0 1-2.95-2.5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M4 21h16"/></svg>',
     auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M3 11l2-6h14l2 6M3 11v6h18v-6M3 11h18"/></svg>',
     photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     tech: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>',
@@ -1320,6 +1323,8 @@ function getServiceIcon(service: string, industry: string): string {
   if (lower.includes('law') || lower.includes('legal') || lower.includes('attorney')) return icons.legal;
   if (lower.includes('tax') || lower.includes('account') || lower.includes('finance')) return icons.account;
   if (lower.includes('fit') || lower.includes('gym') || lower.includes('workout')) return icons.fitness;
+  if (lower.includes('sauna') || lower.includes('bathhouse') || lower.includes('ice bath')) return icons.sauna;
+  if (lower.includes('pottery') || lower.includes('ceramic') || lower.includes('jewellery')) return icons.craft;
   if (lower.includes('hair') || lower.includes('salon') || lower.includes('beauty')) return icons.salon;
   if (lower.includes('car') || lower.includes('auto') || lower.includes('vehicle')) return icons.auto;
   if (lower.includes('photo') || lower.includes('video') || lower.includes('film')) return icons.photo;

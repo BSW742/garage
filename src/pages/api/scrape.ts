@@ -94,6 +94,10 @@ const INDUSTRY_KEYWORDS: Record<string, { keywords: string[]; weight: number }[]
     { keywords: ['workout', 'training', 'exercise', 'personal trainer'], weight: 3 },
   ],
   salon: [
+    { keywords: ['sauna', 'bathhouse', 'ice bath', 'contrast therapy'], weight: 5 },
+    { keywords: ['pottery', 'ceramics', 'jewellery workshop', 'silversmith'], weight: 5 },
+    { keywords: ['kiln', 'wheel throwing', 'the bench', 'maker'], weight: 3 },
+    { keywords: ['plunge', 'cold plunge', 'infrared', 'steam room'], weight: 3 },
     { keywords: ['salon', 'hair salon', 'beauty salon'], weight: 5 },
     { keywords: ['hair', 'beauty', 'spa', 'nails', 'styling'], weight: 3 },
   ],

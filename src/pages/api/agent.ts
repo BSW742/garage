@@ -228,6 +228,50 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
+The workshop template:
+- Style "workshop" is for makers who teach: pottery and ceramics, jewellery and silversmithing,
+  woodwork, glass, leather, weaving. Paper and unglazed clay, and the classes laid out as cards.
+- Ask before switching, in one line, as with the others.
+- Classes go in a menu section. One group is fine for a single-craft studio; use several when the
+  place teaches more than one thing ("Pottery", "Jewellery") or splits them by shape ("Evenings",
+  "Weekend intensives", "Kids").
+- Write each class detail as parts separated by a middle dot, and the template lays them out:
+  "3 hours · $140 · max 6 · you take home a textured silver ring". Anything with a number becomes
+  a tag, and the "you take home" part gets its own line at the foot of the card.
+- The thing they are selling is the object, not the lesson. Every class must say what the person
+  carries out of the door — a ring they made, four glazed pieces, a board. A class with no payoff
+  written down is the single most common failure on these pages. Never leave it off.
+- Say the seat count. These benches hold six or eight and that is the product, not a limitation.
+- Say the wait. Clay goes away to be fired and comes back in three or four weeks, which surprises
+  people who expected to carry a mug home. Put it in specs and again in faq. A spec value is a
+  number or two words — "3–4 weeks", "6" — never a sentence; it is set at display size.
+- What happens on the day goes in steps: arrive, get your hands dirty, glaze, collect.
+- The maker goes in about, with their training in credentials. Never invent a qualification.
+- Practical worries go in faq: what to wear, nails, parking, whether it suits a beginner, age
+  limits, whether you can come alone.
+
+The sauna template:
+- Style "sauna" is for saunas, bathhouses, ice baths, contrast therapy, and the mobile trailer at
+  the surf club. A dark room with the heat coming up off the floor.
+- Ask before switching, in one line, as with the others.
+- The round is the centre of the page and goes in steps: what happens, in order, with times.
+  People genuinely do not know how to do this — how long to sit in the heat, how cold it is,
+  whether they will be all right. Answer it before asking for a booking. Give both numbers, the
+  way the real ones do: beginners five to ten minutes in the sauna, seasoned fifteen to twenty;
+  two to three minutes in the ice, starting at thirty seconds if it is your first time.
+- Write the steps so the words say which half they are — a step naming ice, cold or a plunge gets
+  the cold treatment, one naming the sauna, heat or steam gets the ember. Do not tag them yourself.
+- Prices go in a menu section, but this trade prices a body and a pass, not a service. Use groups:
+  "Sessions" priced per person and by how many share the room ($100 for one, $140 for two), then
+  "Packs" (five for $490, ten for $290), then "Memberships" billed weekly if they have them.
+- Numbers in specs, and keep each one short enough to set large — how hot the sauna runs, how cold
+  the bath is, how long a session lasts, how many fit. Real ones: 80–90°C for a Finnish sauna, 2–5°C in the plunge, fifty minute sessions.
+- What to bring goes in credentials — towel, swimwear, water, and nothing else usually.
+- Safety goes in a conditions section and is not optional. Every real one of these says to get out
+  if you feel dizzy, numb or panicked, and not to get in unwell, exhausted or after drinking. Say
+  it plainly and never dress it up. If they are pregnant or have a heart condition, the page says
+  to talk to a doctor first — it never reassures them. Do not claim it treats or cures anything.
+
 The beauty template:
 - Style "beauty" is for salons, spas, skin clinics, brow and lash studios, nail bars and massage.
   One photograph given the whole top of the page, treatments listed with prices, and a booking

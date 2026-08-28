@@ -35,7 +35,7 @@ if (cameFromOffer && openedSlug) {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
 
   <body>
@@ -159,6 +159,13 @@ if (cameFromOffer && openedSlug) {
                     <button class="tone style" data-style="beauty">Beauty</button>
                     <button class="tone style" data-style="yoga">Yoga</button>
                     <button class="tone style" data-style="pilates">Pilates</button>
+                    <button class="tone style" data-style="sauna">Sauna</button>
+                  </div>
+                </div>
+                <div class="paint-group">
+                  <p>Makers</p>
+                  <div>
+                    <button class="tone style" data-style="workshop">Workshop</button>
                   </div>
                 </div>
                 <div class="paint-group">
@@ -1838,6 +1845,43 @@ if (cameFromOffer && openedSlug) {
         letter-spacing: 0.1em; text-transform: uppercase; color: #7c7266; font-weight: 600; }
 
       /* Agency preview. Same navy, same electric blue, same italic word. */
+      /* Workshop: paper and unglazed clay. */
+      .pv.st-workshop { --pv-display: 'Fraunces', Georgia, serif; }
+      .st-workshop #site-root, .pv.st-workshop { background: #f6f2ea; color: #241f1a; }
+      .st-workshop .pv-nav { border-bottom: 1px solid #e2d9cb; }
+      .st-workshop .pv-h1, .st-workshop .pv-h2 { font-family: var(--pv-display); font-weight: 600;
+        letter-spacing: -0.012em; text-align: left; text-transform: none; }
+      .st-workshop .pv-hero { text-align: left; background: transparent; color: #241f1a; }
+      .st-workshop .pv-lede { color: #7d7266; }
+      .st-workshop .pv-cta, .st-workshop .pv-btn { background: #241f1a; color: #f6f2ea;
+        border-radius: 2px; }
+      .st-workshop .pv-card { background: #fffdf9; border: 1px solid #e2d9cb; border-radius: 4px; }
+      .st-workshop .pv-shot, .st-workshop .pv-hero-photo { border-radius: 3px; }
+      .st-workshop .pv-label, .st-workshop .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.24em; text-transform: uppercase; }
+      .st-workshop .pv-band { background: color-mix(in srgb, var(--pv-primary) 14%, #f6f2ea); }
+
+      /* Sauna: dark, with an ember underneath. */
+      .pv.st-sauna { --pv-display: 'Bricolage Grotesque', system-ui, sans-serif; }
+      .st-sauna #site-root, .pv.st-sauna { background: #14110f; color: #f4efe9; }
+      .st-sauna .pv-nav { border-bottom: 1px solid #2e2825; background: transparent; }
+      .st-sauna .pv-brand, .st-sauna .pv-h1, .st-sauna .pv-h2 { color: #f4efe9;
+        font-family: var(--pv-display); font-weight: 700; letter-spacing: -0.022em;
+        text-align: left; text-transform: none; }
+      .st-sauna .pv-hero { text-align: left; color: #f4efe9;
+        background: radial-gradient(120% 60% at 50% 118%,
+          color-mix(in srgb, var(--pv-primary) 40%, transparent), transparent 70%), #1d1917; }
+      .st-sauna .pv-lede { color: #a2968a; }
+      .st-sauna .pv-cta, .st-sauna .pv-btn { background: var(--pv-primary); color: #fff;
+        border-radius: 999px; }
+      .st-sauna .pv-card, .st-sauna .pv-band, .st-sauna .pv-hours, .st-sauna .pv-rates {
+        background: #1d1917; border: 1px solid #2e2825; border-radius: 14px; color: #f4efe9; }
+      .st-sauna .pv-section { border-color: #2e2825; }
+      .st-sauna .pv-label, .st-sauna .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.26em; text-transform: uppercase; }
+      .st-sauna .pv-quote p, .st-sauna .pv-prose, .st-sauna .pv-contact { color: #f4efe9; }
+      .st-sauna .pv-foot { border-top: 1px solid #2e2825; color: #a2968a; }
+
       .pv.st-mogged { --pv-display: 'Plus Jakarta Sans', system-ui, sans-serif; }
       .st-mogged #site-root, .pv.st-mogged { background: #fff; color: #0d1836; }
       .pv-mg-nav { display: flex; align-items: center; gap: 0.8rem;
@@ -3517,7 +3561,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -4174,7 +4218,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga" or "pilates" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop" or "sauna" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4990,6 +5034,8 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         yoga: 'A studio page — the week on one screen, passes with their prices on them, and teachers with faces. Warm sand and a serif.',
         pilates: 'The same studio page, cooler and flatter. Timetable, passes, teachers — more gym than temple.',
+        workshop: 'For makers who teach — pottery, jewellery, wood, glass. Paper and unglazed clay, the classes as cards, and every one of them saying what you carry out of the door.',
+        sauna: 'For saunas, bathhouses and ice baths — a dark room with the heat under it, the round explained for a first-timer, and sessions priced by the body and the pass.',
         beauty: 'For salons and spas — one photograph given room, treatments priced in the open, and a booking button that follows you down the page.',
         montage: 'A title and then nothing but pictures — a wall of them, and anyone can add one. No dates, no portrait, no words to speak of.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
