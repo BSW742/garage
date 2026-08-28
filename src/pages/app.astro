@@ -346,7 +346,7 @@
         const who = t.visitor_name || 'Name not given';
         const when = shortWhen(t.last_message_at);
         return `
-          <button class="msg-row" onclick="openChat('${t.id}', ${JSON.stringify(who)})">
+          <button class="msg-row" data-thread="${esc(t.id)}" data-who="${esc(who)}">
             <span class="msg-dot${waiting ? ' on' : ''}"></span>
             <span class="msg-av">${esc(who[0].toUpperCase())}</span>
             <span class="msg-mid">
@@ -361,13 +361,13 @@
     function renderThread(el) {
       el.innerHTML = `
         <div class="thread-head">
-          <button class="thread-back" onclick="closeChat()">&lsaquo; Messages</button>
+          <button class="thread-back" data-back="1">&lsaquo; Messages</button>
           <b>${esc(openName)}</b>
         </div>
         <div class="thread-log" id="thread-log">${threadMsgs.map(m => `
           <div class="bub ${m.sender === 'visitor' ? 'them' : m.sender === 'bot' ? 'bot' : 'me'}">${esc(m.body)}</div>
         `).join('')}</div>
-        <form class="thread-bar" onsubmit="return sendReply(event)">
+        <form class="thread-bar" id="thread-form">
           <input name="body" placeholder="Message" autocomplete="off" />
           <button type="submit" aria-label="Send">&uarr;</button>
         </form>`;
@@ -383,6 +383,19 @@
         ? d.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' })
         : d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
     }
+
+    // Delegated, because the rows are rebuilt on every poll and inline
+    // handlers have to be quote-safe inside an attribute — which is exactly
+    // what went wrong: a stringified name closed the onclick early.
+    document.addEventListener('click', (ev) => {
+      const row = ev.target.closest && ev.target.closest('.msg-row');
+      if (row) { openChat(row.dataset.thread, row.dataset.who); return; }
+      const back = ev.target.closest && ev.target.closest('[data-back]');
+      if (back) closeChat();
+    });
+    document.addEventListener('submit', (ev) => {
+      if (ev.target && ev.target.id === 'thread-form') sendReply(ev);
+    });
 
     async function openChat(id, who) {
       openThread = id;
@@ -599,7 +612,12 @@
     window.setStatus = setStatus;
 
     function esc(s) {
-      return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // Quotes as well. This is used inside attributes all over this file —
+      // hrefs, titles, data — and without them one apostrophe in somebody's
+      // name ends the attribute early and takes the markup with it.
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // Service worker + push
