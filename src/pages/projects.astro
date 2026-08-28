@@ -117,19 +117,15 @@ const when = (iso: string) => {
     <header class="work-head">
       <p class="work-eyebrow">The work</p>
       <h1>Real sites, built by talking.</h1>
-      <div class="work-offer">
-        <span class="offer-num">1,000,000</span>
-        <span class="offer-say">free tokens<br />for every NZ business</span>
-      </div>
-
       <div class="work-doing">
         <a class="work-btn" href="/ai">Build yours</a>
         <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
-        <span class="work-count">
-          <b>{liveCount}</b> sites live
-          {todayCount > 0 && <> · <b>{todayCount}</b> worked on today</>}
-        </span>
       </div>
+
+      <p class="work-meta">
+        <b>{liveCount}</b> sites live{todayCount > 0 && <>, <b>{todayCount}</b> worked on today</>}.
+        Free for any New Zealand business, with a million tokens of building.
+      </p>
 
       <div class="how" id="how" hidden>
         <ol>
@@ -201,26 +197,7 @@ const when = (iso: string) => {
     font-family: var(--font-display); font-size: clamp(2.2rem, 6vw, 3.6rem);
     font-weight: 800; letter-spacing: -0.035em; line-height: 1.02;
   }
-  /* The offer, said once and said loudly. */
-  .work-offer {
-    display: flex; align-items: center; gap: 1rem; margin-top: 1.8rem;
-    padding: 1.1rem 1.4rem; border-radius: 16px;
-    background: linear-gradient(100deg,
-      color-mix(in srgb, var(--color-accent, #2563eb) 12%, transparent),
-      color-mix(in srgb, var(--color-accent, #2563eb) 3%, transparent));
-    border: 1px solid color-mix(in srgb, var(--color-accent, #2563eb) 22%, transparent);
-  }
-  .offer-num {
-    font-family: var(--font-display); font-weight: 800; letter-spacing: -0.04em;
-    font-size: clamp(1.8rem, 5.5vw, 2.9rem); line-height: 1;
-    color: var(--color-accent, #2563eb); font-variant-numeric: tabular-nums;
-  }
-  .offer-say {
-    font-size: 0.95rem; font-weight: 600; line-height: 1.3;
-    text-transform: uppercase; letter-spacing: 0.04em;
-  }
-
-  .work-doing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-top: 1.4rem; }
+  .work-doing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-top: 2rem; }
   .work-btn {
     display: inline-block; border: 0; border-radius: 999px; cursor: pointer;
     background: var(--color-accent, #2563eb); color: #fff;
@@ -232,8 +209,15 @@ const when = (iso: string) => {
     border: 1px solid var(--color-border, #e5e5e5);
   }
   .work-btn.ghost:hover { border-color: var(--color-text-muted); }
-  .work-count { font-size: 0.92rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
-  .work-count b { color: inherit; font-weight: 700; }
+  /* A line of fact, not a banner. The offer is more convincing said quietly
+     next to a real number than shouted out of a coloured box — the box read as
+     a discount sticker and cheapened the thing it sat above. */
+  .work-meta {
+    margin-top: 1.1rem; font-size: 0.95rem; line-height: 1.6;
+    color: var(--color-text-muted); font-variant-numeric: tabular-nums;
+    max-width: 34rem;
+  }
+  .work-meta b { color: var(--color-text, inherit); font-weight: 700; }
 
   .how { margin-top: 1.2rem; }
   .how[hidden] { display: none; }
