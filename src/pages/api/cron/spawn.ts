@@ -12,13 +12,18 @@ export const prerender = false;
 //
 // The cost ceiling is the same shape as the chat assistant: counted from
 // agent_usage before anything is spent, so an unattended job cannot run away
-// overnight. Twenty-four a day, Sonnet, capped output.
+// overnight. Sonnet, capped output.
+//
+// TEMPORARY — raised from 24 to 72 for a stress test on 28 Aug 2026, alongside
+// the every-twenty-minutes trigger in sites-worker/wrangler.toml. Both numbers
+// go back together: 72 with an hourly trigger would leave the ceiling slack and
+// never bind, and 24 with a twenty-minute trigger would stop the job at lunch.
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 const MODEL = 'claude-sonnet-5';
-const MAX_PER_DAY = 24;
+const MAX_PER_DAY = 72;
 const MAX_OUT = 2000;
 
 // Business styles only. Nobody wants a memorial or a food diary spawned at 3am.

@@ -13,8 +13,15 @@ binding = "DB"
 database_name = "garage-db"
 database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
 
-# One site an hour, unattended. The endpoint holds the ceiling — twenty-four a
-# day counted out of agent_usage — so this trigger cannot spend more by firing
-# more often than expected.
+# TEMPORARY — stress test, Ben's call on 28 Aug 2026. Every twenty minutes
+# instead of on the hour, so three land an hour and changes to a template show
+# up soon after they ship rather than the next morning. Put this back to
+# ["0 * * * *"] and MAX_PER_DAY back to 24 in src/pages/api/cron/spawn.ts when
+# he says go back; the two numbers have to move together or the ceiling stops
+# the job eight hours into the day.
+#
+# The endpoint still holds the ceiling — counted out of agent_usage before
+# anything is spent — so this trigger cannot spend more by firing more often
+# than expected.
 [triggers]
-crons = ["0 * * * *"]
+crons = ["*/20 * * * *"]
