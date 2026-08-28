@@ -77,7 +77,10 @@ try {
         <span class="logo-text">garage<span class="dot-orange">.</span>co<span class="dot">.</span>nz</span>
       </a>
       {liveSites > 0 && (
-        <a class="site-pulse" href="/" title="Sites built on garage.co.nz">
+        <!-- Points at the admin table rather than the work page: it is a
+             shortcut for Ben, and the number is the thing he clicks to go and
+             look at the list behind it. Unlabelled on purpose. -->
+        <a class="site-pulse" href="/admin/sites" title="Sites built on garage.co.nz">
           <i></i>
           <span><b>{liveSites}</b> sites live{sitesToday > 0 && <>, <b>{sitesToday}</b> today</>}</span>
         </a>
