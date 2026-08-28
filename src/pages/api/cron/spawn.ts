@@ -157,6 +157,34 @@ async function spokenFor(db: any): Promise<Set<string>> {
 
 // A page needs a hero and enough for a gallery. Below this the page is thin
 // enough that it is better not to build it than to build it twice-photographed.
+// Every run says what happened, including the runs that produce nothing.
+//
+// Without this the job is unanswerable: a morning with nine silent slots looks
+// identical to a job that never fired, and the only way to tell them apart was
+// to reason backwards from which minutes have a site in them. A rejection for a
+// missing section, a style with no photographs left and a model that returned
+// broken JSON all used to vanish the same way.
+async function note(
+  db: any,
+  outcome: string,
+  bits: { style?: string; town?: string; detail?: string; slug?: string } = {}
+): Promise<void> {
+  try {
+    await db
+      .prepare(
+        `INSERT INTO spawn_log (id, style, town, outcome, detail, slug, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(crypto.randomUUID(), bits.style || null, bits.town || null, outcome,
+            (bits.detail || '').slice(0, 200) || null, bits.slug || null,
+            new Date().toISOString())
+      .run();
+  } catch (error) {
+    // A log that cannot be written must never be the reason a site is not made.
+    console.error('spawn_log write failed:', error);
+  }
+}
+
 const MIN_PHOTOS = 4;
 const MAX_PHOTOS = 5;
 
@@ -266,7 +294,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const spent = await db
     .prepare("SELECT COUNT(*) AS n FROM agent_usage WHERE model = ? AND message_chars = -1 AND created_at > ?")
     .bind(MODEL, midnight.toISOString()).first();
-  if (Number(spent?.n || 0) >= MAX_PER_DAY) return json({ ok: false, why: 'daily cap' });
+  if (Number(spent?.n || 0) >= MAX_PER_DAY) {
+    await note(db, 'capped', { detail: `${spent?.n} today` });
+    return json({ ok: false, why: 'daily cap' });
+  }
 
   const style = String(body?.style || pick(STYLES));
   const town = String(body?.town || pick(TOWNS));
@@ -297,10 +328,12 @@ async function spawn(
       // The caller pinned this style, so tell them plainly rather than quietly
       // building something else.
       if (body?.style) {
+        await note(db, 'dry', { style, town, detail: `pinned style has ${spare(style)} free` });
         return json({ ok: false, why: `no unused photos left for ${style}`, spare: spare(style) });
       }
       const open = STYLES.filter((s) => spare(s) >= MIN_PHOTOS);
       if (!open.length) {
+        await note(db, 'dry', { style, town, detail: 'every style is out of photos' });
         return json({ ok: false, why: 'every style is out of unused photos' });
       }
       style = pick(open);
@@ -388,6 +421,7 @@ async function spawn(
                        u2.output_tokens || 0, u2.cache_read_input_tokens || 0,
                        u2.cache_creation_input_tokens || 0, new Date().toISOString()).run();
 
+                await note(db, 'held', { style, town, slug: rslug, detail: `real: ${url}` });
                 return json({ ok: true, real: true, held: true, slug: rslug, style, town,
                               photos: photos.length, name: real.name, source: url });
               }
@@ -467,17 +501,31 @@ async function spawn(
         }],
       }),
     });
-    if (!res.ok) return json({ error: `model ${res.status}` }, 502);
+    if (!res.ok) {
+      await note(db, 'error', { style, town, detail: `model HTTP ${res.status}` });
+      return json({ error: `model ${res.status}` }, 502);
+    }
     const data = (await res.json()) as any;
 
     const text = (data?.content || []).filter((c: any) => c?.type === 'text')
       .map((c: any) => c.text).join('');
     const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return json({ error: 'no json back' }, 502);
+    if (!match) {
+      await note(db, 'error', { style, town, detail: 'no json in the reply' });
+      return json({ error: 'no json back' }, 502);
+    }
 
     let cfg: any;
-    try { cfg = JSON.parse(match[0]); } catch { return json({ error: 'bad json back' }, 502); }
-    if (!cfg?.name) return json({ error: 'no name' }, 502);
+    try {
+      cfg = JSON.parse(match[0]);
+    } catch {
+      await note(db, 'error', { style, town, detail: 'unparseable json — usually truncated' });
+      return json({ error: 'bad json back' }, 502);
+    }
+    if (!cfg?.name) {
+      await note(db, 'error', { style, town, detail: 'no business name' });
+      return json({ error: 'no name' }, 502);
+    }
 
     // Pictures it can actually have. Stock, from a pool checked by hand — an
     // invented business with no photographs is a thin page, and thin is the one
@@ -490,6 +538,7 @@ async function spawn(
       .sort(() => Math.random() - 0.5)
       .slice(0, MAX_PHOTOS);
     if (free.length < MIN_PHOTOS) {
+      await note(db, 'dry', { style, town, detail: `${free.length} free, needs ${MIN_PHOTOS}` });
       return json({ ok: false, why: `only ${free.length} unused photos left for ${style}` });
     }
     cfg.style = style;
@@ -505,8 +554,14 @@ async function spawn(
     const have = new Set((cfg.sections || []).map((x: any) => String(x?.type || '')));
     const missing = (MUST[style]?.sections || []).filter((t) => !have.has(t));
     const score = quality(cfg);
-    if (missing.length) return json({ ok: false, why: 'missing ' + missing.join(', '), score });
-    if (score < 14) return json({ ok: false, why: 'too thin', score });
+    if (missing.length) {
+      await note(db, 'rejected', { style, town, detail: `missing ${missing.join(', ')} (score ${score})` });
+      return json({ ok: false, why: 'missing ' + missing.join(', '), score });
+    }
+    if (score < 14) {
+      await note(db, 'rejected', { style, town, detail: `too thin, score ${score}` });
+      return json({ ok: false, why: 'too thin', score });
+    }
 
     let slug = slugify(cfg.name) || 'biz' + Math.random().toString(36).slice(2, 7);
     for (let i = 0; i < 25; i++) {
@@ -531,9 +586,11 @@ async function spawn(
            used.cache_read_input_tokens || 0, used.cache_creation_input_tokens || 0,
            new Date().toISOString()).run();
 
+    await note(db, 'made', { style, town, slug, detail: `${cfg.name} (score ${score})` });
     return json({ ok: true, slug, style, town, score, name: cfg.name });
   } catch (error) {
     console.error('Spawn failed:', error);
+    await note(db, 'error', { style, town, detail: String((error as Error)?.message || error) });
     return json({ error: String((error as Error)?.message || error).slice(0, 160) }, 500);
   }
 }
