@@ -228,6 +228,24 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
+The reel template:
+- Style "reel" is video first: a subject, and the YouTube films already made about it. One feature
+  at the top, the rest on a wall, and every one credited.
+- Ask before switching, in one line, as with the others.
+- NEVER write a video id yourself. Not one. A YouTube id is eleven characters and you can produce a
+  plausible-looking one as easily as a real one, and an invented id renders as a dead grey
+  rectangle that nobody notices for a week. Ids come from a search, and every one is checked
+  against YouTube's oembed endpoint before it goes on the page. If you have not been given a
+  verified id, the page does not get that film.
+- The films go in a video section as a clips array: {"id":"", "title":"", "who":""}. The title and
+  the channel are whatever YouTube says they are — never tidy them up, never translate them, never
+  write a better title. They are somebody's own words about their own work.
+- The first clip is the feature and gets the top of the page, so put the best one first.
+- Write the surrounding page yourself: an about section saying what the subject is, a services
+  section for the practical detail, an faq. The films carry the page, so keep the writing short.
+- Never claim the films are the site owner's, and never imply an endorsement by the people who
+  made them.
+
 The club templates:
 - Styles "rugby", "soccer" and "basketball" are sports clubs. Same page, three sets of colours and
   three words for the draw — pick the one that matches the code they play.

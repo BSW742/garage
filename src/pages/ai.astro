@@ -35,7 +35,7 @@ if (cameFromOffer && openedSlug) {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Sora:wght@400;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Nunito:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Sora:wght@400;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Nunito:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
 
   <body>
@@ -184,6 +184,7 @@ if (cameFromOffer && openedSlug) {
                   <div>
                     <button class="tone style" data-style="bubbles">Bubbles</button>
                     <button class="tone style" data-style="montage">Montage</button>
+                    <button class="tone style" data-style="reel">Reel</button>
                     <button class="tone style" data-style="tribute">Tribute</button>
                   </div>
                 </div>
@@ -1856,6 +1857,26 @@ if (cameFromOffer && openedSlug) {
         letter-spacing: 0.1em; text-transform: uppercase; color: #7c7266; font-weight: 600; }
 
       /* Agency preview. Same navy, same electric blue, same italic word. */
+      /* Reel: a dark room and a lit screen. */
+      .pv.st-reel { --pv-display: 'Space Grotesk', system-ui, sans-serif; }
+      .st-reel #site-root, .pv.st-reel { background: #0b0b0d; color: #f4f4f5; }
+      .st-reel .pv-nav { border-bottom: 1px solid #26262d; background: transparent; }
+      .st-reel .pv-brand, .st-reel .pv-h1, .st-reel .pv-h2 { color: #f4f4f5;
+        font-family: var(--pv-display); font-weight: 700; letter-spacing: -0.028em;
+        text-align: left; text-transform: none; }
+      .st-reel .pv-hero { text-align: left; color: #f4f4f5; background: #141418; }
+      .st-reel .pv-lede { color: #8f8f99; }
+      .st-reel .pv-cta, .st-reel .pv-btn { background: var(--pv-primary); color: #000;
+        border-radius: 8px; font-weight: 600; }
+      .st-reel .pv-card, .st-reel .pv-band, .st-reel .pv-hours, .st-reel .pv-rates {
+        background: #141418; border: 1px solid #26262d; border-radius: 12px; color: #f4f4f5; }
+      .st-reel .pv-section { border-color: #26262d; }
+      .st-reel .pv-shot, .st-reel .pv-hero-photo { border-radius: 12px; }
+      .st-reel .pv-label, .st-reel .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.26em; text-transform: uppercase; }
+      .st-reel .pv-quote p, .st-reel .pv-prose, .st-reel .pv-contact { color: #f4f4f5; }
+      .st-reel .pv-foot { border-top: 1px solid #26262d; color: #8f8f99; }
+
       /* Clubs: three codes, one dark field. */
       .pv.st-rugby, .pv.st-soccer, .pv.st-basketball {
         --pv-display: 'Barlow Condensed', system-ui, sans-serif; }
@@ -3667,7 +3688,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
         root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna', 'st-rugby', 'st-soccer', 'st-basketball', 'st-charity',
-          'st-townhall', 'st-daycare');
+          'st-townhall', 'st-daycare', 'st-reel');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -4324,7 +4345,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall" or "daycare" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall", "daycare" or "reel" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -5140,6 +5161,7 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         yoga: 'A studio page — the week on one screen, passes with their prices on them, and teachers with faces. Warm sand and a serif.',
         pilates: 'The same studio page, cooler and flatter. Timetable, passes, teachers — more gym than temple.',
+        reel: 'Video first — a subject and the films already made about it. One feature up top, the rest on a wall, every one credited to whoever made it.',
         rugby: 'For a rugby club — grades by age so a parent finds their kid in one look, the sponsors up where they belong, subs and training nights, and the clubrooms.',
         soccer: 'The club page in football colours — grades, fixtures, subs, training, and the businesses that pay for the strips.',
         basketball: 'The club page for a basketball club — grades, the schedule, subs, and your sponsors on the wall.',

@@ -14,6 +14,7 @@ import { CLUB_CSS, CLUB_FONT_QUERY, renderClubBody } from './club-render';
 import { CHARITY_CSS, CHARITY_FONT_QUERY, renderCharityBody } from './charity-render';
 import { HALL_CSS, HALL_FONT_QUERY, renderHallBody } from './hall-render';
 import { DAYCARE_CSS, DAYCARE_FONT_QUERY, renderDaycareBody } from './daycare-render';
+import { REEL_CSS, REEL_FONT_QUERY, renderReelBody } from './reel-render';
 import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } from './studio-render';
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
@@ -23,6 +24,13 @@ import { CAFE_CSS, CAFE_FONT_QUERY, renderCafeBody } from './cafe-render';
 // builder stored in D1. Mirrors the live preview in /ai.
 
 export interface SiteContact { phone?: string; email?: string; address?: string }
+/**
+ * One film on a reel. The title and the channel are not ours to write — they
+ * are whatever YouTube says they are, read back from the oEmbed endpoint, so a
+ * page never credits somebody's work with a title a model guessed at.
+ */
+export interface Clip { id: string; title?: string; who?: string; note?: string }
+
 export interface MenuItem { name?: string; price?: string; text?: string }
 export interface MenuGroup { heading?: string; note?: string; items?: MenuItem[] }
 
@@ -39,6 +47,7 @@ export interface SiteSection {
   who?: string;
   videoId?: string;
   videos?: string[];
+  clips?: Clip[];       // a reel: the id, and the title and channel as published
   menu?: MenuGroup[];   // a cafe menu: courses, each with priced items
   partners?: Partner[]; // "we work alongside" — other businesses they work with
 }
@@ -83,7 +92,7 @@ export interface SiteConfig {
   // publish with the page — only the sign-ups need a table.
   campaigns?: RallyCampaign[];
   style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna'
-    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare';
+    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'reel';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1136,6 +1145,24 @@ export function renderSite(
     });
   }
 
+  // A subject and the films already made about it. A dark room and a lit
+  // screen, and the credit is part of the design rather than small print.
+  if (site.style === 'reel') {
+    const room: SiteConfig = {
+      ...site,
+      shop: false,
+      tone: 'dark',
+      palette: { primary: '#e0483d', deep: '#0b0b0d', wash: '#141418', ...(site.palette || {}) },
+    };
+    const name = room.name || slug;
+    return shell(room, slug, {
+      title: name,
+      description: (room.lede || room.headline || name).slice(0, 155),
+      path: '/',
+      body: renderReelBody(room, slug),
+    });
+  }
+
   // Makers who teach: pottery, jewellery, wood, glass. Paper and unglazed
   // clay, and every class says what you carry out of the door with you.
   if (site.style === 'workshop') {
@@ -1637,6 +1664,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'charity' ? CHARITY_FONT_QUERY
     : site.style === 'townhall' ? HALL_FONT_QUERY
     : site.style === 'daycare' ? DAYCARE_FONT_QUERY
+    : site.style === 'reel' ? REEL_FONT_QUERY
     : site.style === 'yoga' ? YOGA_FONT_QUERY
     : site.style === 'pilates' ? PILATES_FONT_QUERY
     : '';
@@ -1658,13 +1686,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'reel' ? ' rl' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
