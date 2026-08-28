@@ -387,16 +387,16 @@ export const TOOLS = [
     description:
       'Turn the spin-to-win wheel on or off, and set what is on it. A tab sits on the edge of ' +
       'every page; a visitor opens it, gives their name, email and phone, and spins. The wheel ' +
-      'has eight equal slots and is genuinely random — the top prize is on two of them so it ' +
-      'comes up one spin in four, so tell the owner that plainly before switching it on and make sure ' +
-      'they are happy to honour it at that rate. Every slot is a prize — there are no losing ' +
-      'slots — so the three prizes fill all eight: the top one twice, the other two three times ' +
-      'each. Prizes come from a fixed catalogue by id, never ' +
-      'free text — every label in it is short enough to sit in a wedge, which is what keeps the ' +
-      'wheel readable. Pass exactly three ids, best first. The catalogue: gift, off10, off20, ' +
-      'half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, ' +
-      'merch, sticker, upgrade. Nothing is ever emailed to the visitor — the details go to the ' +
-      'owner, and the form says so.',
+      'has eight equal slots and is genuinely random. Every slot is a prize — there are no ' +
+      'losing slots — and the first prize you pass is the top one: it gets the single gold slot, ' +
+      'so it comes up one spin in eight. Say that plainly before switching it on and make sure ' +
+      'they are happy to honour it at that rate. Everything after the first fills the other seven ' +
+      'slots in turn. Pass between two and eight prizes, best first. Each is either a catalogue ' +
+      'id — gift, off10, off20, half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, ' +
+      'delivery, session, class, merch, sticker, upgrade — or the owner\'s own words, at most 14 ' +
+      'characters, because that is what fits in a wedge. Use their words when the catalogue has ' +
+      'nothing that suits their trade, and keep them short: "7 days free", "free wash". Nothing ' +
+      'is ever emailed to the visitor — the details go to the owner, and the form says so.',
     input_schema: {
       type: 'object',
       properties: {
@@ -404,7 +404,9 @@ export const TOOLS = [
         prizes: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Exactly three catalogue ids, top prize first. e.g. ["coffee","off20","sticker"]',
+          description:
+            'Two to eight entries, top prize first. Catalogue ids or short custom labels, mixed ' +
+            'freely. e.g. ["coffee","off20","7 days free"]',
         },
         title: { type: 'string', description: 'The tab and the heading, e.g. "Spin to win".' },
         blurb: { type: 'string', description: 'One line under the heading.' },
@@ -754,34 +756,37 @@ export async function runTool(
     case 'set_spinner': {
       const spin: any = site.spinner || {};
       if (input.prizes !== undefined) {
-        const ids = (input.prizes || []).map((p: any) => String(p || '').trim());
-        const unknown = ids.filter((id: string) => !PRIZE_BY_ID[id]);
-        if (unknown.length) {
+        const entries = (input.prizes || [])
+          .map((p: any) => String(p || '').trim())
+          .filter(Boolean)
+          .slice(0, 8);
+        // Anything not in the catalogue is taken as the owner's own wording,
+        // which is the only way this works for a trade nobody has curated.
+        const tooLong = entries.filter((e: string) => !PRIZE_BY_ID[e] && e.length > 14);
+        if (tooLong.length) {
           return {
             ok: false,
             message:
-              `Not in the catalogue: ${unknown.join(', ')}. Pick from gift, off10, off20, half, ` +
-              `bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, ` +
-              `merch, sticker, upgrade.`,
+              `Too long for a wedge (14 characters): ${tooLong.join(', ')}. Shorten them — ` +
+              `"7 days free", "free wash", "$50 off".`,
           };
         }
-        const picked = toPrizes(ids).slice(0, 3);
-        if (input.on && picked.length < 3) {
+        if (input.on && entries.length < 2) {
           return {
             ok: false,
-            message: `The wheel takes three prizes and I have ${picked.length}. Ask which else goes on it.`,
+            message: `A wheel needs at least two prizes and I have ${entries.length}. Ask what else goes on it.`,
           };
         }
-        spin.prizes = picked.map((p) => p.id);
+        spin.prizes = entries;
         delete spin.offers;
       }
-      if (input.on && toPrizes(spin.prizes).length < 3) {
+      if (input.on && (spin.prizes || []).length < 2) {
         return {
           ok: false,
           message:
             'No prizes chosen yet. The six that suit this business: ' +
             shortlistFor(site.style).map((id) => `${id} (${PRIZE_BY_ID[id].label})`).join(', ') +
-            '. Ask which three, best first.',
+            '. Or their own words, 14 characters at most. Ask which, best first.',
         };
       }
       if (input.title !== undefined) spin.title = String(input.title).slice(0, 40);
@@ -791,12 +796,12 @@ export async function runTool(
       site.spinner = spin;
 
       if (!spin.on) return { ok: true, message: 'Wheel is off.' };
-      const won = toPrizes(spin.prizes);
+      const on = (spin.prizes || []).map((e: string) => PRIZE_BY_ID[e]?.label || e);
       return {
         ok: true,
         message:
-          `Wheel is on. Every slot is a prize: ${won[0].note} on two of the eight, ` +
-          `${won[1].label} and ${won[2].label} on three each. Nobody leaves with nothing.`,
+          `Wheel is on with ${on.length} prizes. ${on[0]} has the gold slot, one in eight. ` +
+          `${on.slice(1).join(', ')} share the other seven. Every slot is a prize.`,
         data: { spinner: spin },
       };
     }

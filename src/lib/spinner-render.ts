@@ -42,46 +42,69 @@ export const SLOTS = 8;
  * views looks broken rather than random.
  */
 /**
- * Fill the eight slots from the three prizes.
+ * Fill the eight slots.
  *
- * There are no losing slots. "Not this time" was on five of the eight, which
- * made the wheel mostly a way of telling people no — and a visitor who has just
- * handed over an email to watch a wheel say no has been badly used. Everyone
- * wins something; the top prize is simply rarer than the other two.
+ * There are no losing slots — "Not this time" made the wheel mostly a way of
+ * telling people no, and somebody who has just handed over an email to watch a
+ * wheel say no has been badly used. Everybody wins something.
  *
- * Two slots for the top prize and three each for the others, laid out so no two
- * neighbours are the same and the top prize sits directly opposite itself. The
- * arrangement is fixed rather than shuffled — it is the same wheel every time
- * because it was designed, not dealt.
+ * The top prize gets exactly one slot, which is the gold one, so it comes up
+ * one spin in eight. Everything else goes round the remaining seven in turn —
+ * which works for two prizes or for seven, and never puts the same prize in
+ * two touching wedges.
  */
-const ARRANGEMENT = [0, 1, 2, 1, 0, 2, 1, 2];
-
 export function layout(prizes: Prize[], _slug?: string): Prize[] {
-  const three = prizes.slice(0, 3);
-  if (three.length < 3) return [];
-  return ARRANGEMENT.map((i) => three[i]);
+  const all = prizes.slice(0, SLOTS);
+  if (all.length < 2) return [];
+  const rest = all.slice(1);
+  const slots: Prize[] = [all[0]];
+  for (let i = 1; i < SLOTS; i++) slots.push(rest[(i - 1) % rest.length]);
+  return slots;
 }
 
-/** What is on this site's wheel, from ids or from the old free-text offers. */
+/**
+ * What is on this site's wheel.
+ *
+ * An entry is either a catalogue id or the owner's own words. The catalogue is
+ * the quick path and it only stretches as far as the trades we have thought
+ * about; a physio cannot be offered a free coffee and a mechanic wants
+ * something nobody has written down yet. So anything that is not an id is
+ * taken as a label — capped hard at CUSTOM_MAX, which is what keeps a wedge
+ * readable no matter who typed into it.
+ */
+export const CUSTOM_MAX = 14;
+
 export function prizesOf(spin: Spinner | undefined): Prize[] {
-  const byId = toPrizes(spin?.prizes);
-  if (byId.length) return byId;
-  return (spin?.offers || [])
-    .map((label, i) => ({
-      id: 'legacy' + i,
-      icon: '<circle cx="12" cy="12" r="8"/>',
-      label: String(label).slice(0, 14),
-      note: String(label),
-    }))
-    .slice(0, 3);
+  const raw = (spin?.prizes || []).length ? spin!.prizes! : (spin?.offers || []);
+  const out: Prize[] = [];
+  raw.forEach((entry, i) => {
+    const key = String(entry || '').trim();
+    if (!key) return;
+    const known = toPrizes([key])[0];
+    if (known) {
+      if (!out.some((p) => p.id === known.id)) out.push(known);
+      return;
+    }
+    const label = key.slice(0, CUSTOM_MAX);
+    if (!out.some((p) => p.label.toLowerCase() === label.toLowerCase())) {
+      out.push({ id: 'own' + i, icon: '<circle cx="12" cy="12" r="7.5"/>', label, note: label });
+    }
+  });
+  return out.slice(0, SLOTS);
 }
 
-// Navy, red and near-black. Hairlines, one stroke weight, a lot of space.
+// The wheel goes red, blue, white, in that order — two blues next to each other
+// was the problem, they read as one wide smudge with a seam down it. Alternating
+// three colours means every wedge has a different neighbour on both sides, and
+// the white ones give the whole thing air.
+//
+// The top prize is the gold slot, and there is only one of it.
 const INK = '#0a0c11';
 const CARD = '#0e111a';
-const NAVY = '#16294a';
-const NAVY_DEEP = '#101d36';
-const RED = '#a81f2d';
+const RED = '#b0202f';
+const BLUE = '#1b3a6b';
+const WHITE = '#eef1f7';
+const GOLD = '#c8a23c';
 const LINE = 'rgba(255,255,255,.12)';
 const DIM = '#7d8598';
 
@@ -126,9 +149,10 @@ margin:0 0 .35rem;color:#fff;line-height:1.15}
 /* Whichever it has less of, width or height, so the panel never scrolls. */
 .gsp-wheel-wrap{position:relative;width:min(78vw,42vh,20rem);aspect-ratio:1;margin:0 auto}
 @media(min-width:760px){.gsp-wheel-wrap{width:min(34vw,66vh,22rem)}}
-.gsp-wheel-wrap:before{content:'';position:absolute;left:50%;top:-3px;transform:translateX(-50%);
-border-style:solid;border-width:0 .5rem .9rem .5rem;
-border-color:transparent transparent #eef1f7 transparent;z-index:4}
+.gsp-wheel-wrap:before{content:'';position:absolute;left:50%;top:-.35rem;transform:translateX(-50%);
+border-style:solid;border-width:1.05rem .55rem 0 .55rem;
+border-color:${WHITE} transparent transparent transparent;z-index:4;
+filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
 .gsp-wheel{position:absolute;inset:0;border-radius:50%;
 box-shadow:inset 0 0 0 1px ${LINE},0 0 0 1px ${LINE},0 24px 60px -24px rgba(0,0,0,.9);
 transition:transform 5.4s cubic-bezier(.12,.86,.14,1)}
@@ -145,11 +169,12 @@ width:26%;height:26%;border-radius:50%;background:${RED}}
 .gsp-slot span{position:absolute;left:50%;top:7%;width:34%;
 transform-origin:0 50%;transform:rotate(90deg);
 display:flex;align-items:center;gap:.34rem;
-font:600 .6rem/1 var(--font-sans,system-ui,sans-serif);color:rgba(238,241,247,.94);
-letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
-.gsp-slot svg{flex:none;opacity:.8}
-.gsp-slot.top span{color:#fff}
-.gsp-slot.top svg{opacity:1}
+font:700 .72rem/1 var(--font-sans,system-ui,sans-serif);color:#fff;
+letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.gsp-slot svg{flex:none;opacity:.85}
+.gsp-slot.dark span{color:${INK}}
+.gsp-slot.top span{color:${INK};font-weight:800}
+.gsp-slot.top svg,.gsp-slot.dark svg{opacity:1}
 
 .gsp-form{display:grid;gap:.5rem;margin-top:1rem}
 .gsp-form input{width:100%;font:inherit;font-size:.9rem;padding:.68rem .85rem;
@@ -198,7 +223,11 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   const seg = 360 / SLOTS;
   const top = chosen[0];
 
-  const colour = (i: number) => (slots[i].id === top.id ? RED : i % 2 ? NAVY : NAVY_DEEP);
+  // Slot nought is the top prize and is gold. The other seven cycle red, blue,
+  // white, so nothing touches its own colour.
+  const CYCLE = [RED, BLUE, WHITE];
+  const colour = (i: number) => (i === 0 ? GOLD : CYCLE[(i - 1) % 3]);
+  const onLight = (i: number) => i === 0 || CYCLE[(i - 1) % 3] === WHITE;
   const wedges = slots.map((_, i) => `${colour(i)} ${i * seg}deg ${(i + 1) * seg}deg`).join(',');
 
   // The slot is a full-size layer turned to its wedge; the label inside it is
@@ -206,8 +235,9 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   const faces = slots
     .map((p, i) => {
       const mid = i * seg + seg / 2;
-      return `<div class="gsp-slot${p.id === top.id ? ' top' : ''}" style="transform:rotate(${mid}deg)">
-        <span>${icon(p, '.85rem')}${esc(p.label)}</span>
+      return `<div class="gsp-slot${i === 0 ? ' top' : ''}${onLight(i) ? ' dark' : ''}"
+        style="transform:rotate(${mid}deg)">
+        <span>${icon(p, '1rem')}${esc(p.label)}</span>
       </div>`;
     })
     .join('');
@@ -234,7 +264,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
           <p class="gsp-err" id="gsp-err" role="alert"></p>
           <button class="gsp-go" id="gsp-go" type="submit">Spin the wheel</button>
         </form>
-        <p class="gsp-small">Every slot is a prize &mdash; ${esc(top.note)} is on two of the eight.
+        <p class="gsp-small">Every slot is a prize &mdash; ${esc(top.note)} is the gold one, on one of the eight.
           Your details go to ${who} and nowhere else. We will not email you.</p>
       </div>
 
@@ -291,7 +321,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   function confetti() {
     var box = $('gsp-conf');
     if (!box) return;
-    var colours = ['${RED}', '#eef1f7', '${NAVY}', '#c0242f'];
+    var colours = ['${RED}', '#eef1f7', '${BLUE}', '#c0242f'];
     for (var i = 0; i < 90; i++) {
       var bit = document.createElement('span');
       bit.className = 'gsp-bit';

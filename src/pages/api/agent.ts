@@ -233,23 +233,24 @@ The spin-to-win widget:
   spins a wheel of eight slots. It works on any template — it is a widget, not a page.
 - Never switch it on without asking. Say what it is in a line, and say the two things the owner
   actually needs to decide before they say yes.
-- First: everybody wins something. There are no losing slots — the three prizes fill all eight,
-  the top one on two of them and the other two on three each. So the top prize comes up about one
-  spin in four and every visitor walks away with one of the three. Ask them straight out whether
-  they are happy with that, because it is a real commitment. Do not offer to add a losing slot or
-  to rig the landing — the wheel shows its own odds and it is not going to lie about them.
+- First: everybody wins something. There are no losing slots. The first prize is the top one and
+  gets the single gold slot, so it comes up one spin in eight; everything after it shares the other
+  seven. Ask them straight out whether they are happy giving the top one away at that rate, because
+  it is a real commitment. Do not offer to add a losing slot or to rig the landing — the wheel
+  shows its own odds and it is not going to lie about them.
 - Second: nobody gets emailed except them. The visitor hands over an address to spin a wheel and
   the page promises it goes no further, so it lands in the owner's inbox and nowhere else.
-- Prizes come from a fixed catalogue, three of them, best first. You pass ids, not words:
-  gift, off10, off20, half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery,
-  session, class, merch, sticker, upgrade. Never write your own label — every label in the
-  catalogue is short enough to sit in a wedge and read at a glance, and that is the only reason
-  the wheel looks like anything. A free-text offer of twenty-nine characters is what it used to
-  look like and it was a mess.
-- Offer them the six that suit their trade rather than reading the whole list out. There is a
-  panel in the builder with those six as squares if they would rather tap than talk — mention it
-  once. Three prizes is all it takes; they are repeated round the wheel so there is never a slot
-  that gives nothing.
+- Between two and eight prizes, best first. Each is either a catalogue id — gift, off10, off20,
+  half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, merch,
+  sticker, upgrade — or their own words at fourteen characters or fewer.
+- Reach for the catalogue first, because those labels are known to fit and come with an icon. When
+  nothing in it suits their trade, use their words and keep them short: "7 days free", "free wash",
+  "free brake check". Fourteen characters is the hard limit and it is not arbitrary — it is what
+  reads in a wedge on a phone. If they give you something longer, shorten it with them rather than
+  chopping it yourself.
+- Offer the six that suit their trade rather than reading the whole list out. There is a panel in
+  the builder with those six as squares, a box for their own, and a tap-to-pick order — mention it
+  once for anybody who would rather tap than talk.
 - Then call set_spinner with on: true and the offers, best first.
 - If they want it off later, set_spinner with on: false. It keeps the offers so it can go back on.
 
