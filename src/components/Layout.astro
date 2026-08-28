@@ -766,7 +766,10 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
      business owner's customers. The dot is always green because he asked for
      it — he is more vigilant than the average site owner. -->
 <div id="gg-chat"></div>
-<style>
+<!-- is:global, not scoped. Everything below is built by JS at runtime, so it
+     never receives Astro's data-astro-cid attribute and a scoped rule cannot
+     match it — the widget rendered as raw unstyled HTML. -->
+<style is:global>
   #gg-launch{position:fixed;right:18px;bottom:18px;z-index:80;display:flex;align-items:center;
     gap:.5rem;background:#111;color:#fff;border:0;border-radius:999px;padding:.7rem 1.15rem;
     font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;
