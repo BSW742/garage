@@ -819,8 +819,24 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
   var panel = document.getElementById('gg-panel');
   var log = document.getElementById('gg-log');
-  var thread = null;
-  try { thread = localStorage.getItem(KEY); } catch (e) {}
+  var thread = null, visitor = null, asked = false;
+  try {
+    thread = localStorage.getItem(KEY);
+    visitor = localStorage.getItem(KEY + ':who');
+  } catch (e) {}
+
+  // People answer "can I grab your name" two ways: with just their name, or
+  // with their name buried in a whole question. Short, no question mark, a
+  // couple of words — that is a name. Anything else is the question, and we
+  // ask for the name once afterwards rather than nagging.
+  function looksLikeName(text) {
+    var t = text.trim();
+    if (t.length > 32 || /[?@\d]/.test(t)) return null;
+    var words = t.replace(/^(hi|hey|kia ora|hello|yo)[,! ]+/i, '')
+                 .replace(/^(i'?m|i am|it'?s|this is|my name is|name'?s)\s+/i, '').trim();
+    if (!words || words.split(/\s+/).length > 3) return null;
+    return words.slice(0, 40);
+  }
 
   function add(text, mine){
     var d = document.createElement('div');
@@ -834,7 +850,11 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     panel.classList.add('on');
     document.body.classList.add('gg-open');
     document.getElementById('gg-launch').style.display = 'none';
-    if (!log.childElementCount) add('Kia ora — what can I help with?', false);
+    if (!log.childElementCount) {
+      add('Before I get the real human Ben — can I grab your name? And by all means ' +
+          'fire away with your question. He is online far too much, so you will hear ' +
+          'back soon.', false);
+    }
     document.getElementById('gg-in').focus();
     pull();
   });
@@ -851,15 +871,35 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
     if (!body) return;
     input.value = '';
     add(body, true);
+
+    var name = null;
+    if (!visitor) {
+      name = looksLikeName(body);
+      if (name) {
+        visitor = name;
+        try { localStorage.setItem(KEY + ':who', visitor); } catch (e) {}
+      }
+    }
+
     try {
       var res = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: SLUG, body: body, threadId: thread || undefined })
+        body: JSON.stringify({
+          slug: SLUG, body: body, threadId: thread || undefined,
+          name: name || undefined
+        })
       });
       var data = await res.json();
       if (data.threadId) {
         thread = data.threadId;
         try { localStorage.setItem(KEY, thread); } catch (e) {}
+      }
+
+      if (name) {
+        setTimeout(function(){ add('Thanks ' + name + ' — what can I help with?', false); }, 350);
+      } else if (!visitor && !asked) {
+        asked = true;
+        setTimeout(function(){ add('Onto it. Sorry — what was your name?', false); }, 350);
       }
     } catch (err) {
       add('That did not send — try again in a moment.', false);
