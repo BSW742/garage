@@ -114,9 +114,50 @@ const wres = await fetch('https://api.anthropic.com/v1/messages', {
       clips.map((c) => `  - ${c.title} (${c.who})`).join('\n') }],
   }),
 });
-const wd = await wres.json();
-const wtext = (wd.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
-const w = JSON.parse((wtext.match(/\{[\s\S]*\}/) || ['{}'])[0]);
+// The films are the page. The words around them are worth having but they are
+// not worth losing fourteen verified clips over, and the first Raglan run did
+// exactly that — the model closed a string with an extra quote, JSON.parse
+// threw, and the whole run went in the bin including the search that paid for
+// it. So a broken answer here degrades to a plain page rather than an exception.
+function readJson(response) {
+  const text = (response?.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
+  const block = (text.match(/\{[\s\S]*\}/) || [null])[0];
+  if (!block) return null;
+  try {
+    return JSON.parse(block);
+  } catch {
+    return null;
+  }
+}
+
+let w = readJson(await wres.json());
+if (!w) {
+  say('  the written part came back malformed — asking once more');
+  const retry = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5', max_tokens: 2000,
+      // The first retry dropped the language rules along with everything else,
+      // and came back with a Chinese character wedged into an English headline.
+      // A retry is still the same job — say so.
+      system:
+        'Return ONLY valid JSON, nothing else. Check every string is closed before you finish. ' +
+        'New Zealand English throughout, no exclamation marks, no marketing gloss, and no ' +
+        'characters outside ordinary English punctuation and macronised vowels.',
+      messages: [{ role: 'user', content:
+        `Write this as JSON: {"name":"","eyebrow":"","headline":"six words or so","lede":"two sentences",` +
+        `"about":{"title":"","text":"two short paragraphs separated by a blank line"},` +
+        `"facts":{"title":"","items":[["thing","one line"]]},"faq":{"items":[["q","a"]]}}\n\n` +
+        `Subject: ${subject}\n\nThe films are:\n` + clips.map((c) => `  - ${c.title} (${c.who})`).join('\n') }],
+    }),
+  });
+  w = readJson(await retry.json());
+}
+if (!w) {
+  say('  still malformed — publishing the films with plain wording');
+  w = { name: subject, headline: subject, lede: '' };
+}
 
 const config = {
   name: w.name || subject,
