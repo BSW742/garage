@@ -213,6 +213,21 @@ The diary template:
 - One bad post makes the whole day bad. That is deliberate — say it if they ask, do not apologise
   for it.
 
+The studio templates (yoga and pilates):
+- Styles "yoga" and "pilates" are the same page in two temperatures: yoga is warm sand and a
+  serif, pilates is cool grey and a geometric sans. Pick whichever word they used about
+  themselves. Barre, reformer and dance studios take pilates; meditation and hot yoga take yoga.
+- The timetable is the page. It goes in a menu section: one group per day, one item per class,
+  with the time in the price field and the teacher in the note. Most people open these on a phone
+  minutes before a class, so keep class names short.
+- Passes go in a pricing section, and the price must be on them. Hidden pricing is the single
+  biggest reason people leave a studio site. Write each item as name, then price and an optional
+  note separated by a pipe: "Ten trip pass" / "$200|Never expires".
+- Teachers go in team, with a photograph each. People book with a person, not a studio — a
+  teacher with no face is worth much less than one with.
+- One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
+  sale rather than a welcome.
+
 The beauty template:
 - Style "beauty" is for salons, spas, skin clinics, brow and lash studios, nail bars and massage.
   One photograph given the whole top of the page, treatments listed with prices, and a booking

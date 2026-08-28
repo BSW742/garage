@@ -59,7 +59,10 @@ export const TOOLS = [
       'for a trip, a season, a build, a club, a wedding. Anyone can add one. beauty is for salons, ' +
       'spas, skin clinics, brow and lash studios, nail bars and massage: a full-bleed photograph, ' +
       'treatments listed with duration and price like a menu, and a booking button pinned to the ' +
-      'bottom of every phone screen. listing is one thing for ' +
+      'bottom of every phone screen. yoga and pilates are the same studio page in two ' +
+      'temperatures \u2014 a timetable built for a phone, passes with their prices on them, and ' +
+      'teachers with faces; yoga is warm sand and a serif, pilates cool grey and a geometric sans. ' +
+      'listing is one thing for ' +
       'sale privately — a house or a car: big photos, the price, a strip of the numbers a buyer ' +
       'checks, and a plain list of what is wrong with it. ' +
       'diet is a public food diary for people who want somebody watching: a scoreboard of good ' +
@@ -70,7 +73,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },
