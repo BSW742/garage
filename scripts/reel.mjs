@@ -3,6 +3,7 @@
 //   npm run reel -- queenstown "mountain biking in Queenstown"
 //   npm run reel -- taupo "trout fishing on Lake Taupo" --films 10
 //   npm run reel -- rotorua "..." --replace        # rebuild an existing one
+//   npm run reel -- alaska "..." --ids a1b,c2d      # a list you chose yourself
 //
 // Search, verify, write, publish. The verify step is the one that matters: a
 // model will produce a plausible eleven-character YouTube id as readily as a
@@ -45,6 +46,17 @@ if (!KEY) { console.error('No ANTHROPIC_API_KEY in .dev.vars'); process.exit(1);
 const say = (m) => process.stdout.write(`${m}\n`);
 
 // ── 1. find ────────────────────────────────────────────────────────────────
+// A search is the usual way in, but a subject the search drifts on is better
+// curated by hand — Alaska off-grid came back four-fifths bush flying, because
+// that is what is popular rather than what was asked for. --ids skips the
+// search and takes a list, and everything after this point is identical: the
+// same verification, the same refusal to publish anything unchecked.
+const given = flag('ids', '');
+let found;
+if (given) {
+  found = given.split(/[,\s]+/).filter(Boolean).map((id) => ({ id }));
+  say(`\n  ${found.length} ids given, skipping the search`);
+} else {
 say(`\n  Searching for films about: ${subject}`);
 const res = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
@@ -70,8 +82,9 @@ const data = await res.json();
 const text = (data.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
 const match = text.match(/\[[\s\S]*\]/);
 if (!match) { console.error('  the model returned no list'); process.exit(1); }
-const found = JSON.parse(match[0]);
+found = JSON.parse(match[0]);
 say(`  ${found.length} candidates`);
+}
 
 // ── 2. verify ──────────────────────────────────────────────────────────────
 // oembed is the whole trick: 200 with the real title and author for anything
