@@ -305,16 +305,6 @@ const products = [
     </div>
   </div>
 
-  <!-- Slotted into the top nav, immediately left of Claim. It has to be a
-       direct child of Layout for the slot to take it. -->
-  <button class="floating-cart" id="floating-cart" slot="nav-cart" aria-label="Your cart">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="9" cy="21" r="1"/>
-      <circle cx="20" cy="21" r="1"/>
-      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
-    </svg>
-    <span class="cart-count" id="cart-count">0</span>
-  </button>
 </Layout>
 
 <style>
@@ -547,54 +537,6 @@ const products = [
     font-weight: 500;
   }
 
-  /* The cart, in the top nav beside Claim. Round and dark so it reads as a
-     button among the illustrated icons rather than as another one of them. */
-  .floating-cart {
-    position: relative;
-    width: 38px;
-    height: 38px;
-    flex: none;
-    background: var(--color-text);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, background 0.2s;
-  }
-
-  .floating-cart:hover {
-    transform: scale(1.08);
-    background: #27272a;
-  }
-
-  .floating-cart svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .cart-count {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background: #f97316;
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 700;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .cart-count:empty,
-  .cart-count[data-count="0"] {
-    display: none;
-  }
 
   /* Cart sidebar */
   .cart-overlay {
@@ -1094,7 +1036,21 @@ const products = [
     size?: string;
   }
 
-  let cart: CartItem[] = [];
+  // Shared with the nav button in Layout, which is what makes the cart follow
+  // you off this page. Same key both sides.
+  const CART_KEY = 'garage-cart';
+
+  function loadCart(): CartItem[] {
+    try {
+      const raw = localStorage.getItem(CART_KEY);
+      const parsed = raw ? JSON.parse(raw) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  let cart: CartItem[] = loadCart();
 
   // DOM elements
   const cartOverlay = document.getElementById('cart-overlay');
@@ -1176,6 +1132,19 @@ const products = [
 
   function updateCartUI() {
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+    // Write through on every change rather than on unload — a shut tab, a
+    // crash or a link out all have to leave the basket where it was.
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    } catch {
+      /* private browsing, a full quota — the page still works, the cart just
+         will not follow them to the next one. */
+    }
+    if (typeof (window as any).garageCartPainted === 'function') {
+      (window as any).garageCartPainted();
+    }
+
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     if (cartCount) {
