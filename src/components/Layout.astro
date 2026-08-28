@@ -98,6 +98,10 @@ try {
         <a href="/merch" class="nav-link nav-icon" title="Merch">
           <img src="/nav/merch-v2.png" alt="Merch" />
         </a>
+        <!-- The merch page lifts its cart up here rather than floating one over
+             the bottom-right corner, where the dog, his bone and the chat
+             launcher already live. -->
+        <slot name="nav-cart" />
         <a href="/ai?start=1" class="nav-link nav-cta hide-mobile">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <path d="M12 2.5 21.5 12 12 21.5 2.5 12z" stroke-linejoin="round" />

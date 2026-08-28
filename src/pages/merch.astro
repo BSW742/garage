@@ -177,16 +177,6 @@ const products = [
       </div>
     </aside>
 
-    <!-- Floating Cart Button -->
-    <button class="floating-cart" id="floating-cart">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="9" cy="21" r="1"/>
-        <circle cx="20" cy="21" r="1"/>
-        <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
-      </svg>
-      <span class="cart-count" id="cart-count">0</span>
-    </button>
-
     <!-- Checkout Modal -->
     <div class="checkout-modal" id="checkout-modal">
       <div class="checkout-content">
@@ -314,6 +304,17 @@ const products = [
       </div>
     </div>
   </div>
+
+  <!-- Slotted into the top nav, immediately left of Claim. It has to be a
+       direct child of Layout for the slot to take it. -->
+  <button class="floating-cart" id="floating-cart" slot="nav-cart" aria-label="Your cart">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="9" cy="21" r="1"/>
+      <circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+    </svg>
+    <span class="cart-count" id="cart-count">0</span>
+  </button>
 </Layout>
 
 <style>
@@ -546,33 +547,32 @@ const products = [
     font-weight: 500;
   }
 
-  /* Floating cart */
+  /* The cart, in the top nav beside Claim. Round and dark so it reads as a
+     button among the illustrated icons rather than as another one of them. */
   .floating-cart {
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
+    position: relative;
+    width: 38px;
+    height: 38px;
+    flex: none;
     background: var(--color-text);
     color: white;
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: var(--shadow-lg);
-    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.2s;
   }
 
   .floating-cart:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
+    background: #27272a;
   }
 
   .floating-cart svg {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
   }
 
   .cart-count {
@@ -1063,9 +1063,6 @@ const products = [
       border-bottom: 1px solid var(--color-border);
     }
 
-    .floating-cart {
-      bottom: 80px;
-    }
   }
 
   @media (max-width: 480px) {
