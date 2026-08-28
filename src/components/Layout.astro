@@ -809,8 +809,8 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   var host = document.getElementById('gg-chat');
   if (!host) return;
   host.innerHTML =
-    '<button id="gg-launch"><i></i>Chat to Ben</button>' +
-    '<div id="gg-panel"><div class="gg-top"><i></i>Ben is here' +
+    '<button id="gg-launch"><i></i><span id="gg-launch-label">Chat to Ben</span></button>' +
+    '<div id="gg-panel"><div class="gg-top"><i></i><span id="gg-who">Ben</span>' +
     '<button id="gg-x" aria-label="Close">&times;</button></div>' +
     '<div class="gg-log" id="gg-log"></div>' +
     '<form class="gg-form" id="gg-form">' +
@@ -905,6 +905,35 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       add('That did not send — try again in a moment.', false);
     }
   });
+
+  // How long ago Ben was last about, anywhere on garage.co.nz. The dot stays
+  // green because he asked for it; the words are what make it feel staffed
+  // rather than decorative.
+  function ago(iso){
+    var t = Date.parse(iso || '');
+    if (!t) return null;
+    var mins = Math.round((Date.now() - t) / 60000);
+    if (mins < 2) return 'here now';
+    if (mins < 60) return mins + ' mins ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs === 1 ? 'an hour ago' : hrs + ' hours ago';
+    var days = Math.round(hrs / 24);
+    return days === 1 ? 'yesterday' : days + ' days ago';
+  }
+
+  async function freshen(){
+    try {
+      var r = await fetch('/api/chat/presence?slug=' + encodeURIComponent(SLUG));
+      var d = await r.json();
+      var when = ago(d.seenAt);
+      var who = document.getElementById('gg-who');
+      var lab = document.getElementById('gg-launch-label');
+      if (who) who.textContent = when ? 'Ben \u00b7 ' + when : 'Ben';
+      if (lab) lab.textContent = d.online ? 'Ben is here' : 'Chat to Ben';
+    } catch (e) {}
+  }
+  freshen();
+  setInterval(freshen, 60000);
 
   // threadId, not thread — the endpoint reads threadId and quietly returns an
   // empty list for anything else, so replies never arrived. And "after" is the

@@ -5,6 +5,32 @@ export const prerender = false;
 
 export const OPTIONS: APIRoute = async () => preflight();
 
+/**
+ * When the owner was last about. Public and unauthenticated on purpose — it is
+ * one timestamp, it is the thing the widget shows a visitor, and hiding it
+ * would mean the widget could not say anything truthful.
+ */
+export const GET: APIRoute = async ({ url, locals }) => {
+  try {
+    const db = (locals.runtime?.env as any)?.DB;
+    const slug = String(url.searchParams.get('slug') || '').trim().toLowerCase();
+    if (!db || !/^[a-z0-9-]{1,63}$/.test(slug)) return json({ seenAt: null });
+
+    const row = await db
+      .prepare('SELECT chat_online_at FROM site_claims WHERE slug = ?')
+      .bind(slug)
+      .first();
+    const seenAt = row?.chat_online_at || null;
+    const stamp = seenAt ? Date.parse(String(seenAt)) : NaN;
+    return json({
+      seenAt,
+      online: Number.isFinite(stamp) && Date.now() - stamp < ONLINE_WINDOW_MS,
+    });
+  } catch {
+    return json({ seenAt: null });
+  }
+};
+
 // Fresh enough to mean somebody is sitting there. The inbox stamps every 30s,
 // so this tolerates one missed beat and no more.
 export const ONLINE_WINDOW_MS = 90_000;

@@ -688,6 +688,21 @@
 
     notifyBtn.onclick = () => setupPush(true);
     setupPush(false);
+    // Ben being in the app is Ben being about. The widget on garage.co.nz reads
+    // this to tell visitors how long ago he was last around, which is the
+    // difference between a page that feels staffed and one that does not.
+    function iAmAbout() {
+      fetch('/api/chat/presence', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: CHAT_SLUG, key: CHAT_KEY, on: true })
+      }).catch(() => {});
+    }
+    iAmAbout();
+    setInterval(iAmAbout, 60000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') iAmAbout();
+    });
+
     loadBookings();
     loadApps();
     loadEmails();
