@@ -20,7 +20,7 @@ interface Row {
 let sites: {
   slug: string; name: string; lede: string; style: string;
   hero: string | null; primary: string; deep: string;
-  touched: string | null; fresh: boolean; bubbles: string[];
+  touched: string | null; fresh: boolean; bubbles: string[]; reel: string[]; films: number;
 }[] = [];
 let entries: { id: number; title: string; body: string | null; created_at: string }[] = [];
 let liveCount = 0;
@@ -106,6 +106,22 @@ try {
               ? candidates.map((u) => ({ u, s: score(u) })).filter((x) => x.s >= 0)
                   .sort((a, b) => b.s - a.s).slice(0, 5).map((x) => x.u)
               : [],
+          // A reel site has no photographs at all — it has films. Its card was
+          // rendering as a single grey letter, which was the worst card on the
+          // page attached to the best content on it. Take the thumbnails.
+          reel:
+            (c.style || '') === 'reel'
+              ? (c.sections || [])
+                  .flatMap((sec: any) => sec?.clips || [])
+                  .map((clip: any) => String(clip?.id || ''))
+                  .filter((id: string) => /^[A-Za-z0-9_-]{11}$/.test(id))
+                  .slice(0, 4)
+                  .map((id: string) => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`)
+              : [],
+          films:
+            (c.style || '') === 'reel'
+              ? (c.sections || []).flatMap((sec: any) => sec?.clips || []).length
+              : 0,
           slug: row.slug,
           name: c.name || row.slug,
           lede: String(c.lede || c.headline || '').slice(0, 110),
@@ -195,7 +211,17 @@ const when = (iso: string) => {
           >
             <span class="card-frame">
               <span class="card-bar"><i></i><i></i><i></i><b>{s.slug}.garage.co.nz</b></span>
-              {s.bubbles.length >= 3 ? (
+              {s.reel.length >= 3 ? (
+                <span class="card-shot card-reel">
+                  {s.reel.slice(0, 4).map((u) => (
+                    <span class="rl-tile" style={`background-image:url(${u})`}></span>
+                  ))}
+                  <span class="rl-badge">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                    {s.films} films
+                  </span>
+                </span>
+              ) : s.bubbles.length >= 3 ? (
                 <span class="card-shot card-bub">
                   {s.bubbles.slice(0, 5).map((u, i) => (
                     <span class={`bub b${i + 1}`} style={`background-image:url(${u})`}></span>
@@ -355,6 +381,56 @@ const when = (iso: string) => {
   .card-bub .b3 { width: 34%; padding-bottom: 34%; left: 62%; top: 40%; }
   .card-bub .b4 { width: 22%; padding-bottom: 22%; left: 38%; top: 52%; }
   .card-bub .b5 { width: 17%; padding-bottom: 17%; left: 20%; top: 68%; }
+
+  /* A reel card is four frames and a play badge. A single cropped thumbnail
+     would read as a photograph; four in a grid reads as a reel, which is what
+     the page behind it is. */
+  .card-reel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    background: #0b0b0d;
+    position: relative;
+  }
+
+  .rl-tile {
+    background-size: cover;
+    background-position: center;
+    background-color: #141418;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s;
+    filter: saturate(0.9) brightness(0.86);
+  }
+
+  .card:hover .rl-tile { filter: saturate(1.05) brightness(1); }
+  .card:hover .rl-tile:nth-child(1) { transform: scale(1.06); }
+  .card:hover .rl-tile:nth-child(2) { transform: scale(1.04); }
+  .card:hover .rl-tile:nth-child(3) { transform: scale(1.04); }
+  .card:hover .rl-tile:nth-child(4) { transform: scale(1.06); }
+
+  .rl-badge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(11, 11, 13, 0.82);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem 0.4rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    transition: background 0.25s, border-color 0.25s;
+  }
+
+  .rl-badge svg { width: 0.95rem; height: 0.95rem; fill: currentColor; }
+  .card:hover .rl-badge { background: var(--card-primary); border-color: transparent; }
 
   .card-initial {
     font-family: var(--font-display); font-size: 2.6rem; font-weight: 800;
