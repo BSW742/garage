@@ -92,23 +92,28 @@ const WHAT: Record<string, string> = {
 };
 
 const PHOTOS: Record<string, string[]> = {
-  cafe: ['photo-1704707626060-9b342f92a1b4', 'photo-1780312239639-738b1da1dfa2', 'photo-1670404161019-2c06269de22e', 'photo-1670710029529-48fe1bc2eb3d', 'photo-1677825950108-57a3ed44195e', 'photo-1645436095409-ccb65f96527f', 'photo-1719377058431-834b0772861b'],
-  trade: ['photo-1587582423116-ec07293f0395', 'photo-1589939705384-5185137a7f0f', 'photo-1626885930974-4b69aa21bbf9', 'photo-1595844730298-b960ff98fee0', 'photo-1694522362256-6c907336af43', 'photo-1646324554833-f0b6a479fa5d', 'photo-1513467535987-fd81bc7d62f8'],
-  beauty: ['photo-1598901986949-f593ff2a31a6', 'photo-1570172619644-dfd03ed5d881', 'photo-1643684391140-c5056cfd3436', 'photo-1616394584738-fc6e612e71b9', 'photo-1761718209835-c8586b7dcac0', 'photo-1761718209708-9ab9ba1c7252'],
-  yoga: ['photo-1761971975724-31001b4de0bf', 'photo-1761971975962-9cc397e2ba2a', 'photo-1676496962536-d8ef110ff6f0', 'photo-1599447421430-976c0f776d43', 'photo-1599447421338-2d21d3530aeb', 'photo-1636990628724-cb59f83326d7'],
-  pilates: ['photo-1717500252297-b09508db7ceb', 'photo-1747238415033-b74eec07eb59', 'photo-1747239685045-fcbcf98985db', 'photo-1747239202356-764770773c9a', 'photo-1747240031720-dced770be260'],
-  eggs: ['photo-1518569656558-1f25e69d93d7', 'photo-1582722872445-44dc5f7e3c8f', 'photo-1607690424560-35d967d6ad7c', 'photo-1612170153139-6f881ff067e0', 'photo-1519710164239-da123dc03ef4'],
-  // Every id below was fetched from the CDN before it went in — a pool that
-  // silently 404s produces a page of grey boxes and nobody notices for a week.
-  rugby: ['photo-1480099225005-2513c8947aec', 'photo-1512299286776-c18be8ed6a1a', 'photo-1496224027003-38fc92be458c', 'photo-1529663297269-6d349ec39b57', 'photo-1558151507-c1aa3d917dbb', 'photo-1574602904329-56e2f95fb15e'],
-  soccer: ['photo-1431324155629-1a6deb1dec8d', 'photo-1574629810360-7efbbe195018', 'photo-1489944440615-453fc2b6a9a9', 'photo-1517747614396-d21a78b850e8', 'photo-1522778119026-d647f0596c20', 'photo-1556056504-5c7696c4c28d', 'photo-1579952363873-27f3bade9f55'],
-  basketball: ['photo-1546519638-68e109498ffc', 'photo-1608245449230-4ac19066d2d0', 'photo-1577416412292-747c6607f055', 'photo-1600534220378-df36338afc40', 'photo-1504450758481-7338eba7524a', 'photo-1629901925121-8a141c2a42f4', 'photo-1602357280104-742c517a1d82'],
-  charity: ['photo-1557660559-42497f78035b', 'photo-1706806595136-5afefb45da1a', 'photo-1560220604-1985ebfe28b1', 'photo-1758599668356-c8c919e24dda', 'photo-1787012724048-dccf455a75a4', 'photo-1778864875228-caa80c73cbd3'],
-  townhall: ['photo-1666617710768-425d2d9088f8', 'photo-1677129663241-5be1f17fe6fe', 'photo-1712314947761-a8d718bd8c32', 'photo-1768851142332-75f3d1b47452', 'photo-1768508951405-10e83c4a2872', 'photo-1759477274116-e3cb02d2b9d8', 'photo-1762765684665-6b6855bb6fe6', 'photo-1677129663678-2171fa8a44cb'],
-  daycare: ['photo-1614113036347-9f60df80730a', 'photo-1578349035260-9f3d4042f1f7', 'photo-1747110604852-8f3edc2451ea', 'photo-1761208663763-c4d30657c910', 'photo-1777056491418-d4ff81a4ad92'],
-  workshop: ['photo-1753164725860-ffcd260b7b32', 'photo-1753164726043-31e583f8a9b8', 'photo-1753164725896-f0a39315ff8a', 'photo-1753164725849-54c0698969e5', 'photo-1624585179018-25699030cb8f', 'photo-1609619742069-f5e18afeef17', 'photo-1628058494685-6c2f796ac24a', 'photo-1715374033196-0ff662284a7e', 'photo-1608508644127-ba99d7732fee'],
-  sauna: ['photo-1759216852954-88e547b8e01f', 'photo-1741601272577-fc2c46f87d9f', 'photo-1712659606957-b7395ba9ebb2', 'photo-1745894118353-88e64617e064', 'photo-1702285229572-8aa35e6e3f5d', 'photo-1734117928667-c7f943a27e80', 'photo-1712161321522-c24f686e4ace'],
-  bubbles: ['photo-1578749556568-bc2c40e68b61', 'photo-1514228742587-6b1558fcca3d', 'photo-1610701596007-11502861dcfa', 'photo-1493106641515-6b5631de4bb9', 'photo-1565193566173-7a0ee3dbe261'],
+  // Every id here was fetched from the CDN before it went in. Which of them a
+  // new site may use is decided at spawn time by spokenFor() — a photograph
+  // already on a page is not offered again.
+  modern: ['photo-1472851294608-062f824d29cc', 'photo-1528698827591-e19ccd7bc23d', 'photo-1542715473-63675d7974bd', 'photo-1610839123817-236de748e5c9', 'photo-1595245761073-0eb3ca3f179c', 'photo-1661615277524-c7e67b240e95', 'photo-1656443046114-08c6dac52aa2'],
+  classic: ['photo-1775622360538-7b5b9891c48c', 'photo-1672777368849-9f55d9dd3623', 'photo-1595057243976-875ee35f8dda', 'photo-1705522330262-f8efe5094f00', 'photo-1780765896926-8cc2d92cb069', 'photo-1633949970272-3421a17b5e32', 'photo-1705522330271-25d1a9cbdcdc', 'photo-1786282082303-c94d070d4b1c'],
+  cafe: ['photo-1704707626060-9b342f92a1b4', 'photo-1780312239639-738b1da1dfa2', 'photo-1670404161019-2c06269de22e', 'photo-1670710029529-48fe1bc2eb3d', 'photo-1677825950108-57a3ed44195e', 'photo-1645436095409-ccb65f96527f', 'photo-1719377058431-834b0772861b', 'photo-1567880905822-56f8e06fe630', 'photo-1521017432531-fbd92d768814', 'photo-1494346480775-936a9f0d0877', 'photo-1511081692775-05d0f180a065', 'photo-1453614512568-c4024d13c247', 'photo-1613274554329-70f997f5789f', 'photo-1648462908676-8305f0eff8e0', 'photo-1583354608715-177553a4035e', 'photo-1538333581680-29dd4752ddf2', 'photo-1600353565737-2427a1ba3d3a', 'photo-1588253137728-1e4dd0fe9a93', 'photo-1482350325005-eda5e677279b', 'photo-1545418314-7ce0b9b53901', 'photo-1612192527395-06b72da6b35a', 'photo-1565650839149-2c48a094196c'],
+  physio: ['photo-1754941622136-6664a3f50b2e', 'photo-1770012905139-713758ded6ec', 'photo-1649751361457-01d3a696c7e6', 'photo-1645005512942-a17817fb7c11', 'photo-1768507423533-b87b62769758', 'photo-1630226040750-d934f017f0e4', 'photo-1709880754472-be89c13abc52', 'photo-1706353399656-210cca727a33', 'photo-1668422550557-f096364b72b4'],
+  trade: ['photo-1587582423116-ec07293f0395', 'photo-1589939705384-5185137a7f0f', 'photo-1626885930974-4b69aa21bbf9', 'photo-1595844730298-b960ff98fee0', 'photo-1694522362256-6c907336af43', 'photo-1646324554833-f0b6a479fa5d', 'photo-1513467535987-fd81bc7d62f8', 'photo-1667923006173-9e0d2251f608', 'photo-1593313637552-29c2c0dacd35', 'photo-1632862378103-8248dccb7e3d', 'photo-1630683924997-fe27050a0416', 'photo-1608613304899-ea8098577e38', 'photo-1593786267440-550458cc882a', 'photo-1505798577917-a65157d3320a', 'photo-1631396326838-de37e5f8bcbc', 'photo-1581141849291-1125c7b692b5'],
+  beauty: ['photo-1598901986949-f593ff2a31a6', 'photo-1570172619644-dfd03ed5d881', 'photo-1643684391140-c5056cfd3436', 'photo-1616394584738-fc6e612e71b9', 'photo-1761718209835-c8586b7dcac0', 'photo-1761718209708-9ab9ba1c7252', 'photo-1634449571010-02389ed0f9b0', 'photo-1521590832167-7bcbfaa6381f', 'photo-1629397685944-7073f5589754', 'photo-1595476108010-b4d1f102b1b1', 'photo-1580618672591-eb180b1a973f', 'photo-1731514771613-991a02407132', 'photo-1695527081848-1e46c06e6458', 'photo-1675034743339-0b0747047727', 'photo-1717160675489-7779f2c91999', 'photo-1717160675643-53a7a2ebaa9f', 'photo-1595871151608-bc7abd1caca3', 'photo-1675034743469-4e262c2ff3ef', 'photo-1633681138600-295fcd688876', 'photo-1761718210089-ba3bb5ccb54f'],
+  yoga: ['photo-1761971975724-31001b4de0bf', 'photo-1761971975962-9cc397e2ba2a', 'photo-1676496962536-d8ef110ff6f0', 'photo-1599447421430-976c0f776d43', 'photo-1599447421338-2d21d3530aeb', 'photo-1636990628724-cb59f83326d7', 'photo-1626444232874-e72c020eeb0e', 'photo-1651077837628-52b3247550ae', 'photo-1617734417481-aafe074f1b86', 'photo-1761035005546-62b8018b212a', 'photo-1651077920873-ac1be1b82290', 'photo-1763403921315-f2ef8697199f', 'photo-1787647090307-706df57182d3', 'photo-1671581084344-3d83ae383a83', 'photo-1671581081519-321ab53e0dac', 'photo-1671581084367-1bf522951eae', 'photo-1617734423221-dd4ad460bad6', 'photo-1671581084718-c4c04fc00250'],
+  pilates: ['photo-1717500252297-b09508db7ceb', 'photo-1747238415033-b74eec07eb59', 'photo-1747239685045-fcbcf98985db', 'photo-1747239202356-764770773c9a', 'photo-1747240031720-dced770be260', 'photo-1747237602396-20cb5331ee7b', 'photo-1747239069226-55382c570116', 'photo-1747240549807-fc3962949818', 'photo-1717500252573-d31d4bf5ddf1', 'photo-1717500251716-27057c48ace4', 'photo-1715780463401-b9ef0567943e'],
+  eggs: ['photo-1518569656558-1f25e69d93d7', 'photo-1582722872445-44dc5f7e3c8f', 'photo-1607690424560-35d967d6ad7c', 'photo-1612170153139-6f881ff067e0', 'photo-1519710164239-da123dc03ef4', 'photo-1598965675045-45c5e72c7d05', 'photo-1585355611266-f01530088d60', 'photo-1585355611347-6fb3aca79111', 'photo-1585355611468-3c418173f128', 'photo-1585355611444-06154f329e96', 'photo-1773587534652-1c823227b555', 'photo-1658094048401-7ce081dd3b5e'],
+  mogged: ['photo-1637250060437-eaad0291deff', 'photo-1608666599953-b951163495f4', 'photo-1561070791-2526d30994b5', 'photo-1647427854253-b92bb40c9330', 'photo-1682056598904-9aa7ea5e8991', 'photo-1612544409025-e1f6a56c1152', 'photo-1685654065306-b9ff8af8f68d', 'photo-1574856049959-d3134a3e592f', 'photo-1637250096679-c10f2751def8', 'photo-1744686909358-915e14866592', 'photo-1693159682618-074078ed271e', 'photo-1682939634610-5187eb7f9619'],
+  bubbles: ['photo-1578749556568-bc2c40e68b61', 'photo-1514228742587-6b1558fcca3d', 'photo-1610701596007-11502861dcfa', 'photo-1493106641515-6b5631de4bb9', 'photo-1565193566173-7a0ee3dbe261', 'photo-1606819717115-9159c900370b', 'photo-1582481426757-274f94eecb72', 'photo-1690122582259-d3e7b2cde7ec', 'photo-1569783721854-33a99b4c0bae', 'photo-1655205145442-84abe0ae4fab', 'photo-1598154948139-a899dadb6269', 'photo-1563293743-a9761195b52e', 'photo-1597489420377-e23d4a080346', 'photo-1580687580441-96dbadf8f3c8', 'photo-1735605917461-4c1b77a6616f', 'photo-1653987255814-3b4c05832660', 'photo-1735605918310-73ad27a5dd6b', 'photo-1617386069438-6b3a5f76f0bc', 'photo-1580687580679-3f3e9ca2ef35'],
+  workshop: ['photo-1753164725860-ffcd260b7b32', 'photo-1753164726043-31e583f8a9b8', 'photo-1753164725896-f0a39315ff8a', 'photo-1753164725849-54c0698969e5', 'photo-1624585179018-25699030cb8f', 'photo-1609619742069-f5e18afeef17', 'photo-1628058494685-6c2f796ac24a', 'photo-1715374033196-0ff662284a7e', 'photo-1608508644127-ba99d7732fee', 'photo-1610206349499-c932c3b3aacb', 'photo-1739467516257-20c1d7f1949a', 'photo-1739467516216-424041e6d07a', 'photo-1764507768733-667e135d8cb9', 'photo-1676125105159-517d135a6cc3', 'photo-1676125105332-608345abe20e', 'photo-1760018890645-28c8312cd7cb', 'photo-1778698993355-2c5f29edbfb9', 'photo-1772485718354-6966d953be57', 'photo-1763824371988-8c8eb3d13eff', 'photo-1776972334890-018cb3b3e3c6', 'photo-1766970421184-e3bc69e07dfc'],
+  sauna: ['photo-1759216852954-88e547b8e01f', 'photo-1741601272577-fc2c46f87d9f', 'photo-1712659606957-b7395ba9ebb2', 'photo-1745894118353-88e64617e064', 'photo-1702285229572-8aa35e6e3f5d', 'photo-1734117928667-c7f943a27e80', 'photo-1712161321522-c24f686e4ace', 'photo-1712659604528-b179a3634560', 'photo-1739869481946-c054e37a55b1', 'photo-1741601273168-04934064889f', 'photo-1676452457948-7d02dff1eb43', 'photo-1583416750470-965b2707b355', 'photo-1713270176378-45fbf4a27099', 'photo-1605614307370-f7a1e58ae751', 'photo-1741601274210-14b7ab1ef99c', 'photo-1741601272384-7150b6e6b842', 'photo-1701875265510-11578d366a04', 'photo-1749561532912-41d43d889696', 'photo-1734594709647-7606448ba055', 'photo-1734594683564-cadeeaefd6cd'],
+  rugby: ['photo-1480099225005-2513c8947aec', 'photo-1512299286776-c18be8ed6a1a', 'photo-1496224027003-38fc92be458c', 'photo-1529663297269-6d349ec39b57', 'photo-1558151507-c1aa3d917dbb', 'photo-1574602904329-56e2f95fb15e', 'photo-1698746019802-ec43b1b0db29', 'photo-1676972523246-2ff4125551fb', 'photo-1643096809267-38765bbfd989', 'photo-1649194050205-00ce491f62b3'],
+  soccer: ['photo-1431324155629-1a6deb1dec8d', 'photo-1574629810360-7efbbe195018', 'photo-1489944440615-453fc2b6a9a9', 'photo-1517747614396-d21a78b850e8', 'photo-1522778119026-d647f0596c20', 'photo-1556056504-5c7696c4c28d', 'photo-1579952363873-27f3bade9f55', 'photo-1626248801379-51a0748a5f96', 'photo-1606925797300-0b35e9d1794e', 'photo-1624280157150-4d1ed8632989', 'photo-1517927033932-b3d18e61fb3a', 'photo-1624880357913-a8539238245b', 'photo-1569531955323-33c6b2dca44b', 'photo-1600077063877-22118d6290eb', 'photo-1543326727-cf6c39e8f84c', 'photo-1598399615261-adafbbb044fc', 'photo-1612703738893-31b58c0aebd5', 'photo-1551385093-ad3fb362dc43', 'photo-1550591901-94cca90aeab1', 'photo-1613425295165-dc4a15a98bbf'],
+  basketball: ['photo-1546519638-68e109498ffc', 'photo-1608245449230-4ac19066d2d0', 'photo-1577416412292-747c6607f055', 'photo-1600534220378-df36338afc40', 'photo-1504450758481-7338eba7524a', 'photo-1629901925121-8a141c2a42f4', 'photo-1602357280104-742c517a1d82', 'photo-1505666287802-931dc83948e9', 'photo-1655151162497-065d0da01c9a', 'photo-1585070105361-a13b5623791c', 'photo-1563506644863-444710df1e03', 'photo-1542652694-40abf526446e', 'photo-1512746804203-e53e69406f93', 'photo-1602619075255-d090a7443bfb', 'photo-1639843091936-bb5fca7b5684', 'photo-1602105129381-33a03a924655', 'photo-1705706810771-b7ef95df6b44', 'photo-1531124042451-f3ba1765072c', 'photo-1716731731293-ffc5d16b6107', 'photo-1576250223658-05e6e593d8ce', 'photo-1544919982-b61976f0ba43'],
+  charity: ['photo-1557660559-42497f78035b', 'photo-1706806595136-5afefb45da1a', 'photo-1560220604-1985ebfe28b1', 'photo-1758599668356-c8c919e24dda', 'photo-1787012724048-dccf455a75a4', 'photo-1778864875228-caa80c73cbd3', 'photo-1593113616828-6f22bca04804', 'photo-1628717341663-0007b0ee2597', 'photo-1599059813005-11265ba4b4ce', 'photo-1593113646773-028c64a8f1b8', 'photo-1713977331626-722cd8400b99', 'photo-1712908714811-321472432c4e', 'photo-1615897570286-da936a5dfb81', 'photo-1593113630400-ea4288922497', 'photo-1593113598332-cd288d649433', 'photo-1732194438313-40cb4261f49b', 'photo-1689010254304-c5a67880b5a1', 'photo-1653508310732-cad8be3cd260', 'photo-1695654398729-9009013ca7f4', 'photo-1733809697694-52c0c58ab888', 'photo-1650819786866-9708fd7bf3d3'],
+  townhall: ['photo-1666617710768-425d2d9088f8', 'photo-1677129663241-5be1f17fe6fe', 'photo-1712314947761-a8d718bd8c32', 'photo-1768851142332-75f3d1b47452', 'photo-1768508951405-10e83c4a2872', 'photo-1759477274116-e3cb02d2b9d8', 'photo-1762765684665-6b6855bb6fe6', 'photo-1677129663678-2171fa8a44cb', 'photo-1763706320063-b210731b37a1', 'photo-1764471444363-e6dc0f9773bc', 'photo-1762765685319-fdaf8d22085d', 'photo-1762765684673-d22ece602b10', 'photo-1769638913500-4a0b6ac4561a', 'photo-1777282889677-19fe13252abf', 'photo-1765947384834-3bdcffcaffff', 'photo-1762765684810-b734486c5eda', 'photo-1709521440400-bf38b562b194', 'photo-1769667693426-6ce4b8732060', 'photo-1778086170602-f40da010e5fb', 'photo-1762765685329-97e0af04050c'],
+  daycare: ['photo-1614113036347-9f60df80730a', 'photo-1578349035260-9f3d4042f1f7', 'photo-1747110604852-8f3edc2451ea', 'photo-1761208663763-c4d30657c910', 'photo-1777056491418-d4ff81a4ad92', 'photo-1600880291319-1a7499c191e8', 'photo-1587616211892-f743fcca64f9', 'photo-1567405258710-35a7015252c0', 'photo-1589856198357-4cca29e342c7', 'photo-1648143714234-810e3ce38cc6', 'photo-1633219664515-2441564d0cc4', 'photo-1574429549871-ecf3b8523655', 'photo-1784662117877-105aa6c9161d', 'photo-1759678444866-e71e5484b0e5', 'photo-1759678444821-565ff103465c', 'photo-1774641374314-6aaaf7d45d90', 'photo-1761208663281-619e6532aff3', 'photo-1759678444870-1f09f0d9e688', 'photo-1786292949404-084cbd10c7b1'],
 };
 
 // Half the runs go looking for a real business. Those are never published:
@@ -116,6 +121,44 @@ const PHOTOS: Record<string, string[]> = {
 // what puts it live. A page carrying somebody's real name, photographs and
 // phone number should be a decision, not a side effect of a cron job.
 const REAL_ODDS = 0.5;
+
+// No photograph appears on two sites. That is the rule, and it is enforced here
+// rather than hoped for: every site already published is read back, its
+// pictures collected, and a spawn may only use what is left.
+//
+// The configs are the ledger. A separate table of claimed images would be one
+// more thing to drift out of step with what the pages actually show — this
+// cannot disagree with reality because it is read from it.
+const PHOTO_ID = /(photo-[0-9a-z-]+)/;
+
+async function spokenFor(db: any): Promise<Set<string>> {
+  const rows = await db
+    .prepare(
+      `SELECT json_extract(config, '$.heroImage') AS hero,
+              json_extract(config, '$.images')    AS imgs
+         FROM site_claims WHERE config IS NOT NULL`
+    )
+    .all();
+  const taken = new Set<string>();
+  for (const row of rows?.results || []) {
+    const urls: string[] = [];
+    if (row.hero) urls.push(String(row.hero));
+    try {
+      const list = row.imgs ? JSON.parse(String(row.imgs)) : [];
+      if (Array.isArray(list)) urls.push(...list.map(String));
+    } catch { /* a config we cannot parse cannot be claiming anything */ }
+    for (const url of urls) {
+      const hit = PHOTO_ID.exec(url);
+      if (hit) taken.add(hit[1]);
+    }
+  }
+  return taken;
+}
+
+// A page needs a hero and enough for a gallery. Below this the page is thin
+// enough that it is better not to build it than to build it twice-photographed.
+const MIN_PHOTOS = 4;
+const MAX_PHOTOS = 5;
 
 const pick = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 const shot = (id: string, w = 1600, h = 1100) =>
@@ -242,6 +285,26 @@ async function spawn(
 ): Promise<Response> {
   try {
     const apiKey = env.ANTHROPIC_API_KEY;
+
+    // Work out what pictures are left before spending anything on words. A
+    // style whose pool is used up cannot produce a site worth publishing, and
+    // finding that out after the model has written one wastes the run.
+    const claimedPhotos = await spokenFor(db);
+    const spare = (s: string) =>
+      (PHOTOS[s] || []).filter((id) => !claimedPhotos.has(id)).length;
+
+    if (spare(style) < MIN_PHOTOS) {
+      // The caller pinned this style, so tell them plainly rather than quietly
+      // building something else.
+      if (body?.style) {
+        return json({ ok: false, why: `no unused photos left for ${style}`, spare: spare(style) });
+      }
+      const open = STYLES.filter((s) => spare(s) >= MIN_PHOTOS);
+      if (!open.length) {
+        return json({ ok: false, why: 'every style is out of unused photos' });
+      }
+      style = pick(open);
+    }
     if (!apiKey) return json({ error: 'no key' }, 503);
 
     const wantReal = body?.real ?? Math.random() < REAL_ODDS;
@@ -419,11 +482,19 @@ async function spawn(
     // Pictures it can actually have. Stock, from a pool checked by hand — an
     // invented business with no photographs is a thin page, and thin is the one
     // thing this job is meant to avoid.
-    const ids = PHOTOS[style] || PHOTOS.cafe;
-    const shuffled = [...ids].sort(() => Math.random() - 0.5);
+    // Only photographs nobody else has. Taking the whole pool was the bug:
+    // every beauty site got all six beauty pictures, so the second one was a
+    // duplicate of the first before it had finished being written.
+    const free = [...(PHOTOS[style] || [])]
+      .filter((id) => !claimedPhotos.has(id))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, MAX_PHOTOS);
+    if (free.length < MIN_PHOTOS) {
+      return json({ ok: false, why: `only ${free.length} unused photos left for ${style}` });
+    }
     cfg.style = style;
-    cfg.heroImage = shot(shuffled[0]);
-    cfg.images = shuffled.slice(1).map((i) => shot(i));
+    cfg.heroImage = shot(free[0]);
+    cfg.images = free.slice(1).map((i) => shot(i));
     cfg.shop = false;
     cfg.chat = false;
     cfg.products = cfg.products || [];
