@@ -23,6 +23,8 @@ let sites: {
   touched: string | null; fresh: boolean;
 }[] = [];
 let entries: { id: number; title: string; body: string | null; created_at: string }[] = [];
+let liveCount = 0;
+let todayCount = 0;
 
 try {
   const db = (Astro.locals as any)?.runtime?.env?.DB;
@@ -68,6 +70,19 @@ try {
       })
       .filter(Boolean) as typeof sites;
 
+    // The whole estate, not just what is starred — that is the number worth
+    // putting on a wall.
+    const tally = await db
+      .prepare(
+        `SELECT COUNT(*) AS live,
+                SUM(CASE WHEN COALESCE(updated_at, created_at) > datetime('now','-1 day')
+                         THEN 1 ELSE 0 END) AS today
+           FROM site_claims WHERE status != 'disabled'`
+      )
+      .first();
+    liveCount = Number(tally?.live || 0);
+    todayCount = Number(tally?.today || 0);
+
     const log = await db
       .prepare('SELECT id, title, body, created_at FROM changelog ORDER BY created_at DESC LIMIT 30')
       .all();
@@ -102,13 +117,28 @@ const when = (iso: string) => {
     <header class="work-head">
       <p class="work-eyebrow">The work</p>
       <h1>Real sites, built by talking.</h1>
-      <p class="work-sub">
-        Every one of these was made by describing a business in plain words.
-        {sites.length > 0 && <> {sites.length} of them are up right now.</>}
-      </p>
-      <p class="work-rule">
-        Newest first. Work on your site and you move to the top of this page.
-      </p>
+      <div class="work-offer">
+        <span class="offer-num">1,000,000</span>
+        <span class="offer-say">free tokens<br />for every NZ business</span>
+      </div>
+
+      <div class="work-doing">
+        <a class="work-btn" href="/ai">Build yours</a>
+        <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
+        <span class="work-count">
+          <b>{liveCount}</b> sites live
+          {todayCount > 0 && <> · <b>{todayCount}</b> worked on today</>}
+        </span>
+      </div>
+
+      <div class="how" id="how" hidden>
+        <ol>
+          <li><b>Say what you do.</b> No forms, no templates to pick through — you describe the business in plain words and it builds the page while you watch.</li>
+          <li><b>Change anything by asking.</b> Type over the words on the page, or tell it what to move. It is your site from the first minute.</li>
+          <li><b>Publish to yours.garage.co.nz.</b> Free, and a million tokens of building goes with it — enough to make a site and keep changing it.</li>
+          <li><b>Keep it fresh and you stay top of this page.</b> Newest first, always.</li>
+        </ol>
+      </div>
     </header>
 
     <div class="work-body">
@@ -162,7 +192,7 @@ const when = (iso: string) => {
 <style>
   .work { max-width: 1500px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
 
-  .work-head { max-width: 44rem; margin-bottom: 3rem; }
+  .work-head { max-width: 46rem; margin-bottom: 3rem; }
   .work-eyebrow {
     font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
     font-weight: 700; color: var(--color-accent, #2563eb); margin-bottom: 1rem;
@@ -171,7 +201,45 @@ const when = (iso: string) => {
     font-family: var(--font-display); font-size: clamp(2.2rem, 6vw, 3.6rem);
     font-weight: 800; letter-spacing: -0.035em; line-height: 1.02;
   }
-  .work-sub { margin-top: 1.1rem; color: var(--color-text-muted); font-size: 1.05rem; }
+  /* The offer, said once and said loudly. */
+  .work-offer {
+    display: flex; align-items: center; gap: 1rem; margin-top: 1.8rem;
+    padding: 1.1rem 1.4rem; border-radius: 16px;
+    background: linear-gradient(100deg,
+      color-mix(in srgb, var(--color-accent, #2563eb) 12%, transparent),
+      color-mix(in srgb, var(--color-accent, #2563eb) 3%, transparent));
+    border: 1px solid color-mix(in srgb, var(--color-accent, #2563eb) 22%, transparent);
+  }
+  .offer-num {
+    font-family: var(--font-display); font-weight: 800; letter-spacing: -0.04em;
+    font-size: clamp(1.8rem, 5.5vw, 2.9rem); line-height: 1;
+    color: var(--color-accent, #2563eb); font-variant-numeric: tabular-nums;
+  }
+  .offer-say {
+    font-size: 0.95rem; font-weight: 600; line-height: 1.3;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .work-doing { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; margin-top: 1.4rem; }
+  .work-btn {
+    display: inline-block; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--color-accent, #2563eb); color: #fff;
+    font: inherit; font-size: 0.95rem; font-weight: 600;
+    padding: 0.7rem 1.5rem; text-decoration: none;
+  }
+  .work-btn.ghost {
+    background: transparent; color: inherit;
+    border: 1px solid var(--color-border, #e5e5e5);
+  }
+  .work-btn.ghost:hover { border-color: var(--color-text-muted); }
+  .work-count { font-size: 0.92rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+  .work-count b { color: inherit; font-weight: 700; }
+
+  .how { margin-top: 1.2rem; }
+  .how[hidden] { display: none; }
+  .how ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.7rem; }
+  .how li { font-size: 0.95rem; line-height: 1.6; color: var(--color-text-muted); }
+  .how li b { color: var(--color-text, inherit); }
 
   /* Two thirds sites, one third log. */
   .work-body { display: grid; grid-template-columns: 1fr; gap: 3rem; align-items: start; }
@@ -219,10 +287,6 @@ const when = (iso: string) => {
     font-size: 0.88rem; line-height: 1.5;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .work-rule {
-    margin-top: 0.9rem; font-size: 0.92rem; font-weight: 600;
-    color: var(--color-accent, #2563eb);
-  }
   .card-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem; }
   .card-flag {
     font-style: normal; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
@@ -265,3 +329,14 @@ const when = (iso: string) => {
   .work-none.small { font-size: 0.9rem; }
   @media (prefers-reduced-motion: reduce) { .card:hover .card-frame { transform: none; } }
 </style>
+
+<script>
+  const how = document.getElementById('how');
+  const btn = document.getElementById('how-open');
+  btn?.addEventListener('click', () => {
+    if (!how) return;
+    how.hidden = !how.hidden;
+    btn.setAttribute('aria-expanded', String(!how.hidden));
+    btn.textContent = how.hidden ? 'How it works' : 'Hide';
+  });
+</script>
