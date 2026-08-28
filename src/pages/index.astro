@@ -272,9 +272,13 @@ const when = (iso: string) => {
      launcher all live in the bottom right. Half the size he is over there, so
      he sits beside the work rather than in front of it. */
   .work-mascot {
-    position: fixed;
+    /* Absolute, not fixed. Fixed kept him pinned to the glass the whole way
+       down sixty cards, which is not what he does on the old home page — there
+       he sits in the hero and scrolls away like anything else on the page.
+       This puts him at the foot of the first screen and leaves him there. */
+    position: absolute;
     left: 8px;
-    bottom: 0;
+    top: calc(100vh - 212px);
     height: 190px;
     width: auto;
     z-index: 40;
@@ -548,12 +552,17 @@ const when = (iso: string) => {
     const KEY = 'work-mascot-pos';
     const FLIP = 'scaleX(-1)';
 
+    // Page coordinates, not viewport ones. He belongs to the document now, so
+    // dropping him at the bottom of the screen after scrolling should leave him
+    // at that point in the page rather than at that point on the glass.
     const place = (x: number, y: number) => {
       const w = mascot.offsetWidth || 120;
       const h = mascot.offsetHeight || 190;
+      const wide = document.documentElement.scrollWidth;
+      const tall = document.documentElement.scrollHeight;
       // Never park him somewhere he cannot be picked up again.
-      const left = Math.max(0, Math.min(window.innerWidth - w, x));
-      const top = Math.max(0, Math.min(window.innerHeight - h, y));
+      const left = Math.max(0, Math.min(wide - w, x));
+      const top = Math.max(0, Math.min(Math.max(0, tall - h), y));
       mascot.style.left = left + 'px';
       mascot.style.top = top + 'px';
       mascot.style.bottom = 'auto';
@@ -584,7 +593,7 @@ const when = (iso: string) => {
       if (!dragging) return;
       e.preventDefault();
       const p = point(e);
-      place(p.clientX - grabX, p.clientY - grabY);
+      place(p.clientX + window.scrollX - grabX, p.clientY + window.scrollY - grabY);
     };
 
     const end = () => {
@@ -593,7 +602,10 @@ const when = (iso: string) => {
       mascot.classList.remove('dragging');
       const rect = mascot.getBoundingClientRect();
       try {
-        localStorage.setItem(KEY, JSON.stringify({ x: rect.left, y: rect.top }));
+        localStorage.setItem(KEY, JSON.stringify({
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY,
+        }));
       } catch { /* private browsing — he just goes home next time */ }
     };
 
@@ -609,7 +621,7 @@ const when = (iso: string) => {
     // A window that shrinks should not leave him stranded off the edge.
     window.addEventListener('resize', () => {
       const rect = mascot.getBoundingClientRect();
-      if (mascot.style.left) place(rect.left, rect.top);
+      if (mascot.style.left) place(rect.left + window.scrollX, rect.top + window.scrollY);
     });
   })();
 </script>
