@@ -166,6 +166,9 @@ const config = {
   headline: w.headline || w.name || subject,
   lede: w.lede || '',
   tone: 'dark',
+  // The builder reads a palette off every config it opens. Leaving it
+  // out is what made the first three reels uneditable.
+  palette: { primary: '#e0483d', deep: '#0b0b0d', wash: '#141418' },
   shop: false, chat: false, products: [],
   sections: [
     { type: 'video', label: 'The reel', title: `${clips.length} films`, clips },

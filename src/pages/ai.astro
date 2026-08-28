@@ -3110,8 +3110,13 @@ if (cameFromOffer && openedSlug) {
           case 'video': {
             // Mirrors the reel in site-render.ts. Thumbnails only — the canvas
             // is click-to-edit and a player would fight it.
-            const ids = (Array.isArray(section.videos) ? section.videos
-              : section.videoId ? [section.videoId] : []).filter(Boolean);
+            // clips is how a reel stores them — id, title and channel. The
+            // older shape is a bare list of ids and still renders.
+            const ids = (Array.isArray(section.clips) && section.clips.length
+              ? section.clips.map((c) => c && c.id)
+              : Array.isArray(section.videos) ? section.videos
+              : section.videoId ? [section.videoId] : [])
+              .filter((v) => /^[A-Za-z0-9_-]{11}$/.test(String(v || '')));
             if (!ids.length) return '';
             return '<section class="pv-section">' +
               ed(p + '.label', 'pv-label', 'p', section.label || 'Watch') +
@@ -3270,6 +3275,19 @@ if (cameFromOffer && openedSlug) {
         }
       }
 
+      // Every render path pushed the three palette variables by hand, and every
+      // one of them read straight through s.palette. Fifty sites in the
+      // database have no palette at all — anything the cron or a script made —
+      // so opening one threw inside render() and came back as "couldn't load
+      // that one". One helper, and a missing palette is now a default rather
+      // than a dead builder.
+      function setPalette(root, palette) {
+        const pal = palette || {};
+        root.parentElement.style.setProperty('--pv-primary', pal.primary || '#2563eb');
+        root.parentElement.style.setProperty('--pv-deep', pal.deep || '#1e40af');
+        root.parentElement.style.setProperty('--pv-wash', pal.wash || '#f6f8fb');
+      }
+
       function render() {
         if (S.editing) { S.renderQueued = true; return; }  // never yank the caret away
         const s = S.site;
@@ -3309,7 +3327,7 @@ if (cameFromOffer && openedSlug) {
             '</p>';
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['game']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles');
           root.parentElement.classList.add('st-game');
@@ -3366,7 +3384,7 @@ if (cameFromOffer && openedSlug) {
               : '');
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['eggs']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-mogged');
           root.parentElement.classList.add('st-eggs');
@@ -3426,7 +3444,7 @@ if (cameFromOffer && openedSlug) {
               : '');
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['mogged']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs');
           root.parentElement.classList.add('st-mogged');
@@ -3459,7 +3477,7 @@ if (cameFromOffer && openedSlug) {
                 'and what you write about it is what shows when somebody bursts it.</p>');
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['bubbles']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain');
           root.parentElement.classList.add('st-bubbles');
@@ -3485,7 +3503,7 @@ if (cameFromOffer && openedSlug) {
             'send the link and watch the count.</p>';
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['chain']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet');
           root.parentElement.classList.add('st-chain');
@@ -3516,7 +3534,7 @@ if (cameFromOffer && openedSlug) {
             'The two words on every day are <b data-edit="cta">' + esc(s.cta || 'Good / Bad') + '</b>.</p>';
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['diet']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-chain');
           root.parentElement.classList.add('st-diet');
@@ -3540,7 +3558,7 @@ if (cameFromOffer && openedSlug) {
               : '<p class="pv-trib-empty">No pictures yet — add some and they fill the page.</p>');
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['montage']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-listing');
           root.parentElement.classList.add('st-tribute', 'st-montage');
@@ -3564,7 +3582,7 @@ if (cameFromOffer && openedSlug) {
               : '<p class="pv-trib-empty">No photographs yet — add some and they will fill the page.</p>');
           $('canvas-empty').classList.toggle('gone', true);
           renderedKeys = new Set(['tribute']);
-          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
           root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain');
           root.parentElement.classList.add('st-tribute');
@@ -3682,9 +3700,7 @@ if (cameFromOffer && openedSlug) {
           if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
         }
 
-        root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
-        root.parentElement.style.setProperty('--pv-deep', s.palette.deep);
-        root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
+        setPalette(root, s.palette);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
         root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna', 'st-rugby', 'st-soccer', 'st-basketball', 'st-charity',
@@ -5125,12 +5141,12 @@ if (cameFromOffer && openedSlug) {
         el.style.setProperty('--pv-line', tone.line);
         el.style.setProperty('--pv-card', tone.card);
         el.style.setProperty('--pv-wash', S.site.tone === 'dark'
-          ? mix(S.site.palette.primary, '#0e1116', 0.86)
-          : S.site.palette.wash);
+          ? mix((S.site.palette || {}).primary || '#2563eb', '#0e1116', 0.86)
+          : (S.site.palette || {}).wash || '#f6f8fb');
         document.querySelectorAll('.tone[data-tone]').forEach((b) =>
           b.classList.toggle('on', b.dataset.tone === (S.site.tone || 'light')));
         document.querySelectorAll('.swatch').forEach((b) =>
-          b.classList.toggle('on', b.dataset.colour === S.site.palette.primary));
+          b.classList.toggle('on', b.dataset.colour === (S.site.palette || {}).primary));
         document.querySelectorAll('.style[data-style]').forEach((b) =>
           b.classList.toggle('on', b.dataset.style === (S.site.style || 'modern')));
       }
