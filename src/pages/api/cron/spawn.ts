@@ -71,6 +71,12 @@ const PHOTOS: Record<string, string[]> = {
   bubbles: ['photo-1578749556568-bc2c40e68b61', 'photo-1514228742587-6b1558fcca3d', 'photo-1610701596007-11502861dcfa', 'photo-1493106641515-6b5631de4bb9', 'photo-1565193566173-7a0ee3dbe261'],
 };
 
+// Half the runs go looking for a real business. Those are never published:
+// they land disabled and unstarred, and starring one from the admin page is
+// what puts it live. A page carrying somebody's real name, photographs and
+// phone number should be a decision, not a side effect of a cron job.
+const REAL_ODDS = 0.5;
+
 const pick = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 const shot = (id: string, w = 1600, h = 1100) =>
   `https://images.unsplash.com/${id}?w=${w}&h=${h}&fit=crop`;
@@ -104,6 +110,14 @@ function quality(cfg: any): number {
   }
   return n;
 }
+
+const FIND = `You find one real, existing small business and return its website address.
+
+Return ONLY a JSON object: {"url": "https://...", "name": "..."}
+
+Rules. It must be the business's own website, not a directory, a Facebook page, an aggregator, a
+franchise head office or a review site. It must currently exist. If you cannot find one you are
+confident about, return {"url": null}.`;
 
 const WRITE = `You invent a small business and write its website content, for a demo.
 
@@ -162,6 +176,99 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const town = String(body?.town || pick(TOWNS));
     const apiKey = env.ANTHROPIC_API_KEY;
     if (!apiKey) return json({ error: 'no key' }, 503);
+
+    const wantReal = body?.real ?? Math.random() < REAL_ODDS;
+
+    // ── The real path ──────────────────────────────────────────────────
+    if (wantReal) {
+      try {
+        const found = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
+                     'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: MODEL, max_tokens: 400, system: FIND,
+            tools: [{ type: 'web_search_20260209', name: 'web_search',
+                      allowed_callers: ['direct'], max_uses: 3,
+                      user_location: { type: 'approximate', country: 'NZ' } }],
+            messages: [{ role: 'user',
+              content: `Find ${WHAT[style] || 'a small business'} in ${town}. Its own website only.` }],
+          }),
+        });
+        if (found.ok) {
+          const fd = (await found.json()) as any;
+          const said = (fd?.content || []).filter((c: any) => c?.type === 'text')
+            .map((c: any) => c.text).join('');
+          const hit = said.match(/\{[\s\S]*?\}/);
+          const url = hit ? (JSON.parse(hit[0])?.url || null) : null;
+
+          if (url && /^https?:\/\//.test(url)) {
+            const already = await db
+              .prepare('SELECT slug FROM site_claims WHERE source_url = ?').bind(url).first();
+            if (!already) {
+              const sc = await fetch('https://garage.co.nz/api/scrape', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url }),
+              });
+              const d = sc.ok ? ((await sc.json()) as any) : null;
+              const photos = [...new Set([...(d?.candidateImages || []), ...(d?.galleryImages || [])])]
+                .filter((u: any) => typeof u === 'string' && /^https?:\/\//.test(u)
+                  && !/logo|favicon|icon|sprite|badge|placeholder|filler|spacer/i.test(u.split('?')[0])
+                  && /\.(jpe?g|webp|avif)/i.test(u.split('?')[0]))
+                .slice(0, 12) as string[];
+
+              // Only worth taking if it is actually richer than what we would
+              // have written. Four photographs and a phone number is the bar.
+              if (photos.length >= 4 && d?.phone) {
+                const real: any = {
+                  name: d.title && d.title.length > 3 ? String(d.title).slice(0, 60) : String(fd?.name || town),
+                  eyebrow: town,
+                  headline: d.title || '',
+                  lede: String(d.description || d.tagline || '').slice(0, 220),
+                  cta: 'Get in touch',
+                  style, tone: style === 'trade' ? 'dark' : 'light',
+                  shop: false, chat: false, products: [],
+                  contact: { phone: d.phone || '', email: d.email || '', address: d.address || '' },
+                  heroImage: photos[0], images: photos.slice(1),
+                  sections: [{ type: 'gallery', label: 'Gallery', title: 'Have a look',
+                               images: photos.slice(1) }],
+                };
+                let rslug = slugify(real.name) || slugify(new URL(url).hostname.split('.')[0]);
+                for (let i = 0; i < 25; i++) {
+                  const taken = await db.prepare('SELECT 1 FROM site_claims WHERE slug = ?')
+                    .bind(rslug).first();
+                  if (!taken) break;
+                  rslug = (slugify(real.name) || 'biz').slice(0, 30) + (i + 2);
+                }
+                // Disabled and unstarred. Nothing of theirs is visible anywhere
+                // until somebody looks at it and stars it.
+                await db.prepare(
+                  `INSERT INTO site_claims (slug, email, source_url, config, status, edit_token,
+                                            in_projects, updated_at, created_at)
+                   VALUES (?, ?, ?, ?, 'disabled', ?, 0, datetime('now'), datetime('now'))`
+                ).bind(rslug, d?.email || `${rslug}@garage.co.nz`, url,
+                       JSON.stringify(real), token()).run();
+
+                const u2 = fd?.usage || {};
+                await db.prepare(
+                  `INSERT INTO agent_usage (id, slug, model, steps, input_tokens, output_tokens,
+                                            cache_read, cache_write, message_chars, created_at)
+                   VALUES (?, ?, ?, 1, ?, ?, ?, ?, -1, ?)`
+                ).bind(crypto.randomUUID(), rslug, MODEL, u2.input_tokens || 0,
+                       u2.output_tokens || 0, u2.cache_read_input_tokens || 0,
+                       u2.cache_creation_input_tokens || 0, new Date().toISOString()).run();
+
+                return json({ ok: true, real: true, held: true, slug: rslug, style, town,
+                              photos: photos.length, name: real.name, source: url });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Real path failed, writing one instead:', error);
+      }
+      // Fall through and invent one rather than waste the hour.
+    }
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

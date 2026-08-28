@@ -103,6 +103,12 @@ const recentSlugs = new Set(
   [...sites].sort((a, b) => stamp(b) - stamp(a)).slice(0, RECENT).map((x: any) => x.slug)
 );
 const isRecent = (x: any) => recentSlugs.has(x.slug);
+
+// A site the hourly job scraped from a real business and did not publish.
+// Disabled, unlisted, and carrying somebody else's name — so it waits here
+// until it is looked at. Starring one is the approval and puts it live.
+const isHeld = (x: any) => x.status === 'disabled' && !!x.source_url && !x.in_projects;
+const heldCount = sites.filter(isHeld).length;
 const recentCount = recentSlugs.size;
 const themes = Object.entries(
   sites.reduce((acc: Record<string, number>, x: any) => {
@@ -183,6 +189,9 @@ function summarise(site: any) {
       <aside class="rail">
         <button class="view on" data-view="all">All <i>{sites.length}</i></button>
         <button class="view" data-view="recent">Recent <i>{recentCount}</i></button>
+        {heldCount > 0 && (
+          <button class="view held-view" data-view="held">Waiting on you <i>{heldCount}</i></button>
+        )}
         <p class="rail-head">Themes</p>
         {themes.map((t) => (
           <button class="view theme" data-view={`style:${t.style}`}>
@@ -223,7 +232,7 @@ function summarise(site: any) {
         <tbody>
           {sites.map((site) => (
             <tr
-              class={site.status === 'disabled' ? 'off' : ''}
+              class={isHeld(site) ? 'held' : site.status === 'disabled' ? 'off' : ''}
               data-find={[
                 site.slug,
                 site.biz_name,
@@ -235,6 +244,7 @@ function summarise(site: any) {
               ].filter(Boolean).join(' ').toLowerCase()}
               data-style={site.style || 'modern'}
               data-recent={isRecent(site) ? '1' : ''}
+              data-held={isHeld(site) ? '1' : ''}
             >
               <td class="site-cell">
                 <a href={`https://${site.slug}.garage.co.nz`} target="_blank" rel="noopener" class="slug">
@@ -242,6 +252,11 @@ function summarise(site: any) {
                 </a>
                 <span class="under">
                   <span class={`pill tpl t-${site.style || 'modern'}`}>{site.style || 'modern'}</span>
+                  {isHeld(site) && (
+                    <span class="pill held-pill" title="A real business, scraped but never published. Nothing of theirs is visible anywhere. Star it to put it live.">
+                      waiting on you
+                    </span>
+                  )}
                   {site.biz_name && <span class="biz" title={summarise(site) || ''}>{site.biz_name}</span>}
                 </span>
               </td>
@@ -387,6 +402,7 @@ function summarise(site: any) {
     const inView = (row: HTMLElement) => {
       if (view === 'all') return true;
       if (view === 'recent') return row.dataset.recent === '1';
+      if (view === 'held') return row.dataset.held === '1';
       if (view.startsWith('style:')) return row.dataset.style === view.slice(6);
       return true;
     };
@@ -708,6 +724,11 @@ function summarise(site: any) {
   .muted { color: var(--color-text-soft); }
   .small { font-size: 0.82rem; }
   tr.off { opacity: 0.5; }
+  tr.held { background: #fffdf5; }
+  tr.held td { border-top-color: #f4e3b8; }
+  .pill.held-pill { background: #fef3c7; color: #92400e; font-weight: 600; }
+  .view.held-view { color: #92400e; }
+  .view.held-view i { background: #fef3c7; color: #92400e; }
 
   .slug { font-weight: 600; text-decoration: none; color: var(--color-text); }
   .slug span { color: var(--color-text-muted); font-weight: 400; }

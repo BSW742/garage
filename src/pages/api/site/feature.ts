@@ -21,7 +21,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
       .first();
     if (!allowed) return json({ error: 'Not allowed' }, 403);
 
-    await db.prepare('UPDATE site_claims SET in_projects = ? WHERE slug = ?').bind(on, slug).run();
+    // Starring is also the approval. Sites the hourly job scraped from a real
+    // business land disabled and invisible; putting one on the work page is the
+    // moment somebody decided it should exist, so it goes live at the same
+    // time. Unstarring does not take it down again — that is a separate call,
+    // and quietly disabling somebody's page from a tidy-up would surprise.
+    if (on) {
+      await db.prepare(
+        "UPDATE site_claims SET in_projects = 1, status = CASE WHEN status = 'disabled' THEN 'live' ELSE status END WHERE slug = ?"
+      ).bind(slug).run();
+    } else {
+      await db.prepare('UPDATE site_claims SET in_projects = 0 WHERE slug = ?').bind(slug).run();
+    }
     return json({ ok: true, on: !!on });
   } catch {
     return json({ error: 'Could not do that' }, 500);
