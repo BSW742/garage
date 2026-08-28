@@ -144,13 +144,25 @@ if (cameFromOffer && openedSlug) {
                     <span class="widget-face">&#127920;</span>
                     <span>
                       <b>Spin to win</b>
-                      <i>A tab on the edge. They spin a wheel for one of your offers and leave a name, email and phone.</i>
+                      <i>A tab on the edge. Pick three prizes; they spin for one and leave a name, email and phone.</i>
                     </span>
                   </button>
                   <button class="widget-card off" data-widget="spinner-off">
                     <span class="widget-face">&#9723;</span>
-                    <span><b>Turn the wheel off</b><i>Keeps your offers for next time.</i></span>
+                    <span><b>Turn the wheel off</b><i>Keeps your prizes for next time.</i></span>
                   </button>
+                </div>
+
+                <!-- Six squares. Fixed labels and fixed icons, which is the
+                     only reason the wheel can be drawn properly — nothing has
+                     to bend around somebody's twenty-nine character offer. -->
+                <div class="prize-pick" id="prize-pick" hidden>
+                  <p class="prize-say">Pick three. The first one you choose is the top prize.</p>
+                  <div class="prize-grid" id="prize-grid"></div>
+                  <div class="prize-foot">
+                    <span id="prize-count">0 of 3</span>
+                    <button class="prize-go" id="prize-go" disabled>Put them on the wheel</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -803,6 +815,36 @@ if (cameFromOffer && openedSlug) {
         color: var(--work-dim, #6b7383); margin-top: 0.15rem; line-height: 1.4;
       }
       .widget-card.off .widget-face { opacity: 0.5; }
+
+      .prize-pick { margin-top: 0.9rem; border-top: 1px solid var(--work-3); padding-top: 0.9rem; }
+      .prize-say { font-size: 0.78rem; color: var(--work-dim, #6b7383); margin-bottom: 0.6rem; }
+      .prize-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+      .prize-sq {
+        position: relative; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 0.3rem; aspect-ratio: 1; cursor: pointer;
+        border: 1.5px solid var(--work-3); background: #fff; border-radius: 14px;
+        font-family: var(--font-sans); transition: all 0.15s;
+      }
+      .prize-sq em { font-style: normal; font-size: 1.5rem; line-height: 1; }
+      .prize-sq b { font-size: 0.72rem; font-weight: 700; color: var(--work-ink); text-align: center; }
+      .prize-sq:hover { border-color: #f7c521; transform: translateY(-1px); }
+      .prize-sq.on { border-color: #f7c521; background: #fffdf2; box-shadow: 0 0 0 3px rgba(247,197,33,0.25); }
+      .prize-sq .pick-no {
+        position: absolute; top: 0.3rem; right: 0.35rem; width: 1.2rem; height: 1.2rem;
+        border-radius: 50%; background: #0d0d0f; color: #f7c521; font-size: 0.7rem;
+        font-weight: 800; display: none; align-items: center; justify-content: center;
+      }
+      .prize-sq.on .pick-no { display: flex; }
+      .prize-sq.top .pick-no { background: #f7c521; color: #0d0d0f; }
+      .prize-foot { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
+      .prize-foot span { font-size: 0.76rem; color: var(--work-dim, #6b7383); }
+      .prize-go {
+        margin-left: auto; border: 0; border-radius: 999px; cursor: pointer;
+        background: #f7c521; color: #0d0d0f; font-family: var(--font-sans);
+        font-size: 0.82rem; font-weight: 800; padding: 0.5rem 1rem; transition: all 0.15s;
+      }
+      .prize-go:hover:not(:disabled) { background: #ffd633; }
+      .prize-go:disabled { opacity: 0.45; cursor: default; }
       .agent-done.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
       .agent-log {
@@ -5507,14 +5549,89 @@ if (cameFromOffer && openedSlug) {
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !widgetPanel.hidden) setWidgets(false);
       });
+      // The six that suit this trade. Same list the agent is told about, so the
+      // panel and the conversation never disagree about what is on offer.
+      const PRIZE_BOOK = {
+        gift: ['🎁', 'Free gift'], off10: ['🏷️', '10% off'], off20: ['💰', '20% off'],
+        half: ['✂️', 'Half price'], bogof: ['🎟️', '2 for 1'], vip: ['⭐', 'VIP upgrade'],
+        coffee: ['☕', 'Free coffee'], drink: ['🥤', 'Free drink'], dessert: ['🍰', 'Free dessert'],
+        ten: ['💵', '$10 off'], twenty: ['💸', '$20 off'], fifty: ['🤑', '$50 off'],
+        delivery: ['🚚', 'Free delivery'], session: ['🎯', 'Free session'], class: ['🧘', 'Free class'],
+        merch: ['👕', 'Free merch'], sticker: ['💫', 'Free sticker'], upgrade: ['🚀', 'Free upgrade'],
+      };
+      const SHORTLISTS = {
+        cafe: ['coffee','dessert','off10','bogof','drink','gift'],
+        eggs: ['gift','off10','delivery','half','twenty','merch'],
+        beauty: ['off20','upgrade','gift','half','ten','vip'],
+        yoga: ['class','off20','gift','merch','vip','bogof'],
+        pilates: ['class','off20','gift','merch','vip','bogof'],
+        sauna: ['session','off20','bogof','gift','vip','merch'],
+        physio: ['session','off20','gift','ten','vip','half'],
+        workshop: ['class','off20','gift','merch','half','vip'],
+        trade: ['off10','fifty','twenty','gift','upgrade','vip'],
+        daycare: ['gift','off10','merch','session','vip','twenty'],
+        townhall: ['off20','half','gift','ten','bogof','vip'],
+        charity: ['gift','merch','sticker','vip','upgrade','bogof'],
+        rugby: ['merch','sticker','gift','off20','bogof','vip'],
+        soccer: ['merch','sticker','gift','off20','bogof','vip'],
+        basketball: ['merch','sticker','gift','off20','bogof','vip'],
+      };
+
+      let picked = [];
+      function drawPrizes() {
+        const grid = $('prize-grid');
+        const six = SHORTLISTS[S.site.style] || ['gift','off10','off20','half','bogof','vip'];
+        grid.innerHTML = '';
+        six.forEach((id) => {
+          const [icon, label] = PRIZE_BOOK[id];
+          const b = document.createElement('button');
+          b.className = 'prize-sq';
+          b.dataset.id = id;
+          b.innerHTML = '<span class="pick-no"></span><em>' + icon + '</em><b>' + label + '</b>';
+          b.addEventListener('click', () => {
+            const at = picked.indexOf(id);
+            if (at >= 0) picked.splice(at, 1);
+            else if (picked.length < 3) picked.push(id);
+            paintPrizes();
+          });
+          grid.appendChild(b);
+        });
+        paintPrizes();
+      }
+      function paintPrizes() {
+        $('prize-grid').querySelectorAll('.prize-sq').forEach((sq) => {
+          const at = picked.indexOf(sq.dataset.id);
+          sq.classList.toggle('on', at >= 0);
+          sq.classList.toggle('top', at === 0);
+          sq.querySelector('.pick-no').textContent = at >= 0 ? String(at + 1) : '';
+        });
+        $('prize-count').textContent = picked.length + ' of 3'
+          + (picked.length ? ' · top prize ' + PRIZE_BOOK[picked[0]][1] : '');
+        $('prize-go').disabled = picked.length !== 3;
+      }
+
       widgetPanel.querySelectorAll('[data-widget]').forEach((card) => {
         card.addEventListener('click', () => {
-          setWidgets(false);
           const which = card.dataset.widget;
-          route(which === 'spinner-off'
-            ? 'turn the spin to win wheel off'
-            : 'set up the spin to win wheel on my site');
+          if (which === 'spinner-off') {
+            setWidgets(false);
+            route('turn the spin to win wheel off');
+            return;
+          }
+          // Choose the prizes here, in three taps, rather than describing them
+          // in a sentence the wheel then has to survive.
+          picked = (S.site.spinner && S.site.spinner.prizes) ? S.site.spinner.prizes.slice(0, 3) : [];
+          $('prize-pick').hidden = false;
+          drawPrizes();
         });
+      });
+
+      $('prize-go').addEventListener('click', () => {
+        if (picked.length !== 3) return;
+        setWidgets(false);
+        $('prize-pick').hidden = true;
+        route('put the spin to win wheel on my site with these three prizes, in this order: '
+          + picked.join(', '));
       });
 
       $('media-btn').addEventListener('click', () => openMedia(null));

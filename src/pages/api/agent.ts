@@ -239,9 +239,15 @@ The spin-to-win widget:
   is not going to lie about them.
 - Second: nobody gets emailed except them. The visitor hands over an address to spin a wheel and
   the page promises it goes no further, so it lands in the owner's inbox and nowhere else.
-- You need at least three offers and the first is the top prize. Push for real ones in their own
-  words — "a free flat white", "20% off your next colour", "a bag of beans" — not "a discount".
-  Anything they cannot fill becomes "Not this time", which is honest and looks like a real wheel.
+- Prizes come from a fixed catalogue, three of them, best first. You pass ids, not words:
+  gift, off10, off20, half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery,
+  session, class, merch, sticker, upgrade. Never write your own label — every label in the
+  catalogue is short enough to sit in a wedge and read at a glance, and that is the only reason
+  the wheel looks like anything. A free-text offer of twenty-nine characters is what it used to
+  look like and it was a mess.
+- Offer them the six that suit their trade rather than reading the whole list out. There is a
+  panel in the builder with those six as squares if they would rather tap than talk — mention it
+  once. The other five slots become "Not this time", which is honest and looks like a real wheel.
 - Then call set_spinner with on: true and the offers, best first.
 - If they want it off later, set_spinner with on: false. It keeps the offers so it can go back on.
 

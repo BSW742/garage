@@ -49,7 +49,8 @@ export interface Spinner {
   on?: boolean;
   title?: string;      // "Spin to win"
   blurb?: string;      // a line under the title
-  offers: string[];    // at least 3; the first is the top prize
+  prizes?: string[];   // three ids from the catalogue; the first is the top prize
+  offers?: string[];   // the old free-text form, still read so old sites keep working
   terms?: string;      // "One spin per person. Ask in store."
 }
 

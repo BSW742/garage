@@ -3,6 +3,7 @@
 // of picking from a fixed menu of hardcoded intents.
 
 import type { SiteConfig, SiteSection } from './site-render';
+import { PRIZE_BY_ID, shortlistFor, toPrizes } from './prizes';
 
 export interface ToolResult {
   ok: boolean;
@@ -388,17 +389,20 @@ export const TOOLS = [
       'every page; a visitor opens it, gives their name, email and phone, and spins. The wheel ' +
       'has eight equal slots and is genuinely random — the first offer is the top prize and comes ' +
       'up one spin in eight, so tell the owner that plainly before switching it on and make sure ' +
-      'they are happy to honour it at that rate. You need at least three real offers, in their ' +
-      'words, and the first one is the big one. Empty slots become "Not this time". Nothing is ' +
-      'ever emailed to the visitor — the details go to the owner, and the form says so.',
+      'they are happy to honour it at that rate. Prizes come from a fixed catalogue by id, never ' +
+      'free text — every label in it is short enough to sit in a wedge, which is what keeps the ' +
+      'wheel readable. Pass exactly three ids, best first. The catalogue: gift, off10, off20, ' +
+      'half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, ' +
+      'merch, sticker, upgrade. Nothing is ever emailed to the visitor — the details go to the ' +
+      'owner, and the form says so.',
     input_schema: {
       type: 'object',
       properties: {
         on: { type: 'boolean', description: 'Show the wheel on the site.' },
-        offers: {
+        prizes: {
           type: 'array',
           items: { type: 'string' },
-          description: 'At least three, best first. Real things: "A free coffee", "20% off your next cut".',
+          description: 'Exactly three catalogue ids, top prize first. e.g. ["coffee","off20","sticker"]',
         },
         title: { type: 'string', description: 'The tab and the heading, e.g. "Spin to win".' },
         blurb: { type: 'string', description: 'One line under the heading.' },
@@ -747,21 +751,36 @@ export async function runTool(
 
     case 'set_spinner': {
       const spin: any = site.spinner || {};
-      if (input.offers !== undefined) {
-        const offers = (input.offers || [])
-          .map((o: any) => String(o || '').trim())
-          .filter(Boolean)
-          .slice(0, 8);
-        if (input.on && offers.length < 3) {
+      if (input.prizes !== undefined) {
+        const ids = (input.prizes || []).map((p: any) => String(p || '').trim());
+        const unknown = ids.filter((id: string) => !PRIZE_BY_ID[id]);
+        if (unknown.length) {
           return {
             ok: false,
-            message: `The wheel needs at least three offers and I have ${offers.length}. Ask them what else they can put on it.`,
+            message:
+              `Not in the catalogue: ${unknown.join(', ')}. Pick from gift, off10, off20, half, ` +
+              `bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, ` +
+              `merch, sticker, upgrade.`,
           };
         }
-        spin.offers = offers;
+        const picked = toPrizes(ids).slice(0, 3);
+        if (input.on && picked.length < 3) {
+          return {
+            ok: false,
+            message: `The wheel takes three prizes and I have ${picked.length}. Ask which else goes on it.`,
+          };
+        }
+        spin.prizes = picked.map((p) => p.id);
+        delete spin.offers;
       }
-      if (input.on && (spin.offers || []).length < 3) {
-        return { ok: false, message: 'No offers on the wheel yet — ask them for three, best one first.' };
+      if (input.on && toPrizes(spin.prizes).length < 3) {
+        return {
+          ok: false,
+          message:
+            'No prizes chosen yet. The six that suit this business: ' +
+            shortlistFor(site.style).map((id) => `${id} (${PRIZE_BY_ID[id].label})`).join(', ') +
+            '. Ask which three, best first.',
+        };
       }
       if (input.title !== undefined) spin.title = String(input.title).slice(0, 40);
       if (input.blurb !== undefined) spin.blurb = String(input.blurb).slice(0, 140);
@@ -770,12 +789,13 @@ export async function runTool(
       site.spinner = spin;
 
       if (!spin.on) return { ok: true, message: 'Wheel is off.' };
+      const won = toPrizes(spin.prizes);
       return {
         ok: true,
         message:
-          `Wheel is on with ${spin.offers.length} offers. Top prize is "${spin.offers[0]}", ` +
-          `which lands one spin in eight. The other ${spin.offers.length - 1} are scattered and ` +
-          `the remaining ${8 - spin.offers.length} slots say "Not this time".`,
+          `Wheel is on. Top prize is ${won[0].note}, which lands one spin in eight. ` +
+          `${won[1].label} and ${won[2].label} are on there too, and the other five slots ` +
+          `say "Not this time".`,
         data: { spinner: spin },
       };
     }
