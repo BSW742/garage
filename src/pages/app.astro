@@ -339,11 +339,11 @@
         return;
       }
 
-      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:12px">' + emailsData.map(e => {
+      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:10px">' + emailsData.map(e => {
         const date = new Date(e.received_at);
         const timeStr = date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
         const fromDisplay = e.from_name || e.from_address;
-        const preview = (e.body_text || '').slice(0, 80).replace(/\s+/g, ' ');
+        const preview = readable(e.body_text).slice(0, 90);
 
         return `
         <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);${e.read ? 'opacity:0.7' : ''}">
@@ -367,6 +367,40 @@
           </div>
         </div>`;
       }).join('') + '</div>';
+    }
+
+    // Everything stored before the worker learned to parse MIME is still sitting
+    // in the table as raw multipart. Rather than leave those unreadable, pull
+    // the plain-text part out here as well — the fix upstream stops it
+    // happening again, this makes what is already there legible.
+    function readable(raw) {
+      let body = String(raw || '');
+      if (!body) return '';
+
+      const boundary = body.match(/boundary="?([^"\s;]+)"?/i);
+      if (boundary) {
+        const chunks = body.split('--' + boundary[1]);
+        const plain = chunks.find(c => /content-type:\s*text\/plain/i.test(c));
+        const chosen = plain || chunks.find(c => /content-type:\s*text\/html/i.test(c));
+        if (chosen) {
+          const gap = chosen.search(/\r?\n\r?\n/);
+          body = gap > -1 ? chosen.slice(gap) : chosen;
+          if (!plain) body = body.replace(/<[^>]+>/g, ' ');
+        }
+      }
+
+      return body
+        // quoted-printable: soft line breaks first, then the escapes
+        .replace(/=\r?\n/g, '')
+        .replace(/=([0-9A-F]{2})/gi, (m, h) => {
+          const n = parseInt(h, 16);
+          return n === 160 ? ' ' : n > 31 && n < 127 ? String.fromCharCode(n) : ' ';
+        })
+        .replace(/^\s*content-(type|transfer-encoding|disposition)[^\n]*/gim, ' ')
+        .replace(/^--[-\w]{8,}--?\s*$/gm, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
     async function markRead(id, read) {

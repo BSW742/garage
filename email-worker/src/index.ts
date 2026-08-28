@@ -273,11 +273,36 @@ async function sendReply(
 async function storeAsInboxMail(message: EmailMessageIn, env: Env): Promise<void> {
   const from = message.from;
   const subject = message.headers.get('subject') || '(no subject)';
-  const rawEmail = await new Response(message.raw).text();
-
+  // Was: split on the first blank line and keep the rest. That drops the top
+  // headers and keeps everything else — every MIME boundary, every nested
+  // Content-Type, and the whole quoted-printable HTML part — so the inbox
+  // preview read "--0000000000000dddc7065a0171fa Content-Type: multipart".
+  // PostalMime was already being used ten lines up for site mail; this path
+  // just never reached for it.
   let bodyText = '';
-  const parts = rawEmail.split('\r\n\r\n');
-  if (parts.length > 1) bodyText = parts.slice(1).join('\r\n\r\n');
+  try {
+    const parsed = await PostalMime.parse(message.raw);
+    bodyText = String(parsed.text || '').trim();
+    if (!bodyText && parsed.html) {
+      bodyText = String(parsed.html)
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+  } catch (error) {
+    // A mail we cannot parse is still a mail worth keeping, so fall back to
+    // the old behaviour rather than dropping it.
+    console.error('Could not parse inbound mail:', error);
+    const rawEmail = await new Response(message.raw).text();
+    const parts = rawEmail.split('\r\n\r\n');
+    if (parts.length > 1) bodyText = parts.slice(1).join('\r\n\r\n');
+  }
 
   let fromName: string | null = null;
   let fromAddress = from;
