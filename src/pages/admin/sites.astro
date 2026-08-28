@@ -8,7 +8,7 @@ let error = '';
 if (db) {
   try {
     const result = await db.prepare(`
-      SELECT slug, email, source_url, edit_token, status, created_at, updated_at,
+      SELECT slug, email, source_url, edit_token, status, created_at, updated_at, in_projects,
              LENGTH(config) AS config_size,
              json_extract(config, '$.chat') AS chat_on,
              json_extract(config, '$.style') AS style,
@@ -131,6 +131,8 @@ function summarise(site: any) {
       </div>
       <div class="nav-links">
         <a href="/admin" class="nav-btn">Admin</a>
+        <a href="/projects" class="nav-btn">Work page</a>
+        <button id="log-add" class="nav-btn">+ Shipped</button>
         <a href="/ai" class="nav-btn primary">Build a new one</a>
       </div>
     </header>
@@ -167,6 +169,14 @@ function summarise(site: any) {
         <div class="funnel none">Nothing sent to an owner yet.</div>
       );
     })()}
+
+    <form id="log-form" class="log-form" hidden>
+      <input id="log-title" maxlength="120" placeholder="What shipped? e.g. Owners can delete messages" />
+      <input id="log-body" maxlength="600" placeholder="One line more, if it needs it (optional)" />
+      <button type="submit" class="nav-btn primary">Add it</button>
+      <button type="button" id="log-cancel" class="nav-btn">Cancel</button>
+      <span id="log-said" class="muted small"></span>
+    </form>
 
     <div class="board">
     {sites.length > 0 && (
@@ -284,6 +294,17 @@ function summarise(site: any) {
                   href={`/ai?edit=${encodeURIComponent(site.slug)}${site.edit_token ? `&t=${encodeURIComponent(site.edit_token)}` : ''}`}
                   class="act edit"
                 >Edit</a>
+                <button
+                  class:list={['act', 'icon', 'feat', site.in_projects ? 'on' : '']}
+                  data-slug={site.slug}
+                  data-on={site.in_projects ? '1' : ''}
+                  title={site.in_projects ? 'Showing on the work page' : 'Hidden from the work page'}
+                  aria-label="Show on the work page"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z" />
+                  </svg>
+                </button>
                 {site.edit_token && (
                   <button
                     class="act icon copy"
@@ -420,6 +441,52 @@ function summarise(site: any) {
   // The owner's own editor link. It carries the edit token and src=owner, so
   // opening it both lets them in and marks the site as claimed — which is also
   // what pays out a referral. Copying the Edit href by hand loses the src.
+  const ADMIN_KEY = '83f0dd5f1e8b5b512b68fd95f564a827';
+
+  const logForm = document.getElementById('log-form') as HTMLFormElement | null;
+  document.getElementById('log-add')?.addEventListener('click', () => {
+    if (!logForm) return;
+    logForm.hidden = !logForm.hidden;
+    if (!logForm.hidden) (document.getElementById('log-title') as HTMLInputElement)?.focus();
+  });
+  document.getElementById('log-cancel')?.addEventListener('click', () => {
+    if (logForm) logForm.hidden = true;
+  });
+  logForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = (document.getElementById('log-title') as HTMLInputElement).value.trim();
+    const body = (document.getElementById('log-body') as HTMLInputElement).value.trim();
+    const said = document.getElementById('log-said');
+    if (!title) return;
+    if (said) said.textContent = 'Adding…';
+    const res = await fetch('/api/changelog', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: ADMIN_KEY, title, body }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (said) said.textContent = data.ok ? 'Added' : (data.error || 'Did not save');
+    if (data.ok) {
+      (document.getElementById('log-title') as HTMLInputElement).value = '';
+      (document.getElementById('log-body') as HTMLInputElement).value = '';
+    }
+  });
+
+  // Which sites appear on the work page. Off by default — it is public and
+  // carries garage's name, so a site is chosen rather than merely present.
+  document.querySelectorAll<HTMLElement>('button.act.feat').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const on = !btn.dataset.on;
+      btn.classList.toggle('on', on);
+      btn.dataset.on = on ? '1' : '';
+      const res = await fetch('/api/site/feature', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: ADMIN_KEY, slug: btn.dataset.slug, on }),
+      });
+      if (!res.ok) { btn.classList.toggle('on', !on); btn.dataset.on = on ? '' : '1'; }
+      btn.title = on ? 'Showing on the work page' : 'Hidden from the work page';
+    });
+  });
+
   document.querySelectorAll('button.act.copy').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const link = btn.getAttribute('data-link') || '';
@@ -606,6 +673,15 @@ function summarise(site: any) {
   .act.icon svg { display: block; }
   button.act.chat { cursor: pointer; font: inherit; }
   button.act.copy { cursor: pointer; font: inherit; }
+  button.act.feat { cursor: pointer; font: inherit; color: #b4b8c2; }
+  button.act.feat.on { color: #f59e0b; border-color: #f6d38a; background: #fffaf0; }
+  .log-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+    padding: 0.9rem 1rem; margin-bottom: 1.4rem;
+    border: 1px solid var(--color-border, #e5e5e5); border-radius: 12px; }
+  .log-form[hidden] { display: none; }
+  .log-form input { flex: 1; min-width: 14rem; font: inherit; font-size: 0.92rem;
+    padding: 0.5rem 0.7rem; border: 1px solid var(--color-border, #e5e5e5); border-radius: 8px; }
+  #log-add { cursor: pointer; font: inherit; }
   button.act.copy.done { background: #16a34a; border-color: #16a34a; color: #fff; }
   button.act.chat.on { background: #16a34a; border-color: #16a34a; color: #fff; }
   .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
