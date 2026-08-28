@@ -61,8 +61,7 @@ export const TOOLS = [
       + 'ice baths and contrast therapy. rugby, soccer and basketball are sports clubs. charity '
       + 'is for appeals and trusts asking for donations. townhall is for community halls let out '
       + 'by the hour. daycare is for early childhood centres and kindergartens. reel is video '
-      + 'first — a subject and the YouTube films already made about it. '
-      + 'ice baths and contrast therapy. beauty is for salons, ' +
+      + 'first — a subject and the YouTube films already made about it. beauty is for salons, ' +
       'spas, skin clinics, brow and lash studios, nail bars and massage: a full-bleed photograph, ' +
       'treatments listed with duration and price like a menu, and a booking button pinned to the ' +
       'bottom of every phone screen. yoga and pilates are the same studio page in two ' +
@@ -383,6 +382,31 @@ export const TOOLS = [
     },
   },
   {
+    name: 'add_clips',
+    description:
+      'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
+      'youtu.be links, embed links or bare ids, in any mix. Every one is checked against YouTube ' +
+      'before it goes on the page, and the real title and channel are read back from YouTube ' +
+      'rather than written by you. Anything private, deleted, or with embedding switched off by ' +
+      'its owner is rejected and reported back so you can tell them which one and why. NEVER pass ' +
+      'an id you have not been given by the person or found in a search result — a made-up id ' +
+      'looks exactly like a real one and renders as a dead grey rectangle. Use replace to start ' +
+      'the list again rather than adding to it. The first clip is the feature at the top of the page.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        urls: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'YouTube links or ids, in the order they should appear.',
+        },
+        replace: { type: 'boolean', description: 'Replace the existing films rather than adding to them.' },
+        title: { type: 'string', description: 'Heading for the reel, e.g. "Twelve films".' },
+      },
+      required: ['urls'],
+    },
+  },
+  {
     name: 'read_url',
     description:
       'Fetch a web page and read what is on it — their old site, a Facebook page, a supplier page. ' +
@@ -693,6 +717,82 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to set' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'add_clips': {
+      // A YouTube id is eleven characters of a known alphabet, and it turns up
+      // inside half a dozen link shapes. Take them all, because people paste
+      // whatever was in the address bar.
+      const ids: string[] = [];
+      for (const raw of (input.urls || []).slice(0, 30)) {
+        const v = String(raw || '').trim();
+        const hit =
+          v.match(/[?&]v=([A-Za-z0-9_-]{11})/) ||
+          v.match(/youtu\.be\/([A-Za-z0-9_-]{11})/) ||
+          v.match(/\/(?:embed|shorts|live|v)\/([A-Za-z0-9_-]{11})/) ||
+          (/^[A-Za-z0-9_-]{11}$/.test(v) ? [v, v] : null);
+        if (hit && !ids.includes(hit[1])) ids.push(hit[1]);
+      }
+      if (!ids.length) {
+        return { ok: false, message: 'None of those look like YouTube links. A watch link, a youtu.be link or the id itself all work.' };
+      }
+
+      // The check that matters. oembed answers for anything that can actually
+      // be embedded and refuses everything else, and it hands back the title
+      // and the channel — so the page credits somebody's work with their own
+      // words rather than a guess.
+      const good: { id: string; title: string; who: string }[] = [];
+      const bad: string[] = [];
+      for (const id of ids) {
+        try {
+          const res = await fetch(
+            `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`
+          );
+          if (!res.ok) { bad.push(id); continue; }
+          const meta = (await res.json()) as any;
+          good.push({
+            id,
+            title: String(meta?.title || '').slice(0, 200),
+            who: String(meta?.author_name || '').slice(0, 120),
+          });
+        } catch {
+          bad.push(id);
+        }
+      }
+
+      if (!good.length) {
+        return {
+          ok: false,
+          message:
+            `None of those could be embedded. That usually means the owner has turned embedding ` +
+            `off, or the video is private or gone. Tried: ${ids.join(', ')}`,
+        };
+      }
+
+      if (site.style !== 'reel') site.style = 'reel';
+      let section = site.sections.find((x) => x.type === 'video');
+      if (!section) {
+        section = { type: 'video', label: 'The reel', title: '', clips: [] };
+        site.sections.push(section);
+      }
+      const existing = input.replace ? [] : (section.clips || []);
+      const merged = [...existing];
+      for (const clip of good) {
+        if (!merged.some((c) => c.id === clip.id)) merged.push(clip);
+      }
+      section.clips = merged.slice(0, 24);
+      if (input.title) section.title = String(input.title).slice(0, 80);
+      else section.title = `${section.clips.length} film${section.clips.length === 1 ? '' : 's'}`;
+
+      const named = good.map((c) => `${c.title} — ${c.who}`).join('; ');
+      return {
+        ok: true,
+        message:
+          `Added ${good.length}: ${named}.` +
+          (bad.length ? ` Could not use ${bad.length} (embedding off, private or gone): ${bad.join(', ')}.` : '') +
+          ` ${section.clips.length} on the page now.`,
+        data: { added: good, rejected: bad },
+      };
     }
 
     case 'ask_for_photos': {
