@@ -176,6 +176,7 @@ const when = (iso: string) => {
 ---
 
 <Layout title="Work — garage.co.nz" description="Sites built on garage.co.nz, and what has shipped lately.">
+  <img src="/lean.png" alt="Garage mascot" class="work-mascot" id="work-mascot" draggable="false" />
   <div class="work">
     <header class="work-head">
       <p class="work-eyebrow">The work</p>
@@ -265,6 +266,37 @@ const when = (iso: string) => {
 </Layout>
 
 <style>
+  /* He leans the other way here. On the old home page he is turned in towards
+     the headline; flipped, he leans on the left edge of the screen instead —
+     which is the only place left, since the dog, his bone and the chat
+     launcher all live in the bottom right. Half the size he is over there, so
+     he sits beside the work rather than in front of it. */
+  .work-mascot {
+    position: fixed;
+    left: 8px;
+    bottom: 0;
+    height: 190px;
+    width: auto;
+    z-index: 40;
+    transform: scaleX(-1);
+    transform-origin: center bottom;
+    filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.18));
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
+    transition: filter 0.25s ease;
+  }
+
+  .work-mascot.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 18px 44px rgba(0, 0, 0, 0.3));
+  }
+
+  /* Not enough room beside the cards on a laptop, and none at all on a phone. */
+  @media (max-width: 1100px) {
+    .work-mascot { display: none; }
+  }
   .work { max-width: 1500px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
 
   .work-head { max-width: 46rem; margin-bottom: 3rem; }
@@ -502,4 +534,82 @@ const when = (iso: string) => {
     btn.setAttribute('aria-expanded', String(!how.hidden));
     btn.textContent = how.hidden ? 'How it works' : 'Hide';
   });
+
+  // Drag him wherever you want him, and he stays there. Same trick as the old
+  // home page but against the viewport rather than a hero box, because this
+  // page scrolls a long way and an absolute mascot would be left at the top.
+  //
+  // His own key: the two pages put him in different places and at different
+  // sizes, and sharing one position would fling him off-screen on whichever
+  // you opened second.
+  (() => {
+    const mascot = document.getElementById('work-mascot') as HTMLElement | null;
+    if (!mascot) return;
+    const KEY = 'work-mascot-pos';
+    const FLIP = 'scaleX(-1)';
+
+    const place = (x: number, y: number) => {
+      const w = mascot.offsetWidth || 120;
+      const h = mascot.offsetHeight || 190;
+      // Never park him somewhere he cannot be picked up again.
+      const left = Math.max(0, Math.min(window.innerWidth - w, x));
+      const top = Math.max(0, Math.min(window.innerHeight - h, y));
+      mascot.style.left = left + 'px';
+      mascot.style.top = top + 'px';
+      mascot.style.bottom = 'auto';
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (saved && typeof saved.x === 'number') place(saved.x, saved.y);
+    } catch { /* a corrupt position is not worth a broken page */ }
+
+    let dragging = false;
+    let grabX = 0;
+    let grabY = 0;
+
+    const point = (e: MouseEvent | TouchEvent) =>
+      'touches' in e ? e.touches[0] : (e as MouseEvent);
+
+    const start = (e: MouseEvent | TouchEvent) => {
+      dragging = true;
+      mascot.classList.add('dragging');
+      const p = point(e);
+      const rect = mascot.getBoundingClientRect();
+      grabX = p.clientX - rect.left;
+      grabY = p.clientY - rect.top;
+    };
+
+    const move = (e: MouseEvent | TouchEvent) => {
+      if (!dragging) return;
+      e.preventDefault();
+      const p = point(e);
+      place(p.clientX - grabX, p.clientY - grabY);
+    };
+
+    const end = () => {
+      if (!dragging) return;
+      dragging = false;
+      mascot.classList.remove('dragging');
+      const rect = mascot.getBoundingClientRect();
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ x: rect.left, y: rect.top }));
+      } catch { /* private browsing — he just goes home next time */ }
+    };
+
+    mascot.addEventListener('mousedown', start);
+    mascot.addEventListener('touchstart', start, { passive: true });
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
+    // The flip is on the element, so dragging must not overwrite transform.
+    mascot.style.transform = FLIP;
+
+    // A window that shrinks should not leave him stranded off the edge.
+    window.addEventListener('resize', () => {
+      const rect = mascot.getBoundingClientRect();
+      if (mascot.style.left) place(rect.left, rect.top);
+    });
+  })();
 </script>
