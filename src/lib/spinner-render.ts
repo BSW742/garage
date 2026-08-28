@@ -156,8 +156,10 @@ filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
 .gsp-wheel{position:absolute;inset:0;border-radius:50%;
 box-shadow:inset 0 0 0 1px ${LINE},0 0 0 1px ${LINE},0 24px 60px -24px rgba(0,0,0,.9);
 transition:transform 5.4s cubic-bezier(.12,.86,.14,1)}
+/* 15% across, so its edge sits at 42.5% and the labels' run to 42% clears it.
+   A smaller hub suits the bigger wheel anyway. */
 .gsp-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-width:17%;height:17%;border-radius:50%;background:${CARD};z-index:3;
+width:15%;height:15%;border-radius:50%;background:${CARD};z-index:3;
 box-shadow:0 0 0 1px ${LINE},0 4px 18px rgba(0,0,0,.8)}
 .gsp-hub:after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
 width:26%;height:26%;border-radius:50%;background:${RED}}
@@ -166,12 +168,16 @@ width:26%;height:26%;border-radius:50%;background:${RED}}
    readable while the wheel is turning. Upright labels look fine standing still
    and become a mess the moment it moves. */
 .gsp-slot{position:absolute;inset:0;z-index:2;pointer-events:none}
-.gsp-slot span{position:absolute;left:50%;top:7%;width:34%;
+.gsp-slot span{position:absolute;left:50%;top:4%;width:38%;
 transform-origin:0 50%;transform:rotate(90deg);
-display:flex;align-items:center;gap:.34rem;
+display:flex;align-items:center;gap:.3rem;
 font:700 .72rem/1 var(--font-sans,system-ui,sans-serif);color:#fff;
-letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-.gsp-slot svg{flex:none;opacity:.85}
+letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+/* The words sit at the rim and read inward; the icon trails them. It used to
+   be the other way round, so the icon had the outer position and pushed every
+   label a centimetre off the edge — and the longest ones ran into the hub at
+   the other end. From 4% to 42% is the whole run from rim to hub. */
+.gsp-slot svg{flex:none;opacity:.8;order:2}
 .gsp-slot.dark span{color:${INK}}
 .gsp-slot.top span{color:${INK};font-weight:800}
 .gsp-slot.top svg,.gsp-slot.dark svg{opacity:1}
@@ -237,7 +243,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
       const mid = i * seg + seg / 2;
       return `<div class="gsp-slot${i === 0 ? ' top' : ''}${onLight(i) ? ' dark' : ''}"
         style="transform:rotate(${mid}deg)">
-        <span>${icon(p, '1rem')}${esc(p.label)}</span>
+        <span>${esc(p.label)}${icon(p, '.85rem')}</span>
       </div>`;
     })
     .join('');
