@@ -11,6 +11,8 @@ export interface MailOut {
   /** Optional rich version. Mail clients that can render it will prefer it. */
   html?: string;
   replyTo?: string;
+  /** Files to send along. Small ones only — an invite, a receipt. */
+  attachments?: { filename: string; type: string; content: string }[];
 }
 
 /**
@@ -31,22 +33,43 @@ export async function sendMail(env: any, mail: MailOut): Promise<{ ok: boolean; 
     ? 'https://api.eu.mailgun.net'
     : 'https://api.mailgun.net';
 
-  const form = new URLSearchParams();
-  form.set('from', env?.MAILGUN_FROM || `garage.co.nz <no-reply@${domain}>`);
-  form.set('to', mail.to);
-  form.set('subject', mail.subject.slice(0, 200));
-  form.set('text', mail.text);
-  if (mail.html) form.set('html', mail.html);
-  if (mail.replyTo) form.set('h:Reply-To', mail.replyTo);
+  const from = env?.MAILGUN_FROM || `garage.co.nz <no-reply@${domain}>`;
+
+  // Attachments have to go as multipart, so the body is built two ways. The
+  // urlencoded path is kept for everything else because it is what every other
+  // mail in here has always used and there is no reason to churn it.
+  let body: BodyInit;
+  const headers: Record<string, string> = { Authorization: 'Basic ' + btoa('api:' + key) };
+
+  if (mail.attachments?.length) {
+    const form = new FormData();
+    form.set('from', from);
+    form.set('to', mail.to);
+    form.set('subject', mail.subject.slice(0, 200));
+    form.set('text', mail.text);
+    if (mail.html) form.set('html', mail.html);
+    if (mail.replyTo) form.set('h:Reply-To', mail.replyTo);
+    for (const file of mail.attachments) {
+      form.append('attachment', new Blob([file.content], { type: file.type }), file.filename);
+    }
+    body = form;   // fetch sets the boundary itself; setting it by hand breaks it
+  } else {
+    const form = new URLSearchParams();
+    form.set('from', from);
+    form.set('to', mail.to);
+    form.set('subject', mail.subject.slice(0, 200));
+    form.set('text', mail.text);
+    if (mail.html) form.set('html', mail.html);
+    if (mail.replyTo) form.set('h:Reply-To', mail.replyTo);
+    body = form.toString();
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+  }
 
   try {
     const res = await fetch(`${host}/v3/${encodeURIComponent(domain)}/messages`, {
       method: 'POST',
-      headers: {
-        Authorization: 'Basic ' + btoa('api:' + key),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: form.toString(),
+      headers,
+      body,
     });
     if (!res.ok) {
       return { ok: false, error: `mailgun ${res.status}: ${(await res.text()).slice(0, 160)}` };

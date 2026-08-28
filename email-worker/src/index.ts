@@ -280,9 +280,37 @@ async function storeAsInboxMail(message: EmailMessageIn, env: Env): Promise<void
   // PostalMime was already being used ten lines up for site mail; this path
   // just never reached for it.
   let bodyText = '';
+  let attachments: { name: string; type: string; size: number; url: string }[] = [];
   try {
     const parsed = await PostalMime.parse(message.raw);
     bodyText = String(parsed.text || '').trim();
+
+    // Whatever they attached, kept. A CV that arrives as a subject line about
+    // a CV is not a message anybody can act on. Same bucket the builder uses,
+    // so /images/<key> serves it back with the right content type.
+    for (const file of (parsed.attachments || []).slice(0, 6)) {
+      try {
+        const bytes: ArrayBuffer =
+          file.content instanceof ArrayBuffer
+            ? file.content
+            : new TextEncoder().encode(String(file.content || '')).buffer;
+        if (!bytes.byteLength || bytes.byteLength > 15_000_000) continue;
+
+        const name = String(file.filename || 'attachment').replace(/[^\w.\-]+/g, '_').slice(0, 60);
+        const type = String(file.mimeType || 'application/octet-stream');
+        // Single-segment key: /images/[filename] does not route nested paths.
+        const key = `mail-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${name}`;
+        await env.IMAGES.put(key, bytes, { httpMetadata: { contentType: type } });
+        attachments.push({
+          name: String(file.filename || name).slice(0, 80),
+          type,
+          size: bytes.byteLength,
+          url: `https://garage.co.nz/images/${key}`,
+        });
+      } catch (error) {
+        console.error('Could not keep an attachment:', error);
+      }
+    }
     if (!bodyText && parsed.html) {
       bodyText = String(parsed.html)
         .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -314,10 +342,14 @@ async function storeAsInboxMail(message: EmailMessageIn, env: Env): Promise<void
 
   await env.DB
     .prepare(
-      `INSERT INTO emails (from_address, from_name, to_address, subject, body_text, received_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO emails (from_address, from_name, to_address, subject, body_text, attachments, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-    .bind(fromAddress, fromName, message.to, subject, bodyText.slice(0, 50000), new Date().toISOString())
+    .bind(
+      fromAddress, fromName, message.to, subject, bodyText.slice(0, 50000),
+      attachments.length ? JSON.stringify(attachments) : null,
+      new Date().toISOString()
+    )
     .run();
 
   try {

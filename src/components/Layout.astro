@@ -760,7 +760,115 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
         }, 8000);
       }
     </script>
-  </body>
+  
+<!-- Chat for garage.co.nz itself. The subsites get theirs from site-render;
+     this is the same idea for the main site, aimed at Ben rather than at a
+     business owner's customers. The dot is always green because he asked for
+     it — he is more vigilant than the average site owner. -->
+<div id="gg-chat"></div>
+<style>
+  #gg-launch{position:fixed;right:18px;bottom:18px;z-index:80;display:flex;align-items:center;
+    gap:.5rem;background:#111;color:#fff;border:0;border-radius:999px;padding:.7rem 1.15rem;
+    font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;
+    box-shadow:0 12px 30px -12px rgba(0,0,0,.45)}
+  #gg-launch i{width:.55rem;height:.55rem;border-radius:50%;background:#22c55e;display:block}
+  #gg-panel{position:fixed;right:18px;bottom:18px;z-index:81;width:min(340px,calc(100vw - 36px));
+    background:#fff;border-radius:16px;box-shadow:0 24px 60px -20px rgba(0,0,0,.4);
+    display:none;flex-direction:column;overflow:hidden}
+  #gg-panel.on{display:flex}
+  .gg-top{display:flex;align-items:center;gap:.5rem;padding:.85rem 1rem;border-bottom:1px solid #eee;
+    font-weight:600;font-size:.95rem}
+  .gg-top i{width:.55rem;height:.55rem;border-radius:50%;background:#22c55e;display:block}
+  .gg-top button{margin-left:auto;border:0;background:none;font-size:1.2rem;cursor:pointer;color:#888;
+    line-height:1}
+  .gg-log{padding:.9rem 1rem;display:flex;flex-direction:column;gap:.5rem;max-height:46vh;
+    overflow-y:auto;font-size:.92rem}
+  .gg-m{max-width:82%;padding:.5rem .75rem;border-radius:12px;line-height:1.45}
+  .gg-them{align-self:flex-start;background:#f2f3f5}
+  .gg-me{align-self:flex-end;background:#111;color:#fff}
+  .gg-form{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid #eee}
+  .gg-form input{flex:1;min-width:0;border:1px solid #e5e5e5;border-radius:10px;padding:.55rem .7rem;
+    font:inherit;font-size:.92rem}
+  .gg-form button{border:0;background:#111;color:#fff;border-radius:10px;padding:0 .95rem;
+    font:inherit;font-weight:600;cursor:pointer}
+</style>
+<script is:inline>
+(function(){
+  var SLUG = 'garage', KEY = 'gg-thread';
+  var host = document.getElementById('gg-chat');
+  if (!host) return;
+  host.innerHTML =
+    '<button id="gg-launch"><i></i>Chat to Ben</button>' +
+    '<div id="gg-panel"><div class="gg-top"><i></i>Ben is here' +
+    '<button id="gg-x" aria-label="Close">&times;</button></div>' +
+    '<div class="gg-log" id="gg-log"></div>' +
+    '<form class="gg-form" id="gg-form">' +
+    '<input id="gg-in" placeholder="Ask me anything" autocomplete="off" />' +
+    '<button type="submit">Send</button></form></div>';
+
+  var panel = document.getElementById('gg-panel');
+  var log = document.getElementById('gg-log');
+  var thread = null;
+  try { thread = localStorage.getItem(KEY); } catch (e) {}
+
+  function add(text, mine){
+    var d = document.createElement('div');
+    d.className = 'gg-m ' + (mine ? 'gg-me' : 'gg-them');
+    d.textContent = text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  document.getElementById('gg-launch').addEventListener('click', function(){
+    panel.classList.add('on');
+    document.getElementById('gg-launch').style.display = 'none';
+    if (!log.childElementCount) add('Kia ora — what can I help with?', false);
+    document.getElementById('gg-in').focus();
+    pull();
+  });
+  document.getElementById('gg-x').addEventListener('click', function(){
+    panel.classList.remove('on');
+    document.getElementById('gg-launch').style.display = '';
+  });
+
+  document.getElementById('gg-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var input = document.getElementById('gg-in');
+    var body = input.value.trim();
+    if (!body) return;
+    input.value = '';
+    add(body, true);
+    try {
+      var res = await fetch('/api/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: SLUG, body: body, threadId: thread || undefined })
+      });
+      var data = await res.json();
+      if (data.threadId) {
+        thread = data.threadId;
+        try { localStorage.setItem(KEY, thread); } catch (e) {}
+      }
+    } catch (err) {
+      add('That did not send — try again in a moment.', false);
+    }
+  });
+
+  var seen = 0;
+  async function pull(){
+    if (!thread) return;
+    try {
+      var res = await fetch('/api/chat?thread=' + encodeURIComponent(thread) +
+        '&slug=' + encodeURIComponent(SLUG));
+      var data = await res.json();
+      var msgs = (data.messages || []).filter(function(m){ return m.sender !== 'visitor'; });
+      for (var i = seen; i < msgs.length; i++) add(msgs[i].body, false);
+      seen = msgs.length;
+    } catch (e) {}
+  }
+  setInterval(function(){ if (panel.classList.contains('on')) pull(); }, 5000);
+})();
+</script>
+</body>
 </html>
 
 <style is:global>

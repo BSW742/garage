@@ -175,12 +175,12 @@
   </div>
 
   <div class="tabs">
-    <button class="active" data-tab="bookings">Bookings</button>
+    <button class="active" data-tab="chat">Chat</button>
     <button data-tab="apps">Apps</button>
     <button data-tab="email">Email</button>
   </div>
 
-  <div id="bookings"></div>
+  <div id="chat"></div>
   <div id="apps" class="hidden"></div>
   <div id="email" class="hidden"></div>
 
@@ -189,14 +189,14 @@
     let bookingsData = {};
     let appsData = [];
     let emailsData = [];
-    let tab = 'bookings';
+    let tab = 'chat';
 
     document.querySelectorAll('.tabs button').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         tab = btn.dataset.tab;
-        document.getElementById('bookings').classList.toggle('hidden', tab !== 'bookings');
+        document.getElementById('chat').classList.toggle('hidden', tab !== 'chat');
         document.getElementById('apps').classList.toggle('hidden', tab !== 'apps');
         document.getElementById('email').classList.toggle('hidden', tab !== 'email');
         updateCount();
@@ -211,8 +211,8 @@
 
     function updateCount() {
       const el = document.getElementById('count');
-      if (tab === 'bookings') {
-        const n = Object.values(bookingsData).filter(v => v.startsWith('booked')).length;
+      if (tab === 'chat') {
+        const n = chatData.filter(t => t.last_sender === 'visitor').length;
         el.textContent = n;
       } else if (tab === 'apps') {
         el.textContent = appsData.length;
@@ -222,14 +222,20 @@
       }
     }
 
+    // Chat on garage.co.nz itself. Bookings used to live here and were a list
+    // of slots with nobody's name on them; they are an email with a calendar
+    // invite now, which is where they were going anyway.
+    const CHAT_SLUG = 'garage';
+    const CHAT_KEY = '83f0dd5f1e8b5b512b68fd95f564a827';
+    let chatData = [];
+    let openThread = null;
+
     async function loadBookings() {
       try {
-        const fd = new FormData();
-        fd.append('type', 'calendar-load');
-        const r = await fetch(WORKER, { method: 'POST', body: fd });
-        if (r.ok) bookingsData = await r.json();
-      } catch(e) {}
-      renderBookings();
+        const r = await fetch('/api/chat/inbox?slug=' + CHAT_SLUG + '&key=' + CHAT_KEY);
+        if (r.ok) chatData = (await r.json()).threads || [];
+      } catch (e) {}
+      renderChat();
       updateCount();
     }
 
@@ -253,54 +259,51 @@
       updateCount();
     }
 
-    function renderBookings() {
-      const el = document.getElementById('bookings');
-      const list = Object.entries(bookingsData)
-        .filter(([k, v]) => v.startsWith('booked'))
-        .map(([key, status]) => {
-          const p = key.split('-');
-          const week = p[0], dayIdx = +p[1], time = p.slice(3).join(':');
-          const type = status.includes('[teams]') ? 'teams' : 'coffee';
-          const email = (status.match(/\(([^)]+)\)/) || [])[1] || 'Unknown';
-
-          const now = new Date();
-          const mon = new Date(now);
-          mon.setDate(now.getDate() - (now.getDay() || 7) + 1 + (week === 'next' ? 7 : 0) + dayIdx);
-
-          const [h, m] = time.split(':').map(Number);
-          const timeStr = (h > 12 ? h - 12 : h) + ':' + String(m).padStart(2, '0') + (h >= 12 ? 'pm' : 'am');
-          const dateStr = mon.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' });
-
-          return { key, email, type, timeStr, dateStr, date: mon };
-        })
-        .sort((a, b) => a.date - b.date);
-
-      if (!list.length) {
-        el.innerHTML = '<div class="empty">No bookings</div>';
+    function renderChat() {
+      const el = document.getElementById('chat');
+      if (!chatData.length) {
+        el.innerHTML = '<div class="empty">No one has messaged yet</div>';
         return;
       }
-
-      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:12px">' + list.map(b => `
-        <div style="background:#fff;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
-          <div style="width:56px;height:56px;border-radius:28px;background:${b.type === 'coffee' ? '#fff3e0' : '#ede7f6'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <img src="/booking/${b.type}.png" alt="${b.type}" style="width:36px;height:36px">
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:17px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.email)}</div>
-            <div style="font-size:15px;color:#8e8e93;margin-top:2px">${b.dateStr}</div>
-            <div style="font-size:17px;font-weight:600;margin-top:2px">${b.timeStr}</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <a href="mailto:${esc(b.email)}" style="width:44px;height:44px;border-radius:22px;background:#007aff;display:flex;align-items:center;justify-content:center;text-decoration:none">
-              <svg width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </a>
-            <button onclick="delBooking('${b.key}')" style="width:44px;height:44px;border-radius:22px;background:#ff3b30;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer">
-              <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
-        </div>
-      `).join('') + '</div>';
+      el.innerHTML = '<div style="margin:0 16px;display:flex;flex-direction:column;gap:10px">' +
+        chatData.map(t => {
+          const waiting = t.last_sender === 'visitor';
+          const when = new Date(t.last_message_at).toLocaleDateString('en-NZ',
+            { day: 'numeric', month: 'short' });
+          const who = t.visitor_name || 'Name not given';
+          return `
+          <div style="background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${waiting ? '<span style="width:8px;height:8px;border-radius:4px;background:#007aff;flex-shrink:0"></span>' : ''}
+              <div style="font-size:16px;font-weight:${waiting ? '600' : '400'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(who)}</div>
+              <span style="margin-left:auto;font-size:13px;color:#8e8e93;flex-shrink:0">${when}</span>
+            </div>
+            <div style="font-size:14px;color:#8e8e93;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.last_body || '')}</div>
+            <form onsubmit="return sendReply(event,'${t.id}')" style="display:flex;gap:8px;margin-top:10px">
+              <input name="body" placeholder="Reply" autocomplete="off" style="flex:1;min-width:0;border:1px solid #e5e5ea;border-radius:8px;padding:8px 10px;font-size:15px" />
+              <button type="submit" style="border:0;background:#007aff;color:#fff;border-radius:8px;padding:8px 14px;font-size:15px;font-weight:500">Send</button>
+            </form>
+          </div>`;
+        }).join('') + '</div>';
     }
+
+    async function sendReply(e, threadId) {
+      e.preventDefault();
+      const input = e.target.body;
+      const body = input.value.trim();
+      if (!body) return false;
+      input.value = '';
+      try {
+        await fetch('/api/chat/reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: CHAT_SLUG, key: CHAT_KEY, threadId, body })
+        });
+      } catch (err) {}
+      loadBookings();
+      return false;
+    }
+    window.sendReply = sendReply;
 
     function renderApps() {
       const el = document.getElementById('apps');
@@ -344,6 +347,8 @@
         const timeStr = date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
         const fromDisplay = e.from_name || e.from_address;
         const preview = readable(e.body_text).slice(0, 90);
+        let files = [];
+        try { files = JSON.parse(e.attachments || '[]') || []; } catch (err) { files = []; }
 
         return `
         <div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08);${e.read ? 'opacity:0.7' : ''}">
@@ -358,6 +363,12 @@
               </div>
               <div style="font-size:15px;font-weight:${e.read ? '400' : '500'};margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.subject || '(no subject)')}</div>
               <div style="font-size:14px;color:#8e8e93;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</div>
+              ${files.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${files.map(f => `
+                <a href="${esc(f.url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:rgba(118,118,128,0.12);color:#007aff;text-decoration:none;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;max-width:100%">
+                  <span>${fileIcon(f.type)}</span>
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
+                  <span style="color:#8e8e93;flex-shrink:0">${sizeOf(f.size)}</span>
+                </a>`).join('')}</div>` : ''}
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px">
@@ -403,6 +414,22 @@
         .trim();
     }
 
+    function fileIcon(type) {
+      const t = String(type || '');
+      if (t.includes('pdf')) return '\u{1F4C4}';
+      if (t.startsWith('image/')) return '\u{1F5BC}\uFE0F';
+      if (t.includes('word') || t.includes('document')) return '\u{1F4DD}';
+      if (t.includes('sheet') || t.includes('excel')) return '\u{1F4CA}';
+      return '\u{1F4CE}';
+    }
+
+    function sizeOf(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return n + 'B';
+      if (n < 1024 * 1024) return Math.round(n / 1024) + 'KB';
+      return (n / 1048576).toFixed(1) + 'MB';
+    }
+
     async function markRead(id, read) {
       await fetch('/api/emails', {
         method: 'PATCH',
@@ -431,7 +458,7 @@
       fd.append('email', '');
       await fetch(WORKER, { method: 'POST', body: fd });
       delete bookingsData[key];
-      renderBookings();
+      renderChat();
       updateCount();
     }
     window.delBooking = delBooking;

@@ -61,6 +61,9 @@ async function maybeAnswer(
   try { config = JSON.parse(String(site.config)); } catch { return null; }
   // The owner turned the widget off; nothing here should be running.
   if (!config.chat) return null;
+  // A widget without an assistant. Some owners want the chat to be them and
+  // only them — garage.co.nz's own is one — so the two are separate switches.
+  if (config.assistant === false) return null;
 
   const stamp = Date.parse(String(site.chat_online_at || ''));
   const online = Number.isFinite(stamp) && Date.now() - stamp < ONLINE_WINDOW_MS;

@@ -860,9 +860,16 @@ import Layout from '../components/Layout.astro';
     const dayName = date.toLocaleDateString('en-NZ', { weekday: 'long' });
     const dateStr = date.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long' });
 
+    // The real instant, built from the slot's own date and time rather than
+    // re-parsed from the label later. This is what the calendar invite needs.
+    const [slotHour, slotMin] = time.split(':').map(Number);
+    const startsAt = new Date(date);
+    startsAt.setHours(slotHour, slotMin || 0, 0, 0);
+
     selectedSlot = {
       day: date,
       time,
+      startsAt: startsAt.toISOString(),
       label: `${dayName}, ${dateStr} at ${formatTime12(time)}`,
       meetingType: currentDragType
     };
@@ -1104,7 +1111,11 @@ import Layout from '../components/Layout.astro';
             name,
             email,
             time: selectedSlot.label,
-            meetingType: selectedSlot.meetingType
+            meetingType: selectedSlot.meetingType,
+            // The actual instant, so the invite lands on the right day. Without
+            // this the email still sends, just with no calendar file.
+            startsAt: selectedSlot.startsAt || null,
+            origin: document.referrer || ''
           })
         });
       } catch (e) {
