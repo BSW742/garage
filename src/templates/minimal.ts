@@ -1295,6 +1295,12 @@ function getServiceIcon(service: string, industry: string): string {
     // Heat rising off the stones, and a bowl thrown on the wheel.
     sauna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 3c0 2 1.5 2.5 1.5 4S7 9.5 7 11M12 2c0 2 1.5 2.5 1.5 4S12 8.5 12 10.5M17 3c0 2 1.5 2.5 1.5 4S17 9.5 17 11"/><path d="M3 15h18M4 15a8 8 0 0 1 16 0M6 15v5m12-5v5"/></svg>',
     craft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l-1.2 7.5A3 3 0 0 1 13.85 18h-3.7a3 3 0 0 1-2.95-2.5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M4 21h16"/></svg>',
+    // A ball on a field, a hand giving, a hall with a pitched roof, and two
+    // small figures.
+    club: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="12" rx="9" ry="6"/><path d="M8 8.5l8 7M16 8.5l-8 7"/></svg>',
+    give: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg>',
+    hall: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10l9-6 9 6"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
+    tamariki: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="8" r="2"/><path d="M4 20v-3a4 4 0 0 1 8 0v3M13 20v-2.5a3.5 3.5 0 0 1 7 0V20"/></svg>',
     auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0zm10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M3 11l2-6h14l2 6M3 11v6h18v-6M3 11h18"/></svg>',
     photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     tech: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>',
@@ -1323,6 +1329,12 @@ function getServiceIcon(service: string, industry: string): string {
   if (lower.includes('law') || lower.includes('legal') || lower.includes('attorney')) return icons.legal;
   if (lower.includes('tax') || lower.includes('account') || lower.includes('finance')) return icons.account;
   if (lower.includes('fit') || lower.includes('gym') || lower.includes('workout')) return icons.fitness;
+  if (lower.includes('rugby') || lower.includes('football') || lower.includes('basketball')
+      || lower.includes('club')) return icons.club;
+  if (lower.includes('charit') || lower.includes('trust') || lower.includes('appeal')) return icons.give;
+  if (lower.includes('hall') || lower.includes('community centre')) return icons.hall;
+  if (lower.includes('daycare') || lower.includes('childcare') || lower.includes('kindergarten')
+      || lower.includes('preschool') || lower.includes('early learning')) return icons.tamariki;
   if (lower.includes('sauna') || lower.includes('bathhouse') || lower.includes('ice bath')) return icons.sauna;
   if (lower.includes('pottery') || lower.includes('ceramic') || lower.includes('jewellery')) return icons.craft;
   if (lower.includes('hair') || lower.includes('salon') || lower.includes('beauty')) return icons.salon;

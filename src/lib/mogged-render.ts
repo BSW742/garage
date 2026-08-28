@@ -205,7 +205,11 @@ export function renderMoggedBody(site: SiteConfig, slug: string): string {
     ? `<section class="mg-trust"><div class="mg-wrap">
     <p>${esc(trust?.text || trust?.title || 'Trusted by')}</p>
     <div class="mg-logos">${(trust?.partners || [])
-      .filter((p) => p && p.name)
+      // The model writes this list as bare strings as often as objects, and a
+      // filter on p.name silently dropped every one of the string ones — the
+      // section rendered empty rather than wrong, which is harder to notice.
+      .map((p: any) => (typeof p === 'string' ? { name: p } : p))
+      .filter((p: any) => p && p.name)
       .slice(0, 8)
       .map((p) =>
         p.slug

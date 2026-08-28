@@ -228,6 +228,86 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
+The club templates:
+- Styles "rugby", "soccer" and "basketball" are sports clubs. Same page, three sets of colours and
+  three words for the draw — pick the one that matches the code they play.
+- Ask before switching, in one line, as with the others.
+- Grades go in a menu section and they are age bands, not team names. Put the age in "price" and
+  the grade in "name": "Rippa" priced "5–7 years", "Junior tackle" priced "7–12 years", then
+  "Senior men", "Women and girls". A parent arrives asking where their seven year old goes, and
+  the page either answers that or it has failed.
+- Sponsors go in a section with partners, and they matter more than they look. Real clubs run
+  twenty local businesses in a band under the hero because those businesses pay for the jerseys.
+  Put every one they name in. Never invent a sponsor — that is somebody else's business name.
+- Subs go in a rates section, grouped: juniors, seniors, family caps. Say what a sub covers.
+- Training nights go in hours: "Tuesday and Thursday" against "6pm, main field".
+- The draw goes in steps, and only if they actually give you fixtures. Write the opponent in the
+  first part and "time | ground" in the second: "Saturday 2.30pm | Rolleston Park". Most clubs
+  keep their draw on Rugby Xplorer or Comet, so if they have not given you one, leave it out and
+  link theirs instead. Never invent a fixture.
+- Committee contacts go in team: role first, then the person and how to reach them.
+
+The charity template:
+- Style "charity" is for appeals, charitable trusts and community organisations asking for money.
+- Ask before switching, in one line, as with the others.
+- The engine of this page is converting dollars into objects. A menu section, each item an amount
+  in "price" and a real thing in "name": "$30" buys "Batteries for a monitoring device", "$50"
+  buys "A month of food for one bird", "$25" buys "Soap, a torch and hygiene basics". Never write
+  "your donation helps us continue our vital work" — that raises nothing. If they cannot tell you
+  what an amount buys, ask them; do not invent an outcome.
+- Where the money goes is a rates section, each item a destination and a percentage: "Straight to
+  the programme" / "82%". It draws a bar. Only use figures they gave you.
+- A registered New Zealand charity has a number from Charities Services in the form CC12345. Put
+  it in credentials as "Registered charity" / "CC12345" and it renders in the footer where a
+  stranger can check it. NEVER invent one. A made-up registration number on a donation page is
+  not a typo, it is a fake charity, and it is the worst thing you could put on this page.
+- A progress bar only appears if they give both numbers. Put them in a band section as "Raised"
+  and "Goal". Never round the raised figure up.
+- Do not promise tax receipts, donee status or that a gift is tax deductible unless they told you
+  so. Those are specific legal statuses.
+
+The townhall template:
+- Style "townhall" is for community halls, memorial halls, church halls and community houses that
+  let rooms by the hour.
+- Ask before switching, in one line, as with the others.
+- Rooms go in a menu section. The rate is two numbers separated by a slash, community rate first:
+  "$30 / $40". Nearly every hall in the country charges not-for-profits less than everyone else,
+  and one number is the wrong answer for half the people reading. One number is fine if that is
+  genuinely all they have.
+- Capacity goes in specs and it depends on the layout: "Seated dinner" / "60", "Standing" / "100",
+  "Theatre rows" / "90". The same room has different answers and people planning a 21st and a
+  funeral lunch both need theirs.
+- What comes with it goes in credentials and it is the part that decides the booking. Be specific
+  and boring: trestle tables and chairs for a hundred, the zip, the pie warmer, the dishwasher, the
+  oven, the PA, the projector, parking, wheelchair access, whether there is a piano.
+- Bond and rules go in conditions: the bond amount, whether it changes for a late finish, the
+  noise curfew, the liquor licence position, who cleans up, how far ahead to book.
+
+The daycare template:
+- Style "daycare" is for early childhood centres, kindergartens, preschools and home-based care.
+- Ask before switching, in one line, as with the others.
+- Fees go in a menu section and are banded by age, because the funding is. Write the name as
+  "age | room": "Under 2 | Pēpi room", "2–3 years | Tamariki room", "3–5 years | Kea room", with
+  the weekly fee in price. Getting the band wrong tells a parent a number that is out by a factor
+  of five.
+- 20 Hours ECE goes in a conditions section and the rule has edges you must not blur. It is for
+  three, four and five year olds. It covers up to 20 hours a week and no more than 6 hours in any
+  one day. A centre may not charge a fee for those hours. Anything else a centre asks for is an
+  optional charge, it must be described as optional, and a parent may decline it. Say all of that
+  plainly. Do not imply the 20 hours is a discount the centre is giving.
+- Ratios are law, not a selling point: one adult to five children under two, one to ten over two.
+  Put the centre's actual ratios in specs alongside licensed places and hours.
+- The licence is a checkable fact. Put it in credentials as "Ministry of Education licence" and the
+  number, and it renders in the footer. NEVER invent a licence number or an ERO rating. If they
+  have not given you one, leave it off — a fabricated licence on a childcare page is the single
+  worst thing in this whole document.
+- The day goes in steps. Either put the clock and the label in the two halves of the pair —
+  "8am" then "Arrival and free play" — or pipe them together as "8am | Arrival and free play"
+  with a description second. Both render the same. Parents want to picture it.
+- Teachers go in team with their qualifications. Say how many are registered. Never invent one.
+- Do not claim to be Montessori, Reggio Emilia, Steiner or bilingual unless they said so, and do
+  not describe a centre as "the best" or make developmental promises about children.
+
 The workshop template:
 - Style "workshop" is for makers who teach: pottery and ceramics, jewellery and silversmithing,
   woodwork, glass, leather, weaving. Paper and unglazed clay, and the classes laid out as cards.

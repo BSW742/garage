@@ -223,7 +223,11 @@ export function renderEggsBody(site: SiteConfig, slug: string): string {
     <h2>${esc(where?.title || 'Where to find us')}</h2>
     <p class="eg-sub">${esc(where?.text || 'On the shelf at these places.')}</p>
     <div class="eg-where">${(where?.partners || [])
-      .filter((p) => p && p.name)
+      // The model writes this list as bare strings as often as objects, and a
+      // filter on p.name silently dropped every one of the string ones — the
+      // section rendered empty rather than wrong, which is harder to notice.
+      .map((p: any) => (typeof p === 'string' ? { name: p } : p))
+      .filter((p: any) => p && p.name)
       .map((p) =>
         p.slug
           ? `<a href="https://${esc(p.slug)}.garage.co.nz">${esc(p.name)}</a>`

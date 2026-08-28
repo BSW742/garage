@@ -35,7 +35,7 @@ if (cameFromOffer && openedSlug) {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&family=Archivo+Black&family=Playfair+Display:wght@600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Sora:wght@400;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Nunito:wght@400;600;700&family=Instrument+Serif:ital@0;1&family=Barlow+Condensed:wght@600;700&family=Cormorant+Garamond:wght@300;400&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
 
   <body>
@@ -166,6 +166,17 @@ if (cameFromOffer && openedSlug) {
                   <p>Makers</p>
                   <div>
                     <button class="tone style" data-style="workshop">Workshop</button>
+                  </div>
+                </div>
+                <div class="paint-group">
+                  <p>Clubs &amp; community</p>
+                  <div>
+                    <button class="tone style" data-style="rugby">Rugby</button>
+                    <button class="tone style" data-style="soccer">Soccer</button>
+                    <button class="tone style" data-style="basketball">Basketball</button>
+                    <button class="tone style" data-style="charity">Charity</button>
+                    <button class="tone style" data-style="townhall">Town hall</button>
+                    <button class="tone style" data-style="daycare">Daycare</button>
                   </div>
                 </div>
                 <div class="paint-group">
@@ -1845,6 +1856,87 @@ if (cameFromOffer && openedSlug) {
         letter-spacing: 0.1em; text-transform: uppercase; color: #7c7266; font-weight: 600; }
 
       /* Agency preview. Same navy, same electric blue, same italic word. */
+      /* Clubs: three codes, one dark field. */
+      .pv.st-rugby, .pv.st-soccer, .pv.st-basketball {
+        --pv-display: 'Barlow Condensed', system-ui, sans-serif; }
+      .st-rugby #site-root, .pv.st-rugby { background: #0f1512; color: #f2f4f2; }
+      .st-soccer #site-root, .pv.st-soccer { background: #0c1220; color: #f2f4f2; }
+      .st-basketball #site-root, .pv.st-basketball { background: #17120e; color: #f2f4f2; }
+      .st-rugby .pv-nav, .st-soccer .pv-nav, .st-basketball .pv-nav {
+        border-bottom: 1px solid rgba(242,244,242,0.14); background: transparent; }
+      .st-rugby .pv-brand, .st-soccer .pv-brand, .st-basketball .pv-brand,
+      .st-rugby .pv-h1, .st-soccer .pv-h1, .st-basketball .pv-h1,
+      .st-rugby .pv-h2, .st-soccer .pv-h2, .st-basketball .pv-h2 {
+        color: #f2f4f2; font-family: var(--pv-display); font-weight: 700;
+        text-transform: uppercase; text-align: left; letter-spacing: 0.005em; }
+      .st-rugby .pv-hero, .st-soccer .pv-hero, .st-basketball .pv-hero {
+        text-align: left; color: #f2f4f2; background: rgba(255,255,255,0.03); }
+      .st-rugby .pv-lede, .st-soccer .pv-lede, .st-basketball .pv-lede { color: #9aa5a0; }
+      .st-rugby .pv-cta, .st-soccer .pv-cta, .st-basketball .pv-cta,
+      .st-rugby .pv-btn, .st-soccer .pv-btn, .st-basketball .pv-btn {
+        background: var(--pv-primary); color: #fff; border-radius: 3px;
+        font-family: var(--pv-display); font-weight: 700; text-transform: uppercase; }
+      .st-rugby .pv-card, .st-soccer .pv-card, .st-basketball .pv-card,
+      .st-rugby .pv-band, .st-soccer .pv-band, .st-basketball .pv-band,
+      .st-rugby .pv-hours, .st-soccer .pv-hours, .st-basketball .pv-hours,
+      .st-rugby .pv-rates, .st-soccer .pv-rates, .st-basketball .pv-rates {
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(242,244,242,0.14);
+        border-radius: 6px; color: #f2f4f2; }
+      .st-rugby .pv-section, .st-soccer .pv-section, .st-basketball .pv-section {
+        border-color: rgba(242,244,242,0.14); }
+      .st-rugby .pv-label, .st-soccer .pv-label, .st-basketball .pv-label,
+      .st-rugby .pv-eyebrow, .st-soccer .pv-eyebrow, .st-basketball .pv-eyebrow {
+        color: var(--pv-primary); letter-spacing: 0.22em; text-transform: uppercase;
+        font-family: var(--pv-display); }
+      .st-rugby .pv-quote p, .st-soccer .pv-quote p, .st-basketball .pv-quote p,
+      .st-rugby .pv-prose, .st-soccer .pv-prose, .st-basketball .pv-prose,
+      .st-rugby .pv-contact, .st-soccer .pv-contact, .st-basketball .pv-contact { color: #f2f4f2; }
+      .st-rugby .pv-foot, .st-soccer .pv-foot, .st-basketball .pv-foot {
+        border-top: 1px solid rgba(242,244,242,0.14); color: #9aa5a0; }
+
+      /* Charity: warm paper, one loud accent. */
+      .pv.st-charity { --pv-display: 'Sora', system-ui, sans-serif; }
+      .st-charity #site-root, .pv.st-charity { background: #fbfaf8; color: #1c1a17; }
+      .st-charity .pv-h1, .st-charity .pv-h2 { font-family: var(--pv-display); font-weight: 700;
+        letter-spacing: -0.022em; text-align: left; text-transform: none; }
+      .st-charity .pv-hero { text-align: left; }
+      .st-charity .pv-lede { color: #6f6960; }
+      .st-charity .pv-cta, .st-charity .pv-btn { background: var(--pv-primary); color: #fff;
+        border-radius: 999px; font-weight: 600; }
+      .st-charity .pv-card { background: #fff; border: 1px solid #e8e3db; border-radius: 14px; }
+      .st-charity .pv-band { background: color-mix(in srgb, var(--pv-primary) 10%, #fbfaf8); }
+      .st-charity .pv-label, .st-charity .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.24em; text-transform: uppercase; }
+
+      /* Town hall: newsprint and a wooden floor. */
+      .pv.st-townhall { --pv-display: 'Newsreader', Georgia, serif; }
+      .st-townhall #site-root, .pv.st-townhall { background: #f7f5f0; color: #1f1d18; }
+      .st-townhall .pv-h1, .st-townhall .pv-h2 { font-family: var(--pv-display); font-weight: 600;
+        letter-spacing: -0.008em; text-align: left; text-transform: none; }
+      .st-townhall .pv-hero { text-align: left; }
+      .st-townhall .pv-lede { color: #6e685d; }
+      .st-townhall .pv-cta, .st-townhall .pv-btn { background: #1f1d18; color: #f7f5f0;
+        border-radius: 3px; }
+      .st-townhall .pv-card { background: #fff; border: 1px solid #e0dbd0; border-radius: 8px; }
+      .st-townhall .pv-band { background: color-mix(in srgb, var(--pv-primary) 9%, #f7f5f0); }
+      .st-townhall .pv-label, .st-townhall .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.24em; text-transform: uppercase; }
+
+      /* Daycare: daylight, rounded, not a single primary colour. */
+      .pv.st-daycare { --pv-display: 'Nunito', system-ui, sans-serif; }
+      .st-daycare #site-root, .pv.st-daycare { background: #fdfbf7; color: #26221d; }
+      .st-daycare .pv-h1, .st-daycare .pv-h2 { font-family: var(--pv-display); font-weight: 700;
+        letter-spacing: -0.016em; text-align: left; text-transform: none; }
+      .st-daycare .pv-hero { text-align: left; }
+      .st-daycare .pv-lede { color: #726a5f; }
+      .st-daycare .pv-cta, .st-daycare .pv-btn { background: var(--pv-primary); color: #fff;
+        border-radius: 999px; font-weight: 700; }
+      .st-daycare .pv-card, .st-daycare .pv-hours { background: #fff; border: 1px solid #eae3d8;
+        border-radius: 16px; }
+      .st-daycare .pv-band { background: color-mix(in srgb, var(--pv-primary) 11%, #fdfbf7); }
+      .st-daycare .pv-label, .st-daycare .pv-eyebrow { color: var(--pv-primary);
+        letter-spacing: 0.24em; text-transform: uppercase; }
+
       /* Workshop: paper and unglazed clay. */
       .pv.st-workshop { --pv-display: 'Fraunces', Georgia, serif; }
       .st-workshop #site-root, .pv.st-workshop { background: #f6f2ea; color: #241f1a; }
@@ -3561,7 +3653,8 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna', 'st-rugby', 'st-soccer', 'st-basketball', 'st-charity',
+          'st-townhall', 'st-daycare');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -4218,7 +4311,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop" or "sauna" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall" or "daycare" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -5034,6 +5127,12 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         yoga: 'A studio page — the week on one screen, passes with their prices on them, and teachers with faces. Warm sand and a serif.',
         pilates: 'The same studio page, cooler and flatter. Timetable, passes, teachers — more gym than temple.',
+        rugby: 'For a rugby club — grades by age so a parent finds their kid in one look, the sponsors up where they belong, subs and training nights, and the clubrooms.',
+        soccer: 'The club page in football colours — grades, fixtures, subs, training, and the businesses that pay for the strips.',
+        basketball: 'The club page for a basketball club — grades, the schedule, subs, and your sponsors on the wall.',
+        charity: 'For an appeal or a trust — every amount is a price tag on a real thing, where the money goes is on the page, and your charity number sits in the footer where anyone can check it.',
+        townhall: 'For a hall let out by the hour — two rates because community groups pay less, capacity by layout, what is actually in the kitchen, and the bond.',
+        daycare: 'For an early childhood centre — fees banded by age, 20 Hours ECE explained properly, your ratios and licence, and how a day actually goes.',
         workshop: 'For makers who teach — pottery, jewellery, wood, glass. Paper and unglazed clay, the classes as cards, and every one of them saying what you carry out of the door.',
         sauna: 'For saunas, bathhouses and ice baths — a dark room with the heat under it, the round explained for a first-timer, and sessions priced by the body and the pass.',
         beauty: 'For salons and spas — one photograph given room, treatments priced in the open, and a booking button that follows you down the page.',

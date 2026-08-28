@@ -10,6 +10,10 @@ import { MOGGED_CSS, MOGGED_FONT_QUERY, renderMoggedBody } from './mogged-render
 import { BEAUTY_CSS, BEAUTY_FONT_QUERY, renderBeautyBody } from './beauty-render';
 import { WORKSHOP_CSS, WORKSHOP_FONT_QUERY, renderWorkshopBody } from './workshop-render';
 import { SAUNA_CSS, SAUNA_FONT_QUERY, renderSaunaBody } from './sauna-render';
+import { CLUB_CSS, CLUB_FONT_QUERY, renderClubBody } from './club-render';
+import { CHARITY_CSS, CHARITY_FONT_QUERY, renderCharityBody } from './charity-render';
+import { HALL_CSS, HALL_FONT_QUERY, renderHallBody } from './hall-render';
+import { DAYCARE_CSS, DAYCARE_FONT_QUERY, renderDaycareBody } from './daycare-render';
 import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } from './studio-render';
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
@@ -78,7 +82,8 @@ export interface SiteConfig {
   // config so the owner writes them the same way as everything else, and they
   // publish with the page — only the sign-ups need a table.
   campaigns?: RallyCampaign[];
-  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna';
+  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna'
+    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1057,6 +1062,80 @@ export function renderSite(
     });
   }
 
+  // Three codes, one club. A rugby, football and basketball club put the same
+  // things on a page — who can play at what age, who pays for the ground, when
+  // training is — so this is the yoga and pilates arrangement again.
+  if (site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball') {
+    const colours: Record<string, any> = {
+      rugby:      { primary: '#3f9e56', deep: '#0f1512', wash: '#161d19' },
+      soccer:     { primary: '#3b82f6', deep: '#0c1220', wash: '#131b2c' },
+      basketball: { primary: '#e0742c', deep: '#17120e', wash: '#211a14' },
+    };
+    const club: SiteConfig = {
+      ...site,
+      shop: false,
+      tone: 'dark',
+      palette: { ...colours[site.style], ...(site.palette || {}) },
+    };
+    const name = club.name || slug;
+    return shell(club, slug, {
+      title: name,
+      description: (club.lede || club.headline || name).slice(0, 155),
+      path: '/',
+      body: renderClubBody(club, slug),
+    });
+  }
+
+  // Asking for money. The amounts are price tags on real objects, and the
+  // registration number is in the footer so a stranger can be checked.
+  if (site.style === 'charity') {
+    const cause: SiteConfig = {
+      ...site,
+      shop: false,
+      palette: { primary: '#c2410c', deep: '#1c1a17', wash: '#fbfaf8', ...(site.palette || {}) },
+    };
+    const name = cause.name || slug;
+    return shell(cause, slug, {
+      title: name,
+      description: (cause.lede || cause.headline || name).slice(0, 155),
+      path: '/',
+      body: renderCharityBody(cause, slug),
+    });
+  }
+
+  // A room, a kitchen and a bond. Two rates, because a hall has two.
+  if (site.style === 'townhall') {
+    const hall: SiteConfig = {
+      ...site,
+      shop: false,
+      palette: { primary: '#7c6a46', deep: '#1f1d18', wash: '#f7f5f0', ...(site.palette || {}) },
+    };
+    const name = hall.name || slug;
+    return shell(hall, slug, {
+      title: name,
+      description: (hall.lede || hall.headline || name).slice(0, 155),
+      path: '/',
+      body: renderHallBody(hall, slug),
+    });
+  }
+
+  // Early childhood. Fees banded by age because the funding is, ratios that
+  // are law, and a licence that is never invented.
+  if (site.style === 'daycare') {
+    const centre: SiteConfig = {
+      ...site,
+      shop: false,
+      palette: { primary: '#d97757', deep: '#26221d', wash: '#fdfbf7', ...(site.palette || {}) },
+    };
+    const name = centre.name || slug;
+    return shell(centre, slug, {
+      title: name,
+      description: (centre.lede || centre.headline || name).slice(0, 155),
+      path: '/',
+      body: renderDaycareBody(centre, slug),
+    });
+  }
+
   // Makers who teach: pottery, jewellery, wood, glass. Paper and unglazed
   // clay, and every class says what you carry out of the door with you.
   if (site.style === 'workshop') {
@@ -1554,6 +1633,10 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'beauty' ? BEAUTY_FONT_QUERY
     : site.style === 'workshop' ? WORKSHOP_FONT_QUERY
     : site.style === 'sauna' ? SAUNA_FONT_QUERY
+    : site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_FONT_QUERY
+    : site.style === 'charity' ? CHARITY_FONT_QUERY
+    : site.style === 'townhall' ? HALL_FONT_QUERY
+    : site.style === 'daycare' ? DAYCARE_FONT_QUERY
     : site.style === 'yoga' ? YOGA_FONT_QUERY
     : site.style === 'pilates' ? PILATES_FONT_QUERY
     : '';
@@ -1575,13 +1658,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;

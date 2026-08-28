@@ -58,6 +58,9 @@ export const TOOLS = [
       'without the mourning \u2014 a title and then nothing but pictures, no dates and no portrait, ' +
       'for a trip, a season, a build, a club, a wedding. Anyone can add one. workshop is for makers '
       + 'who teach — pottery, jewellery, wood, glass, leather. sauna is for saunas, bathhouses, '
+      + 'ice baths and contrast therapy. rugby, soccer and basketball are sports clubs. charity '
+      + 'is for appeals and trusts asking for donations. townhall is for community halls let out '
+      + 'by the hour. daycare is for early childhood centres and kindergartens. '
       + 'ice baths and contrast therapy. beauty is for salons, ' +
       'spas, skin clinics, brow and lash studios, nail bars and massage: a full-bleed photograph, ' +
       'treatments listed with duration and price like a menu, and a booking button pinned to the ' +
@@ -75,7 +78,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },

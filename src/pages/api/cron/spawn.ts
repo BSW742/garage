@@ -26,9 +26,23 @@ const MODEL = 'claude-sonnet-5';
 const MAX_PER_DAY = 72;
 const MAX_OUT = 2000;
 
+// Some pages are simply longer than others and the cap has to know it. A club
+// carries grades, sponsors, a draw, subs, training nights, a committee and the
+// numbers; a hall carries rooms, capacities, an inventory and the bond. At 2000
+// tokens those came back truncated mid-JSON, or complete but missing a required
+// section because the model ran out of room and dropped one. Three failures out
+// of four rugby and football runs, against none for beauty.
+//
+// This stays a per-style constant rather than a global raise so the ceiling is
+// still a number anyone can multiply out: the long styles cost about a third
+// more per run, and nothing else changed.
+const LONG_STYLES = new Set(['rugby', 'soccer', 'basketball', 'townhall', 'daycare']);
+const outFor = (style: string) => (LONG_STYLES.has(style) ? 3000 : MAX_OUT);
+
 // Business styles only. Nobody wants a memorial or a food diary spawned at 3am.
 const STYLES = ['modern', 'classic', 'cafe', 'physio', 'trade', 'beauty', 'yoga',
-                'pilates', 'eggs', 'mogged', 'bubbles', 'workshop', 'sauna'];
+                'pilates', 'eggs', 'mogged', 'bubbles', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball',
+                'charity', 'townhall', 'daycare'];
 
 const TOWNS = [
   // Aotearoa
@@ -49,6 +63,12 @@ const MUST: Record<string, { sections: string[]; say: string }> = {
   physio:  { sections: ['services', 'hours'], say: 'what you treat, and opening hours' },
   trade:   { sections: ['services'], say: 'the work you do, and the areas you cover' },
   beauty:  { sections: ['menu', 'hours'], say: 'treatments with durations and prices, and opening hours' },
+  rugby:   { sections: ['menu', 'rates', 'hours'], say: 'the grades with their age bands, the subs, and training nights' },
+  soccer:  { sections: ['menu', 'rates', 'hours'], say: 'the grades with their age bands, the subs, and training nights' },
+  basketball:{ sections: ['menu', 'rates', 'hours'], say: 'the grades with their age bands, the subs, and training nights' },
+  charity: { sections: ['menu', 'rates'], say: 'what specific amounts of money actually buy, and where the money goes' },
+  townhall:{ sections: ['menu', 'specs', 'credentials', 'conditions'], say: 'the rooms with their hourly rates, what the hall holds for each layout, what comes with it, and the bond' },
+  daycare: { sections: ['menu', 'conditions', 'specs', 'steps'], say: 'the fees banded by age, how 20 Hours ECE works, the ratios, and how a day goes' },
   workshop:{ sections: ['menu', 'faq'], say: 'the classes with prices, how long each runs, how many at the bench, and what the person takes home' },
   sauna:   { sections: ['menu', 'steps', 'conditions', 'specs'], say: 'the round explained step by step with times a beginner can follow, sessions and passes with prices, how hot and how cold it runs, and a plain safety note' },
   yoga:    { sections: ['menu', 'pricing'], say: 'a full weekly timetable and the passes with prices' },
@@ -63,6 +83,9 @@ const MUST: Record<string, { sections: string[]; say: string }> = {
 const WHAT: Record<string, string> = {
   modern: 'a small service business', classic: 'a long-established local firm',
   cafe: 'a cafe', physio: 'a physiotherapy clinic', trade: 'a building or trades business',
+  rugby: 'a community rugby club', soccer: 'a community football club',
+  basketball: 'a community basketball club', charity: 'a small charitable trust running an appeal',
+  townhall: 'a community hall let out by the hour', daycare: 'an early childhood centre',
   beauty: 'a beauty salon or day spa', workshop: 'a pottery or jewellery studio that teaches classes', sauna: 'a sauna and ice bath studio', yoga: 'a yoga studio', pilates: 'a reformer pilates studio',
   eggs: 'a food producer or grower', mogged: 'a small creative agency or consultancy',
   bubbles: 'an artist, maker or gallery',
@@ -77,6 +100,12 @@ const PHOTOS: Record<string, string[]> = {
   eggs: ['photo-1518569656558-1f25e69d93d7', 'photo-1582722872445-44dc5f7e3c8f', 'photo-1607690424560-35d967d6ad7c', 'photo-1612170153139-6f881ff067e0', 'photo-1519710164239-da123dc03ef4'],
   // Every id below was fetched from the CDN before it went in — a pool that
   // silently 404s produces a page of grey boxes and nobody notices for a week.
+  rugby: ['photo-1480099225005-2513c8947aec', 'photo-1512299286776-c18be8ed6a1a', 'photo-1496224027003-38fc92be458c', 'photo-1529663297269-6d349ec39b57', 'photo-1558151507-c1aa3d917dbb', 'photo-1574602904329-56e2f95fb15e'],
+  soccer: ['photo-1431324155629-1a6deb1dec8d', 'photo-1574629810360-7efbbe195018', 'photo-1489944440615-453fc2b6a9a9', 'photo-1517747614396-d21a78b850e8', 'photo-1522778119026-d647f0596c20', 'photo-1556056504-5c7696c4c28d', 'photo-1579952363873-27f3bade9f55'],
+  basketball: ['photo-1546519638-68e109498ffc', 'photo-1608245449230-4ac19066d2d0', 'photo-1577416412292-747c6607f055', 'photo-1600534220378-df36338afc40', 'photo-1504450758481-7338eba7524a', 'photo-1629901925121-8a141c2a42f4', 'photo-1602357280104-742c517a1d82'],
+  charity: ['photo-1557660559-42497f78035b', 'photo-1706806595136-5afefb45da1a', 'photo-1560220604-1985ebfe28b1', 'photo-1758599668356-c8c919e24dda', 'photo-1787012724048-dccf455a75a4', 'photo-1778864875228-caa80c73cbd3'],
+  townhall: ['photo-1666617710768-425d2d9088f8', 'photo-1677129663241-5be1f17fe6fe', 'photo-1712314947761-a8d718bd8c32', 'photo-1768851142332-75f3d1b47452', 'photo-1768508951405-10e83c4a2872', 'photo-1759477274116-e3cb02d2b9d8', 'photo-1762765684665-6b6855bb6fe6', 'photo-1677129663678-2171fa8a44cb'],
+  daycare: ['photo-1614113036347-9f60df80730a', 'photo-1578349035260-9f3d4042f1f7', 'photo-1747110604852-8f3edc2451ea', 'photo-1761208663763-c4d30657c910', 'photo-1777056491418-d4ff81a4ad92'],
   workshop: ['photo-1753164725860-ffcd260b7b32', 'photo-1753164726043-31e583f8a9b8', 'photo-1753164725896-f0a39315ff8a', 'photo-1753164725849-54c0698969e5', 'photo-1624585179018-25699030cb8f', 'photo-1609619742069-f5e18afeef17', 'photo-1628058494685-6c2f796ac24a', 'photo-1715374033196-0ff662284a7e', 'photo-1608508644127-ba99d7732fee'],
   sauna: ['photo-1759216852954-88e547b8e01f', 'photo-1741601272577-fc2c46f87d9f', 'photo-1712659606957-b7395ba9ebb2', 'photo-1745894118353-88e64617e064', 'photo-1702285229572-8aa35e6e3f5d', 'photo-1734117928667-c7f943a27e80', 'photo-1712161321522-c24f686e4ace'],
   bubbles: ['photo-1578749556568-bc2c40e68b61', 'photo-1514228742587-6b1558fcca3d', 'photo-1610701596007-11502861dcfa', 'photo-1493106641515-6b5631de4bb9', 'photo-1565193566173-7a0ee3dbe261'],
@@ -313,7 +342,7 @@ async function spawn(
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey,
                  'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: MODEL, max_tokens: MAX_OUT,
+        model: MODEL, max_tokens: outFor(style),
         system: [{ type: 'text', text: WRITE, cache_control: { type: 'ephemeral' } }],
         messages: [{
           role: 'user',
@@ -333,6 +362,35 @@ async function spawn(
                 ' part must always say what the person carries out of the door. Put the firing or' +
                 ' collection wait in specs and again in faq. A spec value is a number or a' +
                 ' couple of words — "3–4 weeks", "6" — never a sentence.'
+              : '') +
+            (style === 'rugby' || style === 'soccer' || style === 'basketball'
+              ? ' Grades go in a menu section: the grade in "name" and the age band in "price",' +
+                ' like "Rippa" priced "5\u20137 years". Sponsors go in a section with a partners' +
+                ' array of invented local businesses. Subs go in rates. Training nights go in' +
+                ' hours. Do not invent a fixture list.'
+              : '') +
+            (style === 'charity'
+              ? ' The menu section is amounts against real things: the dollar figure in "price"' +
+                ' and what it buys in "name", like "$30" buying "Batteries for a monitoring' +
+                ' device". Never write vague good works. The rates section is where the money' +
+                ' goes, each item a destination and a percentage. Put an invented registration' +
+                ' in credentials as "Registered charity" with a CC number.'
+              : '') +
+            (style === 'townhall'
+              ? ' Rooms go in a menu section and the rate is two numbers slash-separated with the' +
+                ' community rate first, like "$30 / $40". Specs are capacity by layout — seated' +
+                ' dinner, standing, theatre. Credentials are what comes with it, specifically:' +
+                ' the tables and chairs, the zip, the dishwasher, the oven, the PA. Conditions' +
+                ' are the bond and the curfew.'
+              : '') +
+            (style === 'daycare'
+              ? ' Fees go in a menu section banded by age, the name written "age | room" like' +
+                ' "Under 2 | P\u0113pi room" with the weekly fee in price. Under-2s are the' +
+                ' expensive band; from 3 the fee drops because 20 Hours ECE applies. The' +
+                ' conditions section explains 20 Hours ECE exactly: 3, 4 and 5 year olds, up to' +
+                ' 20 hours a week, no more than 6 hours a day, and no fee may be charged for' +
+                ' those hours. Specs carry the ratios — 1:5 under two, 1:10 over two. Steps are' +
+                ' the day, the clock first and the label second, like ["8am", "Arrival and free play"].'
               : '') +
             (style === 'sauna'
               ? ' The round goes in a steps section, in order, with times a first-timer can follow' +

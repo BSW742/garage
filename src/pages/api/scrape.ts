@@ -94,6 +94,12 @@ const INDUSTRY_KEYWORDS: Record<string, { keywords: string[]; weight: number }[]
     { keywords: ['workout', 'training', 'exercise', 'personal trainer'], weight: 3 },
   ],
   salon: [
+    { keywords: ['rugby club', 'football club', 'basketball club', 'sports club'], weight: 5 },
+    { keywords: ['donate', 'charitable trust', 'registered charity', 'fundraising'], weight: 5 },
+    { keywords: ['hall hire', 'venue hire', 'community hall', 'memorial hall'], weight: 5 },
+    { keywords: ['early childhood', 'daycare', 'kindergarten', 'preschool', '20 hours ece'], weight: 5 },
+    { keywords: ['grades', 'juniors', 'clubrooms', 'sponsors', 'subs'], weight: 3 },
+    { keywords: ['tamariki', 'whanau', 'enrolment', 'ratios'], weight: 3 },
     { keywords: ['sauna', 'bathhouse', 'ice bath', 'contrast therapy'], weight: 5 },
     { keywords: ['pottery', 'ceramics', 'jewellery workshop', 'silversmith'], weight: 5 },
     { keywords: ['kiln', 'wheel throwing', 'the bench', 'maker'], weight: 3 },
