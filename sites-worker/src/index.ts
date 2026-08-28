@@ -28,6 +28,33 @@ const html = (body: string, status: number) =>
   });
 
 export default {
+  /**
+   * Hourly. The worker holds no secret of its own — it reads garage.co.nz's
+   * edit token out of the database it already has open, which is the same key
+   * the admin page uses, and calls the endpoint with it.
+   */
+  async scheduled(_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const row = await env.DB
+            .prepare("SELECT edit_token FROM site_claims WHERE slug = 'garage'")
+            .first<{ edit_token: string }>();
+          if (!row?.edit_token) return;
+          const res = await fetch('https://garage.co.nz/api/cron/spawn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: row.edit_token }),
+          });
+          console.log('spawn:', res.status, (await res.text()).slice(0, 200));
+        } catch (error) {
+          // A missed hour is a missed hour. Nothing here is worth retrying into.
+          console.error('Scheduled spawn failed:', error);
+        }
+      })()
+    );
+  },
+
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();

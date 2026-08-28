@@ -12,3 +12,9 @@ routes = [
 binding = "DB"
 database_name = "garage-db"
 database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
+
+# One site an hour, unattended. The endpoint holds the ceiling — twenty-four a
+# day counted out of agent_usage — so this trigger cannot spend more by firing
+# more often than expected.
+[triggers]
+crons = ["0 * * * *"]
