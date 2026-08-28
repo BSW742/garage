@@ -43,13 +43,43 @@ try {
         let c: any = {};
         try { c = JSON.parse(row.config || '{}'); } catch { return null; }
         const pal = c.palette || {};
-        const gallery = (c.sections || []).find((s: any) => s?.type === 'gallery');
+        // Pick a photograph, not a logo.
+        //
+        // The first version simply took heroImage, and Tees St's hero is a PNG
+        // wordmark — so the card cropped it into two enormous letters. A card
+        // that shows "ees s" is worse than a card showing nothing.
+        //
+        // No image is downloaded to work this out; the URL is enough. Logos are
+        // PNG or SVG almost without exception, photographs are JPEG, WebP or
+        // AVIF almost without exception, and anything calling itself a logo,
+        // icon or badge says so in its path.
+        const candidates: string[] = [
+          c.heroImage,
+          ...(c.images || []),
+          ...(c.sections || [])
+            .filter((x: any) => x?.type === 'gallery')
+            .flatMap((x: any) => x.images || []),
+          ...(c.products || []).map((p: any) => p?.image),
+        ].filter((u: any) => typeof u === 'string' && /^https?:\/\//.test(u));
+
+        const logoUrl = String(c.logo || '');
+        const score = (u: string) => {
+          const path = u.split('?')[0].toLowerCase();
+          if (logoUrl && u === logoUrl) return -100;
+          if (/logo|favicon|icon|sprite|badge|placeholder|filler|spacer/.test(path)) return -100;
+          if (/\.(jpe?g|webp|avif)(\/|$)/.test(path) || /\.(jpe?g|webp|avif)\//.test(path)) return 2;
+          if (/\.(png|svg)(\/|$)/.test(path) || /\.(png|svg)\//.test(path)) return -1;
+          return 0;   // no extension to go on — a CDN URL, probably fine
+        };
+
+        // Only a picture we are reasonably sure is a picture. Shaws' six
+        // "images" are white SVG category icons — best of a bad lot is still a
+        // blank white card, and the branded initial at least looks deliberate.
         const hero =
-          c.heroImage ||
-          (c.images || [])[0] ||
-          (gallery?.images || [])[0] ||
-          (c.products || []).map((p: any) => p?.image).find(Boolean) ||
-          null;
+          candidates
+            .map((u) => ({ u, s: score(u) }))
+            .filter((x) => x.s >= 0)
+            .sort((a, b) => b.s - a.s)[0]?.u || null;
         const t = Date.parse(String(row.touched || '').replace(' ', 'T') + 'Z');
         const age = Number.isFinite(t) ? Date.now() - t : Infinity;
         return {
@@ -120,16 +150,10 @@ const when = (iso: string) => {
       <div class="work-doing">
         <a class="work-btn" href="/ai">Build yours</a>
         <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
+        <span class="work-btn tag"><i></i>1 Million free tokens</span>
       </div>
 
-      <p class="work-free">
-        Free for any NZ business.<br />
-        <span>1 Million FREE tokens.</span>
-      </p>
-
-      <p class="work-meta">
-        <b>{liveCount}</b> sites live{todayCount > 0 && <>, <b>{todayCount}</b> worked on today</>}.
-      </p>
+      <p class="work-meta">Free for any NZ business.</p>
 
       <div class="how" id="how" hidden>
         <ol>
@@ -213,14 +237,20 @@ const when = (iso: string) => {
     border: 1px solid var(--color-border, #e5e5e5);
   }
   .work-btn.ghost:hover { border-color: var(--color-text-muted); }
-  /* Said in type, not in a box. Two short lines carry it; the second is the
-     one people repeat, so it gets the weight and nothing else does. */
-  .work-free {
-    margin-top: 1.6rem; font-size: clamp(1.05rem, 2.4vw, 1.3rem);
-    line-height: 1.45; font-weight: 600; letter-spacing: -0.015em;
+  /* A third bubble, sitting with the buttons but not pretending to be one —
+     no pointer, no hover. It reads as a fact on the shelf beside the actions,
+     which is quieter than a banner and easier to believe. */
+  .work-btn.tag {
+    display: inline-flex; align-items: center; gap: 0.5rem; cursor: default;
+    background: color-mix(in srgb, var(--color-accent, #2563eb) 8%, transparent);
+    color: var(--color-accent, #2563eb);
+    border: 1px solid color-mix(in srgb, var(--color-accent, #2563eb) 20%, transparent);
+    font-weight: 600;
   }
-  .work-free span { color: var(--color-accent, #2563eb); font-weight: 800; }
-
+  .work-btn.tag i {
+    width: 0.4rem; height: 0.4rem; border-radius: 50%; flex: none;
+    background: currentColor; opacity: 0.7;
+  }
   /* A line of fact, not a banner. The offer is more convincing said quietly
      next to a real number than shouted out of a coloured box — the box read as
      a discount sticker and cheapened the thing it sat above. */

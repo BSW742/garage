@@ -10,6 +10,28 @@ const {
 } = Astro.props;
 const siteUrl = "https://garage.co.nz";
 const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Charities" : `${title} | garage.co.nz`;
+
+// A live count in the nav, on every page. One indexed COUNT, and it fails
+// silently — a header that 500s over a vanity number would be a poor trade.
+let liveSites = 0;
+let sitesToday = 0;
+try {
+  const db = (Astro.locals as any)?.runtime?.env?.DB;
+  if (db) {
+    const row = await db
+      .prepare(
+        `SELECT COUNT(*) AS live,
+                SUM(CASE WHEN COALESCE(updated_at, created_at) > datetime('now','-1 day')
+                         THEN 1 ELSE 0 END) AS today
+           FROM site_claims WHERE status != 'disabled'`
+      )
+      .first();
+    liveSites = Number(row?.live || 0);
+    sitesToday = Number(row?.today || 0);
+  }
+} catch {
+  // No count is better than no page.
+}
 ---
 
 <!doctype html>
@@ -54,6 +76,12 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
       <a href="/" class="logo">
         <span class="logo-text">garage<span class="dot-orange">.</span>co<span class="dot">.</span>nz</span>
       </a>
+      {liveSites > 0 && (
+        <a class="site-pulse" href="/projects" title="Sites built on garage.co.nz">
+          <i></i>
+          <span><b>{liveSites}</b> sites live{sitesToday > 0 && <>, <b>{sitesToday}</b> today</>}</span>
+        </a>
+      )}
       <nav class="nav">
         <a href="/projects" class="nav-link nav-icon hide-mobile" title="Our Projects">
           <img src="/nav/projects.png" alt="Our Projects" />
@@ -955,6 +983,26 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
   setInterval(function(){ if (panel.classList.contains('on')) pull(); }, 5000);
 })();
 </script>
+<style is:global>
+  /* Sits between the wordmark and the nav, quiet enough to ignore and alive
+     enough to notice. Hidden on small screens, where the nav icons already
+     want every pixel. */
+  .site-pulse {
+    display: none; align-items: center; gap: 0.45rem; margin-left: 1rem;
+    text-decoration: none; color: #6b7280; font-size: 0.82rem;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    padding: 0.3rem 0.7rem; border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  @media (min-width: 900px) { .site-pulse { display: inline-flex; } }
+  .site-pulse:hover { color: #111827; border-color: rgba(0, 0, 0, 0.16); }
+  .site-pulse b { font-weight: 700; color: #111827; }
+  .site-pulse i {
+    width: 0.42rem; height: 0.42rem; border-radius: 50%; background: #16a34a;
+    flex: none; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.14);
+  }
+</style>
 </body>
 </html>
 
