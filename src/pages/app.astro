@@ -359,20 +359,34 @@
     }
 
     function renderThread(el) {
+      // If the thread is already on screen, only the bubbles change. Rebuilding
+      // the whole view every poll would clear the composer mid-sentence.
+      const log = document.getElementById('thread-log');
+      if (log && el.dataset.thread === openThread) {
+        const glued = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+        log.innerHTML = bubbles();
+        if (glued) log.scrollTop = log.scrollHeight;
+        return;
+      }
+      el.dataset.thread = openThread;
       el.innerHTML = `
         <div class="thread-head">
           <button class="thread-back" data-back="1">&lsaquo; Messages</button>
           <b>${esc(openName)}</b>
         </div>
-        <div class="thread-log" id="thread-log">${threadMsgs.map(m => `
-          <div class="bub ${m.sender === 'visitor' ? 'them' : m.sender === 'bot' ? 'bot' : 'me'}">${esc(m.body)}</div>
-        `).join('')}</div>
+        <div class="thread-log" id="thread-log">${bubbles()}</div>
         <form class="thread-bar" id="thread-form">
           <input name="body" placeholder="Message" autocomplete="off" />
           <button type="submit" aria-label="Send">&uarr;</button>
         </form>`;
-      const log = document.getElementById('thread-log');
-      if (log) log.scrollTop = log.scrollHeight;
+      const fresh = document.getElementById('thread-log');
+      if (fresh) fresh.scrollTop = fresh.scrollHeight;
+    }
+
+    function bubbles() {
+      return threadMsgs.map(m =>
+        `<div class="bub ${m.sender === 'visitor' ? 'them' : m.sender === 'bot' ? 'bot' : 'me'}">${esc(m.body)}</div>`
+      ).join('');
     }
 
     function shortWhen(iso) {
@@ -407,6 +421,8 @@
     function closeChat() {
       openThread = null;
       threadMsgs = [];
+      const el = document.getElementById('chat');
+      if (el) delete el.dataset.thread;
       loadBookings();
     }
     window.closeChat = closeChat;
@@ -675,7 +691,21 @@
     loadBookings();
     loadApps();
     loadEmails();
-    setInterval(() => { loadBookings(); loadApps(); loadEmails(); }, 30000);
+    // Two speeds. A conversation you are looking at needs to move like a
+    // conversation; email and apps do not.
+    setInterval(() => {
+      if (tab !== 'chat') return;
+      if (openThread) pullThread();
+      else loadBookings();
+    }, 5000);
+    setInterval(() => { loadApps(); loadEmails(); if (tab !== 'chat') loadBookings(); }, 30000);
+
+    // Coming back to the app should show what happened while it was away,
+    // rather than waiting for the next tick.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (openThread) pullThread(); else loadBookings();
+    });
   </script>
 </body>
 </html>
