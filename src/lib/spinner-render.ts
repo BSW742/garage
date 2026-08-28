@@ -65,67 +65,116 @@ export function layout(offers: string[], slug: string): string[] {
   return slots.map((s) => s || 'Not this time');
 }
 
+
+// The panel is two steps, and that order is the whole point.
+//
+// The first version put the wheel and a three-field form on one card, which was
+// taller than a laptop screen — so the offers and the button were never on
+// screen together and you had to scroll past the prizes to reach the thing that
+// spins them. It also asked for an email before it had given anybody a reason
+// to care.
+//
+// Now: look at the wheel, read what is on it, want one. Then press spin, and
+// only then does a sheet slide up asking who you are. The card is sized so both
+// steps fit a phone and a laptop without scrolling — the wheel takes whichever
+// is smaller of the width and the height it is given.
+//
+// Yellow, red and black, which is what a wheel like this is supposed to look
+// like.
+
+const INK = '#0d0d0f';
+const RED = '#d81f2a';
+const YELLOW = '#f7c521';
+
 export const SPINNER_CSS = `
 .gsp-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:9990;
 display:flex;align-items:center;gap:.5rem;border:0;cursor:pointer;
-background:var(--gsp-a,#7c3aed);color:#fff;font:600 .82rem/1 var(--font-sans,system-ui,sans-serif);
-padding:.9rem .7rem;border-radius:10px 0 0 10px;writing-mode:vertical-rl;
-box-shadow:0 8px 26px -8px rgba(0,0,0,.45);transition:padding .2s,filter .2s}
-.gsp-tab:hover{padding-right:1rem;filter:brightness(1.08)}
-.gsp-tab i{font-style:normal;writing-mode:horizontal-tb;font-size:1rem;line-height:1}
-@media(max-width:520px){.gsp-tab{top:auto;bottom:88px;transform:none}}
+background:${YELLOW};color:${INK};font:800 .82rem/1 var(--font-sans,system-ui,sans-serif);
+padding:.95rem .7rem;border-radius:12px 0 0 12px;writing-mode:vertical-rl;letter-spacing:.02em;
+box-shadow:-4px 0 22px -6px rgba(0,0,0,.5);transition:padding .2s,background .2s}
+.gsp-tab:hover{padding-right:1.05rem;background:#ffd633}
+.gsp-tab i{font-style:normal;writing-mode:horizontal-tb;font-size:1.05rem;line-height:1}
+@media(max-width:520px){.gsp-tab{top:auto;bottom:92px;transform:none}}
 
-.gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(8,6,16,.62);
-backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:1rem}
+.gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(6,6,8,.75);
+backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:.8rem}
 .gsp-veil.on{display:flex}
 
-.gsp-card{position:relative;width:min(30rem,100%);max-height:94vh;overflow:auto;
-background:#15121f;color:#f5f3ff;border:1px solid #2c2540;border-radius:20px;
-padding:1.6rem 1.5rem 1.4rem;text-align:center;
-font-family:var(--font-sans,system-ui,sans-serif)}
-.gsp-x{position:absolute;right:.8rem;top:.8rem;width:2rem;height:2rem;border-radius:50%;
-border:1px solid #2c2540;background:transparent;color:#b7aed0;font-size:1.1rem;cursor:pointer;line-height:1}
-.gsp-x:hover{color:#fff;border-color:#4a4066}
-.gsp-card h2{font-size:1.45rem;font-weight:800;letter-spacing:-.02em;margin:0 0 .4rem;color:#fff}
-.gsp-card p.gsp-blurb{color:#b7aed0;font-size:.92rem;margin:0 0 1.1rem}
+/* Never taller than the screen, so there is nothing to scroll. */
+.gsp-card{position:relative;display:flex;flex-direction:column;
+width:min(25rem,100%);max-height:min(96vh,42rem);overflow:hidden;
+background:${INK};color:#fff;border:1px solid #26262c;border-radius:20px;
+padding:1.3rem 1.25rem 1.15rem;text-align:center;
+font-family:var(--font-sans,system-ui,sans-serif);
+box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+.gsp-x{position:absolute;right:.7rem;top:.7rem;width:2rem;height:2rem;border-radius:50%;
+border:1px solid #2e2e36;background:transparent;color:#9a9aa6;font-size:1.1rem;cursor:pointer;
+line-height:1;z-index:3}
+.gsp-x:hover{color:#fff;border-color:#55555f}
+.gsp-card h2{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin:0 0 .3rem;color:#fff}
+.gsp-blurb{color:#9a9aa6;font-size:.86rem;margin:0 0 .8rem;line-height:1.45}
 
-.gsp-wheel-wrap{position:relative;width:min(17rem,72vw);margin:0 auto 1.2rem}
-.gsp-wheel-wrap:before{content:'';position:absolute;left:50%;top:-6px;transform:translateX(-50%);
-border-style:solid;border-width:0 .7rem 1.1rem .7rem;
-border-color:transparent transparent #fff transparent;z-index:2;
-filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-.gsp-wheel{width:100%;aspect-ratio:1;border-radius:50%;border:6px solid #fff;
-box-shadow:0 0 0 4px #2c2540,0 18px 40px -14px rgba(0,0,0,.7);
-transition:transform 5.2s cubic-bezier(.14,.9,.16,1)}
+/* The wheel takes whichever it has less of, width or height. */
+.gsp-wheel-wrap{position:relative;flex:0 1 auto;min-height:0;
+width:min(70vw,38vh,16.5rem);aspect-ratio:1;margin:.1rem auto .9rem}
+.gsp-wheel-wrap:before{content:'';position:absolute;left:50%;top:-7px;transform:translateX(-50%);
+border-style:solid;border-width:0 .65rem 1.05rem .65rem;
+border-color:transparent transparent ${YELLOW} transparent;z-index:3;
+filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.gsp-wheel{position:absolute;inset:0;border-radius:50%;border:5px solid ${YELLOW};
+box-shadow:0 0 0 3px ${INK},0 14px 34px -12px rgba(0,0,0,.8);
+transition:transform 5s cubic-bezier(.15,.9,.16,1)}
 .gsp-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-width:2.4rem;height:2.4rem;border-radius:50%;background:#fff;z-index:2;
-box-shadow:0 2px 8px rgba(0,0,0,.4)}
+width:20%;height:20%;border-radius:50%;background:${YELLOW};z-index:2;
+box-shadow:0 2px 10px rgba(0,0,0,.6)}
+.gsp-hub:after{content:'';position:absolute;inset:22%;border-radius:50%;background:${INK}}
 
-.gsp-form{display:grid;gap:.55rem;text-align:left}
-.gsp-form input{width:100%;font:inherit;font-size:.95rem;padding:.7rem .85rem;
-border-radius:10px;border:1px solid #2c2540;background:#0f0c17;color:#f5f3ff}
-.gsp-form input::placeholder{color:#6f6790}
-.gsp-form input:focus{outline:2px solid var(--gsp-a,#7c3aed);outline-offset:1px}
-.gsp-go{margin-top:.35rem;width:100%;border:0;border-radius:999px;cursor:pointer;
-background:var(--gsp-a,#7c3aed);color:#fff;font:800 1rem/1 var(--font-sans,system-ui,sans-serif);
-padding:.95rem 1rem;transition:filter .15s}
-.gsp-go:hover{filter:brightness(1.1)}
-.gsp-go:disabled{opacity:.6;cursor:default}
-.gsp-small{margin:.7rem 0 0;font-size:.74rem;color:#8b83a8;line-height:1.5}
-.gsp-err{margin:.5rem 0 0;font-size:.84rem;color:#fca5a5;min-height:1.1em}
+/* Labels read outward along the radius, and flip on the left half so nothing
+   is upside down. Truncation is by character count rather than ellipsis in CSS
+   because a rotated overflowing box clips into its neighbour. */
+.gsp-lab{position:absolute;left:50%;top:50%;transform-origin:0 0;
+font:800 .58rem/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.01em;
+white-space:nowrap;pointer-events:none;color:#fff}
+.gsp-lab.dark{color:${INK}}
+
+.gsp-go{flex:none;width:100%;border:0;border-radius:999px;cursor:pointer;
+background:${YELLOW};color:${INK};font:800 1.02rem/1 var(--font-sans,system-ui,sans-serif);
+padding:.95rem 1rem;transition:background .15s,transform .1s}
+.gsp-go:hover{background:#ffd633}
+.gsp-go:active{transform:translateY(1px)}
+.gsp-go:disabled{opacity:.55;cursor:default}
+.gsp-small{margin:.6rem 0 0;font-size:.7rem;color:#77777f;line-height:1.5;flex:none}
+
+/* Step two slides over the wheel rather than pushing it down the page. */
+.gsp-sheet{position:absolute;inset:auto 0 0 0;z-index:4;transform:translateY(101%);
+background:${INK};border-top:1px solid #26262c;border-radius:20px;
+padding:1.2rem 1.25rem 1.15rem;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.gsp-sheet.on{transform:translateY(0)}
+.gsp-sheet h3{margin:0 0 .2rem;font-size:1.05rem;color:#fff}
+.gsp-form{display:grid;gap:.5rem;text-align:left;margin-top:.7rem}
+.gsp-form input{width:100%;font:inherit;font-size:.95rem;padding:.72rem .85rem;
+border-radius:10px;border:1px solid #2e2e36;background:#17171c;color:#fff}
+.gsp-form input::placeholder{color:#6a6a74}
+.gsp-form input:focus{outline:2px solid ${YELLOW};outline-offset:1px;border-color:transparent}
+.gsp-err{margin:.15rem 0 0;font-size:.8rem;color:#ff9a9a;min-height:1.05em}
+.gsp-back{margin:.55rem auto 0;display:block;background:none;border:0;cursor:pointer;
+color:#77777f;font:600 .78rem/1 var(--font-sans,system-ui,sans-serif)}
+.gsp-back:hover{color:#fff}
 
 .gsp-won{display:none}
 .gsp-won.on{display:block}
-.gsp-won h3{font-size:1.6rem;margin:.2rem 0 .3rem;color:#fff}
-.gsp-prize{font-size:1.15rem;font-weight:700;color:var(--gsp-a,#7c3aed);
-background:#0f0c17;border:1px solid #2c2540;border-radius:12px;padding:.9rem 1rem;margin:.9rem 0}
+.gsp-won h3{font-size:1.5rem;margin:.3rem 0 .2rem;color:${YELLOW}}
+.gsp-prize{font-size:1.1rem;font-weight:800;color:#fff;background:#17171c;
+border:1px solid #2e2e36;border-radius:12px;padding:.9rem 1rem;margin:.85rem 0}
+
 .gsp-conf{position:fixed;inset:0;pointer-events:none;z-index:9992;overflow:hidden}
-.gsp-bit{position:absolute;width:.55rem;height:.9rem;opacity:0;animation:gspFall linear forwards}
+.gsp-bit{position:absolute;width:.5rem;height:.85rem;opacity:0;animation:gspFall linear forwards}
 @keyframes gspFall{
   0%{opacity:1;transform:translate3d(0,-10vh,0) rotate(0)}
   100%{opacity:0;transform:translate3d(var(--dx,0),105vh,0) rotate(var(--rot,540deg))}}
 @media(prefers-reduced-motion:reduce){
   .gsp-wheel{transition-duration:.6s}
+  .gsp-sheet{transition-duration:0s}
   .gsp-bit{display:none}}
 `;
 
@@ -136,26 +185,40 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   const slots = layout(spin.offers || [], slug);
   if (slots.length !== SLOTS) return '';
 
-  const accent = site.palette?.primary || '#7c3aed';
   const seg = 360 / SLOTS;
+  const top = slots[0];
 
-  // The face is drawn as a conic gradient with the labels laid over it, so
-  // there is no image to load and it scales to any size.
+  // Red and black around the wheel, and the top prize in yellow so the eye
+  // lands on the thing worth wanting.
+  const colour = (i: number) => (i === 0 ? YELLOW : i % 2 ? RED : '#1b1b21');
   const wedges = slots
-    .map((_, i) => {
-      const a = i % 2 ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.02)';
-      return `${a} ${i * seg}deg ${(i + 1) * seg}deg`;
-    })
+    .map((_, i) => `${colour(i)} ${i * seg}deg ${(i + 1) * seg}deg`)
     .join(',');
 
   const labels = slots
     .map((text, i) => {
       const mid = i * seg + seg / 2;
-      return `<span class="gsp-lab" style="transform:rotate(${mid}deg) translateY(-6.1rem) rotate(90deg)">${esc(
-        text.length > 22 ? text.slice(0, 21) + '…' : text
-      )}</span>`;
+      const short = text.length > 17 ? text.slice(0, 16) + '…' : text;
+      // Past halfway the label would be upside down, so it is turned round and
+      // hung off the far edge reading back towards the centre.
+      // translateX is a percentage of the label's own width, not the wheel's.
+      // The label is 30% of the wheel, so 47% of it puts the text's inner edge
+      // at 14% of the wheel — just clear of the hub, which has a 10% radius.
+      // At 16% it started underneath the hub.
+      //
+      // Flipped labels are rotated the other way, so +x points back towards the
+      // centre: -147% hangs the band off the 44% mark and it reads inward to
+      // the same 14%. Both halves therefore occupy the same ring.
+      const flipped = mid > 180;
+      const t = flipped
+        ? `rotate(${mid + 90}deg) translateX(-147%)`
+        : `rotate(${mid - 90}deg) translateX(47%)`;
+      return `<span class="gsp-lab${i === 0 ? ' dark' : ''}"
+        style="transform:${t};width:30%;text-align:${flipped ? 'right' : 'left'}">${esc(short)}</span>`;
     })
     .join('');
+
+  const who = esc(site.name || slug);
 
   return `
 <button class="gsp-tab" id="gsp-tab" type="button" aria-haspopup="dialog">
@@ -166,96 +229,90 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   <div class="gsp-card">
     <button class="gsp-x" id="gsp-x" type="button" aria-label="Close">&times;</button>
 
-    <div id="gsp-play">
-      <h2>${esc(spin.title || 'Spin to win')}</h2>
-      <p class="gsp-blurb">${esc(spin.blurb || 'One spin, one chance. Fill this in and give it a go.')}</p>
+    <div id="gsp-play" style="display:contents">
+      <h2 id="gsp-title">${esc(spin.title || 'Spin to win')}</h2>
+      <p class="gsp-blurb">${esc(spin.blurb || `Have a look at what is on the wheel.`)}</p>
 
       <div class="gsp-wheel-wrap">
-        <div class="gsp-wheel" id="gsp-wheel"
-             style="background:conic-gradient(${wedges}),radial-gradient(circle at 50% 50%, ${esc(accent)}, #2a1a4d)">
-          ${labels}
-        </div>
+        <div class="gsp-wheel" id="gsp-wheel" style="background:conic-gradient(${wedges})">${labels}</div>
         <span class="gsp-hub"></span>
       </div>
 
-      <form class="gsp-form" id="gsp-form" novalidate>
-        <input id="gsp-name" name="name" placeholder="Your name" autocomplete="name" required />
-        <input id="gsp-email" name="email" type="email" placeholder="Email" autocomplete="email" required />
-        <input id="gsp-phone" name="phone" type="tel" placeholder="Phone" autocomplete="tel" />
-        <p class="gsp-err" id="gsp-err" role="alert"></p>
-        <button class="gsp-go" id="gsp-go" type="submit">Spin the wheel</button>
-      </form>
-      <p class="gsp-small">
-        Your details go to ${esc(site.name || slug)} so they can sort your prize &mdash; nothing else,
-        and you will not be added to any list by us.
-        ${spin.terms ? esc(spin.terms) : ''}
-      </p>
+      <button class="gsp-go" id="gsp-open" type="button">Spin the wheel</button>
+      <p class="gsp-small">Top prize: ${esc(top)}. Eight slots, one spin, genuinely random.</p>
     </div>
 
     <div class="gsp-won" id="gsp-won">
       <h3 id="gsp-head">Congratulations</h3>
       <p class="gsp-blurb" id="gsp-sub">Here is what you landed on.</p>
       <div class="gsp-prize" id="gsp-prize"></div>
-      <p class="gsp-small">${esc(site.name || slug)} has your details and will be in touch.
-        Show them this screen or mention it when you get in touch.</p>
+      <p class="gsp-small">${who} has your details and will be in touch.
+        ${spin.terms ? esc(spin.terms) : ''}</p>
+    </div>
+
+    <!-- Step two. Over the wheel, not below it. -->
+    <div class="gsp-sheet" id="gsp-sheet">
+      <h3>Who are we spinning for?</h3>
+      <p class="gsp-blurb">So ${who} knows who won.</p>
+      <form class="gsp-form" id="gsp-form" novalidate>
+        <input id="gsp-name" placeholder="Your name" autocomplete="name" />
+        <input id="gsp-email" type="email" placeholder="Email" autocomplete="email" />
+        <input id="gsp-phone" type="tel" placeholder="Phone (optional)" autocomplete="tel" />
+        <p class="gsp-err" id="gsp-err" role="alert"></p>
+        <button class="gsp-go" id="gsp-go" type="submit">Spin it</button>
+      </form>
+      <button class="gsp-back" id="gsp-back" type="button">Back to the wheel</button>
+      <p class="gsp-small">Your details go to ${who} and nowhere else. We will not email you.</p>
     </div>
   </div>
 </div>
 <div class="gsp-conf" id="gsp-conf" aria-hidden="true"></div>
-
-<style>
-.gsp-wheel{position:relative}
-.gsp-lab{position:absolute;left:50%;top:50%;transform-origin:0 0;
-font:700 .62rem/1.15 var(--font-sans,system-ui,sans-serif);color:#fff;
-width:5.6rem;margin-left:-2.8rem;text-align:center;pointer-events:none;
-text-shadow:0 1px 3px rgba(0,0,0,.6)}
-</style>
 
 <script>
 (function () {
   var SLOTS = ${SLOTS};
   var slots = ${JSON.stringify(slots)};
   var slug = ${JSON.stringify(slug)};
-  var tab = document.getElementById('gsp-tab');
-  var veil = document.getElementById('gsp-veil');
-  var wheel = document.getElementById('gsp-wheel');
-  var form = document.getElementById('gsp-form');
-  var go = document.getElementById('gsp-go');
-  var err = document.getElementById('gsp-err');
-  if (!tab || !veil || !wheel || !form) return;
+  var $ = function (id) { return document.getElementById(id); };
+  var veil = $('gsp-veil'), wheel = $('gsp-wheel'), sheet = $('gsp-sheet'), form = $('gsp-form');
+  if (!veil || !wheel || !form) return;
 
-  // One spin per browser. Not a security control — somebody who wants another
-  // go can have one — but it stops the same person filling the owner's inbox
-  // by clicking the tab five times.
   var KEY = 'garage-spun:' + slug;
-  var spun = false;
-  try { spun = !!localStorage.getItem(KEY); } catch (e) {}
-
   function open() { veil.classList.add('on'); }
   function close() { veil.classList.remove('on'); }
-  tab.addEventListener('click', open);
-  document.getElementById('gsp-x').addEventListener('click', close);
+  $('gsp-tab').addEventListener('click', open);
+  $('gsp-x').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 
-  if (spun) {
-    var prev = null;
-    try { prev = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-    if (prev && prev.prize) {
-      document.getElementById('gsp-play').style.display = 'none';
-      document.getElementById('gsp-prize').textContent = prev.prize;
-      document.getElementById('gsp-head').textContent = prev.won ? 'You won' : 'Not this time';
-      document.getElementById('gsp-sub').textContent = prev.won
-        ? 'You have already had your spin.'
-        : 'You have already had your spin.';
-      document.getElementById('gsp-won').classList.add('on');
-    }
+  // Look first, then asked. The sheet is the only thing that wants an email
+  // and it does not appear until somebody has decided they want a go.
+  $('gsp-open').addEventListener('click', function () {
+    sheet.classList.add('on');
+    setTimeout(function () { $('gsp-name').focus(); }, 300);
+  });
+  $('gsp-back').addEventListener('click', function () { sheet.classList.remove('on'); });
+
+  function finish(prize, won, already) {
+    $('gsp-play').style.display = 'none';
+    sheet.classList.remove('on');
+    $('gsp-prize').textContent = prize;
+    $('gsp-head').textContent = won ? 'Congratulations' : 'Not this time';
+    $('gsp-sub').textContent = already
+      ? 'You have already had your spin.'
+      : won ? 'Here is what you landed on.' : 'The wheel was not kind. Thanks for playing.';
+    $('gsp-won').classList.add('on');
   }
 
-  function confetti(accent) {
-    var box = document.getElementById('gsp-conf');
+  try {
+    var prev = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (prev && prev.prize) finish(prev.prize, prev.won, true);
+  } catch (e) {}
+
+  function confetti() {
+    var box = $('gsp-conf');
     if (!box) return;
-    var colours = [accent, '#fbbf24', '#34d399', '#f472b6', '#60a5fa'];
+    var colours = ['${YELLOW}', '${RED}', '#ffffff', '#ffd633'];
     for (var i = 0; i < 70; i++) {
       var bit = document.createElement('span');
       bit.className = 'gsp-bit';
@@ -272,47 +329,34 @@ text-shadow:0 1px 3px rgba(0,0,0,.6)}
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    err.textContent = '';
-    var name = document.getElementById('gsp-name').value.trim();
-    var email = document.getElementById('gsp-email').value.trim();
-    var phone = document.getElementById('gsp-phone').value.trim();
+    var err = $('gsp-err'); err.textContent = '';
+    var name = $('gsp-name').value.trim();
+    var email = $('gsp-email').value.trim();
+    var phone = $('gsp-phone').value.trim();
     if (!name) { err.textContent = 'We need a name.'; return; }
     if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) { err.textContent = 'That email does not look right.'; return; }
 
-    // The landing slot is picked here, uniformly, before anything is animated.
-    // The animation is told where to stop; it does not decide.
+    // The slot is chosen here, uniformly, before anything moves. The animation
+    // is told where to stop; it does not decide.
     var idx = Math.floor(Math.random() * SLOTS);
     var prize = slots[idx];
     var won = prize !== 'Not this time';
 
-    go.disabled = true;
-    go.textContent = 'Spinning…';
+    var go = $('gsp-go');
+    go.disabled = true; go.textContent = 'Spinning…';
+    sheet.classList.remove('on');
 
     var seg = 360 / SLOTS;
-    var stop = 360 * 6 - (idx * seg + seg / 2);
-    wheel.style.transform = 'rotate(' + stop + 'deg)';
+    wheel.style.transform = 'rotate(' + (360 * 6 - (idx * seg + seg / 2)) + 'deg)';
 
-    // Absolute, not relative. A published site is served from its own
-    // subdomain by a different worker, and a relative path would post the
-    // lead into that worker's 404 page.
     fetch('https://garage.co.nz/api/spin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: slug, name: name, email: email, phone: phone, prize: prize, won: won }),
-    }).catch(function () { /* the spin still happened as far as they are concerned */ });
+    }).catch(function () {});
 
     try { localStorage.setItem(KEY, JSON.stringify({ prize: prize, won: won })); } catch (e) {}
 
-    setTimeout(function () {
-      document.getElementById('gsp-play').style.display = 'none';
-      document.getElementById('gsp-prize').textContent = prize;
-      document.getElementById('gsp-head').textContent = won ? 'Congratulations' : 'Not this time';
-      document.getElementById('gsp-sub').textContent = won
-        ? 'Here is what you landed on.'
-        : 'The wheel was not kind. Thanks for playing.';
-      document.getElementById('gsp-won').classList.add('on');
-      if (won) confetti(${JSON.stringify(accent)});
-    }, 5400);
+    setTimeout(function () { finish(prize, won, false); if (won) confetti(); }, 5200);
   });
 })();
 </script>`;
