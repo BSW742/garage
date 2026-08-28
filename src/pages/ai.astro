@@ -142,6 +142,7 @@ if (cameFromOffer && openedSlug) {
                 <button class="tone style" data-style="physio">Clinic</button>
                 <button class="tone style" data-style="trade">Trade</button>
                 <button class="tone style" data-style="tribute">Tribute</button>
+                <button class="tone style" data-style="montage">Montage</button>
                 <button class="tone style" data-style="listing">Listing</button>
                 <button class="tone style" data-style="diet">Diary</button>
                 <button class="tone style" data-style="chain">Chain</button>
@@ -3319,6 +3320,28 @@ if (cameFromOffer && openedSlug) {
 
         // A tribute is not built out of sections, so the ordinary block loop
         // has nothing to walk. It gets its own two-part shape instead.
+        if (s.style === 'montage') {
+          const shots = (s.images || []).filter(Boolean);
+          root.innerHTML =
+            '<div class="pv-trib-head">' +
+            '<h1 class="pv-h1" data-edit="name">' + esc(s.name) + '</h1>' +
+            (s.lede ? '<p class="pv-trib-note" data-edit="lede">' + esc(s.lede) + '</p>' : '') +
+            '</div>' +
+            (shots.length
+              ? '<div class="pv-trib-wall">' + shots.map((u, i) =>
+                  '<img src="' + esc(u) + '" alt="" data-photo="images.' + i + '" />').join('') + '</div>'
+              : '<p class="pv-trib-empty">No pictures yet — add some and they fill the page.</p>');
+          $('canvas-empty').classList.toggle('gone', true);
+          renderedKeys = new Set(['montage']);
+          root.parentElement.style.setProperty('--pv-primary', s.palette.primary);
+          root.parentElement.classList.add('pv');
+          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-listing');
+          root.parentElement.classList.add('st-tribute', 'st-montage');
+          applyTone();
+          restoreSelection();
+          return;
+        }
+
         if (s.style === 'tribute') {
           const shots = (s.images || []).filter(Boolean);
           root.innerHTML =
@@ -3457,7 +3480,7 @@ if (cameFromOffer && openedSlug) {
         root.parentElement.style.setProperty('--pv-wash', s.palette.wash);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged');
+        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage');
         root.parentElement.classList.add('st-' + st);
         applyTone();
         restoreSelection();
@@ -4114,7 +4137,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer" or "agency" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency" or "montage" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -4928,6 +4951,7 @@ if (cameFromOffer && openedSlug) {
         cafe: 'For places that serve food — full-bleed photo, warm cream and espresso, and the menu doing the talking.',
         physio: 'Light and airy for clinics — pale paper, deep sage, a fine serif, and what you treat leading the page.',
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
+        montage: 'A title and then nothing but pictures — a wall of them, and anyone can add one. No dates, no portrait, no words to speak of.',
         tribute: 'A memorial page — a name, two dates, and a wall of photographs. Almost no words.',
         listing: 'One thing for sale — big photos, the price, the numbers, and an honest list of what is wrong with it.',
         mogged: 'Confident and sales-led for people who sell expertise — a heavy headline with one word in italic, three proofs, a wall of client names, and a definition of what you want to be known for.',

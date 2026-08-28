@@ -1,5 +1,5 @@
 import { LISTING_CSS, LISTING_FONT_QUERY, renderListingBody } from './listing-render';
-import { TRIBUTE_CSS, TRIBUTE_FONT_QUERY, renderTributeBody, type TributePhoto } from './tribute-render';
+import { TRIBUTE_CSS, TRIBUTE_FONT_QUERY, renderTributeBody, MONTAGE_WORDS, type TributePhoto } from './tribute-render';
 import { DIET_CSS, DIET_FONT_QUERY, renderDietBody, type DietPost } from './diet-render';
 import { CHAIN_CSS, CHAIN_FONT_QUERY, renderChainBody, type ChainNote } from './chain-render';
 import { RALLY_CSS, renderRallyBody, type RallyCampaign, type RallyState } from './rally-render';
@@ -74,7 +74,7 @@ export interface SiteConfig {
   // config so the owner writes them the same way as everything else, and they
   // publish with the page — only the sign-ups need a table.
   campaigns?: RallyCampaign[];
-  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged';
+  style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1137,6 +1137,24 @@ export function renderSite(
     });
   }
 
+  // The same wall without the mourning: a title, then the pictures. No
+  // portrait, no dates, nobody has died.
+  if (site.style === 'montage') {
+    const wall: SiteConfig = {
+      ...site,
+      shop: false,
+      chat: false,
+      palette: { primary: '#c9c3b8', deep: '#0d0d0e', wash: '#17171a', ...(site.palette || {}) },
+    };
+    const what = wall.name || slug;
+    return shell(wall, slug, {
+      title: what,
+      description: (wall.lede || `${what} — pictures.`).slice(0, 155),
+      path: '/',
+      body: renderTributeBody(wall, slug, sent as TributePhoto[], MONTAGE_WORDS),
+    });
+  }
+
   // A memorial: a name, two dates, and a wall of photographs. No nav, no
   // sections, no cart, no chat widget.
   if (site.style === 'tribute') {
@@ -1449,7 +1467,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'cafe' ? CAFE_FONT_QUERY
     : site.style === 'physio' ? CLINIC_FONT_QUERY
     : site.style === 'trade' ? TRADE_FONT_QUERY
-    : site.style === 'tribute' ? TRIBUTE_FONT_QUERY
+    : site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_FONT_QUERY
     : site.style === 'listing' ? LISTING_FONT_QUERY
     : site.style === 'diet' ? DIET_FONT_QUERY
     : site.style === 'chain' ? CHAIN_FONT_QUERY
@@ -1476,13 +1494,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;

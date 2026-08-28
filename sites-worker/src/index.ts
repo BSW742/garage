@@ -174,7 +174,7 @@ export default {
       // A tribute page also carries whatever people have sent in and the
       // family has approved. Never the pending ones.
       let sent: any[] = [];
-      if (config.style === 'tribute') {
+      if (config.style === 'tribute' || config.style === 'montage') {
         try {
           const { results } = await env.DB
             .prepare(

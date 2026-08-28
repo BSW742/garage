@@ -138,9 +138,59 @@ export interface TributePhoto {
  * The wall. Photos from the site config come first (whatever the family put
  * up), then anything sent in and approved.
  */
-export function renderTributeBody(site: SiteConfig, slug: string, sent: TributePhoto[] = []): string {
+/**
+ * The words and the portrait are the only things that separate a memorial from
+ * a montage. Everything else — the masonry wall, the lightbox, sending one in
+ * — is the same page, so it is the same code with a different vocabulary
+ * rather than three hundred duplicated lines.
+ */
+export interface WallWords {
+  portrait: boolean;
+  empty: string;
+  invite: (name: string) => string;
+  button: string;
+  sheetTitle: string;
+  sheetNote: string;
+  caption: string;
+  who: (name: string) => string;
+  foot: (name: string) => string;
+  alt: (name: string) => string;
+}
+
+export const MEMORIAL_WORDS: WallWords = {
+  portrait: true,
+  empty: 'No photographs yet. If you have one, please send it.',
+  invite: (name) => `If you have a photograph of ${name}, please add it.`,
+  button: 'Add a photograph',
+  sheetTitle: 'Add a photograph',
+  sheetNote: 'It will appear on the page straight away.',
+  caption: 'A few words about it (optional)',
+  who: (name) => `Sent by ${name}`,
+  foot: (name) => `In memory of ${name}`,
+  alt: (name) => `A photograph of ${name}`,
+};
+
+export const MONTAGE_WORDS: WallWords = {
+  portrait: false,
+  empty: 'Nothing up yet. Add the first one.',
+  invite: () => 'Got one to add? Everybody can.',
+  button: 'Add a photo',
+  sheetTitle: 'Add a photo',
+  sheetNote: 'It goes up straight away, for everybody.',
+  caption: 'A few words about it (optional)',
+  who: (name) => `Added by ${name}`,
+  foot: (name) => name,
+  alt: (name) => `A photo from ${name}`,
+};
+
+export function renderTributeBody(
+  site: SiteConfig,
+  slug: string,
+  sent: TributePhoto[] = [],
+  words: WallWords = MEMORIAL_WORDS
+): string {
   const name = site.name || slug;
-  const portrait = safeUrl(site.heroImage);
+  const portrait = words.portrait ? safeUrl(site.heroImage) : null;
 
   // Anything in images, plus anything sitting in a gallery section — some
   // other path may still put photos there, and a photo that reached the config
@@ -165,16 +215,16 @@ export function renderTributeBody(site: SiteConfig, slug: string, sent: TributeP
     ? `<div class="tr-wall" id="wall">${all
         .map((p, i) => {
           const cap = p.caption ? `<b>${esc(p.caption)}</b>` : '';
-          const who = p.who ? `<span>Sent by ${esc(p.who)}</span>` : '';
+          const who = p.who ? `<span>${esc(words.who(p.who))}</span>` : '';
           return `<figure class="tr-pic" data-i="${i}" data-full="${esc(p.url)}"
             data-cap="${esc(p.caption || '')}" data-who="${esc(p.who || '')}" tabindex="0" role="button"
             aria-label="${esc(p.caption || 'Photograph')}">
-            <img src="${esc(p.url)}" alt="${esc(p.caption || `A photograph of ${name}`)}" loading="lazy" />
+            <img src="${esc(p.url)}" alt="${esc(p.caption || words.alt(name))}" loading="lazy" />
             ${cap || who ? `<figcaption>${cap}${who}</figcaption>` : ''}
           </figure>`;
         })
         .join('')}</div>`
-    : `<p class="tr-empty">No photographs yet. If you have one, please send it.</p>`;
+    : `<p class="tr-empty">${esc(words.empty)}</p>`;
 
   return `
 <header class="tr-head" id="top">
@@ -186,11 +236,11 @@ export function renderTributeBody(site: SiteConfig, slug: string, sent: TributeP
 </header>
 ${wall}
 <section class="tr-invite">
-  <p>${esc(site.cta || 'If you have a photograph of ' + name + ', please add it.')}</p>
-  <button type="button" class="tr-add" id="tr-add">Add a photograph</button>
+  <p>${esc(site.cta || words.invite(name))}</p>
+  <button type="button" class="tr-add" id="tr-add">${esc(words.button)}</button>
 </section>
 <footer class="tr-foot">
-  <span>In memory of ${esc(name)}</span> &middot;
+  <span>${esc(words.foot(name))}</span> &middot;
   <a href="https://garage.co.nz/ai">A page by garage.co.nz</a>
 </footer>
 
@@ -204,8 +254,8 @@ ${wall}
 
 <div class="tr-sheet" id="tr-sheet" aria-hidden="true">
   <div class="tr-sheet-card">
-    <h2>Add a photograph</h2>
-    <p>It will appear on the page straight away.</p>
+    <h2>${esc(words.sheetTitle)}</h2>
+    <p>${esc(words.sheetNote)}</p>
     <label class="tr-pick" id="tr-pick">Choose a photo<input type="file" accept="image/*" id="tr-file" hidden /></label>
     <input type="text" id="tr-cap" maxlength="90" placeholder="A few words about it (optional)" />
     <input type="text" id="tr-who" maxlength="40" placeholder="Your name (optional)" />
@@ -217,6 +267,7 @@ ${wall}
 
 <script>(function(){
 var SLUG=${JSON.stringify(slug)};
+var WHO=${JSON.stringify(words.who('').trim())};
 var pics=[].slice.call(document.querySelectorAll('.tr-pic'));
 var box=document.getElementById('tr-box'),img=box.querySelector('img'),cap=box.querySelector('.tr-box-cap');
 var at=0;
@@ -226,7 +277,7 @@ function show(i){
   var p=pics[at];
   img.src=p.getAttribute('data-full');
   var c=p.getAttribute('data-cap'),w=p.getAttribute('data-who');
-  cap.innerHTML=(c?c:'')+(w?' <span>Sent by '+w+'</span>':'');
+  cap.innerHTML=(c?c:'')+(w?' <span>'+WHO+' '+w+'</span>':'');
   box.classList.add('on');box.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
 }

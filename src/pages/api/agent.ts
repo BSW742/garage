@@ -213,6 +213,17 @@ The diary template:
 - One bad post makes the whole day bad. That is deliberate — say it if they ask, do not apologise
   for it.
 
+The montage template:
+- Style "montage" is the tribute wall with the mourning taken out: a title, maybe one line, then
+  nothing but photographs. No dates, no portrait, nobody has died. It suits a trip, a season, a
+  build, a club, a wedding, a year of somebody's dog.
+- If they want somewhere to put a pile of photos and not much else, offer it in one line. Never
+  switch on your own, and never use it for a memorial — that is the tribute template, and getting
+  those two the wrong way round would be a bad mistake to make.
+- Put the title in name and at most one sentence in lede. Everything else is pictures. Do not add
+  services, hours, testimonials or a call to action.
+- Anyone visiting can add a photo and it appears straight away, same as the tribute wall.
+
 The tribute template:
 - Style "tribute" is a memorial page. A name, two dates, and a wall of photographs from the top of
   the page to the bottom. There is no nav, no sections, no shop and no chat, and there should be

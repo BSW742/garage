@@ -45,7 +45,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!row) return json({ error: 'No such page' }, 404);
     let style = '';
     try { style = String(JSON.parse(String(row.config) || '{}').style || ''); } catch {}
-    if (style !== 'tribute') return json({ error: 'This page does not take photos' }, 403);
+    if (style !== 'tribute' && style !== 'montage') {
+      return json({ error: 'This page does not take photos' }, 403);
+    }
 
     const image = String(body.image || '');
     if (!image.startsWith('data:image/')) return json({ error: 'Send an image' }, 400);
