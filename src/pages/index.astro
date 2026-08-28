@@ -31,10 +31,19 @@ try {
   if (db) {
     const { results } = await db
       .prepare(
-        `SELECT slug, config, COALESCE(updated_at, created_at) AS touched, created_at
+        // Sorted on a normalised stamp. The column has been written both as
+        // datetime('now') and as toISOString() over the years, and because it
+        // is compared as text the 'T' in the ISO form sorts above the space in
+        // the other one — so an ISO stamp from 8am beat a SQLite stamp from
+        // 6pm on the same day. Four sites published this evening sat forty
+        // cards down. The writers are consistent again, and this makes the
+        // ordering survive the next one that is not.
+        `SELECT slug, config,
+                replace(substr(COALESCE(updated_at, created_at), 1, 19), 'T', ' ') AS touched,
+                created_at
            FROM site_claims
           WHERE in_projects = 1 AND status != 'disabled'
-          ORDER BY COALESCE(updated_at, created_at) DESC LIMIT 60`
+          ORDER BY touched DESC LIMIT 60`
       )
       .all();
 

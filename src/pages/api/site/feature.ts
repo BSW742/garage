@@ -26,9 +26,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // moment somebody decided it should exist, so it goes live at the same
     // time. Unstarring does not take it down again — that is a separate call,
     // and quietly disabling somebody's page from a tidy-up would surprise.
+    //
+    // Publishing also counts as the moment the site happened. The work page is
+    // ordered by updated_at, and this call was not setting it — so a site the
+    // cron made at 11.40am and somebody approved at six in the evening still
+    // sorted to 11.40am and landed forty cards down a sixty-card page. It was
+    // published, it was starred, and it was invisible, which is the same as not
+    // being there.
     if (on) {
       await db.prepare(
-        "UPDATE site_claims SET in_projects = 1, status = CASE WHEN status = 'disabled' THEN 'live' ELSE status END WHERE slug = ?"
+        `UPDATE site_claims
+            SET in_projects = 1,
+                status = CASE WHEN status = 'disabled' THEN 'live' ELSE status END,
+                updated_at = datetime('now')
+          WHERE slug = ?`
       ).bind(slug).run();
     } else {
       await db.prepare('UPDATE site_claims SET in_projects = 0 WHERE slug = ?').bind(slug).run();

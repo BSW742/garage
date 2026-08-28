@@ -23,8 +23,8 @@ if (db && token) {
     site = row.slug;
   } else {
     await db
-      .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
-      .bind(row.prev_config, new Date().toISOString(), row.slug)
+      .prepare("UPDATE site_claims SET config = ?, updated_at = datetime('now') WHERE slug = ?")
+      .bind(row.prev_config, row.slug)
       .run();
     await db
       .prepare('UPDATE site_mail SET applied = 0 WHERE id = ?')

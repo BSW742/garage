@@ -25,8 +25,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     config.chat = !!on;
 
     await db
-      .prepare('UPDATE site_claims SET config = ?, updated_at = ? WHERE slug = ?')
-      .bind(JSON.stringify(config), new Date().toISOString(), slug)
+      // datetime('now'), not toISOString(). The column is sorted as text and
+      // mixing the two formats silently breaks the order: 'T' sorts above ' ',
+      // so any ISO stamp beat every SQLite one on the same day whatever the
+      // actual time. A site edited at 8am outranked one published at 6pm.
+      .prepare("UPDATE site_claims SET config = ?, updated_at = datetime('now') WHERE slug = ?")
+      .bind(JSON.stringify(config), slug)
       .run();
 
     return json({ ok: true, chat: config.chat });

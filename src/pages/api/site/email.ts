@@ -27,8 +27,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!site) return json({ error: 'Not your site' }, 403);
 
     await db
-      .prepare('UPDATE site_claims SET email = ?, updated_at = ? WHERE slug = ?')
-      .bind(address, new Date().toISOString(), slug)
+      .prepare("UPDATE site_claims SET email = ?, updated_at = datetime('now') WHERE slug = ?")
+      .bind(address, slug)
       .run();
 
     return json({ ok: true, email: address });
