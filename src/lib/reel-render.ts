@@ -150,6 +150,25 @@ border-bottom:1px solid var(--line);align-items:baseline}
 .rl-makers a{font-size:.85rem;border:1px solid var(--line);border-radius:999px;
 padding:.32rem .8rem;color:var(--dim)}
 .rl-makers a:hover{border-color:var(--accent);color:var(--ink)}
+
+/* -- The overlay. A film from the wall, given the whole room. -- */
+.rl-box{position:fixed;inset:0;z-index:80;display:none;place-items:center;padding:1.4rem;
+background:rgba(4,4,6,.94);backdrop-filter:blur(14px)}
+.rl-box.on{display:grid}
+.rl-box-in{width:min(78rem,100%)}
+.rl-box-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;
+border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rl-box-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.rl-box-cap{margin-top:.95rem;display:flex;gap:.35rem 1rem;align-items:baseline;flex-wrap:wrap}
+.rl-box-cap b{font-family:var(--display);font-weight:500;font-size:1.05rem}
+.rl-box-cap span{color:var(--dim);font-size:.9rem}
+.rl-box-cap a{margin-left:auto;color:var(--dim);font-size:.86rem;
+border-bottom:1px solid var(--line)}
+.rl-box-cap a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+.rl-shut{position:fixed;top:1rem;right:1.2rem;width:2.6rem;height:2.6rem;border-radius:50%;
+background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:1.35rem;
+line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+.rl-shut:hover{border-color:var(--accent)}
 `;
 
 // One slot: a thumbnail, a play button, and nothing else until it is pressed.
@@ -157,7 +176,9 @@ function frame(clip: Clip, big: boolean): string {
   const id = esc(clip.id);
   const size = big ? 'maxresdefault' : 'hqdefault';
   const label = clip.title ? `Play: ${clip.title}` : 'Play video';
-  return `<div class="rl-frame" data-yt="${id}">
+  // The credit rides on the frame so the overlay can caption a film without
+  // going back to the config for it.
+  return `<div class="rl-frame" data-yt="${id}" data-title="${esc(clip.title || '')}" data-who="${esc(clip.who || '')}">
     <img src="https://i.ytimg.com/vi/${id}/${size}.jpg" alt="" loading="lazy"
          onerror="this.src='https://i.ytimg.com/vi/${id}/hqdefault.jpg'" />
     <button type="button" class="rl-play" aria-label="${esc(label)}"><span class="rl-disc"></span></button>
@@ -209,7 +230,7 @@ export function renderReelBody(site: SiteConfig, slug: string): string {
           ${credit(c)}
           ${c.note ? `<p>${esc(c.note)}</p>` : ''}
           <a href="https://www.youtube.com/watch?v=${esc(c.id)}" target="_blank"
-             rel="noopener nofollow" style="margin-top:.35rem">Watch on YouTube</a>
+             rel="noopener nofollow" style="margin-top:.35rem;font-size:.8rem">On YouTube &#8599;</a>
         </div>
       </article>`
       )
@@ -291,25 +312,78 @@ ${faqHtml}
     : ''}
 </div></section>
 
+${rest.length
+  ? `<div class="rl-box" id="rl-box" role="dialog" aria-modal="true" aria-label="Player">
+  <button type="button" class="rl-shut" aria-label="Close player">&times;</button>
+  <div class="rl-box-in">
+    <div class="rl-box-screen"></div>
+    <div class="rl-box-cap"><b></b><span></span>
+      <a href="https://www.youtube.com" target="_blank" rel="noopener nofollow">Watch on YouTube</a>
+    </div>
+  </div>
+</div>`
+  : ''}
+
 <script>
 (function () {
   // Nothing is embedded until somebody asks for it. Twelve iframes on load is
   // several megabytes and a set of cookies each, for films most visitors will
   // never press. nocookie is the same player without the tracking on arrival.
+  var box = document.getElementById('rl-box');
+  var screen = box && box.querySelector('.rl-box-screen');
+  var cap = box && box.querySelector('.rl-box-cap');
+
+  function embed(id, title) {
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+    f.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
+    f.allowFullscreen = true;
+    f.title = title || 'Video';
+    return f;
+  }
+
+  function shut() {
+    if (!box || !box.classList.contains('on')) return;
+    box.classList.remove('on');
+    screen.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
   document.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('.rl-play') : null;
     if (!btn) return;
     var frame = btn.closest('.rl-frame');
     var id = frame && frame.dataset.yt;
     if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) return;
-    var f = document.createElement('iframe');
-    f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
-    f.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
-    f.allowFullscreen = true;
-    f.title = btn.getAttribute('aria-label') || 'Video';
+    var title = frame.dataset.title || '';
+
+    // The feature is already the width of the page, so it plays where it sits.
+    // A film in a third-of-a-row card is not watchable, so the wall opens over
+    // the room instead — nobody should have to leave for YouTube to see it.
+    if (box && frame.closest('.rl-card')) {
+      cap.querySelector('b').textContent = title || 'Untitled';
+      cap.querySelector('span').textContent = frame.dataset.who || '';
+      cap.querySelector('a').href = 'https://www.youtube.com/watch?v=' + id;
+      screen.innerHTML = '';
+      screen.appendChild(embed(id, title));
+      box.classList.add('on');
+      document.body.style.overflow = 'hidden';
+      return;
+    }
+
     frame.innerHTML = '';
-    frame.appendChild(f);
+    frame.appendChild(embed(id, title));
   });
+
+  if (box) {
+    // The backdrop and the cross close it; the player itself does not.
+    box.addEventListener('click', function (e) {
+      if (e.target === box || (e.target.closest && e.target.closest('.rl-shut'))) shut();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') shut();
+    });
+  }
 })();
 </script>`;
 }
