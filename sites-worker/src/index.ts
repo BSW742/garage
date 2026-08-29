@@ -232,6 +232,37 @@ export default {
         }
       }
 
+      // An insta wall carries whatever the owner has pasted in. The paste box
+      // itself only appears when the edit token is in the address, so a
+      // visitor never sees it.
+      let canAdd = false;
+      if (config.style === 'insta') {
+        try {
+          const { results } = await env.DB
+            .prepare(
+              `SELECT code, kind FROM insta_posts
+                WHERE slug = ? AND status = 'live' ORDER BY created_at DESC LIMIT 200`
+            )
+            .bind(slug)
+            .all();
+          sent = results || [];
+        } catch {
+          // An empty wall still beats a page that 500s
+        }
+        const key = url.searchParams.get('add') || '';
+        if (key) {
+          try {
+            const own = await env.DB
+              .prepare('SELECT edit_token FROM site_claims WHERE slug = ?')
+              .bind(slug)
+              .first<{ edit_token: string }>();
+            canAdd = !!own?.edit_token && own.edit_token === key;
+          } catch {
+            canAdd = false;
+          }
+        }
+      }
+
       // A chain page. While it is still filling up the bodies are never
       // selected — hiding them in CSS would not be hiding them at all — so a
       // locked page only ever learns who has added, and how many.
@@ -283,7 +314,7 @@ export default {
         );
       }
 
-      return html(renderSite(config, slug, sent, { unlocked }), 200);
+      return html(renderSite(config, slug, sent, { unlocked, canAdd }), 200);
     } catch (error) {
       console.error('Site render error:', slug, error);
       return html(renderAvailable(slug), 404);

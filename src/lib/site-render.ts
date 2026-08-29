@@ -15,6 +15,7 @@ import { CHARITY_CSS, CHARITY_FONT_QUERY, renderCharityBody } from './charity-re
 import { HALL_CSS, HALL_FONT_QUERY, renderHallBody } from './hall-render';
 import { DAYCARE_CSS, DAYCARE_FONT_QUERY, renderDaycareBody } from './daycare-render';
 import { REEL_CSS, REEL_FONT_QUERY, renderReelBody } from './reel-render';
+import { renderInstaBody, INSTA_CSS, INSTA_FONT_QUERY, type InstaPost } from './insta-render';
 import { SPINNER_CSS, renderSpinner } from './spinner-render';
 import { WAITLIST_CSS, renderWaitlist } from './waitlist-render';
 import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } from './studio-render';
@@ -134,7 +135,7 @@ export interface SiteConfig {
   // publish with the page — only the sign-ups need a table.
   campaigns?: EventCampaign[];
   style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna'
-    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'reel';
+    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'reel' | 'insta';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1092,8 +1093,8 @@ poll();
 export function renderSite(
   site: SiteConfig,
   slug: string,
-  sent: TributePhoto[] | DietPost[] | ChainNote[] = [],
-  state: { unlocked?: boolean } = {}
+  sent: TributePhoto[] | DietPost[] | ChainNote[] | InstaPost[] = [],
+  state: { unlocked?: boolean; canAdd?: boolean } = {}
 ): string {
   // Yoga and pilates: one renderer, two temperatures. The timetable, the
   // passes and the teachers are the same job either way.
@@ -1204,6 +1205,25 @@ export function renderSite(
       description: (room.lede || room.headline || name).slice(0, 155),
       path: '/',
       body: renderReelBody(room, slug),
+    });
+  }
+
+  // A wall of someone's own Instagram posts, packed tight. Instagram's embed
+  // is the only sanctioned way to show a post and it is heavy, so the tiles
+  // fill as you reach them rather than on load.
+  if (site.style === 'insta') {
+    const wall: SiteConfig = {
+      ...site,
+      shop: false,
+      tone: 'dark',
+      palette: { primary: '#e1306c', deep: '#0a0a0b', wash: '#141416', ...(site.palette || {}) },
+    };
+    const name = wall.name || slug;
+    return shell(wall, slug, {
+      title: name,
+      description: (wall.lede || wall.headline || name).slice(0, 155),
+      path: '/',
+      body: renderInstaBody(wall, slug, (sent || []) as InstaPost[], { canAdd: state.canAdd }),
     });
   }
 
@@ -1709,6 +1729,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'townhall' ? HALL_FONT_QUERY
     : site.style === 'daycare' ? DAYCARE_FONT_QUERY
     : site.style === 'reel' ? REEL_FONT_QUERY
+    : site.style === 'insta' ? INSTA_FONT_QUERY
     : site.style === 'yoga' ? YOGA_FONT_QUERY
     : site.style === 'pilates' ? PILATES_FONT_QUERY
     : '';
@@ -1730,13 +1751,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.style === 'insta' ? INSTA_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'reel' ? ' rl' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'reel' ? ' rl' : ''}${site.style === 'insta' ? ' ig' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}${renderEventBar(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
