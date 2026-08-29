@@ -14,16 +14,23 @@ export const prerender = false;
 // agent_usage before anything is spent, so an unattended job cannot run away
 // overnight. Sonnet, capped output.
 //
-// TEMPORARY — raised from 24 to 72 for a stress test on 28 Aug 2026, alongside
-// the every-twenty-minutes trigger in sites-worker/wrangler.toml. Both numbers
-// go back together: 72 with an hourly trigger would leave the ceiling slack and
-// never bind, and 24 with a twenty-minute trigger would stop the job at lunch.
+// MAX_PER_DAY and the cron trigger in sites-worker/wrangler.toml are one
+// setting in two files and always move together. 72 against an hourly trigger
+// leaves the ceiling slack so it never binds; 24 against a twenty-minute
+// trigger stops the job around lunchtime and the log says nothing about why.
+// It was 72 and every twenty minutes from 28 to 30 Aug 2026 for a stress test.
+//
+// Each run costs real money: the Anthropic call is billed as pay-as-you-go API
+// credit, which is not a Claude subscription and has nothing to do with any
+// laptop being awake. Roughly a dollar a day at this rate. When the balance
+// runs out every run fails, and the failure now reports the API's own words
+// rather than guessing at truncated JSON.
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 const MODEL = 'claude-sonnet-5';
-const MAX_PER_DAY = 72;
+const MAX_PER_DAY = 24;
 const MAX_OUT = 2000;
 
 // Some pages are simply longer than others and the cap has to know it. A club

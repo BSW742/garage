@@ -13,15 +13,16 @@ binding = "DB"
 database_name = "garage-db"
 database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
 
-# TEMPORARY — stress test, Ben's call on 28 Aug 2026. Every twenty minutes
-# instead of on the hour, so three land an hour and changes to a template show
-# up soon after they ship rather than the next morning. Put this back to
-# ["0 * * * *"] and MAX_PER_DAY back to 24 in src/pages/api/cron/spawn.ts when
-# he says go back; the two numbers have to move together or the ceiling stops
-# the job eight hours into the day.
+# One an hour, which is the normal rate. It ran at three an hour from 28 to 30
+# Aug 2026 for a stress test, so template changes showed up in new sites within
+# the hour instead of the next morning.
 #
-# The endpoint still holds the ceiling — counted out of agent_usage before
-# anything is spent — so this trigger cannot spend more by firing more often
-# than expected.
+# This number and MAX_PER_DAY in src/pages/api/cron/spawn.ts have to move
+# together: raise the trigger without raising the ceiling and the job stops
+# partway through the day, and the log gives no hint why.
+#
+# It costs money. Each run calls the Anthropic API with a key billed as
+# pay-as-you-go credit — not against a Claude subscription, and not on anybody's
+# laptop. This worker runs in Cloudflare whether a machine is on or not.
 [triggers]
-crons = ["*/20 * * * *"]
+crons = ["0 * * * *"]
