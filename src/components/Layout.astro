@@ -78,11 +78,14 @@ try {
       </a>
       {liveSites > 0 && (
         <!-- Points at the admin table rather than the work page: it is a
-             shortcut for Ben, and the number is the thing he clicks to go and
-             look at the list behind it. Unlabelled on purpose. -->
+             shortcut for Ben, and this is the thing he clicks to go and look at
+             the list behind it. Two counts read as a dashboard nobody asked to
+             see; three words say the only part a visitor needs, which is that
+             the place is not abandoned. The counts are still on /admin/sites.
+             It stays hidden until there is at least one live site. -->
         <a class="site-pulse" href="/admin/sites" title="Sites built on garage.co.nz">
           <i></i>
-          <span><b>{liveSites}</b> sites live{sitesToday > 0 && <>, <b>{sitesToday}</b> today</>}</span>
+          <span>updated today</span>
         </a>
       )}
       <nav class="nav">
