@@ -1718,6 +1718,74 @@ export function llmIndex(site: SiteConfig, slug: string): Record<string, unknown
   };
 }
 
+/**
+ * A sixty-second video sitting above somebody's new site.
+ *
+ * It goes above everything, because it is the reason they opened the link —
+ * the email said "I made you this and here is me making it", and burying it
+ * under the nav would be answering a different question.
+ *
+ * Set on the way in and cleared on the way out, so a render that does not
+ * carry a note cannot inherit the last one's.
+ */
+let pageNote: { key: string; seconds?: number } | null = null;
+
+export function setPageNote(note: { key: string; seconds?: number } | null): void {
+  pageNote = note;
+}
+
+const NOTE_CSS = `
+.gz-note{background:#0b0c0f;color:#f3f4f6;padding:1.1rem 1rem 1.3rem;
+font-family:Inter,system-ui,-apple-system,sans-serif}
+.gz-note-in{max-width:52rem;margin:0 auto}
+.gz-note video{width:100%;display:block;border-radius:12px;background:#000;
+border:1px solid #24272f}
+.gz-note p{margin:.7rem 0 0;font-size:.86rem;color:#9aa0ac;display:flex;
+gap:.6rem;align-items:baseline;flex-wrap:wrap}
+.gz-note b{color:#f3f4f6;font-weight:600}
+.gz-note a{color:#9aa0ac;text-decoration:underline;text-underline-offset:3px}
+.gz-note a:hover{color:#fff}
+`;
+
+function noteBlock(slug: string): string {
+  if (!pageNote) return '';
+  const key = esc(pageNote.key);
+  return `<section class="gz-note"><div class="gz-note-in">
+  <video id="gz-note-v" controls playsinline preload="metadata"
+         src="/images/${key}"></video>
+  <p><b>Your new site, and how to change it.</b>
+     <span>Sixty seconds from Ben at <a href="https://garage.co.nz">garage.co.nz</a></span></p>
+</div></section>
+<script>
+(function(){
+  var v = document.getElementById('gz-note-v');
+  if (!v) return;
+  var slug = ${JSON.stringify(slug)};
+  // Ben watching his own take back is not a view. The recorder leaves this
+  // behind in his browser; nobody else's has it.
+  var mine = false;
+  try { mine = localStorage.getItem('gz-recorder') === '1'; } catch (e) {}
+  var sent = {};
+  function ping(at) {
+    if (sent[at]) return;
+    sent[at] = 1;
+    try {
+      navigator.sendBeacon('https://garage.co.nz/api/record/seen',
+        new Blob([JSON.stringify({ slug: slug, at: at, mine: mine })],
+                 { type: 'application/json' }));
+    } catch (e) {}
+  }
+  v.addEventListener('play', function () { ping(0); }, { once: true });
+  // Where people stop is the thing worth knowing, so the depth is reported as
+  // it happens rather than only at the end, which nobody reaches.
+  v.addEventListener('timeupdate', function () {
+    var t = Math.floor(v.currentTime / 5) * 5;
+    if (t > 0) ping(t);
+  });
+})();
+</script>`;
+}
+
 function shell(site: SiteConfig, slug: string, page: PageMeta): string {
   const palette = site.palette || {};
   const tone = TONES[site.tone || 'light'] || TONES.light;
@@ -1774,13 +1842,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'youtube' ? YOUTUBE_CSS : ''}${site.style === 'insta' ? INSTA_CSS : ''}${site.style === 'videomap' ? VIDEOMAP_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'youtube' ? YOUTUBE_CSS : ''}${site.style === 'insta' ? INSTA_CSS : ''}${site.style === 'videomap' ? VIDEOMAP_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${pageNote ? NOTE_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'youtube' ? ' yt' : ''}${site.style === 'insta' ? ' ig' : ''}${site.style === 'videomap' ? ' vm' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'youtube' ? ' yt' : ''}${site.style === 'insta' ? ' ig' : ''}${site.style === 'videomap' ? ' vm' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${noteBlock(slug)}${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}${renderEventBar(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;

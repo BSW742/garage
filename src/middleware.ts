@@ -23,7 +23,14 @@ const RESERVED_HOSTS = new Set([
  */
 function guardAdmin(context: any): Response | null {
   const url = new URL(context.request.url);
-  if (!/^\/admin(\/|$)/.test(url.pathname)) return null;
+  // /record can send email to real businesses and attach video to their sites,
+  // so it belongs behind the same door as /admin. The play ping stays open —
+  // it is called from every published subdomain by people who are not Ben.
+  const guarded =
+    /^\/admin(\/|$)/.test(url.pathname) ||
+    /^\/record(\/|$)/.test(url.pathname) ||
+    (/^\/api\/record(\/|$)/.test(url.pathname) && !/^\/api\/record\/seen$/.test(url.pathname));
+  if (!guarded) return null;
 
   const shut = (why: string) =>
     new Response(why, {

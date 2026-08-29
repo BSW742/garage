@@ -1,0 +1,427 @@
+---
+// THE RECORDER
+//
+// Sixty seconds, their face in a strip down the left, their new site filling
+// the rest. Press record, pick the window, talk, and it uploads itself.
+//
+// Two screens' worth of streams are drawn into one canvas rather than recorded
+// separately and layered at playback. Two files would mean two uploads and a
+// sync that drifts; one canvas is a single webm with the layout already baked
+// in, and nothing to line up afterwards.
+//
+// It stops itself at sixty seconds. "60 seconds > NO MORE" was the brief, and
+// a limit that relies on remembering is not a limit.
+export const prerender = false;
+
+const db = (Astro.locals.runtime?.env as any)?.DB;
+const slug = (Astro.url.searchParams.get('s') || '').toLowerCase().trim();
+
+let sites: any[] = [];
+let error = '';
+if (db) {
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT s.slug,
+                json_extract(s.config, '$.name')  AS name,
+                json_extract(s.config, '$.style') AS style,
+                json_extract(s.config, '$.contact.email') AS site_email,
+                s.email, s.owner_sent_at, s.unsubscribed_at,
+                (SELECT COUNT(*) FROM recordings r
+                  WHERE r.slug = s.slug AND r.status = 'live') AS takes
+           FROM site_claims s
+          WHERE s.status = 'live'
+          ORDER BY COALESCE(s.updated_at, s.created_at) DESC
+          LIMIT 300`
+      )
+      .all();
+    sites = results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+const picked = sites.find((s) => s.slug === slug) || null;
+---
+
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Record</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --room: #0b0c0f;
+        --panel: #15171c;
+        --line: #24272f;
+        --ink: #f3f4f6;
+        --dim: #8b909c;
+        --go: #16a34a;
+        --stop: #dc2626;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--room);
+        color: var(--ink);
+        font-family: Inter, system-ui, sans-serif;
+        line-height: 1.5;
+      }
+      .wrap { max-width: 68rem; margin: 0 auto; padding: 1.6rem 1.2rem 4rem; }
+      h1 { font-size: 1.3rem; margin: 0 0 0.2rem; letter-spacing: -0.02em; }
+      .sub { color: var(--dim); font-size: 0.85rem; margin: 0 0 1.4rem; }
+
+      .pick { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+      select, .btn {
+        font: inherit;
+        font-size: 0.9rem;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        padding: 0.55rem 0.8rem;
+        cursor: pointer;
+      }
+      select { flex: 1; min-width: 18rem; }
+      .btn.go { background: var(--go); border-color: var(--go); color: #fff; font-weight: 600; }
+      .btn.stop { background: var(--stop); border-color: var(--stop); color: #fff; font-weight: 600; }
+      .btn[disabled] { opacity: 0.45; cursor: default; }
+
+      .stage {
+        position: relative;
+        background: #000;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+      }
+      .stage canvas { width: 100%; height: 100%; display: block; }
+      .stage .idle {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--dim);
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      /* The clock has to be readable while he is talking, not studied. */
+      .clock {
+        position: absolute;
+        top: 0.8rem;
+        left: 0.8rem;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.62);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+      }
+      .clock.on { display: inline-flex; }
+      .clock i {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        background: var(--stop);
+        animation: blink 1s steps(2, end) infinite;
+      }
+      @keyframes blink { 50% { opacity: 0.25; } }
+      .clock.warn { color: #fca5a5; }
+
+      .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 0.8rem; }
+      .bar i { display: block; height: 100%; width: 0; background: var(--go); transition: width 0.25s linear; }
+
+      .say { margin-top: 0.9rem; color: var(--dim); font-size: 0.86rem; min-height: 1.4em; }
+      .say.bad { color: #fca5a5; }
+      .say.good { color: #86efac; }
+
+      .after { margin-top: 1.2rem; display: none; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+      .after.on { display: flex; }
+      video.review {
+        width: 100%;
+        max-width: 34rem;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: #000;
+        display: block;
+        margin-top: 0.8rem;
+      }
+      .send { display: flex; gap: 0.6rem; margin-top: 1.4rem; flex-wrap: wrap; }
+      .draft {
+        white-space: pre-wrap;
+        font: inherit;
+        font-size: 0.84rem;
+        color: var(--dim);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        margin: 0.8rem 0 0;
+        max-width: 44rem;
+      }
+      .tip { color: var(--dim); font-size: 0.78rem; margin-top: 1.6rem; }
+      .tip b { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Record</h1>
+      <p class="sub">Sixty seconds. Your face down the left, their site filling the rest.</p>
+
+      {error && <p class="say bad">{error}</p>}
+
+      <div class="pick">
+        <select id="site">
+          <option value="">Pick a site…</option>
+          {sites.map((s) => (
+            <option value={s.slug} selected={picked && picked.slug === s.slug}>
+              {s.name || s.slug} — {s.slug}.garage.co.nz
+              {s.takes ? ` · ${s.takes} take${s.takes === 1 ? '' : 's'}` : ''}
+              {s.owner_sent_at ? ' · sent' : ''}
+            </option>
+          ))}
+        </select>
+        <button class="btn go" id="go">Record</button>
+        <button class="btn stop" id="stop" disabled>Stop</button>
+        <a class="btn" id="open" target="_blank" rel="noopener">Open site</a>
+      </div>
+
+      <div class="stage">
+        <canvas id="canvas" width="1280" height="720"></canvas>
+        <div class="idle" id="idle">Pick a site, press Record, then choose the window with their site in it.</div>
+        <div class="clock" id="clock"><i></i><span id="left">0:60</span></div>
+      </div>
+      <div class="bar"><i id="bar"></i></div>
+
+      <p class="say" id="say"></p>
+
+      <div class="after" id="after">
+        <button class="btn go" id="save">Save to their site</button>
+        <button class="btn" id="again">Record again</button>
+      </div>
+
+      <!-- The send lives here rather than in the admin table so the whole loop
+           is one screen: pick, record, save, read it back, send. -->
+      <div class="send">
+        <button class="btn" id="preview">Read the email</button>
+        <button class="btn go" id="send">Send it</button>
+      </div>
+      <pre class="draft" id="draft" hidden></pre>
+      <video class="review" id="review" controls playsinline hidden></video>
+
+      <p class="tip">
+        <b>Chrome only.</b> Pick the window with their site in it, not the whole screen —
+        the tab bar and your other windows are not the point. It stops itself at sixty seconds.
+      </p>
+    </div>
+
+    <script is:inline>
+      const $ = (id) => document.getElementById(id);
+      const CAP = 60;             // seconds. The brief was "60 seconds > NO MORE".
+      const W = 1280, H = 720;
+      const STRIP = 232;          // the face column, in canvas pixels
+
+      // So his own views of his own take are not counted as theirs. The site
+      // player reads this back before it pings.
+      try { localStorage.setItem('gz-recorder', '1'); } catch (e) {}
+
+      const canvas = $('canvas');
+      const ctx = canvas.getContext('2d');
+      let screenStream = null, faceStream = null, recorder = null;
+      let chunks = [], blob = null, started = 0, raf = 0, ticker = 0;
+
+      const say = (text, kind) => { const s = $('say'); s.textContent = text || ''; s.className = 'say ' + (kind || ''); };
+
+      $('site').addEventListener('change', () => {
+        const s = $('site').value;
+        $('open').href = s ? 'https://' + s + '.garage.co.nz/' : '#';
+      });
+      $('site').dispatchEvent(new Event('change'));
+
+      function paint() {
+        const screenVid = paint.screen, faceVid = paint.face;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+
+        // Their site, fitted whole. Cropping somebody's homepage to fill a
+        // 16:9 box cuts the top off the thing being shown.
+        if (screenVid && screenVid.videoWidth) {
+          const k = Math.min(W / screenVid.videoWidth, H / screenVid.videoHeight);
+          const w = screenVid.videoWidth * k, h = screenVid.videoHeight * k;
+          ctx.drawImage(screenVid, (W - w) / 2, (H - h) / 2, w, h);
+        }
+
+        // The face, cropped to a vertical strip down the left edge.
+        if (faceVid && faceVid.videoWidth) {
+          const k = Math.max(STRIP / faceVid.videoWidth, H / faceVid.videoHeight);
+          const w = faceVid.videoWidth * k, h = faceVid.videoHeight * k;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(0, 0, STRIP, H);
+          ctx.clip();
+          // Mirrored, because a face that moves the wrong way is unsettling.
+          ctx.translate(STRIP, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(faceVid, (STRIP - w) / 2, (H - h) / 2, w, h);
+          ctx.restore();
+          ctx.fillStyle = 'rgba(255,255,255,.14)';
+          ctx.fillRect(STRIP - 1, 0, 1, H);
+        }
+        raf = requestAnimationFrame(paint);
+      }
+
+      async function start() {
+        if (!$('site').value) return say('Pick a site first.', 'bad');
+        if (!navigator.mediaDevices?.getDisplayMedia) return say('This browser cannot record a window. Use Chrome.', 'bad');
+        try {
+          say('Choose the window with their site in it…');
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 30 }, audio: false,
+          });
+          faceStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+            audio: { echoCancellation: true, noiseSuppression: true },
+          });
+        } catch (e) {
+          say('Cancelled — nothing recorded.', '');
+          [screenStream, faceStream].forEach((s) => s && s.getTracks().forEach((t) => t.stop()));
+          screenStream = faceStream = null;
+          return;
+        }
+
+        const sv = document.createElement('video');
+        sv.srcObject = screenStream; sv.muted = true; await sv.play();
+        const fv = document.createElement('video');
+        fv.srcObject = faceStream; fv.muted = true; await fv.play();
+        paint.screen = sv; paint.face = fv;
+        $('idle').style.display = 'none';
+        paint();
+
+        // If he stops sharing from Chrome's own bar, that means stop.
+        screenStream.getVideoTracks()[0].addEventListener('ended', () => finish());
+
+        const mixed = new MediaStream([
+          ...canvas.captureStream(30).getVideoTracks(),
+          ...faceStream.getAudioTracks(),
+        ]);
+        const type = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+          .find((t) => MediaRecorder.isTypeSupported(t)) || '';
+        chunks = [];
+        recorder = new MediaRecorder(mixed, type ? { mimeType: type, videoBitsPerSecond: 2_500_000 } : undefined);
+        recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+        recorder.onstop = done;
+        recorder.start(250);
+
+        started = Date.now();
+        $('go').disabled = true; $('stop').disabled = false;
+        $('clock').classList.add('on');
+        $('after').classList.remove('on');
+        $('review').hidden = true;
+        say('Recording. It stops itself at sixty seconds.');
+
+        ticker = setInterval(() => {
+          const gone = (Date.now() - started) / 1000;
+          const left = Math.max(0, CAP - gone);
+          $('left').textContent = '0:' + String(Math.ceil(left)).padStart(2, '0');
+          $('clock').classList.toggle('warn', left <= 10);
+          $('bar').style.width = Math.min(100, (gone / CAP) * 100) + '%';
+          if (gone >= CAP) finish();
+        }, 200);
+      }
+
+      function finish() {
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+      }
+
+      function done() {
+        clearInterval(ticker); cancelAnimationFrame(raf);
+        [screenStream, faceStream].forEach((s) => s && s.getTracks().forEach((t) => t.stop()));
+        screenStream = faceStream = null;
+        $('clock').classList.remove('on');
+        $('go').disabled = false; $('stop').disabled = true;
+        blob = new Blob(chunks, { type: chunks[0]?.type || 'video/webm' });
+        const secs = Math.round((Date.now() - started) / 1000);
+        $('review').src = URL.createObjectURL(blob);
+        $('review').hidden = false;
+        $('after').classList.add('on');
+        say(secs + ' seconds, ' + (blob.size / 1e6).toFixed(1) + 'MB. Watch it back before you save.', 'good');
+        done.secs = secs;
+      }
+
+      $('go').addEventListener('click', start);
+      $('stop').addEventListener('click', finish);
+      $('again').addEventListener('click', () => {
+        blob = null; $('after').classList.remove('on'); $('review').hidden = true;
+        $('bar').style.width = '0'; say('');
+      });
+
+      async function mail(preview) {
+        const slug = $('site').value;
+        if (!slug) return say('Pick a site first.', 'bad');
+        const btn = preview ? $('preview') : $('send');
+        btn.disabled = true;
+        say(preview ? 'Building the draft…' : 'Sending…');
+        try {
+          const res = await fetch('/api/record/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: slug, preview: preview }),
+          });
+          const d = await res.json();
+          if (!d.ok) { say(d.message || 'Did not send.', 'bad'); return; }
+          if (preview) {
+            $('draft').hidden = false;
+            $('draft').textContent = 'To: ' + d.to + '\nSubject: ' + d.subject + '\n\n' + d.text;
+            say('That is what goes out. Nothing sent yet.');
+          } else {
+            $('draft').hidden = true;
+            say((d.resent ? 'Sent again to ' : 'Sent to ') + d.to, 'good');
+          }
+        } catch (e) {
+          say('Could not reach the server.', 'bad');
+        } finally {
+          btn.disabled = false;
+        }
+      }
+      $('preview').addEventListener('click', () => mail(true));
+      $('send').addEventListener('click', () => {
+        if (confirm('Send the email to ' + $('site').value + '.garage.co.nz\u2019s owner?')) mail(false);
+      });
+
+      $('save').addEventListener('click', async () => {
+        if (!blob) return;
+        const slug = $('site').value;
+        $('save').disabled = true;
+        say('Uploading…');
+        try {
+          const res = await fetch('/api/record/save?s=' + encodeURIComponent(slug) +
+                                  '&secs=' + (done.secs || 0), {
+            method: 'POST',
+            headers: { 'Content-Type': blob.type || 'video/webm' },
+            body: blob,
+          });
+          const d = await res.json();
+          if (!d.ok) throw new Error(d.message || 'save failed');
+          say('Saved. It is on ' + slug + '.garage.co.nz now.', 'good');
+          $('open').href = 'https://' + slug + '.garage.co.nz/';
+        } catch (e) {
+          say('Could not save: ' + e.message, 'bad');
+        } finally {
+          $('save').disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

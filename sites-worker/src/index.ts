@@ -1,4 +1,4 @@
-import { renderSite, renderTeam, renderCases, renderAvailable, renderEventPage, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
+import { renderSite, renderTeam, renderCases, renderAvailable, renderEventPage, setPageNote, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
 import { renderInbox, inboxManifest } from '../../src/lib/chat-admin';
 import { renderPhotoQueue } from '../../src/lib/tribute-admin';
 
@@ -230,6 +230,20 @@ export default {
         } catch {
           // A page that loses the feed still beats a page that 500s
         }
+      }
+
+      // A sixty-second video Ben recorded about this site, if there is one.
+      // Cleared every request: a worker instance is reused across sites, and a
+      // note left behind would appear on the next business's page.
+      setPageNote(null);
+      try {
+        const take = await env.DB
+          .prepare("SELECT key, seconds FROM recordings WHERE slug = ? AND status = 'live' ORDER BY created_at DESC LIMIT 1")
+          .bind(slug)
+          .first<{ key: string; seconds: number }>();
+        if (take?.key) setPageNote({ key: take.key, seconds: take.seconds });
+      } catch {
+        // A page without the video still beats a page that 500s.
       }
 
       // An insta wall carries whatever the owner has pasted in. The paste box
