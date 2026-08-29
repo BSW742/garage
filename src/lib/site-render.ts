@@ -2,7 +2,7 @@ import { LISTING_CSS, LISTING_FONT_QUERY, renderListingBody } from './listing-re
 import { TRIBUTE_CSS, TRIBUTE_FONT_QUERY, renderTributeBody, MONTAGE_WORDS, type TributePhoto } from './tribute-render';
 import { DIET_CSS, DIET_FONT_QUERY, renderDietBody, type DietPost } from './diet-render';
 import { CHAIN_CSS, CHAIN_FONT_QUERY, renderChainBody, type ChainNote } from './chain-render';
-import { RALLY_CSS, renderRallyBody, type RallyCampaign, type RallyState, RALLY_TAB_CSS, renderRallyTab } from './rally-render';
+import { EVENT_CSS, renderEventBody, type EventCampaign, type EventState, EVENT_BAR_CSS, renderEventBar } from './event-render';
 import { BUBBLE_CSS, BUBBLE_FONT_QUERY, renderBubbleBody } from './bubble-render';
 import { GAME_CSS, GAME_FONT_QUERY, renderGameBody } from './game-render';
 import { EGGS_CSS, EGGS_FONT_QUERY, renderEggsBody } from './eggs-render';
@@ -132,7 +132,7 @@ export interface SiteConfig {
   // Campaign pages hanging off this site at /<path>. They are part of the
   // config so the owner writes them the same way as everything else, and they
   // publish with the page — only the sign-ups need a table.
-  campaigns?: RallyCampaign[];
+  campaigns?: EventCampaign[];
   style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna'
     | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'reel';
   socials?: Record<string, string>;
@@ -507,11 +507,11 @@ ${pageFoot(site, name)}`;
  * nav, colours and type on purpose: the share link should look like them, not
  * like a landing page somebody bolted on.
  */
-export function renderRallyPage(
+export function renderEventPage(
   site: SiteConfig,
   slug: string,
-  campaign: RallyCampaign,
-  state: RallyState
+  campaign: EventCampaign,
+  state: EventState
 ): string {
   const name = site.name || slug;
   const path = '/' + String(campaign.path).replace(/^\/+/, '');
@@ -519,8 +519,8 @@ export function renderRallyPage(
     title: `${campaign.title} — ${name}`,
     description: (campaign.blurb || `${campaign.title}. It runs if enough people are in.`).slice(0, 155),
     path,
-    body: renderRallyBody(site, slug, campaign, state, pageNav(site, slug, path), pageFoot(site, name)),
-    extraCss: RALLY_CSS,
+    body: renderEventBody(site, slug, campaign, state, pageNav(site, slug, path), pageFoot(site, name)),
+    extraCss: EVENT_CSS,
   });
 }
 
@@ -1730,7 +1730,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? RALLY_TAB_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
@@ -1738,7 +1738,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 </head>
 <body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'reel' ? ' rl' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
-    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}${renderRallyTab(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
+    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}${renderEventBar(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
 function shut(){z.classList.remove('on');document.body.style.overflow='';
 var f=document.getElementById('logo-film');if(f){try{f.pause();}catch(e){}}}

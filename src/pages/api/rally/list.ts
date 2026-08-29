@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
     return json({ ok: true, campaigns });
   } catch (error) {
-    console.error('Rally list failed:', error);
+    console.error('Event list failed:', error);
     return json({ error: 'Could not read the list' }, 500);
   }
 };

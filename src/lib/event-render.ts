@@ -1,4 +1,4 @@
-// THE RALLY — a campaign page that lives at a path on a business's own site.
+// THE EVENT — a campaign page that lives at a path on a business's own site.
 //
 // raglanphysio.garage.co.nz/spring. Not a separate site: it borrows the
 // parent's nav, colours and type, so every share carries their name and every
@@ -16,7 +16,7 @@
 
 import type { SiteConfig } from './site-render';
 
-export interface RallyCampaign {
+export interface EventCampaign {
   path: string;                  // "spring" — lives at /spring
   title: string;
   blurb?: string;
@@ -27,7 +27,7 @@ export interface RallyCampaign {
   cta?: string;
 }
 
-export interface RallyState {
+export interface EventState {
   count: number;
   names: string[];
   latest?: string;               // ISO timestamp of the most recent sign-up
@@ -39,7 +39,7 @@ function esc(value: unknown): string {
   );
 }
 
-export const RALLY_CSS = `
+export const EVENT_CSS = `
 .ral{padding:3.5rem 0 1rem}
 .ral-wrap{max-width:44rem;margin:0 auto;padding:0 1.2rem}
 .ral-eyebrow{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;
@@ -128,11 +128,11 @@ padding:.8rem;color:var(--ink);resize:vertical;line-height:1.6}
  * nav, colours, type — so it reads as part of their business rather than as a
  * landing page somebody bolted on.
  */
-export function renderRallyBody(
+export function renderEventBody(
   site: SiteConfig,
   slug: string,
-  campaign: RallyCampaign,
-  state: RallyState,
+  campaign: EventCampaign,
+  state: EventState,
   nav: string,
   foot: string
 ): string {
@@ -283,10 +283,10 @@ if(key){
 })();</script>`;
 }
 
-// ── The rally as a widget ────────────────────────────────────────────────────
+// ── The event as a widget ────────────────────────────────────────────────────
 //
 // The campaign page only works if somebody lands on it, and most people on a
-// business's site never will. So the rally also rides along on every page as a
+// business's site never will. So the event also rides along on every page as a
 // bar at the bottom of the screen.
 //
 // The count is the whole pitch and it does not need help. "8 more and it's on"
@@ -300,7 +300,7 @@ if(key){
 // sits on the right and the short notice list on the left; a third tab would be
 // a row of tabs, and this one is a shout rather than a bookmark.
 
-export const RALLY_TAB_CSS = `
+export const EVENT_BAR_CSS = `
 .grl-bar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(0);
 z-index:9987;display:flex;align-items:center;gap:.85rem;cursor:pointer;border:0;
 width:min(26rem,calc(100vw - 1.6rem));padding:.72rem .95rem .72rem .78rem;
@@ -390,14 +390,14 @@ text-transform:uppercase;padding:.9rem 1rem}
 .grl-done h3{font-size:1.25rem;font-weight:600;color:#fff;margin:.4rem 0 .3rem}
 `;
 
-/** The bar and its panel. Empty when there is no rally on this site. */
-export function renderRallyTab(site: SiteConfig, slug: string): string {
+/** The bar and its panel. Empty when there is no event on this site. */
+export function renderEventBar(site: SiteConfig, slug: string): string {
   // The first campaign, because a bar at the bottom of the screen can only
   // shout about one thing. Everything else is still on its own page.
-  const rally = ((site as any).campaigns || [])[0] as RallyCampaign | undefined;
-  const path = String(rally?.path || '').replace(/^\/+/, '').toLowerCase();
-  const target = Math.max(1, Math.min(500, Math.round(Number(rally?.target)) || 0));
-  if (!rally?.title || !path || !target) return '';
+  const event = ((site as any).campaigns || [])[0] as EventCampaign | undefined;
+  const path = String(event?.path || '').replace(/^\/+/, '').toLowerCase();
+  const target = Math.max(1, Math.min(500, Math.round(Number(event?.target)) || 0));
+  if (!event?.title || !path || !target) return '';
 
   const accent = site.palette?.primary || '#3ddc97';
   const who = esc(site.name || slug);
@@ -408,30 +408,30 @@ export function renderRallyTab(site: SiteConfig, slug: string): string {
   <span class="grl-num"><b id="grl-count">0</b><i>going</i></span>
   <span class="grl-say">
     <strong id="grl-hook">Happens if enough people are in</strong>
-    <span id="grl-sub">${esc(rally.title)}</span>
+    <span id="grl-sub">${esc(event.title)}</span>
   </span>
-  <span class="grl-go" id="grl-cta">${esc(rally.cta || 'Count me in')}</span>
+  <span class="grl-go" id="grl-cta">${esc(event.cta || 'Count me in')}</span>
 </button>
 
 <div class="grl-veil" id="grl-veil" role="dialog" aria-modal="true" style="--grl-a:${esc(accent)}"
-     aria-label="${esc(rally.title)}">
+     aria-label="${esc(event.title)}">
   <div class="grl-card">
     <button class="grl-x" id="grl-x" type="button" aria-label="Close">&times;</button>
     <div id="grl-ask">
       <p class="grl-eyebrow">${who}</p>
-      <h2>${esc(rally.title)}</h2>
-      ${rally.when ? `<p class="grl-when">${esc(rally.when)}</p>` : ''}
-      ${rally.blurb ? `<p class="grl-blurb">${esc(rally.blurb)}</p>` : ''}
+      <h2>${esc(event.title)}</h2>
+      ${event.when ? `<p class="grl-when">${esc(event.when)}</p>` : ''}
+      ${event.blurb ? `<p class="grl-blurb">${esc(event.blurb)}</p>` : ''}
       <div class="grl-track"><i id="grl-track-fill"></i></div>
       <p class="grl-state" id="grl-state"></p>
       <form class="grl-form" id="grl-form" novalidate>
         <input id="grl-name" maxlength="40" placeholder="Your name" autocomplete="given-name" />
         <input id="grl-email" type="email" maxlength="120" placeholder="Email" autocomplete="email" />
         <p class="grl-err" id="grl-err" role="alert"></p>
-        <button class="grl-join" id="grl-join" type="submit">${esc(rally.cta || 'Count me in')}</button>
+        <button class="grl-join" id="grl-join" type="submit">${esc(event.cta || 'Count me in')}</button>
       </form>
       <p class="grl-small">Nothing to pay &mdash; this is only whether it happens.
-        ${rally.closes ? esc(rally.closes) + '. ' : ''}<a href="/${esc(path)}"
+        ${event.closes ? esc(event.closes) + '. ' : ''}<a href="/${esc(path)}"
         style="color:inherit;text-decoration:underline">See the whole thing</a>.</p>
     </div>
     <div class="grl-done" id="grl-done">
@@ -470,6 +470,9 @@ export function renderRallyTab(site: SiteConfig, slug: string): string {
     bar.hidden = false;
   }
 
+  // The route and the table keep the old word on purpose: they are contracts
+  // with rows already in them, and renaming storage to tidy up a label is how
+  // working features get broken.
   fetch('https://garage.co.nz/api/rally?slug=' + encodeURIComponent(SLUG) + '&path=' + encodeURIComponent(PATH))
     .then(function (r) { return r.json(); })
     .then(function (d) { if (d && d.ok) paint(d.count); })
@@ -507,7 +510,7 @@ export function renderRallyTab(site: SiteConfig, slug: string): string {
       })
       .catch(function (e) {
         err.textContent = e.message || 'That did not go through.';
-        go.disabled = false; go.textContent = ${JSON.stringify(rally.cta || 'Count me in')};
+        go.disabled = false; go.textContent = ${JSON.stringify(event.cta || 'Count me in')};
       });
   });
 })();

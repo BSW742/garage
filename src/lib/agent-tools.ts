@@ -86,9 +86,9 @@ export const TOOLS = [
     },
   },
   {
-    name: 'set_rally',
+    name: 'set_event',
     description:
-      'Put a campaign page on this site at its own path — <slug>.garage.co.nz/<path>. A rally is ' +
+      'Put a campaign page on this site at its own path — <slug>.garage.co.nz/<path>. An event is ' +
       'a thing the business will only run if enough people want it: a workshop, a class, a supper ' +
       'club, a group rate on a street. Nobody is asked to pay, only whether it should happen, and ' +
       'the page collects names and emails until it reaches the target. Use it when they want to ' +
@@ -598,7 +598,7 @@ export async function runTool(
       return { ok: true, message: changed.join(', ') };
     }
 
-    case 'set_rally': {
+    case 'set_event': {
       const path = String(input.path || '')
         .toLowerCase().trim().replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9-]+/g, '-').slice(0, 40);
       if (!path) return { ok: false, message: 'A campaign needs a short url' };

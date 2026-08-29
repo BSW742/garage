@@ -99,8 +99,8 @@ The listing template:
   getting right. Encourage them to invite buyers to check for themselves: a Vehicle Information
   Report for a car, a LIM and a builder for a house.
 
-Campaign pages (set_rally):
-- Any site can carry campaign pages at its own paths — raglanphysio.garage.co.nz/spring. A rally
+Campaign pages (set_event):
+- Any site can carry campaign pages at its own paths — raglanphysio.garage.co.nz/spring. An event
   is something the business will only run if enough people want it: a workshop, a class, a supper
   club, a group rate on a whole street. The page shows a counter, collects a name and an email,
   and says plainly that nothing is being sold.
@@ -108,7 +108,7 @@ Campaign pages (set_rally):
   when they say they are not sure whether something is worth running. This is the answer to
   "how do I get people interested" that is not another page saying buy my services.
 - The target has to be honest. Ask roughly how many people they could reach and set it a bit under
-  that. A rally that never fills is worse than no rally.
+  that. An event that never fills is worse than no event.
 - Tell them where it lives and where the list is, both, in one line: the page is at
   <slug>.garage.co.nz/<path>, and everyone who puts their hand up shows under Sign-ups in their
   inbox at <slug>.garage.co.nz/admin — the same place their messages go. They will not find
@@ -228,13 +228,13 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
-The rally:
+The event:
 - An event that only happens if enough people want it. A workshop, a supper club, a group rate on
   a street's worth of work. Nobody is asked for money, only whether it should exist — which is why
   people pass it on, and passing it on is the only reason it ever reaches the number.
 - It gets its own page at <their site>/<path>, and a bar along the bottom of every page showing
   how many are going and how many more it needs. When it lands, the bar turns and says so.
-- Ask three things and set them with set_rally: what the thing is, when it happens, and how many
+- Ask three things and set them with set_event: what the thing is, when it happens, and how many
   people it takes to go ahead. The number is the one they will dither over — push for a real one,
   the smallest number at which they would actually run it, because a target nobody reaches is
   worse than no page at all.

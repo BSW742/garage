@@ -19,7 +19,7 @@ export const OPTIONS: APIRoute = () => new Response(null, { status: 204, headers
 const PER_HOUR = 20;
 
 /**
- * Where a rally is up to. The widget needs the count on every page without
+ * Where an event is up to. The widget needs the count on every page without
  * signing anybody up for it, so this is the read half of the same thing.
  */
 export const GET: APIRoute = async ({ url, locals }) => {
@@ -52,7 +52,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const count = Number(tally?.n || 0);
     return json({ ok: true, count, target, togo: Math.max(0, target - count), on: count >= target });
   } catch (error) {
-    console.error('Rally read failed:', error);
+    console.error('Event read failed:', error);
     return json({ error: 'Could not read that' }, 500);
   }
 };
@@ -119,7 +119,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     return json({ ok: true, count, target, togo: Math.max(0, target - count), on: count >= target });
   } catch (error) {
-    console.error('Rally signup failed:', error);
+    console.error('Event signup failed:', error);
     return json({ error: 'Could not add you, sorry' }, 500);
   }
 };
