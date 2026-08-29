@@ -385,22 +385,23 @@ export const TOOLS = [
   {
     name: 'set_waitlist',
     description:
-      'Turn the waitlist on or off. A tab on the edge of every page: somebody who cannot get an ' +
-      'appointment puts their name down, and when a slot frees up the owner tells the list from ' +
-      'one page and the first to claim it takes it. This is for businesses that are booked out — ' +
-      'physios, hairdressers, dentists, tattooists, anyone who says "we have nothing until ' +
-      'November, shall I put you on the cancellation list?". Nothing is discounted and nothing is ' +
-      'marketed: the people on the list already wanted that slot at full price, so filling a ' +
-      'cancellation from here recovers a booking that was otherwise lost. Do not suggest it to a ' +
-      'business that is quiet — a waitlist for an empty diary is an insult.',
+      'Turn the short notice list on or off. A tab on the edge of every page: somebody who ' +
+      'cannot get an appointment leaves their name, and when a time opens up the owner tells the ' +
+      'list from one page and the first to say yes takes it. For businesses that are booked out ' +
+      '— physios, hairdressers, dentists, tattooists, anyone whose receptionist already offers ' +
+      'to put people on a list. Call it the short notice list, never the cancellation list: the ' +
+      'first is about what the visitor can do, the second is about the business having a bad day, ' +
+      'and a page should not apologise for being in demand. Nothing is discounted and nobody is ' +
+      'marketed at. Do not suggest it to a business that is quiet — a list for an empty diary is ' +
+      'an insult.',
     input_schema: {
       type: 'object',
       properties: {
         on: { type: 'boolean', description: 'Show the waitlist tab on the site.' },
-        title: { type: 'string', description: 'The tab, e.g. "Waitlist" or "Cancellations".' },
+        title: { type: 'string', description: 'The tab, short. Defaults to "Short notice".' },
         blurb: {
           type: 'string',
-          description: 'One line on how booked up they are, in their words. e.g. "We are about six weeks out at the moment, but people cancel most weeks."',
+          description: 'One line on how booked up they are, in their words, that also allows it is annoying. e.g. "We are about six weeks out at the moment, which we know is no help when your back hurts."',
         },
       },
       required: ['on'],
@@ -781,13 +782,13 @@ export async function runTool(
       if (input.blurb !== undefined) list.blurb = String(input.blurb).slice(0, 220);
       list.on = !!input.on;
       site.waitlist = list;
-      if (!list.on) return { ok: true, message: 'Waitlist is off.' };
+      if (!list.on) return { ok: true, message: 'Short notice list is off.' };
       return {
         ok: true,
         message:
-          'Waitlist is on. People can put their name down from any page. When somebody ' +
-          'cancels, open the waitlist page from your keys email, type when the slot is, and ' +
-          'everyone hears at once — first to claim it gets it and you get told who.',
+          'Short notice list is on. People can leave their name from any page. When a time ' +
+          'opens up, open the list page from your keys email, type when it is, and everyone ' +
+          'hears at once — first to say yes takes it and you get told who.',
         data: { waitlist: list },
       };
     }

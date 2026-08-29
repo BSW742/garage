@@ -125,10 +125,11 @@ if (db && offerId && personId) {
     {state === 'ready' && (
       <>
         <p class="eyebrow">{who}</p>
-        <h1>This slot is still going</h1>
+        <h1>Still available</h1>
         <div class="slot">{slot}</div>
-        <form method="POST"><button type="submit">Claim it</button></form>
-        <p class="small">First to claim gets it. If somebody beats you to it we will say so.</p>
+        <form method="POST"><button type="submit">Yes, I&rsquo;ll take it</button></form>
+        <p class="small">First to say yes takes it. If somebody gets there before you we will
+          say so, and you stay on the list.</p>
       </>
     )}
     {state === 'yours' && (
@@ -136,30 +137,30 @@ if (db && offerId && personId) {
         <p class="eyebrow">{who}</p>
         <h1>It is yours</h1>
         <div class="slot">{slot}</div>
-        <p>{who} has been told and will confirm with you. You are off the waitlist now —
-          join again any time you want in sooner.</p>
+        <p>{who} has been told and will confirm with you. You are off the list now — put your
+          name back down any time you want an earlier one again.</p>
       </>
     )}
     {state === 'taken' && (
       <>
         <p class="eyebrow">{who}</p>
-        <h1>Just missed it</h1>
+        <h1>Somebody was quicker</h1>
         <div class="slot">{slot}</div>
         <p>{winner ? `${winner} got there first.` : 'Somebody got there first.'}
-          You are still on the waitlist, so you will hear about the next one.</p>
+          You are still on the list, so you will hear about the next one.</p>
       </>
     )}
     {state === 'off' && (
       <>
         <p class="eyebrow">{who}</p>
         <h1>You are off the list</h1>
-        <p>We will not email you about slots again. No hard feelings.</p>
+        <p>We will not email you about times opening up again. No hard feelings.</p>
       </>
     )}
     {state === 'bad' && (
       <>
         <h1>That link has expired</h1>
-        <p>It may have been from an old message. Ask to go back on the waitlist and we will
+        <p>It may have been from an old message. Put your name back on the list and we will
           let you know about the next one.</p>
       </>
     )}

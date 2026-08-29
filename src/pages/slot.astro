@@ -42,7 +42,7 @@ if (db && slug && key) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Waitlist — {who || 'garage.co.nz'}</title>
+  <title>Short notice list — {who || 'garage.co.nz'}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -89,19 +89,19 @@ if (db && slug && key) {
     {!ok && (
       <>
         <h1>Not your list</h1>
-        <p>This link needs the key from your keys email. Open the waitlist from there and it will
-          come with everything it needs.</p>
+        <p>This link needs the key from your keys email. Open the short notice list from there
+          and it will come with everything it needs.</p>
       </>
     )}
     {ok && (
       <>
         <p class="eyebrow">{who}</p>
-        <h1>Somebody cancelled?</h1>
-        <p>Say when the slot is and everyone on the waitlist hears at once. First to claim it
-          gets it, and we will tell you who.</p>
+        <h1>Has a time opened up?</h1>
+        <p>Say when it is and everyone on your short notice list hears at once. First to say yes
+          takes it, and we will tell you who.</p>
         <input id="slot" placeholder="Thursday 2pm" maxlength="80" autofocus />
         <button id="go" data-slug={slug} data-key={key} disabled={waiting === 0}>
-          {waiting === 0 ? 'Nobody waiting yet' : `Tell the waitlist (${waiting})`}
+          {waiting === 0 ? 'Nobody on the list yet' : `Tell the list (${waiting})`}
         </button>
         <p class="said" id="said"></p>
 
@@ -111,7 +111,7 @@ if (db && slug && key) {
             {recent.map((r: any) => (
               <div class="row">
                 <b>{r.slot}</b>
-                <span>{r.winner ? `${r.winner} took it` : `told ${r.told}, still going`}</span>
+                <span>{r.winner ? `${r.winner} took it` : `told ${r.told}, still available`}</span>
               </div>
             ))}
           </div>
@@ -143,7 +143,7 @@ if (db && slug && key) {
           });
           const data = await res.json();
           if (!res.ok || !data.ok) throw new Error(data.why || data.error || 'That did not go through');
-          said!.textContent = `Told ${data.told} of ${data.of}. First to claim it gets it.`;
+          said!.textContent = `Told ${data.told} of ${data.of}. First to say yes takes it.`;
           said!.className = 'said good';
           (slot as HTMLInputElement).value = '';
         } catch (e: any) {

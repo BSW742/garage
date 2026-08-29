@@ -1,17 +1,22 @@
-// THE WAITLIST — a tab for a business that is booked out.
+// THE SHORT NOTICE LIST — a tab for a business that is booked out.
 //
-// The physio says "we have nothing until November, shall I put you on the
-// cancellation list?", writes a name on a pad, and rings down it when somebody
-// drops out. This is that, without the pad and the ringing.
+// The mechanism is a cancellation list. The words are not, and that distinction
+// is the whole design of this file.
 //
-// The language matters more than the mechanism here, and it runs one way on
-// both sides: this is not a mailing list and nobody is being marketed at. The
-// person joining wants one thing — to get in earlier — and the message they
-// eventually get is the answer to the question they asked, not an offer.
+// "Cancellation list" describes the business's bad day — somebody let us down,
+// here is the scrap — and makes a page apologise for being busy. Turned round,
+// the same thing describes something good about the visitor: can you come at
+// short notice. That is a question, it puts them in an active role, and it
+// takes being in demand for granted without ever boasting about it.
 //
-// So: "want in sooner", not "subscribe". "A spot has come up", not "special
-// offer". And no discount anywhere, because they already wanted that slot at
-// full price and could not have it.
+// Three things the words carry, in this order:
+//   we are busy, and that is why you are reading this
+//   we know that is annoying when you want to be seen
+//   so here is the best shot anyone gets at an earlier time
+//
+// Nothing is discounted and nobody is marketed at. The person joining already
+// wanted that appointment at full price and could not have it, so this is the
+// answer to a question they asked rather than an offer they did not.
 
 import type { SiteConfig, Waitlist } from './site-render';
 
@@ -78,7 +83,7 @@ export function renderWaitlist(site: SiteConfig, slug: string): string {
   const list = site.waitlist as Waitlist | undefined;
   if (!list?.on) return '';
   const who = esc(site.name || slug);
-  const tab = esc(list.title || 'Waitlist');
+  const tab = esc(list.title || 'Short notice');
 
   return `
 <button class="gwl-tab" id="gwl-tab" type="button" aria-haspopup="dialog">${tab}</button>
@@ -89,29 +94,29 @@ export function renderWaitlist(site: SiteConfig, slug: string): string {
 
     <div id="gwl-ask">
       <p class="gwl-eyebrow">${who}</p>
-      <h2>Want in sooner?</h2>
+      <h2>Can you come at short notice?</h2>
       <p class="gwl-blurb">${esc(
         list.blurb ||
-          'We are booked a fair way ahead, but people cancel. Put your name down and we will let you know the moment something opens up.'
+          'We are booked a good way ahead, which we know is no help when you want to be seen. Times do open up though — usually a day or two out — and this list hears about them first.'
       )}</p>
       <form class="gwl-form" id="gwl-form" novalidate>
         <input id="gwl-name" placeholder="Your name" autocomplete="name" />
         <input id="gwl-email" type="email" placeholder="Email" autocomplete="email" />
         <input id="gwl-phone" type="tel" placeholder="Phone" autocomplete="tel" />
-        <input id="gwl-note" placeholder="When suits you? e.g. any weekday morning" maxlength="120" />
+        <input id="gwl-note" placeholder="When could you come? e.g. any weekday morning" maxlength="120" />
         <p class="gwl-err" id="gwl-err" role="alert"></p>
-        <button class="gwl-go" id="gwl-go" type="submit">Put me on the waitlist</button>
+        <button class="gwl-go" id="gwl-go" type="submit">Add me to the list</button>
       </form>
-      <p class="gwl-small">No charge and no discount &mdash; the same slot at the same price, you
-        just hear about it first. One email when something frees up, and you can come off the list
-        in a tap.</p>
+      <p class="gwl-small">No charge and no discount &mdash; the same appointment at the same
+        price. You just hear first, and the first to say yes takes it. One email when a time opens
+        up, and you can come off the list in a tap.</p>
     </div>
 
     <div class="gwl-done" id="gwl-done">
       <p class="gwl-eyebrow">${who}</p>
       <h3>You are on the list</h3>
-      <p class="gwl-blurb">We will email you the moment a slot comes free. First to claim it
-        gets it, so it is worth opening.</p>
+      <p class="gwl-blurb">Next time a time opens up you will hear straight away. First to say
+        yes takes it, so it is worth opening.</p>
     </div>
   </div>
 </div>
@@ -153,7 +158,7 @@ export function renderWaitlist(site: SiteConfig, slug: string): string {
       })
       .catch(function (e) {
         err.textContent = e.message || 'That did not go through. Try again shortly.';
-        go.disabled = false; go.textContent = 'Put me on the waitlist';
+        go.disabled = false; go.textContent = 'Add me to the list';
       });
   });
 })();

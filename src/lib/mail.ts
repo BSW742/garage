@@ -137,10 +137,10 @@ export function keysEmail(slug: string, token: string, name?: string, waitlist =
     '',
     ...(waitlist
       ? [
-          `SOMEBODY CANCELLED  ${slot}`,
-          'Type when the slot is and everyone on your waitlist hears at once. First',
-          'to claim it takes it and we tell you who. Nothing is discounted — they',
-          'already wanted that time.',
+          `A TIME OPENED UP  ${slot}`,
+          'Type when it is and everyone on your short notice list hears at once.',
+          'First to say yes takes it and we tell you who. Nothing is discounted —',
+          'they already wanted that time.',
           '',
         ]
       : []),

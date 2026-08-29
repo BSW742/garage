@@ -2,11 +2,11 @@ import type { APIRoute } from 'astro';
 import { sendMail } from '../../../lib/mail';
 
 /**
- * A slot came free. Tell the list.
+ * A time opened up. Tell the list.
  *
- * Everybody on it gets the same message at the same time and the first to
- * claim takes it, which is the honest version of ringing down a pad — except
- * nobody is left waiting by a phone that never rings.
+ * Everybody hears at once and the first to say yes takes it, which is the
+ * honest version of ringing down a pad — except nobody is left sitting by a
+ * phone that never rings.
  */
 
 const json = (b: unknown, s = 200) =>
@@ -55,12 +55,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       const link = `https://garage.co.nz/grab/${id}.${person.id}`;
       const out = await sendMail(env, {
         to: person.email,
-        subject: `A spot has come up at ${who} — ${slot}`,
+        subject: `A time has opened up at ${who} — ${slot}`,
         text:
           `Hello ${person.name || 'there'},\n\n` +
-          `You asked to hear if anything opened up at ${who}. Something has:\n\n` +
+          `You said you could come at short notice. This has just opened up:\n\n` +
           `    ${slot}\n\n` +
-          `First to claim it gets it:\n${link}\n\n` +
+          `First to say yes takes it:\n${link}\n\n` +
           `If it does not suit, do nothing — you stay on the list for the next one.\n\n` +
           `To come off the list altogether: https://garage.co.nz/grab/${id}.${person.id}?off=1\n`,
       });

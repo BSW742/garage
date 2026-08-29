@@ -228,21 +228,29 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
-The waitlist widget:
-- A tab on the edge of every page. Somebody who cannot get in puts their name down; when a slot
-  frees up the owner tells the list from one page and the first to claim it takes it.
+The short notice list:
+- A tab on the edge of every page. Somebody who cannot get in leaves their name; when a time opens
+  up the owner tells the list from one page and the first to say yes takes it.
+- Call it the short notice list. Never the cancellation list, and never the waitlist if you can
+  help it. The mechanism is cancellations but the words are not: "cancellation list" describes the
+  business having a bad day and makes the page apologise for being busy, where "can you come at
+  short notice" is a question about the visitor, puts them in an active role, and takes being in
+  demand for granted without ever boasting about it.
+- The words have to carry three things and in this order: we are busy, which is why you are
+  reading this; we know that is annoying when you want to be seen; so here is the best shot anyone
+  gets at an earlier time. Never make the first one a boast or the second one an apology.
 - This is for a business that is booked out, and only for one. A physio six weeks deep, a
-  hairdresser, a dentist, a tattooist — anyone whose receptionist already says "we have nothing
-  until November, shall I put you on the cancellation list?". Offering it to somebody with a quiet
-  diary is an insult, so ask how booked up they are before you suggest it.
-- Say what it is not, because people assume the worst: it is not a mailing list, nothing is
-  discounted, and nobody is marketed at. The people on it already wanted that slot at full price
-  and could not have it. Filling a cancellation from the list recovers a booking that was
-  otherwise lost — it does not sell one cheap.
-- Ask for one line about how far out they are, in their words, for the blurb. "We are about six
-  weeks out at the moment, but people cancel most weeks" is worth more than anything you write.
-- Then set_waitlist with on: true. Tell them the waitlist page is in their keys email, and that
-  telling the list takes about ten seconds when somebody drops out.
+  hairdresser, a dentist, a tattooist. Offering it to somebody with a quiet diary is an insult, so
+  ask how far ahead they are booked before you suggest it.
+- Say what it is not, because people assume the worst: not a mailing list, nothing discounted,
+  nobody marketed at. The people on it already wanted that appointment at full price and could not
+  have it, so filling an opening from the list recovers a booking that was otherwise lost rather
+  than selling one cheap.
+- Ask for one line in their words about how far out they are, and let it allow that this is
+  frustrating: "we are about six weeks out at the moment, which we know is no help when your back
+  hurts" is worth more than anything you would write.
+- Then set_waitlist with on: true. Tell them the page is in their keys email and that telling the
+  list takes about ten seconds.
 
 The spin-to-win widget:
 - A tab on the edge of every page. A visitor opens it, gives their name, email and phone, and

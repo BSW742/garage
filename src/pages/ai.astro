@@ -154,14 +154,14 @@ if (cameFromOffer && openedSlug) {
                   <button class="widget-card" data-widget="waitlist">
                     <span class="widget-face">&#9202;</span>
                     <span>
-                      <b>Waitlist</b>
-                      <i>Booked out? People put their name down, and when somebody cancels the
-                        first to claim it takes the slot. No discount.</i>
+                      <b>Short notice list</b>
+                      <i>Booked out? People who can come at short notice put their name down and
+                        hear first when a time opens up. Same price, no discount.</i>
                     </span>
                   </button>
                   <button class="widget-card off" data-widget="waitlist-off">
                     <span class="widget-face">&#9723;</span>
-                    <span><b>Turn the waitlist off</b><i>Keeps everyone already on it.</i></span>
+                    <span><b>Turn the list off</b><i>Keeps everyone already on it.</i></span>
                   </button>
                 </div>
 
@@ -5670,8 +5670,9 @@ if (cameFromOffer && openedSlug) {
           if (which === 'waitlist' || which === 'waitlist-off') {
             setWidgets(false);
             route(which === 'waitlist-off'
-              ? 'turn the waitlist off'
-              : 'set up the waitlist — I am booked out and want people to be able to grab cancellations');
+              ? 'turn the short notice list off'
+              : 'set up the short notice list — we are booked out and I want people to be able to '
+                + 'get an earlier time when one opens up');
             return;
           }
           // Choose the prizes here, in three taps, rather than describing them
