@@ -173,69 +173,57 @@ if (cameFromOffer && openedSlug) {
             <!-- Style controls live behind the Style button, anchored to the
                  head, so they stay out of the conversation. -->
             <div class="agent-paint" id="agent-paint" hidden>
-              <div class="paint-groups">
-                <div class="paint-group">
-                  <p>Business</p>
-                  <div>
-                    <button class="tone style" data-style="modern">Modern</button>
-                    <button class="tone style" data-style="classic">Classic</button>
-                    <button class="tone style" data-style="brutal">Brutal</button>
-                    <button class="tone style" data-style="mogged">Agency</button>
-                    <button class="tone style" data-style="trade">Trade</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>Food &amp; drink</p>
-                  <div>
-                    <button class="tone style" data-style="cafe">Cafe</button>
-                    <button class="tone style" data-style="eggs">Producer</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>Body</p>
-                  <div>
-                    <button class="tone style" data-style="physio">Clinic</button>
-                    <button class="tone style" data-style="beauty">Beauty</button>
-                    <button class="tone style" data-style="yoga">Yoga</button>
-                    <button class="tone style" data-style="pilates">Pilates</button>
-                    <button class="tone style" data-style="sauna">Sauna</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>Makers</p>
-                  <div>
-                    <button class="tone style" data-style="workshop">Workshop</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>Clubs &amp; community</p>
-                  <div>
-                    <button class="tone style" data-style="rugby">Rugby</button>
-                    <button class="tone style" data-style="soccer">Soccer</button>
-                    <button class="tone style" data-style="basketball">Basketball</button>
-                    <button class="tone style" data-style="charity">Charity</button>
-                    <button class="tone style" data-style="townhall">Town hall</button>
-                    <button class="tone style" data-style="daycare">Daycare</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>Pictures</p>
-                  <div>
-                    <button class="tone style" data-style="bubbles">Bubbles</button>
-                    <button class="tone style" data-style="montage">Montage</button>
-                    <button class="tone style" data-style="reel">Reel</button>
-                    <button class="tone style" data-style="tribute">Tribute</button>
-                  </div>
-                </div>
-                <div class="paint-group">
-                  <p>One of a kind</p>
-                  <div>
-                    <button class="tone style" data-style="listing">Listing</button>
-                    <button class="tone style" data-style="chain">Chain</button>
-                    <button class="tone style" data-style="diet">Diary</button>
-                    <button class="tone style" data-style="game">Game</button>
-                  </div>
-                </div>
+              <!-- One control, not thirty. Seven groups of pills filled the
+                   panel and buried the colour and tone rows underneath, and
+                   picking a style is a one-off decision that does not deserve
+                   that much of the surface. The groups survive as optgroups,
+                   which is what they were doing anyway. -->
+              <div class="paint-row style-line">
+                <label for="style-pick">Style</label>
+                <select id="style-pick">
+                  <optgroup label="Business">
+                    <option value="modern">Modern</option>
+                    <option value="classic">Classic</option>
+                    <option value="brutal">Brutal</option>
+                    <option value="mogged">Agency</option>
+                    <option value="trade">Trade</option>
+                  </optgroup>
+                  <optgroup label="Food &amp; drink">
+                    <option value="cafe">Cafe</option>
+                    <option value="eggs">Producer</option>
+                  </optgroup>
+                  <optgroup label="Body">
+                    <option value="physio">Clinic</option>
+                    <option value="beauty">Beauty</option>
+                    <option value="yoga">Yoga</option>
+                    <option value="pilates">Pilates</option>
+                    <option value="sauna">Sauna</option>
+                  </optgroup>
+                  <optgroup label="Makers">
+                    <option value="workshop">Workshop</option>
+                  </optgroup>
+                  <optgroup label="Clubs &amp; community">
+                    <option value="rugby">Rugby</option>
+                    <option value="soccer">Soccer</option>
+                    <option value="basketball">Basketball</option>
+                    <option value="charity">Charity</option>
+                    <option value="townhall">Town hall</option>
+                    <option value="daycare">Daycare</option>
+                  </optgroup>
+                  <optgroup label="Pictures &amp; video">
+                    <option value="bubbles">Bubbles</option>
+                    <option value="montage">Montage</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="insta">Instagram</option>
+                    <option value="tribute">Tribute</option>
+                  </optgroup>
+                  <optgroup label="One of a kind">
+                    <option value="listing">Listing</option>
+                    <option value="chain">Chain</option>
+                    <option value="diet">Diary</option>
+                    <option value="game">Game</option>
+                  </optgroup>
+                </select>
               </div>
               <div class="paint-row colour-line">
                 <button class="tone colour-open" id="colour-open" aria-expanded="false">
@@ -1033,12 +1021,26 @@ if (cameFromOffer && openedSlug) {
       /* Eighteen styles in one flat row was a wall of names you had to read
          end to end. Grouped by what the business is, it becomes a place you
          scan to the right shelf and stop. */
-      .paint-groups { display: grid; gap: 0.55rem; margin-bottom: 0.6rem; }
-      .paint-group > p {
+      .style-line { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+      .style-line label {
         font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
-        color: var(--text-muted); font-weight: 700; margin-bottom: 0.28rem;
+        color: var(--text-muted); font-weight: 700;
       }
-      .paint-group > div { display: flex; flex-wrap: wrap; gap: 5px; }
+      .style-line select {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--work-3);
+        background: #fff;
+        color: #44506b;
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.32rem 0.45rem;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .style-line select:hover { border-color: var(--accent); color: var(--accent-deep); }
+      .style-line select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
       .paint-row[hidden] { display: none; }
       /* Eleven swatches on show made the panel feel like a control surface.
          Most of the time somebody wants the style, not the colour. */
@@ -3513,8 +3515,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['game']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles');
-          root.parentElement.classList.add('st-game');
+          wearStyle(root.parentElement, 'st-game');
           applyTone();
           restoreSelection();
           return;
@@ -3570,8 +3571,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['eggs']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-mogged');
-          root.parentElement.classList.add('st-eggs');
+          wearStyle(root.parentElement, 'st-eggs');
           applyTone();
           restoreSelection();
           return;
@@ -3630,8 +3630,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['mogged']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs');
-          root.parentElement.classList.add('st-mogged');
+          wearStyle(root.parentElement, 'st-mogged');
           applyTone();
           restoreSelection();
           return;
@@ -3663,8 +3662,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['bubbles']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain');
-          root.parentElement.classList.add('st-bubbles');
+          wearStyle(root.parentElement, 'st-bubbles');
           applyTone();
           restoreSelection();
           return;
@@ -3689,8 +3687,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['chain']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet');
-          root.parentElement.classList.add('st-chain');
+          wearStyle(root.parentElement, 'st-chain');
           applyTone();
           restoreSelection();
           return;
@@ -3720,8 +3717,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['diet']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-chain');
-          root.parentElement.classList.add('st-diet');
+          wearStyle(root.parentElement, 'st-diet');
           applyTone();
           restoreSelection();
           return;
@@ -3744,8 +3740,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['montage']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-listing');
-          root.parentElement.classList.add('st-tribute', 'st-montage');
+          wearStyle(root.parentElement, 'st-tribute', 'st-montage');
           applyTone();
           restoreSelection();
           return;
@@ -3768,8 +3763,7 @@ if (cameFromOffer && openedSlug) {
           renderedKeys = new Set(['tribute']);
           setPalette(root, s.palette);
           root.parentElement.classList.add('pv');
-          root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-diet', 'st-chain');
-          root.parentElement.classList.add('st-tribute');
+          wearStyle(root.parentElement, 'st-tribute');
           applyTone();
           restoreSelection();
           return;
@@ -3887,11 +3881,23 @@ if (cameFromOffer && openedSlug) {
         setPalette(root, s.palette);
         root.parentElement.classList.add('pv');
         const st = S.site.style || 'modern';
-        root.parentElement.classList.remove('st-modern', 'st-brutal', 'st-classic', 'st-cafe', 'st-physio', 'st-trade', 'st-tribute', 'st-listing', 'st-diet', 'st-chain', 'st-bubbles', 'st-game', 'st-eggs', 'st-mogged', 'st-montage', 'st-beauty', 'st-yoga', 'st-pilates', 'st-workshop', 'st-sauna', 'st-rugby', 'st-soccer', 'st-basketball', 'st-charity',
-          'st-townhall', 'st-daycare', 'st-reel');
-        root.parentElement.classList.add('st-' + st);
+        wearStyle(root.parentElement, 'st-' + st);
         applyTone();
         restoreSelection();
+      }
+
+      /**
+       * Put exactly one st-* class on the preview.
+       *
+       * This was nine hardcoded remove() lists, each naming every style that
+       * existed when it was written. Adding youtube and insta did not update
+       * them, so switching away from either left the old class in place
+       * alongside the new one and two stylesheets fought over the preview.
+       * Stripping whatever is there means the next style added is free.
+       */
+      function wearStyle(el, ...names) {
+        [...el.classList].forEach((c) => { if (c.startsWith('st-')) el.classList.remove(c); });
+        el.classList.add(...names);
       }
 
       function snapshot() {
@@ -4545,7 +4551,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall", "daycare" or "reel" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall", "daycare", "youtube" or "instagram" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -5331,8 +5337,25 @@ if (cameFromOffer && openedSlug) {
           b.classList.toggle('on', b.dataset.tone === (S.site.tone || 'light')));
         document.querySelectorAll('.swatch').forEach((b) =>
           b.classList.toggle('on', b.dataset.colour === (S.site.palette || {}).primary));
-        document.querySelectorAll('.style[data-style]').forEach((b) =>
-          b.classList.toggle('on', b.dataset.style === (S.site.style || 'modern')));
+        const pick = $('style-pick');
+        if (pick) {
+          // A style set from the chat may not be in the list — reel became
+          // youtube, and a site saved under the old name must not silently
+          // read as Modern in here.
+          const now = S.site.style === 'reel' ? 'youtube' : (S.site.style || 'modern');
+          pick.value = now;
+          if (pick.value !== now) {
+            let odd = pick.querySelector('option[data-odd]');
+            if (!odd) {
+              odd = document.createElement('option');
+              odd.dataset.odd = '1';
+              pick.appendChild(odd);
+            }
+            odd.value = now;
+            odd.textContent = now;
+            pick.value = now;
+          }
+        }
       }
 
       function paint(colour, quiet) {
@@ -5361,7 +5384,8 @@ if (cameFromOffer && openedSlug) {
         trade: 'Dark and blunt for tradies — the phone number everywhere, areas covered, and photos of real jobs.',
         yoga: 'A studio page — the week on one screen, passes with their prices on them, and teachers with faces. Warm sand and a serif.',
         pilates: 'The same studio page, cooler and flatter. Timetable, passes, teachers — more gym than temple.',
-        reel: 'Video first — a subject and the films already made about it. One feature up top, the rest on a wall, every one credited to whoever made it.',
+        youtube: 'Video first — a subject and the films already made about it. One feature up top, the rest on a wall, every one credited to whoever made it.',
+        insta: 'A wall of your own Instagram posts, packed tight. Email a link to insta@garage.co.nz and it goes up; send it back with "remove" in the subject and it comes down.',
         rugby: 'For a rugby club — grades by age so a parent finds their kid in one look, the sponsors up where they belong, subs and training nights, and the clubrooms.',
         soccer: 'The club page in football colours — grades, fixtures, subs, training, and the businesses that pay for the strips.',
         basketball: 'The club page for a basketball club — grades, the schedule, subs, and your sponsors on the wall.',
@@ -5418,8 +5442,8 @@ if (cameFromOffer && openedSlug) {
           b.addEventListener('click', () => { paint(c); markColour(); });
           row.appendChild(b);
         });
-        document.querySelectorAll('.style[data-style]').forEach((b) =>
-          b.addEventListener('click', () => setStyle(b.dataset.style)));
+        const stylePick = $('style-pick');
+        if (stylePick) stylePick.addEventListener('change', () => setStyle(stylePick.value));
         document.querySelectorAll('.tone[data-tone]').forEach((b) =>
           b.addEventListener('click', () => {
             snapshot();

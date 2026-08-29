@@ -255,19 +255,17 @@ const when = (iso: string) => {
               {s.style === 'insta' ? (
                 <span class="card-shot card-insta">
                   {[0, 1, 2].map((i) => (
-                    s.insta[i] ? (
-                      <span class="ig-bar" data-ig={s.insta[i]}></span>
-                    ) : (
-                      <span class="ig-bar ig-none">
-                        {/* A struck-through eye: there is nothing in this slot
-                            to show, and an empty box would read as broken. */}
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
-                          <circle cx="12" cy="12" r="3.2" />
-                          <line x1="3" y1="21" x2="21" y2="3" />
-                        </svg>
-                      </span>
-                    )
+                    /* The eye is in every bar, not only the empty ones. A slot
+                       whose embed never arrives falls back to it rather than
+                       to a black rectangle, so a bar is always either a
+                       picture or a deliberate mark. */
+                    <span class={`ig-bar${s.insta[i] ? '' : ' ig-none'}`} data-ig={s.insta[i] || undefined}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+                        <circle cx="12" cy="12" r="3.2" />
+                        <line x1="3" y1="21" x2="21" y2="3" />
+                      </svg>
+                    </span>
                   ))}
                   {s.posts > 0 && <span class="rl-badge">{s.posts} post{s.posts === 1 ? '' : 's'}</span>}
                 </span>
@@ -564,7 +562,7 @@ const when = (iso: string) => {
     .ig-bar[data-ig]:not(.up) { animation: none; }
   }
 
-  .ig-none svg {
+  .ig-bar svg {
     width: 34%;
     max-width: 30px;
     height: auto;
@@ -573,9 +571,16 @@ const when = (iso: string) => {
     stroke-width: 1.6;
     stroke-linecap: round;
     opacity: 0.75;
+    transition: opacity 0.4s;
   }
 
   .card:hover .ig-none svg { opacity: 1; }
+
+  /* A slot expecting a picture hides the eye while it waits — the pulse is
+     already saying "loading". It comes back only if the embed never lands. */
+  .ig-bar[data-ig] svg { opacity: 0; }
+  .ig-bar[data-ig].ig-gave-up svg { opacity: 0.75; }
+  .ig-bar.up svg { opacity: 0; }
 
   .rl-tile { min-width: 0; min-height: 0; width: 100%; height: 100%; }
 
@@ -797,7 +802,7 @@ const when = (iso: string) => {
       });
       // A bar that pulses for ever is worse than one that simply sits there.
       // If Instagram has not answered by now it is not going to.
-      const giveUp = setTimeout(() => bar.classList.add('ig-gave-up'), 8000);
+      const giveUp = setTimeout(() => bar.classList.add('ig-gave-up'), 15000);
       bar.appendChild(f);
       // 326px is the embed's floor, so it is scaled rather than resized.
       //
