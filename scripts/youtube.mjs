@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 //
-//   npm run reel -- queenstown "mountain biking in Queenstown"
-//   npm run reel -- taupo "trout fishing on Lake Taupo" --films 10
-//   npm run reel -- rotorua "..." --replace        # rebuild an existing one
-//   npm run reel -- alaska "..." --ids a1b,c2d      # a list you chose yourself
+//   npm run youtube -- queenstown "mountain biking in Queenstown"
+//   npm run youtube -- taupo "trout fishing on Lake Taupo" --films 10
+//   npm run youtube -- rotorua "..." --replace        # rebuild an existing one
+//   npm run youtube -- alaska "..." --ids a1b,c2d      # a list you chose yourself
 //
 // Search, verify, write, publish. The verify step is the one that matters: a
 // model will produce a plausible eleven-character YouTube id as readily as a
@@ -36,7 +36,7 @@ const subject = positional[1] || '';
 const want = Math.max(4, Math.min(20, Number(flag('films', 12)) || 12));
 
 if (!/^[a-z0-9-]{3,40}$/.test(slug) || !subject) {
-  console.error('usage: npm run reel -- <slug> "<subject>" [--films 12] [--replace]');
+  console.error('usage: npm run youtube -- <slug> "<subject>" [--films 12] [--replace]');
   process.exit(1);
 }
 
@@ -114,7 +114,7 @@ const wres = await fetch('https://api.anthropic.com/v1/messages', {
   method: 'POST',
   headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
   body: JSON.stringify({
-    model: 'claude-sonnet-5', max_tokens: 2000,
+    model: 'claude-sonnet-5', max_tokens: 4000,
     system:
       'You write the short written part of a page whose real content is a set of YouTube films. ' +
       'Return ONLY JSON: {"name":"","eyebrow":"","headline":"six words or so","lede":"two ' +
@@ -132,25 +132,37 @@ const wres = await fetch('https://api.anthropic.com/v1/messages', {
 // exactly that — the model closed a string with an extra quote, JSON.parse
 // threw, and the whole run went in the bin including the search that paid for
 // it. So a broken answer here degrades to a plain page rather than an exception.
+let whyFailed = '';
 function readJson(response) {
+  // Say which failure this was. "Malformed" covered both a genuine syntax slip
+  // and simply running out of room, and those want opposite fixes — the second
+  // one repeats identically on retry, so a bare retry is wasted.
+  if (response?.stop_reason === 'max_tokens') {
+    whyFailed = 'the answer was cut off at the token limit';
+    return null;
+  }
   const text = (response?.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
   const block = (text.match(/\{[\s\S]*\}/) || [null])[0];
-  if (!block) return null;
+  if (!block) {
+    whyFailed = response?.error?.message || 'no JSON object in the answer';
+    return null;
+  }
   try {
     return JSON.parse(block);
-  } catch {
+  } catch (e) {
+    whyFailed = `JSON.parse: ${e.message}`;
     return null;
   }
 }
 
 let w = readJson(await wres.json());
 if (!w) {
-  say('  the written part came back malformed — asking once more');
+  say(`  the written part did not come back clean (${whyFailed}) — asking once more`);
   const retry = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': KEY, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
-      model: 'claude-sonnet-5', max_tokens: 2000,
+      model: 'claude-sonnet-5', max_tokens: 4000,
       // The first retry dropped the language rules along with everything else,
       // and came back with a Chinese character wedged into an English headline.
       // A retry is still the same job — say so.
@@ -168,7 +180,7 @@ if (!w) {
   w = readJson(await retry.json());
 }
 if (!w) {
-  say('  still malformed — publishing the films with plain wording');
+  say(`  still no good (${whyFailed}) — publishing the films with plain wording`);
   w = { name: subject, headline: subject, lede: '' };
 }
 
@@ -184,7 +196,7 @@ const config = {
   palette: { primary: '#e0483d', deep: '#0b0b0d', wash: '#141418' },
   shop: false, chat: false, products: [],
   sections: [
-    { type: 'video', label: 'The reel', title: `${clips.length} films`, clips },
+    { type: 'video', label: 'The films', title: `${clips.length} films`, clips },
     ...(w.about?.text ? [{ type: 'about', label: 'The subject', title: w.about.title || '', text: w.about.text }] : []),
     ...(w.facts?.items?.length ? [{ type: 'services', label: 'Worth knowing', title: w.facts.title || '', items: w.facts.items }] : []),
     ...(w.faq?.items?.length ? [{ type: 'faq', label: 'Questions', title: 'Asked a lot', items: w.faq.items }] : []),

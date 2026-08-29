@@ -628,15 +628,25 @@ async function spawn(
       .map((c: any) => c.text).join('');
     const match = text.match(/\{[\s\S]*\}/);
     if (!match) {
-      await note(db, 'error', { style, town, detail: 'no json in the reply' });
-      return json({ error: 'no json back' }, 502);
+      // The API's own words, when it has any. A run that fails because the
+      // account is out of credit looked exactly like a run that fails because
+      // the model wandered, and the log said the second thing for both — which
+      // is how the whole spawner sat dead for hours reading as a bad reply.
+      const why = (data as any)?.error?.message
+        || ((data as any)?.stop_reason === 'max_tokens' ? 'cut off at the token limit' : '')
+        || 'no json in the reply';
+      await note(db, 'error', { style, town, detail: String(why).slice(0, 300) });
+      return json({ error: why }, 502);
     }
 
     let cfg: any;
     try {
       cfg = JSON.parse(match[0]);
-    } catch {
-      await note(db, 'error', { style, town, detail: 'unparseable json — usually truncated' });
+    } catch (e) {
+      await note(db, 'error', {
+        style, town,
+        detail: `JSON.parse: ${String((e as Error)?.message || e).slice(0, 200)}`,
+      });
       return json({ error: 'bad json back' }, 502);
     }
     if (!cfg?.name) {
