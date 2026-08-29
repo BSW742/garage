@@ -38,13 +38,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!address || !address.includes('@')) return json({ error: 'no address on file' }, 422);
 
     let name: string | undefined;
+    let onWaitlist = false;
     try {
-      name = JSON.parse(row.config || '{}')?.name || undefined;
+      const cfg = JSON.parse(row.config || '{}');
+      name = cfg?.name || undefined;
+      onWaitlist = !!cfg?.waitlist?.on;
     } catch {
       /* the slug will do */
     }
 
-    const mail = keysEmail(slug, row.edit_token, name);
+    const mail = keysEmail(slug, row.edit_token, name, onWaitlist);
     const sent = await sendMail(env, {
       to: address,
       subject: mail.subject,

@@ -383,6 +383,30 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_waitlist',
+    description:
+      'Turn the waitlist on or off. A tab on the edge of every page: somebody who cannot get an ' +
+      'appointment puts their name down, and when a slot frees up the owner tells the list from ' +
+      'one page and the first to claim it takes it. This is for businesses that are booked out — ' +
+      'physios, hairdressers, dentists, tattooists, anyone who says "we have nothing until ' +
+      'November, shall I put you on the cancellation list?". Nothing is discounted and nothing is ' +
+      'marketed: the people on the list already wanted that slot at full price, so filling a ' +
+      'cancellation from here recovers a booking that was otherwise lost. Do not suggest it to a ' +
+      'business that is quiet — a waitlist for an empty diary is an insult.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the waitlist tab on the site.' },
+        title: { type: 'string', description: 'The tab, e.g. "Waitlist" or "Cancellations".' },
+        blurb: {
+          type: 'string',
+          description: 'One line on how booked up they are, in their words. e.g. "We are about six weeks out at the moment, but people cancel most weeks."',
+        },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'set_spinner',
     description:
       'Turn the spin-to-win wheel on or off, and set what is on it. A tab sits on the edge of ' +
@@ -749,6 +773,23 @@ export async function runTool(
       }
       if (!changed.length) return { ok: false, message: 'Nothing to set' };
       return { ok: true, message: changed.join(', ') };
+    }
+
+    case 'set_waitlist': {
+      const list: any = site.waitlist || {};
+      if (input.title !== undefined) list.title = String(input.title).slice(0, 24);
+      if (input.blurb !== undefined) list.blurb = String(input.blurb).slice(0, 220);
+      list.on = !!input.on;
+      site.waitlist = list;
+      if (!list.on) return { ok: true, message: 'Waitlist is off.' };
+      return {
+        ok: true,
+        message:
+          'Waitlist is on. People can put their name down from any page. When somebody ' +
+          'cancels, open the waitlist page from your keys email, type when the slot is, and ' +
+          'everyone hears at once — first to claim it gets it and you get told who.',
+        data: { waitlist: list },
+      };
     }
 
     case 'set_spinner': {

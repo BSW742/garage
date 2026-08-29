@@ -16,6 +16,7 @@ import { HALL_CSS, HALL_FONT_QUERY, renderHallBody } from './hall-render';
 import { DAYCARE_CSS, DAYCARE_FONT_QUERY, renderDaycareBody } from './daycare-render';
 import { REEL_CSS, REEL_FONT_QUERY, renderReelBody } from './reel-render';
 import { SPINNER_CSS, renderSpinner } from './spinner-render';
+import { WAITLIST_CSS, renderWaitlist } from './waitlist-render';
 import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } from './studio-render';
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
@@ -45,6 +46,23 @@ export interface Clip { id: string; title?: string; who?: string; note?: string 
  * with an animation. An owner putting a top prize on here should know it comes
  * up one spin in eight.
  */
+/**
+ * The waitlist.
+ *
+ * For a business that is booked out — "we have nothing until November, shall I
+ * put you on the cancellation list?" — which today means a name on a pad and
+ * somebody ringing down it when a slot drops.
+ *
+ * Nothing is discounted. The people on this list already wanted that slot at
+ * full price and could not have it, so filling a cancellation from here is
+ * recovering a booking that was otherwise lost rather than selling one cheap.
+ */
+export interface Waitlist {
+  on?: boolean;
+  title?: string;    // the tab: "Waitlist"
+  blurb?: string;    // one line about how booked up they are
+}
+
 export interface Spinner {
   on?: boolean;
   title?: string;      // "Spin to win"
@@ -137,6 +155,7 @@ export interface SiteConfig {
   chatLabel?: string;  // what the launcher says, default "Chat right now"
   chat?: boolean;   // chat widget is off until the owner is actually reachable
   spinner?: Spinner;   // spin-to-win: a tab on the edge that captures a lead
+  waitlist?: Waitlist; // the cancellation list: tell people when a slot frees up
 }
 
 function esc(value: unknown): string {
@@ -1710,7 +1729,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'reel' ? REEL_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
@@ -1718,7 +1737,7 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 </head>
 <body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'reel' ? ' rl' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
-    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
+    : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
 function shut(){z.classList.remove('on');document.body.style.overflow='';
 var f=document.getElementById('logo-film');if(f){try{f.pause();}catch(e){}}}

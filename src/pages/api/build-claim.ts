@@ -150,7 +150,7 @@ async function mailKeys(env: any, db: any, slug: string, email: string, site: an
       key = row?.edit_token;
     }
     if (!key) return;
-    const mail = keysEmail(slug, key, site?.name);
+    const mail = keysEmail(slug, key, site?.name, !!(site as any)?.waitlist?.on);
     const sent = await sendMail(env, {
       to: email,
       subject: mail.subject,

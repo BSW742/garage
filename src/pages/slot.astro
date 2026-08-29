@@ -1,0 +1,161 @@
+---
+// The owner's end of the waitlist. One field and one button.
+//
+// Reached from the link in their keys email, so the edit token is in the URL
+// and there is nothing to log in to. A receptionist with a cancellation has
+// about ten seconds of patience for this and it should not need any more.
+
+export const prerender = false;
+
+const slug = String(Astro.url.searchParams.get('s') || '').toLowerCase();
+const key = String(Astro.url.searchParams.get('k') || '');
+const db = (Astro.locals as any)?.runtime?.env?.DB;
+
+let ok = false;
+let who = '';
+let waiting = 0;
+let recent: any[] = [];
+
+if (db && slug && key) {
+  const site = await db
+    .prepare('SELECT slug, config FROM site_claims WHERE slug = ? AND edit_token = ?')
+    .bind(slug, key).first();
+  if (site) {
+    ok = true;
+    try { who = JSON.parse(String(site.config) || '{}')?.name || slug; } catch { who = slug; }
+    const n = await db
+      .prepare('SELECT COUNT(*) AS n FROM waitlist WHERE slug = ? AND left_at IS NULL')
+      .bind(slug).first();
+    waiting = Number(n?.n || 0);
+    const past = await db
+      .prepare(
+        `SELECT o.slot, o.created_at, o.told, w.name AS winner
+           FROM slot_offers o LEFT JOIN waitlist w ON w.id = o.claimed_by
+          WHERE o.slug = ? ORDER BY o.created_at DESC LIMIT 5`
+      )
+      .bind(slug).all();
+    recent = (past?.results || []) as any[];
+  }
+}
+---
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Waitlist — {who || 'garage.co.nz'}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.2rem;
+      background: #0a0c11; color: #eef1f7; font-family: Inter, system-ui, sans-serif;
+    }
+    .card {
+      width: min(30rem, 100%); background: #0e111a; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px; padding: 2rem 1.6rem 1.6rem;
+    }
+    .eyebrow { font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+      color: #1f7a4d; font-weight: 700; margin: 0 0 .6rem; }
+    h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -.02em; margin: 0 0 .4rem; }
+    p { color: #7d8598; font-size: .88rem; line-height: 1.6; margin: 0; }
+    input {
+      width: 100%; box-sizing: border-box; margin-top: 1.1rem; font: inherit; font-size: 1rem;
+      padding: .85rem .9rem; border-radius: 6px; border: 1px solid rgba(255,255,255,.12);
+      background: #0a0c11; color: #fff;
+    }
+    input:focus { outline: none; border-color: #1f7a4d; }
+    button {
+      width: 100%; margin-top: .6rem; border: 0; border-radius: 6px; cursor: pointer;
+      background: #1f7a4d; color: #fff; font: 600 .88rem/1 Inter, sans-serif;
+      letter-spacing: .08em; text-transform: uppercase; padding: .95rem 1rem;
+    }
+    button:hover { background: #24905b; }
+    button:disabled { opacity: .5; cursor: default; }
+    .said { margin-top: .9rem; font-size: .85rem; min-height: 1.2em; }
+    .said.good { color: #6ee7b7; } .said.bad { color: #fca5a5; }
+    .past { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid rgba(255,255,255,.12); }
+    .past h2 { font-size: .62rem; letter-spacing: .22em; text-transform: uppercase;
+      color: #5f6675; margin: 0 0 .7rem; }
+    .row { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0;
+      font-size: .84rem; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .row:last-child { border-bottom: 0; }
+    .row b { font-weight: 600; }
+    .row span { color: #5f6675; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {!ok && (
+      <>
+        <h1>Not your list</h1>
+        <p>This link needs the key from your keys email. Open the waitlist from there and it will
+          come with everything it needs.</p>
+      </>
+    )}
+    {ok && (
+      <>
+        <p class="eyebrow">{who}</p>
+        <h1>Somebody cancelled?</h1>
+        <p>Say when the slot is and everyone on the waitlist hears at once. First to claim it
+          gets it, and we will tell you who.</p>
+        <input id="slot" placeholder="Thursday 2pm" maxlength="80" autofocus />
+        <button id="go" data-slug={slug} data-key={key} disabled={waiting === 0}>
+          {waiting === 0 ? 'Nobody waiting yet' : `Tell the waitlist (${waiting})`}
+        </button>
+        <p class="said" id="said"></p>
+
+        {recent.length > 0 && (
+          <div class="past">
+            <h2>Lately</h2>
+            {recent.map((r: any) => (
+              <div class="row">
+                <b>{r.slot}</b>
+                <span>{r.winner ? `${r.winner} took it` : `told ${r.told}, still going`}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    )}
+  </div>
+
+  <script>
+    const go = document.getElementById('go');
+    const slot = document.getElementById('slot');
+    const said = document.getElementById('said');
+    if (go && slot) {
+      const send = async () => {
+        const text = (slot as HTMLInputElement).value.trim();
+        if (!text) { said!.textContent = 'Say when it is first.'; said!.className = 'said bad'; return; }
+        const label = go.textContent;
+        (go as HTMLButtonElement).disabled = true;
+        go.textContent = 'Telling them';
+        try {
+          const res = await fetch('/api/waitlist/tell', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              slug: (go as HTMLElement).dataset.slug,
+              key: (go as HTMLElement).dataset.key,
+              slot: text,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.why || data.error || 'That did not go through');
+          said!.textContent = `Told ${data.told} of ${data.of}. First to claim it gets it.`;
+          said!.className = 'said good';
+          (slot as HTMLInputElement).value = '';
+        } catch (e: any) {
+          said!.textContent = e.message || 'That did not go through.';
+          said!.className = 'said bad';
+        }
+        (go as HTMLButtonElement).disabled = false;
+        go.textContent = label;
+      };
+      go.addEventListener('click', send);
+      slot.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') send(); });
+    }
+  </script>
+</body>
+</html>

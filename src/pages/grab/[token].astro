@@ -1,0 +1,168 @@
+---
+import { sendMail } from '../../lib/mail';
+
+// Claiming a slot from the email.
+//
+// The link in the mail is a GET, and a GET must not claim anything. Mail
+// clients and corporate scanners follow links to check they are safe, and one
+// of those would otherwise take the slot on somebody's behalf before they had
+// even opened the message. So the link shows a button, and the button posts.
+//
+// The claim itself is a conditional update — set the winner only if there is
+// not one already — so two people pressing at the same moment cannot both win.
+
+export const prerender = false;
+
+const db = (Astro.locals as any)?.runtime?.env?.DB;
+const env = (Astro.locals as any)?.runtime?.env || {};
+const token = String(Astro.params.token || '');
+const [offerId, personId] = token.split('.');
+const wantsOff = Astro.url.searchParams.get('off') === '1';
+
+let state: 'gone' | 'yours' | 'taken' | 'ready' | 'off' | 'bad' = 'bad';
+let slot = '';
+let who = '';
+let winner = '';
+
+if (db && offerId && personId) {
+  const offer = await db
+    .prepare('SELECT id, slug, slot, claimed_by FROM slot_offers WHERE id = ?')
+    .bind(offerId).first();
+  const person = await db
+    .prepare('SELECT id, name, email, phone FROM waitlist WHERE id = ? AND slug = ?')
+    .bind(personId, offer?.slug || '').first();
+
+  if (offer && person) {
+    slot = String(offer.slot);
+    const site = await db
+      .prepare('SELECT config, email FROM site_claims WHERE slug = ?')
+      .bind(offer.slug).first();
+    try { who = JSON.parse(String(site?.config) || '{}')?.name || String(offer.slug); }
+    catch { who = String(offer.slug); }
+
+    if (wantsOff) {
+      await db
+        .prepare("UPDATE waitlist SET left_at = ?, left_why = 'unsubscribed' WHERE id = ?")
+        .bind(new Date().toISOString(), personId).run();
+      state = 'off';
+    } else if (Astro.request.method === 'POST') {
+      // Only wins if nobody has it yet.
+      const done = await db
+        .prepare('UPDATE slot_offers SET claimed_by = ?, claimed_at = ? WHERE id = ? AND claimed_by IS NULL')
+        .bind(personId, new Date().toISOString(), offerId).run();
+      const mine = (done?.meta?.changes ?? 0) > 0;
+      if (mine) {
+        state = 'yours';
+        // They got what they were waiting for, so they come off the list —
+        // no reason to keep mailing somebody who is sorted.
+        await db
+          .prepare("UPDATE waitlist SET left_at = ?, left_why = 'claimed' WHERE id = ?")
+          .bind(new Date().toISOString(), personId).run();
+        if (site?.email) {
+          await sendMail(env, {
+            to: String(site.email),
+            replyTo: String(person.email || ''),
+            subject: `${person.name} grabbed ${slot}`,
+            text:
+              `${person.name} claimed the slot you put out: ${slot}.\n\n` +
+              `Email: ${person.email}\n` +
+              (person.phone ? `Phone: ${person.phone}\n` : '') +
+              `\nThey are off the waitlist now. Confirm it with them however you normally would.\n`,
+          });
+        }
+      } else {
+        state = 'taken';
+        const took = await db
+          .prepare('SELECT name FROM waitlist WHERE id = ?')
+          .bind(offer.claimed_by).first();
+        winner = String(took?.name || '');
+      }
+    } else {
+      state = offer.claimed_by ? 'taken' : 'ready';
+    }
+  }
+}
+---
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{slot ? `${slot} — ${who}` : 'Waitlist'}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 1.2rem;
+      background: #0a0c11; color: #eef1f7;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      width: min(27rem, 100%); background: #0e111a; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px; padding: 2rem 1.6rem 1.7rem; text-align: center;
+    }
+    .eyebrow {
+      font-size: .62rem; letter-spacing: .26em; text-transform: uppercase;
+      color: #1f7a4d; font-weight: 700; margin: 0 0 .6rem;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -.02em; margin: 0 0 .4rem; }
+    p { color: #7d8598; font-size: .9rem; line-height: 1.6; margin: 0; }
+    .slot {
+      margin: 1.2rem 0; padding: 1rem; border-radius: 10px; background: #0a0c11;
+      border: 1px solid rgba(255,255,255,.12); font-size: 1.15rem; font-weight: 700; color: #fff;
+    }
+    button {
+      width: 100%; margin-top: .3rem; border: 0; border-radius: 6px; cursor: pointer;
+      background: #1f7a4d; color: #fff; font: 600 .9rem/1 Inter, sans-serif;
+      letter-spacing: .08em; text-transform: uppercase; padding: 1rem;
+    }
+    button:hover { background: #24905b; }
+    .small { margin-top: 1rem; font-size: .72rem; color: #5f6675; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {state === 'ready' && (
+      <>
+        <p class="eyebrow">{who}</p>
+        <h1>This slot is still going</h1>
+        <div class="slot">{slot}</div>
+        <form method="POST"><button type="submit">Claim it</button></form>
+        <p class="small">First to claim gets it. If somebody beats you to it we will say so.</p>
+      </>
+    )}
+    {state === 'yours' && (
+      <>
+        <p class="eyebrow">{who}</p>
+        <h1>It is yours</h1>
+        <div class="slot">{slot}</div>
+        <p>{who} has been told and will confirm with you. You are off the waitlist now —
+          join again any time you want in sooner.</p>
+      </>
+    )}
+    {state === 'taken' && (
+      <>
+        <p class="eyebrow">{who}</p>
+        <h1>Just missed it</h1>
+        <div class="slot">{slot}</div>
+        <p>{winner ? `${winner} got there first.` : 'Somebody got there first.'}
+          You are still on the waitlist, so you will hear about the next one.</p>
+      </>
+    )}
+    {state === 'off' && (
+      <>
+        <p class="eyebrow">{who}</p>
+        <h1>You are off the list</h1>
+        <p>We will not email you about slots again. No hard feelings.</p>
+      </>
+    )}
+    {state === 'bad' && (
+      <>
+        <h1>That link has expired</h1>
+        <p>It may have been from an old message. Ask to go back on the waitlist and we will
+          let you know about the next one.</p>
+      </>
+    )}
+  </div>
+</body>
+</html>

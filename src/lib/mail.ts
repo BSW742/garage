@@ -111,10 +111,13 @@ export async function ownerContact(
  * The keys email. Every link in here carries the edit key, because a link that
  * lands on "who are you" is the same as no link at all.
  */
-export function keysEmail(slug: string, token: string, name?: string) {
+export function keysEmail(slug: string, token: string, name?: string, waitlist = false) {
   const site = `https://${slug}.garage.co.nz`;
   const inbox = `${site}/admin?k=${encodeURIComponent(token)}`;
   const editor = `https://garage.co.nz/ai?edit=${encodeURIComponent(slug)}&t=${encodeURIComponent(token)}`;
+  // Only in the email when the waitlist is actually on, because a link to a
+  // feature somebody is not using is one more thing to skip past.
+  const slot = `https://garage.co.nz/slot?s=${encodeURIComponent(slug)}&k=${encodeURIComponent(token)}`;
   const label = name || `${slug}.garage.co.nz`;
 
   const text = [
@@ -132,6 +135,15 @@ export function keysEmail(slug: string, token: string, name?: string) {
     'Tell it what you want in plain words: "make the headline shorter", "add a',
     'photo of the new van", "we do Cambridge too". It does it while you watch.',
     '',
+    ...(waitlist
+      ? [
+          `SOMEBODY CANCELLED  ${slot}`,
+          'Type when the slot is and everyone on your waitlist hears at once. First',
+          'to claim it takes it and we tell you who. Nothing is discounted — they',
+          'already wanted that time.',
+          '',
+        ]
+      : []),
     `OR JUST EMAIL US  ${slug}@garage.co.nz`,
     'Send that address a note and we will make the change. Attach photos and',
     'they go on the site. Send a YouTube link and it goes in the video reel.',

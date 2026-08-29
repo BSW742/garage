@@ -228,6 +228,22 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
+The waitlist widget:
+- A tab on the edge of every page. Somebody who cannot get in puts their name down; when a slot
+  frees up the owner tells the list from one page and the first to claim it takes it.
+- This is for a business that is booked out, and only for one. A physio six weeks deep, a
+  hairdresser, a dentist, a tattooist — anyone whose receptionist already says "we have nothing
+  until November, shall I put you on the cancellation list?". Offering it to somebody with a quiet
+  diary is an insult, so ask how booked up they are before you suggest it.
+- Say what it is not, because people assume the worst: it is not a mailing list, nothing is
+  discounted, and nobody is marketed at. The people on it already wanted that slot at full price
+  and could not have it. Filling a cancellation from the list recovers a booking that was
+  otherwise lost — it does not sell one cheap.
+- Ask for one line about how far out they are, in their words, for the blurb. "We are about six
+  weeks out at the moment, but people cancel most weeks" is worth more than anything you write.
+- Then set_waitlist with on: true. Tell them the waitlist page is in their keys email, and that
+  telling the list takes about ten seconds when somebody drops out.
+
 The spin-to-win widget:
 - A tab on the edge of every page. A visitor opens it, gives their name, email and phone, and
   spins a wheel of eight slots. It works on any template — it is a widget, not a page.
