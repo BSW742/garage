@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "reel": "node scripts/reel.mjs"
+    "youtube": "node scripts/youtube.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

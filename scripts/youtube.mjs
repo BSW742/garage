@@ -174,7 +174,7 @@ if (!w) {
 
 const config = {
   name: w.name || subject,
-  style: 'reel',
+  style: 'youtube',
   eyebrow: w.eyebrow || '',
   headline: w.headline || w.name || subject,
   lede: w.lede || '',

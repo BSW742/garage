@@ -110,7 +110,7 @@ try {
           // rendering as a single grey letter, which was the worst card on the
           // page attached to the best content on it. Take the thumbnails.
           reel:
-            (c.style || '') === 'reel'
+            ['youtube', 'reel'].includes(c.style || '')
               ? (c.sections || [])
                   .flatMap((sec: any) => sec?.clips || [])
                   .map((clip: any) => String(clip?.id || ''))
@@ -119,7 +119,7 @@ try {
                   .map((id: string) => `https://i.ytimg.com/vi/${id}/mqdefault.jpg`)
               : [],
           films:
-            (c.style || '') === 'reel'
+            ['youtube', 'reel'].includes(c.style || '')
               ? (c.sections || []).flatMap((sec: any) => sec?.clips || []).length
               : 0,
           slug: row.slug,

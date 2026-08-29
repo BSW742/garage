@@ -79,7 +79,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'reel'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'youtube', 'insta'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },
@@ -930,7 +930,10 @@ export async function runTool(
         };
       }
 
-      if (site.style !== 'reel') site.style = 'reel';
+      // An insta wall also takes clips; it must not be flipped to the YouTube
+      // template just because somebody added one. That is what wiped the style
+      // off insta.garage.co.nz.
+      if (site.style !== 'youtube' && site.style !== 'insta') site.style = 'youtube';
       let section = site.sections.find((x) => x.type === 'video');
       if (!section) {
         section = { type: 'video', label: 'The reel', title: '', clips: [] };
