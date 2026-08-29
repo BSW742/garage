@@ -227,6 +227,7 @@ if (cameFromOffer && openedSlug) {
                     <option value="montage">Montage</option>
                     <option value="youtube">YouTube</option>
                     <option value="insta">Instagram</option>
+                    <option value="videomap">Video map</option>
                     <option value="tribute">Tribute</option>
                   </optgroup>
                   <optgroup label="One of a kind">
@@ -4829,7 +4830,7 @@ if (cameFromOffer && openedSlug) {
                 : null;
           if (style) {
             if (setStyle(style)) {
-              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall", "daycare", "youtube" or "instagram" to flip between them.');
+              await say(STYLE_NOTES[style] + ' Have a look — say "modern", "brutal", "classic", "cafe", "physio", "trade", "tribute", "listing", "diary", "chain", "bubbles", "game", "producer", "agency", "montage", "beauty", "yoga", "pilates", "workshop", "sauna", "rugby", "soccer", "basketball", "charity", "town hall", "daycare", "youtube", "instagram" or "video map" to flip between them.');
             } else {
               await say("It's already in that style. Try one of the other two.");
             }
@@ -5663,6 +5664,7 @@ if (cameFromOffer && openedSlug) {
         yoga: 'A studio page — the week on one screen, passes with their prices on them, and teachers with faces. Warm sand and a serif.',
         pilates: 'The same studio page, cooler and flatter. Timetable, passes, teachers — more gym than temple.',
         youtube: 'Video first — a subject and the films already made about it. One feature up top, the rest on a wall, every one credited to whoever made it.',
+        videomap: 'A trip told on the map it happened on. Every stop is a place with a photo or a film on it, joined in the order you went, so a family can follow the whole thing without reading a word.',
         insta: 'A wall of your own Instagram posts, packed tight. Email a link to insta@garage.co.nz and it goes up; send it back with "remove" in the subject and it comes down.',
         rugby: 'For a rugby club — grades by age so a parent finds their kid in one look, the sponsors up where they belong, subs and training nights, and the clubrooms.',
         soccer: 'The club page in football colours — grades, fixtures, subs, training, and the businesses that pay for the strips.',

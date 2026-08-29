@@ -79,7 +79,7 @@ export const TOOLS = [
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'youtube', 'insta'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'youtube', 'insta', 'videomap'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },
