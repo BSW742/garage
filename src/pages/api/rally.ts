@@ -18,6 +18,45 @@ export const OPTIONS: APIRoute = () => new Response(null, { status: 204, headers
 
 const PER_HOUR = 20;
 
+/**
+ * Where a rally is up to. The widget needs the count on every page without
+ * signing anybody up for it, so this is the read half of the same thing.
+ */
+export const GET: APIRoute = async ({ url, locals }) => {
+  try {
+    const db = (locals.runtime?.env as any)?.DB;
+    if (!db) return json({ error: 'not-configured' }, 503);
+    const slug = String(url.searchParams.get('slug') || '').toLowerCase();
+    const path = String(url.searchParams.get('path') || '').toLowerCase();
+    if (!/^[a-z0-9-]{1,63}$/.test(slug) || !/^[a-z0-9-]{1,40}$/.test(path)) {
+      return json({ error: 'Bad address' }, 400);
+    }
+    const row = await db
+      .prepare("SELECT config FROM site_claims WHERE slug = ? AND status != 'archived'")
+      .bind(slug).first();
+    if (!row) return json({ error: 'No such page' }, 404);
+    // Campaigns live in an array — a site can run more than one — so this
+    // looks the same way the sign-up half does rather than guessing.
+    let target = 0;
+    try {
+      const found = (JSON.parse(String(row.config) || '{}')?.campaigns || []).find(
+        (c: any) => String(c?.path || '').toLowerCase() === path
+      );
+      target = Number(found?.target) || 0;
+    } catch { /* no campaign */ }
+    if (!target) return json({ error: 'No such page' }, 404);
+
+    const tally = await db
+      .prepare('SELECT COUNT(*) AS n FROM rally_signups WHERE slug = ? AND path = ?')
+      .bind(slug, path).first();
+    const count = Number(tally?.n || 0);
+    return json({ ok: true, count, target, togo: Math.max(0, target - count), on: count >= target });
+  } catch (error) {
+    console.error('Rally read failed:', error);
+    return json({ error: 'Could not read that' }, 500);
+  }
+};
+
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const db = (locals.runtime?.env as any)?.DB;

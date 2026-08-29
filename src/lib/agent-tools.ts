@@ -106,6 +106,10 @@ export const TOOLS = [
         blurb: { type: 'string' },
         detail: { type: 'string' },
         target: { type: 'number', description: 'How many people it takes to go ahead' },
+        when: {
+          type: 'string',
+          description: 'When the thing itself happens, in their words. "Saturday 4 October, 10am"',
+        },
         closes: { type: 'string' },
         cta: { type: 'string' },
       },
@@ -613,6 +617,7 @@ export async function runTool(
         blurb: String(input.blurb || '').slice(0, 300) || undefined,
         detail: String(input.detail || '').slice(0, 900) || undefined,
         target,
+        when: String(input.when || '').slice(0, 80) || undefined,
         closes: String(input.closes || '').slice(0, 60) || undefined,
         cta: String(input.cta || '').slice(0, 30) || undefined,
       };
@@ -622,7 +627,9 @@ export async function runTool(
       else list.push(campaign);
       return {
         ok: true,
-        message: `${title} at /${path}, going ahead at ${target}`,
+        message:
+          `${title} at /${path}, going ahead at ${target}. The bar shows on every page — ` +
+          `"N going" and how many more it needs — and it turns when it lands.`,
         data: { url: `/${path}` },
       };
     }

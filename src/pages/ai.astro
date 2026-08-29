@@ -163,6 +163,14 @@ if (cameFromOffer && openedSlug) {
                     <span class="widget-face">&#9723;</span>
                     <span><b>Turn the list off</b><i>Keeps everyone already on it.</i></span>
                   </button>
+                  <button class="widget-card" data-widget="rally">
+                    <span class="widget-face">&#128227;</span>
+                    <span>
+                      <b>Rally</b>
+                      <i>An event that only runs if enough people are in. A bar along the bottom
+                        of every page shows how many are going and how many more it needs.</i>
+                    </span>
+                  </button>
                 </div>
 
                 <!-- Six squares. Fixed labels and fixed icons, which is the
@@ -5665,6 +5673,12 @@ if (cameFromOffer && openedSlug) {
           if (which === 'spinner-off') {
             setWidgets(false);
             route('turn the spin to win wheel off');
+            return;
+          }
+          if (which === 'rally') {
+            setWidgets(false);
+            route('set up a rally — an event that only goes ahead if enough people put their '
+              + 'name down. Ask me what it is, when it is and how many people it needs.');
             return;
           }
           if (which === 'waitlist' || which === 'waitlist-off') {

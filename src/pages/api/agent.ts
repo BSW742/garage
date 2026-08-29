@@ -228,6 +228,20 @@ The studio templates (yoga and pilates):
 - One offer for a first-timer, in a band section, and only one. Two competing offers reads as a
   sale rather than a welcome.
 
+The rally:
+- An event that only happens if enough people want it. A workshop, a supper club, a group rate on
+  a street's worth of work. Nobody is asked for money, only whether it should exist — which is why
+  people pass it on, and passing it on is the only reason it ever reaches the number.
+- It gets its own page at <their site>/<path>, and a bar along the bottom of every page showing
+  how many are going and how many more it needs. When it lands, the bar turns and says so.
+- Ask three things and set them with set_rally: what the thing is, when it happens, and how many
+  people it takes to go ahead. The number is the one they will dither over — push for a real one,
+  the smallest number at which they would actually run it, because a target nobody reaches is
+  worse than no page at all.
+- Also worth having: a line on what people get, and when sign-ups close.
+- Say plainly that nobody is charged. People assume a sign-up form wants their card, and the whole
+  mechanism falls over if they think that.
+
 The short notice list:
 - A tab on the edge of every page. Somebody who cannot get in leaves their name; when a time opens
   up the owner tells the list from one page and the first to say yes takes it.
