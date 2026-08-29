@@ -218,7 +218,11 @@ const when = (iso: string) => {
       <p class="work-eyebrow">The work</p>
       <h1>Real sites, built by talking.</h1>
       <div class="work-doing">
-        <a class="work-btn" href="/ai">Build yours</a>
+        <!-- ?start=1 skips the builder's hero and drops straight on the
+             address step, the same as Claim in the nav. Somebody who has just
+             scrolled a wall of finished sites and pressed this has already
+             been talked into it; the pitch page is a step backwards. -->
+        <a class="work-btn" href="/ai?start=1">Build yours</a>
         <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
         <span class="work-btn tag"><i></i>1 Million free tokens</span>
       </div>
