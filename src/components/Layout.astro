@@ -13,18 +13,43 @@ const fullTitle = title === "Home" ? "garage.co.nz — Free Websites for NZ Char
 
 // A live count in the nav, on every page. One indexed COUNT, and it fails
 // silently — a header that 500s over a vanity number would be a poor trade.
+//
+// "Today" means today in Auckland, not the last twenty-four hours and not
+// today in UTC. D1 runs on UTC, so at nine in the morning here 'now' is still
+// yesterday afternoon there, and a plain date('now') would count from the
+// wrong midnight for half of every day. The offset is read from the clock
+// rather than fixed at twelve hours, so it stays right across daylight saving.
+function aucklandDayStart(): string {
+  const now = new Date();
+  const here = new Date(now.toLocaleString('en-US', { timeZone: 'Pacific/Auckland' }));
+  const offset = here.getTime() - now.getTime();
+  here.setHours(0, 0, 0, 0);
+  // Formatted the way SQLite's datetime() returns, so the comparison is
+  // like-for-like against rows written in either ISO or plain form.
+  return new Date(here.getTime() - offset).toISOString().slice(0, 19).replace('T', ' ');
+}
+
 let liveSites = 0;
 let sitesToday = 0;
 try {
   const db = (Astro.locals as any)?.runtime?.env?.DB;
   if (db) {
+    let since: string;
+    try {
+      since = aucklandDayStart();
+    } catch {
+      // Without a timezone database, a rolling day is closer than a wrong one.
+      since = '';
+    }
     const row = await db
       .prepare(
         `SELECT COUNT(*) AS live,
-                SUM(CASE WHEN COALESCE(updated_at, created_at) > datetime('now','-1 day')
+                SUM(CASE WHEN datetime(COALESCE(updated_at, created_at)) >=
+                              COALESCE(NULLIF(?, ''), datetime('now','-1 day'))
                          THEN 1 ELSE 0 END) AS today
            FROM site_claims WHERE status != 'disabled'`
       )
+      .bind(since)
       .first();
     liveSites = Number(row?.live || 0);
     sitesToday = Number(row?.today || 0);
@@ -81,11 +106,15 @@ try {
              shortcut for Ben, and this is the thing he clicks to go and look at
              the list behind it. Two counts read as a dashboard nobody asked to
              see; three words say the only part a visitor needs, which is that
-             the place is not abandoned. The counts are still on /admin/sites.
-             It stays hidden until there is at least one live site. -->
+             the place is not abandoned. Built and edited count the same, since
+             a visitor does not care which it was. Before the first one lands
+             each morning there is nothing true to say, so it falls back to the
+             total rather than showing a nought. -->
         <a class="site-pulse" href="/admin/sites" title="Sites built on garage.co.nz">
           <i></i>
-          <span>updated today</span>
+          <span>{sitesToday > 0
+            ? <><b>{sitesToday}</b> updated today</>
+            : <><b>{liveSites}</b> sites live</>}</span>
         </a>
       )}
       <nav class="nav">
