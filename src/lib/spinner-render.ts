@@ -23,7 +23,7 @@
 // button, in a sentence nobody has to go looking for.
 
 import type { SiteConfig, Spinner } from './site-render';
-import { toPrizes, icon, type Prize } from './prizes';
+import { toPrizes, type Prize } from './prizes';
 
 function esc(value: unknown): string {
   return String(value == null ? '' : value).replace(/[&<>"]/g, (c) =>
@@ -170,14 +170,13 @@ width:26%;height:26%;border-radius:50%;background:${RED}}
 .gsp-slot{position:absolute;inset:0;z-index:2;pointer-events:none}
 .gsp-slot span{position:absolute;left:50%;top:4%;width:38%;
 transform-origin:0 50%;transform:rotate(90deg);
-display:flex;align-items:center;gap:.3rem;
-font:700 .72rem/1 var(--font-sans,system-ui,sans-serif);color:#fff;
-letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-/* The words sit at the rim and read inward; the icon trails them. It used to
-   be the other way round, so the icon had the outer position and pushed every
-   label a centimetre off the edge — and the longest ones ran into the hub at
-   the other end. From 4% to 42% is the whole run from rim to hub. */
-.gsp-slot svg{flex:none;opacity:.8;order:2}
+display:flex;align-items:center;
+font:700 .78rem/1 var(--font-sans,system-ui,sans-serif);color:#fff;
+letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+/* Words only. Icons and typed prizes are one or the other: an icon means a
+   catalogue with a fixed list, and typing means anybody can put anything on.
+   Half the wheel carrying a generic circle because nobody had drawn "7 days
+   beans" was the worst of both. From 4% to 42% is the run from rim to hub. */
 .gsp-slot.dark span{color:${INK}}
 .gsp-slot.top span{color:${INK};font-weight:800}
 .gsp-slot.top svg,.gsp-slot.dark svg{opacity:1}
@@ -243,7 +242,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
       const mid = i * seg + seg / 2;
       return `<div class="gsp-slot${i === 0 ? ' top' : ''}${onLight(i) ? ' dark' : ''}"
         style="transform:rotate(${mid}deg)">
-        <span>${esc(p.label)}${icon(p, '.85rem')}</span>
+        <span>${esc(p.label)}</span>
       </div>`;
     })
     .join('');

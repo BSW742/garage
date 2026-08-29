@@ -391,12 +391,10 @@ export const TOOLS = [
       'losing slots — and the first prize you pass is the top one: it gets the single gold slot, ' +
       'so it comes up one spin in eight. Say that plainly before switching it on and make sure ' +
       'they are happy to honour it at that rate. Everything after the first fills the other seven ' +
-      'slots in turn. Pass between two and eight prizes, best first. Each is either a catalogue ' +
-      'id — gift, off10, off20, half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, ' +
-      'delivery, session, class, merch, sticker, upgrade — or the owner\'s own words, at most 14 ' +
-      'characters, because that is what fits in a wedge. Use their words when the catalogue has ' +
-      'nothing that suits their trade, and keep them short: "7 days free", "free wash". Nothing ' +
-      'is ever emailed to the visitor — the details go to the owner, and the form says so.',
+      'slots in turn. Pass between two and eight prizes, best first, in the owner\'s own words. ' +
+      'Fourteen characters each at the very most — that is what fits in a wedge — so "Free ' +
+      'coffee", "20% off", "7 days free", "Free brake check". Nothing is ever emailed to the ' +
+      'visitor: the details go to the owner, and the form says so.',
     input_schema: {
       type: 'object',
       properties: {
@@ -405,8 +403,8 @@ export const TOOLS = [
           type: 'array',
           items: { type: 'string' },
           description:
-            'Two to eight entries, top prize first. Catalogue ids or short custom labels, mixed ' +
-            'freely. e.g. ["coffee","off20","7 days free"]',
+            'Two to eight short labels, top prize first, 14 characters each at most. ' +
+            'e.g. ["Free coffee","20% off","7 days free"]',
         },
         title: { type: 'string', description: 'The tab and the heading, e.g. "Spin to win".' },
         blurb: { type: 'string', description: 'One line under the heading.' },
@@ -784,9 +782,9 @@ export async function runTool(
         return {
           ok: false,
           message:
-            'No prizes chosen yet. The six that suit this business: ' +
-            shortlistFor(site.style).map((id) => `${id} (${PRIZE_BY_ID[id].label})`).join(', ') +
-            '. Or their own words, 14 characters at most. Ask which, best first.',
+            'No prizes yet. Suggestions that suit this business: ' +
+            shortlistFor(site.style).map((id) => `"${PRIZE_BY_ID[id].label}"`).join(', ') +
+            '. Their own words are better if they have them. 14 characters at most, best first.',
         };
       }
       if (input.title !== undefined) spin.title = String(input.title).slice(0, 40);

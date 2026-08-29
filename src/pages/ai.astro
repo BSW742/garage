@@ -157,16 +157,20 @@ if (cameFromOffer && openedSlug) {
                      only reason the wheel can be drawn properly — nothing has
                      to bend around somebody's twenty-nine character offer. -->
                 <div class="prize-pick" id="prize-pick" hidden>
-                  <p class="prize-say">Tap what you want on the wheel. The first one you pick is
-                    the top prize &mdash; it gets the gold slot, one in eight.</p>
-                  <div class="prize-grid" id="prize-grid"></div>
+                  <p class="prize-say">Type what you are giving away. Short &mdash; it has to read
+                    in a wedge. Two or more.</p>
                   <div class="prize-own">
-                    <input id="prize-input" maxlength="14" placeholder="Or type your own" />
+                    <input id="prize-input" maxlength="14" placeholder="A free coffee, 20% off, 7 days free…" />
                     <button class="prize-add" id="prize-add" type="button">Add</button>
                     <span class="prize-left" id="prize-left">14</span>
                   </div>
+                  <ul class="prize-list" id="prize-list"></ul>
+                  <p class="prize-hint" id="prize-hint" hidden>
+                    The one at the top gets the gold slot &mdash; it comes up one spin in eight.
+                    Use &uarr; to move a prize up there.
+                  </p>
                   <div class="prize-foot">
-                    <span id="prize-count">nothing picked yet</span>
+                    <span id="prize-count">nothing on the wheel yet</span>
                     <button class="prize-go" id="prize-go" disabled>Put them on the wheel</button>
                   </div>
                 </div>
@@ -824,41 +828,47 @@ if (cameFromOffer && openedSlug) {
 
       .prize-pick { margin-top: 0.9rem; border-top: 1px solid var(--work-3); padding-top: 0.9rem; }
       .prize-say { font-size: 0.78rem; color: var(--work-dim, #6b7383); margin-bottom: 0.6rem; }
-      .prize-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-      .prize-sq {
-        position: relative; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 0.3rem; aspect-ratio: 1; cursor: pointer;
-        border: 1.5px solid var(--work-3); background: #fff; border-radius: 14px;
-        font-family: var(--font-sans); transition: all 0.15s;
-      }
-      .prize-sq svg { width: 1.45rem; height: 1.45rem; color: #16294a; }
-      .prize-sq b { font-size: 0.72rem; font-weight: 700; color: var(--work-ink); text-align: center; }
-      .prize-sq:hover { border-color: #16294a; transform: translateY(-1px); }
-      .prize-sq.on { border-color: #a81f2d; background: #fdf7f7; box-shadow: 0 0 0 3px rgba(168,31,45,0.14); }
-      .prize-sq.on svg { color: #a81f2d; }
-      .prize-sq .pick-no {
-        position: absolute; top: 0.3rem; right: 0.35rem; width: 1.2rem; height: 1.2rem;
-        border-radius: 50%; background: #0e111a; color: #fff; font-size: 0.7rem;
-        font-weight: 800; display: none; align-items: center; justify-content: center;
-      }
-      .prize-sq.on .pick-no { display: flex; }
-      .prize-sq.top .pick-no { background: #a81f2d; color: #fff; }
-      /* Any trade can put its own words on, so long as they fit a wedge. The
-         catalogue only stretches as far as the trades we have thought about. */
-      .prize-own { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; }
+      .prize-own { display: flex; align-items: center; gap: 0.4rem; }
       .prize-own input {
-        flex: 1; min-width: 0; font: inherit; font-size: 0.84rem; padding: 0.45rem 0.6rem;
+        flex: 1; min-width: 0; font: inherit; font-size: 0.88rem; padding: 0.55rem 0.7rem;
         border: 1px solid var(--work-3); border-radius: 8px; background: #fff;
       }
       .prize-own input:focus { outline: none; border-color: #a81f2d; }
       .prize-add {
         border: 1px solid var(--work-3); background: #fff; border-radius: 8px; cursor: pointer;
-        font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.45rem 0.75rem;
+        font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.55rem 0.85rem;
       }
       .prize-add:hover { border-color: #a81f2d; color: #a81f2d; }
       .prize-left { font-size: 0.72rem; color: var(--work-dim, #6b7383); width: 1.4rem; text-align: right; }
-      .prize-sq.own em { font-style: normal; font-size: 0.78rem; font-weight: 700; }
 
+      .prize-list { list-style: none; margin: 0.7rem 0 0; padding: 0; display: grid; gap: 0.35rem; }
+      .prize-row {
+        display: flex; align-items: center; gap: 0.55rem;
+        border: 1px solid var(--work-3); border-radius: 10px; padding: 0.5rem 0.6rem;
+        background: #fff; font-size: 0.86rem;
+      }
+      .prize-row b { flex: 1; min-width: 0; font-weight: 600; color: var(--work-ink); }
+      .prize-row .row-btn {
+        border: 0; background: none; cursor: pointer; color: var(--work-dim, #6b7383);
+        font: inherit; font-size: 0.9rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 6px;
+      }
+      .prize-row .row-btn:hover { color: #a81f2d; background: #faf3f4; }
+
+      /* The gold row is the whole point of the panel, so it does not look like
+         the others at all: a gold rule down the side and the words TOP PRIZE
+         above it, rather than a number you have to interpret. */
+      .prize-row.top {
+        border-color: #c8a23c; background: #fffdf6;
+        box-shadow: inset 3px 0 0 #c8a23c;
+      }
+      .prize-crown {
+        font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+        color: #96741f; flex: none;
+      }
+      .prize-hint {
+        font-size: 0.74rem; color: var(--work-dim, #6b7383); margin-top: 0.5rem; line-height: 1.5;
+      }
+      .prize-hint[hidden] { display: none; }
       .prize-foot { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; }
       .prize-foot span { font-size: 0.76rem; color: var(--work-dim, #6b7383); }
       .prize-go {
@@ -5576,144 +5586,45 @@ if (cameFromOffer && openedSlug) {
       // panel and the conversation never disagree about what is on offer.
       // Icon paths lifted from prizes.ts, so a tile and a wedge always show
       // the same drawing.
-      const PRIZE_BOOK = {
-              "gift": [
-                      "<path d=\"M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z\"/>",
-                      "Free gift"
-              ],
-              "off10": [
-                      "<path d=\"M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>",
-                      "10% off"
-              ],
-              "off20": [
-                      "<path d=\"M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>",
-                      "20% off"
-              ],
-              "half": [
-                      "<circle cx=\"6\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12\"/>",
-                      "Half price"
-              ],
-              "bogof": [
-                      "<path d=\"M3 9V6a1 1 0 011-1h16a1 1 0 011 1v3a3 3 0 000 6v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3a3 3 0 000-6zM13 5v2M13 11v2M13 17v2\"/>",
-                      "2 for 1"
-              ],
-              "vip": [
-                      "<path d=\"M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z\"/>",
-                      "VIP upgrade"
-              ],
-              "coffee": [
-                      "<path d=\"M4 8h13v6a5 5 0 01-5 5H9a5 5 0 01-5-5zM17 9h1.5a2.5 2.5 0 010 5H17M3 22h15\"/>",
-                      "Free coffee"
-              ],
-              "drink": [
-                      "<path d=\"M5 4h14l-1.5 6.5A4 4 0 0113.6 14h-3.2a4 4 0 01-3.9-3.5zM12 14v6M8.5 20h7\"/>",
-                      "Free drink"
-              ],
-              "dessert": [
-                      "<path d=\"M6 10h12l-1 10H7zM8.5 10L9 4M15.5 10L15 4M12 10V4M4 20h16\"/>",
-                      "Free dessert"
-              ],
-              "ten": [
-                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
-                      "$10 off"
-              ],
-              "twenty": [
-                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
-                      "$20 off"
-              ],
-              "fifty": [
-                      "<rect x=\"2\" y=\"6\" width=\"20\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.5\"/><path d=\"M6 12h.01M18 12h.01\"/>",
-                      "$50 off"
-              ],
-              "delivery": [
-                      "<path d=\"M2 7h11v10H2zM13 10h4.5l3.5 3.5V17h-8z\"/><circle cx=\"6.5\" cy=\"18.5\" r=\"1.8\"/><circle cx=\"17\" cy=\"18.5\" r=\"1.8\"/>",
-                      "Free delivery"
-              ],
-              "session": [
-                      "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\"/>",
-                      "Free session"
-              ],
-              "class": [
-                      "<circle cx=\"12\" cy=\"5\" r=\"2.4\"/><path d=\"M12 8v6M8 21l4-7 4 7M6 11l6-2 6 2\"/>",
-                      "Free class"
-              ],
-              "merch": [
-                      "<path d=\"M8 3l4 2 4-2 5 3-2.5 4L17 9v12H7V9l-1.5 1L3 6z\"/>",
-                      "Free merch"
-              ],
-              "sticker": [
-                      "<path d=\"M12 2.5l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9zM18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z\"/>",
-                      "Free sticker"
-              ],
-              "upgrade": [
-                      "<path d=\"M12 20V5M6 11l6-6 6 6M6 21h12\"/>",
-                      "Free upgrade"
-              ]
-      };
-      const SHORTLISTS = {
-        cafe: ['coffee','dessert','off10','bogof','drink','gift'],
-        eggs: ['gift','off10','delivery','half','twenty','merch'],
-        beauty: ['off20','upgrade','gift','half','ten','vip'],
-        yoga: ['class','off20','gift','merch','vip','bogof'],
-        pilates: ['class','off20','gift','merch','vip','bogof'],
-        sauna: ['session','off20','bogof','gift','vip','merch'],
-        physio: ['session','off20','gift','ten','vip','half'],
-        workshop: ['class','off20','gift','merch','half','vip'],
-        trade: ['off10','fifty','twenty','gift','upgrade','vip'],
-        daycare: ['gift','off10','merch','session','vip','twenty'],
-        townhall: ['off20','half','gift','ten','bogof','vip'],
-        charity: ['gift','merch','sticker','vip','upgrade','bogof'],
-        rugby: ['merch','sticker','gift','off20','bogof','vip'],
-        soccer: ['merch','sticker','gift','off20','bogof','vip'],
-        basketball: ['merch','sticker','gift','off20','bogof','vip'],
-      };
+      // Only used to turn a stored catalogue id back into words when an older
+      // wheel is reopened. Nothing writes ids any more.
+      const PRIZE_BOOK = {"gift": ["", "Free gift"], "off10": ["", "10% off"], "off20": ["", "20% off"], "half": ["", "Half price"], "bogof": ["", "2 for 1"], "vip": ["", "VIP upgrade"], "coffee": ["", "Free coffee"], "drink": ["", "Free drink"], "dessert": ["", "Free dessert"], "ten": ["", "$10 off"], "twenty": ["", "$20 off"], "fifty": ["", "$50 off"], "delivery": ["", "Free delivery"], "session": ["", "Free session"], "class": ["", "Free class"], "merch": ["", "Free merch"], "sticker": ["", "Free sticker"], "upgrade": ["", "Free upgrade"]};
 
-      // Pick as many or as few as you like. Two is the floor — one prize on
-      // every slot is not a wheel — and eight is the ceiling because that is
-      // how many wedges there are.
+      // Typed, not tapped. The catalogue and its icons were the other half of
+      // an either/or: a fixed list you pick from, or your own words. Words won,
+      // so the icons went with them.
       let picked = [];
-      let ownTiles = [];
-      const labelOf = (id) => (PRIZE_BOOK[id] ? PRIZE_BOOK[id][1] : id);
-
-      function drawPrizes() {
-        const grid = $('prize-grid');
-        const six = SHORTLISTS[S.site.style] || ['gift','off10','off20','half','bogof','vip'];
-        const all = six.concat(ownTiles.filter((t) => six.indexOf(t) < 0));
-        grid.innerHTML = '';
-        all.forEach((id) => {
-          const known = PRIZE_BOOK[id];
-          const b = document.createElement('button');
-          b.className = 'prize-sq' + (known ? '' : ' own');
-          b.dataset.id = id;
-          b.innerHTML = '<span class="pick-no"></span>'
-            + (known
-              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" '
-                + 'stroke-linecap="round" stroke-linejoin="round">' + known[0] + '</svg>'
-                + '<b>' + known[1] + '</b>'
-              : '<em>' + id + '</em>');
-          b.addEventListener('click', () => {
-            const at = picked.indexOf(id);
-            if (at >= 0) picked.splice(at, 1);
-            else if (picked.length < 8) picked.push(id);
-            paintPrizes();
-          });
-          grid.appendChild(b);
-        });
-        paintPrizes();
-      }
 
       function paintPrizes() {
-        $('prize-grid').querySelectorAll('.prize-sq').forEach((sq) => {
-          const at = picked.indexOf(sq.dataset.id);
-          sq.classList.toggle('on', at >= 0);
-          sq.classList.toggle('top', at === 0);
-          sq.querySelector('.pick-no').textContent = at >= 0 ? String(at + 1) : '';
+        const list = $('prize-list');
+        list.innerHTML = '';
+        picked.forEach((text, i) => {
+          const li = document.createElement('li');
+          li.className = 'prize-row' + (i === 0 ? ' top' : '');
+          li.innerHTML =
+            (i === 0 ? '<span class="prize-crown">Top prize</span>' : '')
+            + '<b></b>'
+            + (i === 0 ? '' : '<button class="row-btn up" title="Make this the top prize">&uarr;</button>')
+            + '<button class="row-btn go" title="Remove">&times;</button>';
+          li.querySelector('b').textContent = text;
+          const up = li.querySelector('.up');
+          if (up) up.addEventListener('click', () => {
+            picked.splice(i, 1);
+            picked.unshift(text);
+            paintPrizes();
+          });
+          li.querySelector('.go').addEventListener('click', () => {
+            picked.splice(i, 1);
+            paintPrizes();
+          });
+          list.appendChild(li);
         });
+        $('prize-hint').hidden = picked.length < 2;
         $('prize-count').textContent = !picked.length
-          ? 'nothing picked yet'
+          ? 'nothing on the wheel yet'
           : picked.length === 1
             ? 'one more at least — a wheel needs two'
-            : picked.length + ' on the wheel · gold slot goes to ' + labelOf(picked[0]);
+            : picked.length + ' on the wheel';
         $('prize-go').disabled = picked.length < 2;
       }
 
@@ -5721,11 +5632,12 @@ if (cameFromOffer && openedSlug) {
         const box = $('prize-input');
         const text = box.value.trim().slice(0, 14);
         if (!text) return;
-        if (ownTiles.indexOf(text) < 0) ownTiles.push(text);
-        if (picked.indexOf(text) < 0 && picked.length < 8) picked.push(text);
+        if (picked.some((p) => p.toLowerCase() === text.toLowerCase())) { box.value = ''; return; }
+        if (picked.length < 8) picked.push(text);
         box.value = '';
         $('prize-left').textContent = '14';
-        drawPrizes();
+        paintPrizes();
+        box.focus();
       }
       $('prize-add').addEventListener('click', addOwn);
       $('prize-input').addEventListener('input', () => {
@@ -5745,9 +5657,11 @@ if (cameFromOffer && openedSlug) {
           }
           // Choose the prizes here, in three taps, rather than describing them
           // in a sentence the wheel then has to survive.
-          picked = (S.site.spinner && S.site.spinner.prizes) ? S.site.spinner.prizes.slice(0, 3) : [];
+          const saved = (S.site.spinner && S.site.spinner.prizes) || [];
+          picked = saved.map((p) => (PRIZE_BOOK[p] ? PRIZE_BOOK[p][1] : p)).slice(0, 8);
           $('prize-pick').hidden = false;
-          drawPrizes();
+          paintPrizes();
+          setTimeout(() => $('prize-input').focus(), 60);
         });
       });
 

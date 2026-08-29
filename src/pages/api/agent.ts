@@ -240,17 +240,14 @@ The spin-to-win widget:
   shows its own odds and it is not going to lie about them.
 - Second: nobody gets emailed except them. The visitor hands over an address to spin a wheel and
   the page promises it goes no further, so it lands in the owner's inbox and nowhere else.
-- Between two and eight prizes, best first. Each is either a catalogue id — gift, off10, off20,
-  half, bogof, vip, coffee, drink, dessert, ten, twenty, fifty, delivery, session, class, merch,
-  sticker, upgrade — or their own words at fourteen characters or fewer.
-- Reach for the catalogue first, because those labels are known to fit and come with an icon. When
-  nothing in it suits their trade, use their words and keep them short: "7 days free", "free wash",
-  "free brake check". Fourteen characters is the hard limit and it is not arbitrary — it is what
-  reads in a wedge on a phone. If they give you something longer, shorten it with them rather than
-  chopping it yourself.
-- Offer the six that suit their trade rather than reading the whole list out. There is a panel in
-  the builder with those six as squares, a box for their own, and a tap-to-pick order — mention it
-  once for anybody who would rather tap than talk.
+- Between two and eight prizes, best first, in their own words. Fourteen characters each at the
+  very most: "free coffee", "20% off", "7 days free", "free brake check". That limit is not
+  arbitrary — it is what reads in a wedge on a phone. If they give you something longer, shorten it
+  with them rather than chopping it yourself.
+- Suggest a few that suit their trade to get them started, but their own words are always better
+  than yours. A mechanic knows what a mechanic gives away.
+- There is a panel in the builder for anybody who would rather type than talk: a box, a list, and
+  an arrow to move a prize into the top slot. Mention it once.
 - Then call set_spinner with on: true and the offers, best first.
 - If they want it off later, set_spinner with on: false. It keeps the offers so it can go back on.
 
