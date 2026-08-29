@@ -21,6 +21,7 @@ let sites: {
   slug: string; name: string; lede: string; style: string;
   hero: string | null; primary: string; deep: string;
   touched: string | null; fresh: boolean; bubbles: string[]; reel: string[]; films: number;
+  insta: string[]; posts: number;
 }[] = [];
 let entries: { id: number; title: string; body: string | null; created_at: string }[] = [];
 let liveCount = 0;
@@ -122,6 +123,10 @@ try {
             ['youtube', 'reel'].includes(c.style || '')
               ? (c.sections || []).flatMap((sec: any) => sec?.clips || []).length
               : 0,
+          // Filled in below. An insta wall keeps its posts in a table rather
+          // than in the config, because they arrive by email one at a time.
+          insta: [] as string[],
+          posts: 0,
           slug: row.slug,
           name: c.name || row.slug,
           lede: String(c.lede || c.headline || '').slice(0, 110),
@@ -132,6 +137,37 @@ try {
         };
       })
       .filter(Boolean) as typeof sites;
+
+    // The three newest posts for each insta wall.
+    //
+    // Instagram's pictures cannot be borrowed the way YouTube's thumbnails can
+    // — fbcdn serves them with Cross-Origin-Resource-Policy: same-origin, so an
+    // <img> is refused before it renders. The only thing that shows a real post
+    // is Instagram's own embed, which is heavy, so the card carries the codes
+    // and the browser mounts a strip for each one when the card comes into
+    // view. Slots with no post get a struck-through eye instead.
+    const instaSlugs = sites.filter((x) => x.style === 'insta').map((x) => x.slug);
+    if (instaSlugs.length) {
+      try {
+        const marks = instaSlugs.map(() => '?').join(',');
+        const { results } = await db
+          .prepare(
+            `SELECT slug, code FROM insta_posts
+              WHERE status = 'live' AND slug IN (${marks})
+              ORDER BY created_at DESC`
+          )
+          .bind(...instaSlugs)
+          .all();
+        for (const row of (results || []) as any[]) {
+          const site = sites.find((x) => x.slug === row.slug);
+          if (!site) continue;
+          site.posts += 1;
+          if (site.insta.length < 3) site.insta.push(String(row.code));
+        }
+      } catch {
+        // A wall with no strips still beats a home page that 500s.
+      }
+    }
 
     // The whole estate, not just what is starred — that is the number worth
     // putting on a wall.
@@ -212,7 +248,26 @@ const when = (iso: string) => {
           >
             <span class="card-frame">
               <span class="card-bar"><i></i><i></i><i></i><b>{s.slug}.garage.co.nz</b></span>
-              {s.reel.length >= 3 ? (
+              {s.style === 'insta' ? (
+                <span class="card-shot card-insta">
+                  {[0, 1, 2].map((i) => (
+                    s.insta[i] ? (
+                      <span class="ig-bar" data-ig={s.insta[i]}></span>
+                    ) : (
+                      <span class="ig-bar ig-none">
+                        {/* A struck-through eye: there is nothing in this slot
+                            to show, and an empty box would read as broken. */}
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+                          <circle cx="12" cy="12" r="3.2" />
+                          <line x1="3" y1="21" x2="21" y2="3" />
+                        </svg>
+                      </span>
+                    )
+                  ))}
+                  {s.posts > 0 && <span class="rl-badge">{s.posts} post{s.posts === 1 ? '' : 's'}</span>}
+                </span>
+              ) : s.reel.length >= 3 ? (
                 <span class="card-shot card-reel">
                   {s.reel.slice(0, 4).map((u) => (
                     <span class="rl-tile" style={`background-image:url(${u})`}></span>
@@ -435,6 +490,66 @@ const when = (iso: string) => {
     position: relative;
   }
 
+  /* An insta card is three vertical bars, the shape of the posts behind it.
+     Each filled one mounts Instagram's own embed when the card reaches the
+     screen — nothing loads on page load, and nothing loads at all for a card
+     nobody scrolls to. The embed will not go below 326px wide, so it is
+     scaled down and cropped to the bar. */
+  .card-insta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    place-items: stretch;
+    gap: 3px;
+    background: #0b0b0d;
+    position: relative;
+  }
+
+  .ig-bar {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    background: #141416;
+    display: grid;
+    place-items: center;
+  }
+
+  /* :global because this iframe is built by script, so it never gets the
+     data-astro-cid attribute Astro scopes selectors with — the rules simply
+     did not apply, and the embed sat at an iframe's default 304x154 with the
+     scale computed against the wrong box. */
+  .ig-bar :global(iframe) {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    /* Centred by margin rather than a percentage translate, so the transform
+       is only ever a scale and a shift and the two cannot fight. */
+    margin-left: -163px;
+    width: 326px;
+    height: 620px;
+    border: 0;
+    /* The card is a link. Without this the iframe swallows the click. */
+    pointer-events: none;
+    transform-origin: 50% 0;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .ig-bar.up :global(iframe) { opacity: 1; }
+
+  .ig-none svg {
+    width: 34%;
+    max-width: 30px;
+    height: auto;
+    fill: none;
+    stroke: color-mix(in srgb, var(--card-primary) 55%, #6b6b74);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    opacity: 0.75;
+  }
+
+  .card:hover .ig-none svg { opacity: 1; }
+
   .rl-tile { min-width: 0; min-height: 0; width: 100%; height: 100%; }
 
   .rl-tile {
@@ -623,5 +738,59 @@ const when = (iso: string) => {
       const rect = mascot.getBoundingClientRect();
       if (mascot.style.left) place(rect.left + window.scrollX, rect.top + window.scrollY);
     });
+  })();
+</script>
+
+<script>
+  // The insta bars.
+  //
+  // Instagram's picture cannot be borrowed — fbcdn refuses a cross-origin
+  // <img> outright — so the only way to preview a real post is Instagram's own
+  // embed, and each of those is around 600KB. Loading them for every insta
+  // card on arrival would cost more than the rest of the page put together, so
+  // nothing mounts until a card is close to the screen, and a card nobody
+  // scrolls to never touches Instagram at all.
+  (() => {
+    const bars = [...document.querySelectorAll('.ig-bar[data-ig]')];
+    if (!bars.length) return;
+
+    const mount = (bar) => {
+      if (bar.dataset.up) return;
+      bar.dataset.up = '1';
+      const code = bar.dataset.ig;
+      if (!/^[A-Za-z0-9_-]{5,24}$/.test(code || '')) return;
+      const f = document.createElement('iframe');
+      f.src = `https://www.instagram.com/p/${code}/embed/`;
+      f.setAttribute('scrolling', 'no');
+      f.loading = 'lazy';
+      f.title = 'Instagram post';
+      f.addEventListener('load', () => bar.classList.add('up'));
+      bar.appendChild(f);
+      // 326px is the embed's floor, so it is scaled rather than resized.
+      //
+      // Scale to the bar's HEIGHT, not its width. The picture inside the embed
+      // is 326 wide and about as tall, so matching the width leaves a squat
+      // square in a tall bar with the like bar and comment box on show under
+      // it. Matching the height fills the bar and crops the sides, which is
+      // what a bar of a photograph should look like.
+      //
+      // Then shift up by the header — roughly 52px at full size, so 52k here,
+      // which scale() applies for us because it is written to its right.
+      const fit = () => {
+        const k = bar.clientHeight / 326;
+        f.style.transform = `scale(${k}) translateY(-52px)`;
+      };
+      fit();
+      window.addEventListener('resize', fit);
+    };
+
+    if (!('IntersectionObserver' in window)) return bars.forEach(mount);
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) { mount(e.target); io.unobserve(e.target); }
+      }),
+      { rootMargin: '300px 0px' }
+    );
+    bars.forEach((b) => io.observe(b));
   })();
 </script>
