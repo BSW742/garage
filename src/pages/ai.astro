@@ -138,40 +138,13 @@ if (cameFromOffer && openedSlug) {
                  rather than trying to be a form. -->
             <div class="agent-paint agent-widgets" id="agent-widgets" hidden>
               <div class="paint-group">
-                <p>Capture</p>
-                <div class="widget-list">
-                  <button class="widget-card" data-widget="spinner">
-                    <span class="widget-face">&#127920;</span>
-                    <span>
-                      <b>Spin to win</b>
-                      <i>A tab on the edge. Pick three prizes; every spin wins one, and they leave a name, email and phone.</i>
-                    </span>
-                  </button>
-                  <button class="widget-card off" data-widget="spinner-off">
-                    <span class="widget-face">&#9723;</span>
-                    <span><b>Turn the wheel off</b><i>Keeps your prizes for next time.</i></span>
-                  </button>
-                  <button class="widget-card" data-widget="waitlist">
-                    <span class="widget-face">&#9202;</span>
-                    <span>
-                      <b>Short notice list</b>
-                      <i>Booked out? People who can come at short notice put their name down and
-                        hear first when a time opens up. Same price, no discount.</i>
-                    </span>
-                  </button>
-                  <button class="widget-card off" data-widget="waitlist-off">
-                    <span class="widget-face">&#9723;</span>
-                    <span><b>Turn the list off</b><i>Keeps everyone already on it.</i></span>
-                  </button>
-                  <button class="widget-card" data-widget="event">
-                    <span class="widget-face">&#128227;</span>
-                    <span>
-                      <b>Event</b>
-                      <i>An event that only runs if enough people are in. A bar along the bottom
-                        of every page shows how many are going and how many more it needs.</i>
-                    </span>
-                  </button>
-                </div>
+                <p>Widgets</p>
+                <!-- One row each, built in JS so the on/off state is always the
+                     real one rather than something that has to be kept in step.
+                     Collapsed until you open one, and only one opens at a time —
+                     three widgets with their full descriptions showing was most
+                     of a panel spent on things nobody was changing. -->
+                <div class="wrow-list" id="widget-rows"></div>
 
                 <!-- Six squares. Fixed labels and fixed icons, which is the
                      only reason the wheel can be drawn properly — nothing has
@@ -829,24 +802,63 @@ if (cameFromOffer && openedSlug) {
       }
       .agent-done:hover { background: #16a34a; border-color: #16a34a; color: #fff; }
 
-      .agent-widgets { width: min(24rem, 82vw); }
-      .widget-list { display: grid; gap: 0.5rem; }
-      .widget-card {
-        display: flex; gap: 0.7rem; align-items: flex-start; text-align: left;
-        border: 1px solid var(--work-3); background: #fff; border-radius: 12px;
-        padding: 0.75rem 0.85rem; cursor: pointer; font-family: var(--font-sans);
-        transition: border-color 0.15s, background 0.15s;
-      }
-      .widget-card:hover { border-color: var(--accent); background: #fbfaff; }
-      .widget-face { font-size: 1.3rem; line-height: 1.1; flex: none; }
-      .widget-card b { display: block; font-size: 0.9rem; color: var(--work-ink); }
-      .widget-card i {
-        display: block; font-style: normal; font-size: 0.78rem;
-        color: var(--work-dim, #6b7383); margin-top: 0.15rem; line-height: 1.4;
-      }
-      .widget-card.off .widget-face { opacity: 0.5; }
+      .agent-widgets { width: min(24rem, 84vw); }
 
-      .prize-pick { margin-top: 0.9rem; border-top: 1px solid var(--work-3); padding-top: 0.9rem; }
+      /* A row per widget: what it is, whether it is on, and one line of state.
+         Everything else is behind the chevron. */
+      .wrow-list { display: grid; gap: 0.4rem; }
+      .wrow {
+        border: 1px solid var(--work-3); border-radius: 12px; background: #fff;
+        overflow: hidden; transition: border-color 0.15s;
+      }
+      .wrow.on { border-color: #bfe3cd; background: #fbfefc; }
+      .wrow.open { border-color: var(--accent); }
+      .wrow-head {
+        width: 100%; display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
+        border: 0; background: none; padding: 0.7rem 0.75rem; text-align: left;
+        font-family: var(--font-sans);
+      }
+      .wrow-face { font-size: 1.1rem; line-height: 1; flex: none; }
+      .wrow-name { flex: 1; min-width: 0; }
+      .wrow-name b { display: block; font-size: 0.88rem; color: var(--work-ink); }
+      .wrow-name i {
+        display: block; font-style: normal; font-size: 0.74rem; margin-top: 0.1rem;
+        color: var(--work-dim, #6b7383); white-space: nowrap; overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .wrow-name i:empty { display: none; }
+
+      /* The state is the point of the row, so it is a pill rather than a word
+         in the description somewhere. */
+      .wrow-pill {
+        flex: none; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.08em;
+        text-transform: uppercase; padding: 0.22rem 0.5rem; border-radius: 999px;
+        background: rgba(0, 0, 0, 0.06); color: #6b7383;
+      }
+      .wrow.on .wrow-pill { background: #15803d; color: #fff; }
+      .wrow-chev {
+        flex: none; color: #9aa1ad; font-size: 1rem; line-height: 1;
+        transition: transform 0.18s;
+      }
+      .wrow.open .wrow-chev { transform: rotate(90deg); }
+
+      .wrow-body { padding: 0 0.75rem 0.75rem; }
+      .wrow-body > p {
+        font-size: 0.78rem; line-height: 1.5; color: var(--work-dim, #6b7383);
+        margin: 0 0 0.6rem;
+      }
+      .wrow-go, .wrow-off {
+        width: 100%; border-radius: 8px; cursor: pointer; font-family: var(--font-sans);
+        font-size: 0.82rem; font-weight: 700; padding: 0.6rem 0.8rem;
+      }
+      .wrow-go { border: 0; background: var(--work-ink, #14161c); color: #fff; }
+      .wrow-go:hover { background: #000; }
+      .wrow-off {
+        margin-top: 0.4rem; border: 1px solid var(--work-3); background: #fff; color: #b91c1c;
+      }
+      .wrow-off:hover { border-color: #b91c1c; }
+
+      .prize-pick { margin-top: 0; }
       .prize-say { font-size: 0.78rem; color: var(--work-dim, #6b7383); margin-bottom: 0.6rem; }
       .prize-own { display: flex; align-items: center; gap: 0.4rem; }
       .prize-own input {
@@ -5596,7 +5608,12 @@ if (cameFromOffer && openedSlug) {
         widgetBtn.classList.toggle('on', open);
         widgetBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       }
-      widgetBtn.addEventListener('click', (e) => { e.stopPropagation(); setWidgets(widgetPanel.hidden); });
+      widgetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const opening = widgetPanel.hidden;
+        if (opening) { openRow = null; drawWidgets(); }
+        setWidgets(opening);
+      });
       widgetPanel.addEventListener('click', (e) => e.stopPropagation());
       document.addEventListener('click', () => { if (!widgetPanel.hidden) setWidgets(false); });
       document.addEventListener('keydown', (e) => {
@@ -5667,37 +5684,114 @@ if (cameFromOffer && openedSlug) {
         if (e.key === 'Enter') { e.preventDefault(); addOwn(); }
       });
 
-      widgetPanel.querySelectorAll('[data-widget]').forEach((card) => {
-        card.addEventListener('click', () => {
-          const which = card.dataset.widget;
-          if (which === 'spinner-off') {
-            setWidgets(false);
-            route('turn the spin to win wheel off');
-            return;
+      // Three rows, each knowing whether it is on. Built fresh every time the
+      // panel opens so the state is read rather than remembered — a widget that
+      // says Off while the site says on is worse than no indicator at all.
+      const WIDGETS = [
+        {
+          id: 'spinner', icon: '\u{1F3B0}', name: 'Spin to win',
+          blurb: 'A tab on the edge. They spin a wheel and every spin wins one of your prizes.',
+          on: () => !!(S.site.spinner && S.site.spinner.on),
+          sum: () => {
+            const p = (S.site.spinner && S.site.spinner.prizes) || [];
+            return p.length ? p.join(' · ') : '';
+          },
+          off: 'turn the spin to win wheel off',
+        },
+        {
+          id: 'waitlist', icon: '\u23F2', name: 'Short notice list',
+          blurb: 'Booked out? People leave their name and hear first when a time opens up. Same price, no discount.',
+          on: () => !!(S.site.waitlist && S.site.waitlist.on),
+          sum: () => {
+            const w = S.site.waitlist || {};
+            return w.weeksOut ? 'Showing ' + w.weeksOut + ' weeks out' : '';
+          },
+          set: 'set up the short notice list — we are booked out and I want people to be able to '
+             + 'get an earlier time when one opens up',
+          off: 'turn the short notice list off',
+        },
+        {
+          id: 'event', icon: '\u{1F4E3}', name: 'Event',
+          blurb: 'Only runs if enough people are in. A bar on every page shows how many are going.',
+          on: () => !!((S.site.campaigns || [])[0] || {}).target,
+          sum: () => {
+            const c = (S.site.campaigns || [])[0];
+            return c ? c.title + ' · needs ' + c.target : '';
+          },
+          set: 'set up an event — something free that only goes ahead if enough people put their '
+             + 'name down. Ask me what it is, when it is, how many people it needs and when it closes.',
+          off: 'take the event off my site',
+        },
+      ];
+
+      let openRow = null;
+
+      function drawWidgets() {
+        const box = $('widget-rows');
+        box.innerHTML = '';
+        let needsPaint = false;
+        WIDGETS.forEach((wid) => {
+          const on = wid.on();
+          const row = document.createElement('div');
+          row.className = 'wrow' + (on ? ' on' : '') + (openRow === wid.id ? ' open' : '');
+
+          const head = document.createElement('button');
+          head.className = 'wrow-head';
+          head.type = 'button';
+          head.innerHTML =
+            '<span class="wrow-face">' + wid.icon + '</span>'
+            + '<span class="wrow-name"><b></b><i></i></span>'
+            + '<span class="wrow-pill">' + (on ? 'On' : 'Off') + '</span>'
+            + '<span class="wrow-chev">\u203A</span>';
+          head.querySelector('b').textContent = wid.name;
+          head.querySelector('i').textContent = on ? (wid.sum() || 'Running') : '';
+          head.addEventListener('click', () => {
+            openRow = openRow === wid.id ? null : wid.id;
+            drawWidgets();
+          });
+          row.appendChild(head);
+
+          if (openRow === wid.id) {
+            const body = document.createElement('div');
+            body.className = 'wrow-body';
+            const say = document.createElement('p');
+            say.textContent = wid.blurb;
+            body.appendChild(say);
+
+            if (wid.id === 'spinner') {
+              // The picker lives outside the rows and gets moved in, which keeps
+              // its listeners rather than rebinding them on every open.
+              const pick = $('prize-pick');
+              pick.hidden = false;
+              body.appendChild(pick);
+              const saved = (S.site.spinner && S.site.spinner.prizes) || [];
+              picked = saved.map((x) => (PRIZE_BOOK[x] ? PRIZE_BOOK[x][1] : x)).slice(0, 8);
+              // Painted after the row is in the document, not here: moving the
+              // picker detaches it, and getElementById cannot find an element
+              // that is not attached to anything yet.
+              needsPaint = true;
+            } else {
+              const go = document.createElement('button');
+              go.className = 'wrow-go';
+              go.textContent = on ? 'Change it' : 'Set it up';
+              go.addEventListener('click', () => { setWidgets(false); route(wid.set); });
+              body.appendChild(go);
+            }
+
+            if (on) {
+              const kill = document.createElement('button');
+              kill.className = 'wrow-off';
+              kill.textContent = 'Turn it off';
+              kill.addEventListener('click', () => { setWidgets(false); route(wid.off); });
+              body.appendChild(kill);
+            }
+            row.appendChild(body);
           }
-          if (which === 'event') {
-            setWidgets(false);
-            route('set up an event — an event that only goes ahead if enough people put their '
-              + 'name down. Ask me what it is, when it is and how many people it needs.');
-            return;
-          }
-          if (which === 'waitlist' || which === 'waitlist-off') {
-            setWidgets(false);
-            route(which === 'waitlist-off'
-              ? 'turn the short notice list off'
-              : 'set up the short notice list — we are booked out and I want people to be able to '
-                + 'get an earlier time when one opens up');
-            return;
-          }
-          // Choose the prizes here, in three taps, rather than describing them
-          // in a sentence the wheel then has to survive.
-          const saved = (S.site.spinner && S.site.spinner.prizes) || [];
-          picked = saved.map((p) => (PRIZE_BOOK[p] ? PRIZE_BOOK[p][1] : p)).slice(0, 8);
-          $('prize-pick').hidden = false;
-          paintPrizes();
-          setTimeout(() => $('prize-input').focus(), 60);
+          box.appendChild(row);
         });
-      });
+        if (openRow !== 'spinner') { const p = $('prize-pick'); if (p) p.hidden = true; }
+        if (needsPaint) paintPrizes();
+      }
 
       $('prize-go').addEventListener('click', () => {
         if (picked.length < 2) return;
