@@ -399,9 +399,19 @@ export const TOOLS = [
       properties: {
         on: { type: 'boolean', description: 'Show the waitlist tab on the site.' },
         title: { type: 'string', description: 'The tab, short. Defaults to "Short notice".' },
+        weeks_out: {
+          type: 'integer',
+          description:
+            'How many weeks ahead they are booked. The panel works the date out from this and ' +
+            'shows it — "Our next spot is Saturday 19 September" — so it never goes stale. Ask ' +
+            'them; do not guess.',
+        },
         blurb: {
           type: 'string',
-          description: 'One line on how booked up they are, in their words, that also allows it is annoying. e.g. "We are about six weeks out at the moment, which we know is no help when your back hurts."',
+          description:
+            'Rarely needed. The default line is "People do cancel. If you can be flexible, we ' +
+            'will email you when one opens up." Only override it if theirs is genuinely better, ' +
+            'and keep it to one sentence.',
         },
       },
       required: ['on'],
@@ -779,16 +789,24 @@ export async function runTool(
     case 'set_waitlist': {
       const list: any = site.waitlist || {};
       if (input.title !== undefined) list.title = String(input.title).slice(0, 24);
-      if (input.blurb !== undefined) list.blurb = String(input.blurb).slice(0, 220);
+      if (input.weeks_out !== undefined) {
+        list.weeksOut = Math.max(1, Math.min(52, Number(input.weeks_out) || 3));
+      }
+      // One sentence. The panel was ninety words and read like terms and
+      // conditions; a date and a line is the whole of it.
+      if (input.blurb !== undefined) list.blurb = String(input.blurb).slice(0, 140);
+      if (input.on && !list.weeksOut) {
+        return { ok: false, message: 'How many weeks ahead are they booked? The panel shows the date.' };
+      }
       list.on = !!input.on;
       site.waitlist = list;
       if (!list.on) return { ok: true, message: 'Short notice list is off.' };
       return {
         ok: true,
         message:
-          'Short notice list is on. People can leave their name from any page. When a time ' +
-          'opens up, open the list page from your keys email, type when it is, and everyone ' +
-          'hears at once — first to say yes takes it and you get told who.',
+          `Short notice list is on, showing ${list.weeksOut} weeks out. When a time opens up, ` +
+          'open the list page from your keys email, type when it is, and everyone hears at once ' +
+          '— first to say yes takes it and you get told who.',
         data: { waitlist: list },
       };
     }

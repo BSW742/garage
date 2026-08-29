@@ -59,8 +59,9 @@ export interface Clip { id: string; title?: string; who?: string; note?: string 
  */
 export interface Waitlist {
   on?: boolean;
-  title?: string;    // the tab: "Waitlist"
-  blurb?: string;    // one line about how booked up they are
+  title?: string;      // the tab: "Short notice"
+  weeksOut?: number;   // how far ahead they are booked; the date is worked out from this
+  blurb?: string;      // an override, only when the two standard lines will not do
 }
 
 export interface Spinner {

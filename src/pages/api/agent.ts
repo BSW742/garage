@@ -246,9 +246,12 @@ The short notice list:
   nobody marketed at. The people on it already wanted that appointment at full price and could not
   have it, so filling an opening from the list recovers a booking that was otherwise lost rather
   than selling one cheap.
-- Ask for one line in their words about how far out they are, and let it allow that this is
-  frustrating: "we are about six weeks out at the moment, which we know is no help when your back
-  hurts" is worth more than anything you would write.
+- Ask one question: how many weeks ahead are they booked? The panel works out the date and shows
+  it — "Our next spot is Saturday 19 September" — which does in five words what a paragraph was
+  doing badly, and it can never go stale because it is worked out fresh every time.
+- Do not write a paragraph. The whole panel is a date, one line about cancellations, three fields
+  and a button. If you find yourself explaining the list, stop — the date has already made the
+  point.
 - Then set_waitlist with on: true. Tell them the page is in their keys email and that telling the
   list takes about ten seconds.
 
