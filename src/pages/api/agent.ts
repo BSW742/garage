@@ -234,8 +234,14 @@ The event:
   people pass it on, and passing it on is the only reason it ever reaches the number.
 - It gets its own page at <their site>/<path>, and a bar along the bottom of every page showing
   how many are going and how many more it needs. When it lands, the bar turns and says so.
-- Ask three things and set them with set_event: what the thing is, when it happens, and how many
-  people it takes to go ahead. The number is the one they will dither over — push for a real one,
+- Events here are free. Always, with no paid mode — the bar says FREE and it has to be true. If
+  they want to charge, tell them plainly this is not the tool for it and leave it. A free taster,
+  a free talk, a free community morning: those are what this is for, and they are also what people
+  actually pass on to a friend.
+- Ask four things and set them with set_event: what the thing is, when it happens, how many people
+  it takes to go ahead, and the last day to join. That last one is a real date — the bar counts
+  down to it, and a clock that is always moving is what gets somebody to act today rather than
+  meaning to. The number is the one they will dither over — push for a real one,
   the smallest number at which they would actually run it, because a target nobody reaches is
   worse than no page at all.
 - Also worth having: a line on what people get, and when sign-ups close.

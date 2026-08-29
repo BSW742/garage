@@ -90,7 +90,10 @@ export const TOOLS = [
     description:
       'Put a campaign page on this site at its own path — <slug>.garage.co.nz/<path>. An event is ' +
       'a thing the business will only run if enough people want it: a workshop, a class, a supper ' +
-      'club, a group rate on a street. Nobody is asked to pay, only whether it should happen, and ' +
+      'club, a group rate on a street. Events here are always free — there is no paid mode and ' +
+      'never will be, so the bar says FREE and it is always true. If they want to charge for ' +
+      'something, this is the wrong tool and you should say so rather than bending it. Nobody is ' +
+      'asked to pay, only whether it should happen, and ' +
       'the page collects names and emails until it reaches the target. Use it when they want to ' +
       'test interest, fill a session, collect emails, or promote something without selling. ' +
       'path is a short slug like "spring" or "running-clinic". title is the thing itself. blurb is ' +
@@ -109,6 +112,10 @@ export const TOOLS = [
         when: {
           type: 'string',
           description: 'When the thing itself happens, in their words. "Saturday 4 October, 10am"',
+        },
+        closes_at: {
+          type: 'string',
+          description: 'The last day people can join, as YYYY-MM-DD. The bar counts down to it.',
         },
         closes: { type: 'string' },
         cta: { type: 'string' },
@@ -618,6 +625,8 @@ export async function runTool(
         detail: String(input.detail || '').slice(0, 900) || undefined,
         target,
         when: String(input.when || '').slice(0, 80) || undefined,
+        closesAt: /^\d{4}-\d{2}-\d{2}$/.test(String(input.closes_at || ''))
+          ? String(input.closes_at) : undefined,
         closes: String(input.closes || '').slice(0, 60) || undefined,
         cta: String(input.cta || '').slice(0, 30) || undefined,
       };

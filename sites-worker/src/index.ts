@@ -1,4 +1,4 @@
-import { renderSite, renderTeam, renderCases, renderAvailable, renderRallyPage, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
+import { renderSite, renderTeam, renderCases, renderAvailable, renderEventPage, llmsTxt, llmIndex, type SiteConfig } from '../../src/lib/site-render';
 import { renderInbox, inboxManifest } from '../../src/lib/chat-admin';
 import { renderPhotoQueue } from '../../src/lib/tribute-admin';
 
@@ -185,7 +185,7 @@ export default {
           } catch {
             // An empty rally still beats a page that 500s
           }
-          return html(renderRallyPage(config, slug, campaign, { count, names, latest }), 200);
+          return html(renderEventPage(config, slug, campaign, { count, names, latest }), 200);
         }
       }
 

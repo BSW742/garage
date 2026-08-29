@@ -50,7 +50,28 @@ export const GET: APIRoute = async ({ url, locals }) => {
       .prepare('SELECT COUNT(*) AS n FROM rally_signups WHERE slug = ? AND path = ?')
       .bind(slug, path).first();
     const count = Number(tally?.n || 0);
-    return json({ ok: true, count, target, togo: Math.max(0, target - count), on: count >= target });
+
+    // Hearts are interest, not commitment, and are counted apart from the
+    // target on purpose: an owner who turns up to an empty room because a
+    // tap was allowed to tip it over would never use this again.
+    const loved = await db
+      .prepare('SELECT COUNT(*) AS n FROM event_hearts WHERE slug = ? AND path = ?')
+      .bind(slug, path).first();
+
+    // First names only. They are already public on the campaign page and they
+    // are what makes a row of initials mean anything.
+    const recent = await db
+      .prepare(
+        `SELECT name FROM rally_signups WHERE slug = ? AND path = ?
+          ORDER BY created_at DESC LIMIT 3`
+      )
+      .bind(slug, path).all();
+
+    return json({
+      ok: true, count, target, togo: Math.max(0, target - count), on: count >= target,
+      hearts: Number(loved?.n || 0),
+      names: (recent?.results || []).map((r: any) => String(r.name || '').trim()).filter(Boolean),
+    });
   } catch (error) {
     console.error('Event read failed:', error);
     return json({ error: 'Could not read that' }, 500);
