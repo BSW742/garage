@@ -112,9 +112,21 @@ if (cameFromOffer && openedSlug) {
           </div>
           <div class="canvas" id="canvas">
             <div class="canvas-empty" id="canvas-empty">
-              <div class="empty-mark"></div>
-              <p>A completely blank page.</p>
-              <span>Say the word and it fills up →</span>
+              <!-- A blank page is a bad first thing to hand somebody. These are
+                   real sites already running on garage.co.nz, shown live rather
+                   than as pictures of themselves, and picking one fills this
+                   page in that style so there is something to publish inside a
+                   few seconds. Anyone who genuinely wants nothing still can. -->
+              <div class="starters" id="starters">
+                <p class="starters-say">Start from a look</p>
+                <div class="starter-grid" id="starter-grid"></div>
+                <button type="button" class="starters-skip" id="starters-skip">Nah, let me raw dog it</button>
+              </div>
+              <div class="blank-note" id="blank-note" hidden>
+                <div class="empty-mark"></div>
+                <p>A completely blank page.</p>
+                <span>Say the word and it fills up →</span>
+              </div>
             </div>
             <div id="site-root"></div>
           </div>
@@ -739,6 +751,128 @@ if (cameFromOffer && openedSlug) {
         transition: opacity 0.4s;
       }
       .canvas-empty.gone { opacity: 0; }
+      /* A short canvas must still reach the last row and the way out. */
+      .canvas-empty { overflow-y: auto; }
+
+      /* ── Starters ──────────────────────────────────────────────────────
+         Nine real sites, live, in miniature. The grid is the whole screen's
+         worth of decision: one line of instruction, the tiles, and a way out.
+         Nothing else competes for the eye. */
+      .starters {
+        pointer-events: auto;
+        width: 100%;
+        /* Three rows have to clear the canvas without scrolling. Wider tiles
+           looked better one at a time and clipped the top row in practice. */
+        max-width: 33rem;
+        padding: 1rem 1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.9rem;
+      }
+      .starters-say {
+        font-size: 0.68rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #8a93a3;
+        margin: 0;
+      }
+      .starter-grid {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.6rem;
+      }
+      @media (max-width: 620px) { .starter-grid { grid-template-columns: repeat(2, 1fr); } }
+
+      .starter {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        border: 1px solid var(--work-3);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        padding: 0;
+        cursor: pointer;
+        /* The lift is the only motion. Everything else holds still. */
+        transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+                    box-shadow 0.18s, border-color 0.18s;
+      }
+      .starter:hover, .starter:focus-visible {
+        transform: translateY(-3px);
+        border-color: var(--accent);
+        box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.45);
+        outline: none;
+      }
+      .starter:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+      /* The site itself, rendered small. It is decoration here, not a
+         document — it must never eat the click meant for the tile. */
+      .starter iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1120px;
+        height: 1493px;
+        border: 0;
+        pointer-events: none;
+        transform-origin: 0 0;
+        opacity: 0;
+        transition: opacity 0.45s;
+      }
+      .starter.up iframe { opacity: 1; }
+
+      /* Until it lands, the tile is a quiet sweep rather than a white hole. */
+      .starter:not(.up)::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(105deg, #f3f5f8 30%, #e7ebf1 50%, #f3f5f8 70%);
+        background-size: 260% 100%;
+        animation: starter-wait 1.5s ease-in-out infinite;
+      }
+      @keyframes starter-wait {
+        from { background-position: 130% 0; }
+        to { background-position: -30% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .starter:not(.up)::after { animation: none; }
+        .starter { transition: none; }
+      }
+
+      .starter b {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        padding: 0.4rem 0.55rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-align: left;
+        color: #0f172a;
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(6px);
+        border-top: 1px solid rgba(15, 23, 42, 0.07);
+      }
+
+      .starters-skip {
+        border: 0;
+        background: none;
+        color: #8a93a3;
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .starters-skip:hover { color: var(--accent-deep); }
+      .blank-note { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+      /* A class that sets display beats [hidden] from the UA sheet, so the
+         blank message sat under the tiles instead of waiting its turn. */
+      .blank-note[hidden], .starters[hidden] { display: none; }
       .empty-mark {
         width: 46px; height: 46px;
         border: 2px dashed #d7dde6;
@@ -2637,6 +2771,15 @@ if (cameFromOffer && openedSlug) {
 
       $('fresh-btn').addEventListener('click', () => { S.sourceUrl = ''; enterBuilder(); });
 
+      // Genuinely blank, for anyone who wants it. The tiles go, the old empty
+      // message comes back, and nothing has been written to the page.
+      $('starters-skip').addEventListener('click', () => {
+        $('starters').hidden = true;
+        $('blank-note').hidden = false;
+        say('Fair enough — blank it is. Tell me what you do and I will build it from there.');
+        $('agent-text').focus();
+      });
+
       $('source-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pull-btn').click(); });
 
       // ══════════════════════════════════════════════
@@ -3769,7 +3912,12 @@ if (cameFromOffer && openedSlug) {
           return;
         }
 
-        const hasContent = !!(s.headline || s.sections.length);
+        // The alongside slot is added to every page by ensureAlongSlot before
+        // anybody has typed a word, so counting sections made a brand new site
+        // look finished: the empty state was suppressed and the starters with
+        // it, leaving a nav, two buttons and an empty partners band as the
+        // first thing anybody saw. Only content somebody actually chose counts.
+        const hasContent = !!(s.headline || s.sections.some((x) => x && x.type !== 'alongside'));
         $('canvas-empty').classList.toggle('gone', hasContent);
         if (!hasContent) { root.innerHTML = ''; renderedKeys = new Set(); return; }
 
@@ -3945,7 +4093,10 @@ if (cameFromOffer && openedSlug) {
           return;
         }
 
-        await say('Right — ' + S.slug + '.garage.co.nz is yours. Blank page, live already.');
+        await say('Right — ' + S.slug + '.garage.co.nz is yours, live from this second.');
+        // A blank canvas is a bad first thing to hand somebody. Offer a look to
+        // start from; the tiles only exist while the page is still empty.
+        buildStarters();
 
         if (S.sourceUrl) {
           await say('Shall I drag your assets across from ' + S.sourceUrl + '? Logo, colours, wording, photos — I only keep what still looks good.');
@@ -3954,7 +4105,7 @@ if (cameFromOffer && openedSlug) {
             { label: 'No, start clean', send: 'start fresh' },
           ]);
         } else {
-          await say('What is the business or group called?');
+          await say('Pick a look on the left to start from, or tell me what the business or group is called.');
           S.awaiting = 'name';
         }
         $('agent-text').focus();
@@ -4110,6 +4261,133 @@ if (cameFromOffer && openedSlug) {
           return;
         }
         chips(IDLE_CHIPS);
+      }
+
+      // ── Starters ─────────────────────────────────
+      //
+      // Nine real sites already running on garage.co.nz. The tile is the site
+      // itself in an iframe rather than a screenshot, so it can never go stale
+      // and there is nothing to regenerate when a template changes.
+      //
+      // Picking one does NOT copy that business. It takes the style and drops
+      // in starter wording for that kind of place, so the page is publishable
+      // immediately and every word is theirs to replace.
+      const STARTERS = [
+        { style: 'trade', slug: 'trade', label: 'Trade', colour: '#c2410c',
+          eyebrow: 'Builders and renovations', cta: 'Get a quote',
+          lede: 'Straight answers, a proper quote, and a crew that turns up when it said it would.',
+          items: [['New builds', 'From the slab to the keys, run by the same person throughout.'],
+                  ['Renovations', 'Kitchens, bathrooms and extensions, done once and done right.'],
+                  ['Maintenance', 'The smaller jobs most builders will not come out for.']] },
+        { style: 'cafe', slug: 'cornercafe', label: 'Cafe', colour: '#b45309',
+          eyebrow: 'Coffee and a feed', cta: 'See the menu',
+          lede: 'Good coffee, food made on site, and a table you can sit at all morning.',
+          items: [['Breakfast', 'On until eleven, and the eggs are done properly.'],
+                  ['Lunch', 'A short menu that changes with whatever is good this week.'],
+                  ['Coffee', 'Beans roasted locally and pulled by someone who cares.']] },
+        { style: 'physio', slug: 'physio', label: 'Clinic', colour: '#0e7490',
+          eyebrow: 'Physiotherapy', cta: 'Book an appointment',
+          lede: 'Hands-on treatment and a plan you can actually follow, so the thing stops coming back.',
+          items: [['Injury treatment', 'Assessment, hands-on work, and the exercises that hold it.'],
+                  ['Rehab', 'Getting back to the sport or the job, in the right order.'],
+                  ['ACC', 'We can lodge the claim for you at the first appointment.']] },
+        { style: 'beauty', slug: 'beautystudiomartinborough', label: 'Beauty', colour: '#9d174d',
+          eyebrow: 'Salon and day spa', cta: 'Book a treatment',
+          lede: 'An hour that is entirely yours, in a room that was set up for exactly that.',
+          items: [['Facials', 'Read your skin first, then treat what is actually going on.'],
+                  ['Brows and lashes', 'Shaped to your face, not to a template.'],
+                  ['Massage', 'Relaxation or remedial, whichever the week has earned.']] },
+        { style: 'yoga', slug: 'lakeyogawanaka', label: 'Yoga', colour: '#4d7c0f',
+          eyebrow: 'Studio timetable', cta: 'Book a class',
+          lede: 'Small classes, warm room, and teachers who watch what your body is doing.',
+          items: [['Beginners', 'Six weeks, same faces, start from nothing.'],
+                  ['Vinyasa', 'Moving with the breath, at a pace you set.'],
+                  ['Restorative', 'Held shapes and blankets. Bring nothing but yourself.']] },
+        { style: 'rugby', slug: 'ashburtoncountyrugbyfootballclub', label: 'Club', colour: '#166534',
+          eyebrow: 'Community club', cta: 'Register a player',
+          lede: 'Grades from juniors to seniors, training nights, and a clubroom that stays open after.',
+          items: [['Juniors', 'Age grades with the weight bands, so a parent finds their kid in one look.'],
+                  ['Seniors', 'Premier and reserve, training twice a week.'],
+                  ['Subs', 'What it costs for the season, and who to ask if that is hard.']] },
+        { style: 'workshop', slug: 'rimuroadstudio', label: 'Workshop', colour: '#7c2d12',
+          eyebrow: 'Classes at the bench', cta: 'Book a class',
+          lede: 'Small classes at the wheel or the bench, and you take home whatever you make.',
+          items: [['Beginners wheel', 'Three hours, everything supplied, two pots to keep.'],
+                  ['Six-week course', 'Same bench each week and enough time to get good.'],
+                  ['Private groups', 'Birthdays, work do, hen party. Up to ten at a time.']] },
+        { style: 'charity', slug: 'tehikuwhanausupporttrust', label: 'Charity', colour: '#b91c1c',
+          eyebrow: 'Community trust', cta: 'Donate',
+          lede: 'Local, small, and specific about where the money goes and what it buys.',
+          items: [['What we do', 'The work, in plain words, without the annual-report voice.'],
+                  ['Where it goes', 'What twenty dollars buys, and what two hundred does.'],
+                  ['Volunteering', 'The jobs that need doing and the hours they take.']] },
+        { style: 'youtube', slug: 'alaska', label: 'Video wall', colour: '#e0483d',
+          eyebrow: 'The films', cta: '',
+          lede: 'A subject, and the films people have already made about it. Paste the links and it builds itself.',
+          items: [] },
+      ];
+
+      function buildStarters() {
+        const grid = $('starter-grid');
+        if (!grid || grid.childElementCount) return;
+
+        STARTERS.forEach((preset) => {
+          const tile = document.createElement('button');
+          tile.type = 'button';
+          tile.className = 'starter';
+          tile.setAttribute('aria-label', 'Start from the ' + preset.label + ' look');
+          const name = document.createElement('b');
+          name.textContent = preset.label;
+          tile.appendChild(name);
+
+          const frame = document.createElement('iframe');
+          frame.src = 'https://' + preset.slug + '.garage.co.nz/';
+          frame.setAttribute('scrolling', 'no');
+          frame.setAttribute('tabindex', '-1');
+          frame.setAttribute('aria-hidden', 'true');
+          frame.loading = 'lazy';
+          frame.addEventListener('load', () => tile.classList.add('up'));
+          tile.appendChild(frame);
+
+          // The site renders at desktop width and is scaled down, so the tile
+          // shows the real proportions rather than a phone layout.
+          const fit = () => {
+            const k = tile.clientWidth / 1120;
+            frame.style.transform = 'scale(' + k + ')';
+          };
+          requestAnimationFrame(fit);
+          window.addEventListener('resize', fit);
+
+          tile.addEventListener('click', () => startFromPreset(preset));
+          grid.appendChild(tile);
+        });
+      }
+
+      function startFromPreset(preset) {
+        snapshot();
+        const s = S.site;
+        s.style = preset.style;
+        s.palette = paletteFrom(preset.colour);
+        s.name = s.name || titleCase(S.slug);
+        s.eyebrow = preset.eyebrow;
+        s.headline = s.name;
+        s.lede = preset.lede;
+        if (preset.cta) s.cta = preset.cta;
+        s.sections = preset.items.length
+          ? [{ type: 'services', label: preset.eyebrow, title: 'What we do', items: preset.items },
+             { type: 'band', title: 'Ready when you are', text: 'Get in touch and we will sort it.' }]
+          : [];
+        renderedKeys = new Set();
+        render();
+        did(preset.label + ' look');
+        say('There you go — that is a real page already, and Publish works this second. ' +
+            'Now tell me what you actually do and I will make every word of it yours.');
+        $('agent-text').focus();
+      }
+
+      function titleCase(slug) {
+        return String(slug || 'Your business').replace(/-/g, ' ')
+          .replace(/\b[a-z]/g, (c) => c.toUpperCase());
       }
 
       // ── Blank start ──────────────────────────────
