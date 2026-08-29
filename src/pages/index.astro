@@ -541,6 +541,29 @@ const when = (iso: string) => {
 
   .ig-bar.up :global(iframe) { opacity: 1; }
 
+  /* A bar waiting on Instagram breathes in the site's own colour, so the gap
+     between the card appearing and the picture arriving reads as loading
+     rather than as a broken tile. Only bars that are actually expecting
+     something pulse — a censored slot is not waiting for anything. */
+  @keyframes ig-wait {
+    0%, 100% { background-color: #141416; }
+    50% { background-color: color-mix(in srgb, var(--card-primary) 24%, #141416); }
+  }
+
+  .ig-bar[data-ig]:not(.up):not(.ig-gave-up) {
+    animation: ig-wait 1.5s ease-in-out infinite;
+  }
+
+  /* Offset, so three bars breathe as a wave rather than as one block. These
+     have to out-specify the rule above, because its `animation` shorthand
+     resets animation-delay to zero and would flatten the wave. */
+  .ig-bar[data-ig]:not(.up):not(.ig-gave-up):nth-child(2) { animation-delay: 0.25s; }
+  .ig-bar[data-ig]:not(.up):not(.ig-gave-up):nth-child(3) { animation-delay: 0.5s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ig-bar[data-ig]:not(.up) { animation: none; }
+  }
+
   .ig-none svg {
     width: 34%;
     max-width: 30px;
@@ -768,7 +791,13 @@ const when = (iso: string) => {
       f.setAttribute('scrolling', 'no');
       f.loading = 'lazy';
       f.title = 'Instagram post';
-      f.addEventListener('load', () => bar.classList.add('up'));
+      f.addEventListener('load', () => {
+        bar.classList.add('up');
+        clearTimeout(giveUp);
+      });
+      // A bar that pulses for ever is worse than one that simply sits there.
+      // If Instagram has not answered by now it is not going to.
+      const giveUp = setTimeout(() => bar.classList.add('ig-gave-up'), 8000);
       bar.appendChild(f);
       // 326px is the embed's floor, so it is scaled rather than resized.
       //
