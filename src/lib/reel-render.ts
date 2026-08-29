@@ -85,8 +85,12 @@ margin-bottom:1rem}
 
 .rl-stage{margin-top:2.2rem;position:relative;border-radius:14px;overflow:hidden;
 background:var(--panel);border:1px solid var(--line)}
-.rl-stage .rl-frame{aspect-ratio:16/9;width:100%;display:block;position:relative}
-.rl-frame img{width:100%;height:100%;object-fit:cover;display:block}
+/* The slot owns its shape. The thumbnail has to be taken out of flow to get
+   it: hqdefault is 4:3 with YouTube's black bars baked in, and an in-flow img
+   is taller than 16/9, so it grows the box and the bars show. Absolute plus
+   object-fit:cover crops them off instead. */
+.rl-frame{position:relative;display:block;width:100%;aspect-ratio:16/9}
+.rl-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .rl-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 .rl-play{position:absolute;inset:0;display:grid;place-items:center;border:0;cursor:pointer;
 background:linear-gradient(transparent 40%,rgba(0,0,0,.55));width:100%;height:100%;padding:0}
@@ -116,7 +120,6 @@ margin-bottom:.8rem}
 @media(min-width:1040px){.rl-grid{grid-template-columns:repeat(3,1fr);gap:1.6rem}}
 .rl-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
 display:flex;flex-direction:column}
-.rl-card .rl-frame{aspect-ratio:16/9}
 .rl-card .rl-disc{width:3rem;height:3rem}
 .rl-card .rl-disc:after{border-width:.44rem 0 .44rem .75rem;margin-left:.16rem}
 .rl-meta{padding:.95rem 1rem 1.05rem;display:flex;flex-direction:column;gap:.3rem;flex:1}
