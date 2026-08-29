@@ -179,6 +179,33 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     ? instaLinks(`${parsed.text || ''} ${parsed.html || ''} ${record.subject}`)
     : [];
 
+  // "Remove" anywhere in the subject or the first line takes the linked posts
+  // off the wall instead of putting them on. One mailbox, one habit, and the
+  // owner check is already done — the words people reach for are remove,
+  // delete and take off.
+  const removing = wall && posts.length &&
+    /\b(remove|delete|take\s*(it|them|this)?\s*off|get\s*rid)\b/i.test(
+      `${record.subject} ${String(parsed.text || '').slice(0, 200)}`
+    );
+
+  if (removing) {
+    const gone: string[] = [];
+    const missing: string[] = [];
+    for (const post of posts.slice(0, 24)) {
+      const done = await env.DB
+        .prepare('DELETE FROM insta_posts WHERE slug = ? AND code = ?')
+        .bind(slug, post.code)
+        .run();
+      (done.meta?.changes ? gone : missing).push(post.code);
+    }
+    record.intent = 'insta-remove';
+    record.applied = gone.length ? 1 : 0;
+    const lines: string[] = [];
+    if (gone.length) lines.push(`Took ${gone.length} off the wall.`);
+    if (missing.length) lines.push(`${missing.length} was not on it: ${missing.join(', ')}.`);
+    return say(`${lines.join('\n')}\n\nSee it:  https://${slug}.garage.co.nz`);
+  }
+
   if (wall && posts.length) {
     const added: string[] = [];
     const refused: string[] = [];
@@ -219,6 +246,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     }
     return say(
       `${lines.join('\n')}\n\nSee it:  https://${slug}.garage.co.nz\n\n` +
+      `To take one down, send the same link back with "remove" in the subject.\n\n` +
       `A heads up: reels using licensed music show a still and send people to ` +
       `Instagram to watch. Your own audio plays right on the page.`
     );
@@ -230,7 +258,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
       heic
         ? `Those photos are in a format websites cannot show (HEIC). On an iPhone: Settings > Camera > Formats > Most Compatible, then send them again.`
         : wall
-          ? `Nothing was changed.\n\nShare a post from Instagram to Mail and send it here — the link in the body is all this needs.`
+          ? `Nothing was changed.\n\nShare a post from Instagram to Mail and send it here — the link in the body is all this needs. To take one down, send the same link with "remove" in the subject.`
           : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or send a YouTube link and it goes up as a video.`
     );
   }
