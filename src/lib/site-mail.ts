@@ -208,6 +208,27 @@ export function youtubeId(text: unknown): string | null {
 }
 
 /**
+ * Every Instagram post linked anywhere in a message.
+ *
+ * Sharing a post from the iPhone app to Mail puts the link in the body, often
+ * wrapped in tracking parameters and sometimes more than one to an email, so
+ * this takes them all rather than the first. Order is kept and duplicates are
+ * dropped; whether a post is real and public is Instagram's call, made later.
+ */
+export function instaLinks(text: unknown): { code: string; kind: 'p' | 'reel' }[] {
+  const body = String(text ?? '');
+  const out: { code: string; kind: 'p' | 'reel' }[] = [];
+  const pattern = /instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]{5,24})/gi;
+  let found: RegExpExecArray | null;
+  while ((found = pattern.exec(body))) {
+    const code = found[2];
+    if (out.some((x) => x.code === code)) continue;
+    out.push({ code, kind: /^reel/i.test(found[1]) ? 'reel' : 'p' });
+  }
+  return out;
+}
+
+/**
  * Videos live together in one reel. A second link joins the first rather than
  * replacing it, which is the whole point of having somewhere to put them.
  */

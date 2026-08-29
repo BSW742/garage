@@ -3,7 +3,7 @@ import PostalMime from 'postal-mime';
 import { EmailMessage } from 'cloudflare:email';
 import {
   mailboxSlug, bareAddress, authVerdict, isAutomated, buildReplyMime,
-  MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, addVideo, usablePhotos,
+  MAX_IMAGES_PER_EMAIL, addToGallery, youtubeId, addVideo, usablePhotos, instaLinks,
 } from '../../src/lib/site-mail';
 
 // Declared here rather than pulled in wholesale, matching how the API routes
@@ -170,12 +170,68 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
 
   const video = youtubeId(`${parsed.text || ''} ${parsed.html || ''} ${record.subject}`);
 
-  if (!attachments.length && !video) {
+  // An insta wall takes Instagram links instead. Share a post to Mail on the
+  // phone and the link arrives in the body — this is the whole point of the
+  // mailbox: no copying, no pasting, no browser.
+  let wall = false;
+  try { wall = JSON.parse(site.config || '{}')?.style === 'insta'; } catch { wall = false; }
+  const posts = wall
+    ? instaLinks(`${parsed.text || ''} ${parsed.html || ''} ${record.subject}`)
+    : [];
+
+  if (wall && posts.length) {
+    const added: string[] = [];
+    const refused: string[] = [];
+    for (const post of posts.slice(0, 12)) {
+      // Instagram's own oembed is the gate. It answers without a token and
+      // returns 400 for anything that is not a real, public, embeddable post,
+      // so a dead square never reaches the wall.
+      let live = false;
+      try {
+        const check = await fetch(
+          'https://graph.facebook.com/v25.0/instagram_oembed?omitscript=true&url=' +
+            encodeURIComponent(`https://www.instagram.com/${post.kind}/${post.code}/`)
+        );
+        live = check.ok;
+      } catch {
+        live = false;
+      }
+      if (!live) { refused.push(post.code); continue; }
+      const done = await env.DB
+        .prepare(
+          `INSERT INTO insta_posts (slug, code, kind) VALUES (?, ?, ?)
+             ON CONFLICT (slug, code) DO NOTHING`
+        )
+        .bind(slug, post.code, post.kind)
+        .run();
+      if (done.meta?.changes) added.push(post.code);
+    }
+
+    record.intent = 'insta';
+    record.applied = added.length ? 1 : 0;
+    const lines: string[] = [];
+    if (added.length) lines.push(`${added.length} post${added.length === 1 ? '' : 's'} went up.`);
+    if (!added.length && !refused.length) lines.push('Already on the wall — nothing to do.');
+    if (refused.length) {
+      lines.push(
+        `${refused.length} would not embed (private account, deleted, or a story): ${refused.join(', ')}.`
+      );
+    }
+    return say(
+      `${lines.join('\n')}\n\nSee it:  https://${slug}.garage.co.nz\n\n` +
+      `A heads up: reels using licensed music show a still and send people to ` +
+      `Instagram to watch. Your own audio plays right on the page.`
+    );
+  }
+
+  if (!attachments.length && !video && !(wall && posts.length)) {
     record.intent = 'held';
     return say(
       heic
         ? `Those photos are in a format websites cannot show (HEIC). On an iPhone: Settings > Camera > Formats > Most Compatible, then send them again.`
-        : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or send a YouTube link and it goes up as a video.`
+        : wall
+          ? `Nothing was changed.\n\nShare a post from Instagram to Mail and send it here — the link in the body is all this needs.`
+          : `Nothing was changed.\n\nAttach photos and they go into your gallery, with the subject line as the caption. Or send a YouTube link and it goes up as a video.`
     );
   }
 
