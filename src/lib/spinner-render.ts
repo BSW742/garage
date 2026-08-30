@@ -130,7 +130,7 @@ export const SPINNER_CSS = `
 .gsp-tab{position:fixed;right:1.7rem;bottom:1.7rem;z-index:9990;
 width:138px;height:138px;touch-action:none;padding:0;border:0;border-radius:50%;
 background:none;cursor:pointer;display:block;
-filter:drop-shadow(0 12px 26px rgba(0,0,0,.34)) drop-shadow(0 0 13px rgba(240,160,32,.42));
+filter:drop-shadow(0 10px 22px rgba(0,0,0,.32)) drop-shadow(0 0 9px rgba(255,255,255,.95)) drop-shadow(0 7px 20px rgba(255,255,255,.8)) drop-shadow(0 0 40px rgba(255,255,255,.5));
 transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
 .gsp-tab:hover{transform:scale(1.07)}
 .gsp-tab:active{transform:scale(.96)}
