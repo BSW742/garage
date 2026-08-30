@@ -42,14 +42,48 @@ import Layout from '../components/Layout.astro';
     padding: 2rem 1rem;
   }
 
-  /* He walks in the gutter beside the card, standing on the bottom of the
-     screen. The card is capped at 650px, so there is only room for him out
-     there once the window is wide enough to hold both — below that he stops
-     being scenery and starts covering the thing people came to use. */
+  /* Dark, and only here. These are declared on body rather than :root so they
+     simply win by being nearer the elements that read them — no fighting the
+     layout's own :root over source order. Everything inside inherits. */
+  body {
+    --color-bg: #0b0c0f;
+    --color-surface: #15171c;
+    --color-text: #f4f4f5;
+    --color-text-soft: #c8ccd4;
+    --color-text-muted: #8b909b;
+    --color-border: #262a33;
+  }
+
+  /* The header's pill and cart are painted with --color-text and hold white
+     text, which was a dark chip on a light page and becomes white on white
+     the moment the theme flips. They have to be stated the other way round. */
+  .nav-cta,
+  .nav-cart {
+    background: #f4f4f5;
+    color: #0b0c0f !important;
+  }
+
+  /* Mid green on near-black is too quiet to read a time in. */
+  .slot.available { color: #4ade80; }
+
+  /* The chat launcher is a black pill, which disappears into a black page.
+     Higher specificity than the layout's own #gg-launch so it wins wherever
+     the two sheets land relative to each other. */
+  html #gg-launch {
+    background: #f4f4f5;
+    color: #0b0c0f;
+    box-shadow: 0 12px 30px -12px rgba(0, 0, 0, .8);
+  }
+
+  /* He walks in the gutter on the right, halfway down. The card is capped at
+     650px, so there is only room for him out there once the window is wide
+     enough to hold both — below that he stops being scenery and starts
+     covering the thing people came to use. */
   .ben-walk {
     position: fixed;
-    left: 1.5rem;
-    bottom: 0;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
     z-index: 5;
     pointer-events: none;
   }
@@ -63,6 +97,7 @@ import Layout from '../components/Layout.astro';
   @media (max-width: 1049px) {
     .ben-walk {
       position: static;
+      transform: none;
       display: flex;
       justify-content: center;
       margin: -1rem 0 1.5rem;
