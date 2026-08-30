@@ -1897,7 +1897,42 @@ font:inherit;font-weight:700;cursor:pointer}
 .gz-short{display:none}
 .gz-brand{display:none}
 .gz-hint{display:none}
-.gz-bubble{display:none}
+/* ── The bubble ────────────────────────────────────────────────────
+   Him, bottom right, on every screen. The badge says it plays; the orange
+   ring keeps him off whatever colour the site happens to be, and white
+   behind a cutout reads as a portrait rather than a hole punched in it. */
+.gz-bubble{display:grid;position:fixed;right:1.5rem;
+bottom:calc(1.5rem + env(safe-area-inset-bottom));z-index:9600;
+width:6.6rem;height:6.6rem;border-radius:50%;padding:0;cursor:pointer;
+background:#fff;border:3px solid #f97316;overflow:visible;
+box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+animation:gz-float 3.6s ease-in-out infinite;transition:box-shadow .18s ease}
+/* Pinned to the circle rather than sized to it. height:100% on a grid child
+   of a button resolves to auto here, so he rendered at his own 2:3 shape and
+   hung 47px out of the bottom of the ring. inset:0 has no such argument. */
+.gz-bubble img{position:absolute;inset:0;width:100%;height:100%;
+object-fit:cover;object-position:50% 22%;border-radius:50%;pointer-events:none}
+.gz-bubble s{position:absolute;right:-.1rem;bottom:-.1rem;text-decoration:none;
+width:2.3rem;height:2.3rem;border-radius:50%;background:#f97316;border:2.5px solid #fff;
+display:grid;place-items:center}
+.gz-bubble s:after{content:'';border-style:solid;border-width:.36rem 0 .36rem .58rem;
+border-color:transparent transparent transparent #fff;margin-left:.12rem}
+/* animation:none first, or the float's own transform wins and nothing moves. */
+.gz-bubble:hover{animation:none;transform:translateY(-4px);
+box-shadow:0 16px 34px -10px rgba(0,0,0,.5)}
+.gz-bubble:active{transform:scale(.94)}
+@keyframes gz-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(prefers-reduced-motion:reduce){.gz-bubble{animation:none}}
+
+/* On a big screen the film plays centred in its own dark room, and a bright
+   bubble hovering over that is clutter — the close button is already there.
+   On a phone he has to stay: the card's tail is pointing at him. */
+body.gz-open .gz-bubble{display:none}
+
+/* Both want the bottom right corner. The cart moves up and lines up with him
+   rather than disappearing — on a wide screen there is room for the two, and
+   only the phone is tight enough to have to choose. */
+body.gz-noted .cart-open{right:3.3rem;bottom:9rem}
 .gz-seen{display:block;text-align:center;color:#9aa0ac;font-size:.85rem;
 text-decoration:underline;text-underline-offset:3px;padding:.2rem}
 .gz-seen[hidden]{display:none}
@@ -2003,34 +2038,15 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
   /* He is the desktop's welcome. On a phone he is the bubble instead. */
   .gz-ben{display:none}
 
-  /* The cart and the bubble both want the bottom right corner, and on the
-     outreach view the bubble is the only one of the two that is the point.
+  /* No room for both, and here the bubble is the one that is the point.
      Scoped to gz-noted, so a site somebody actually owns keeps its shop. */
   body.gz-noted .cart-open{display:none}
 
-  /* ── The bubble ──────────────────────────────────────────────────
-     Him, full size, where a thumb already is. The badge says it plays;
-     the orange ring keeps him off whatever colour the site happens to be,
-     and white behind a cutout reads as a portrait rather than a hole. */
-  .gz-bubble{display:grid;position:fixed;right:1rem;
-  bottom:calc(1rem + env(safe-area-inset-bottom));z-index:9600;
-  width:6.6rem;height:6.6rem;border-radius:50%;padding:0;cursor:pointer;
-  background:#fff;border:3px solid #f97316;overflow:visible;
-  box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
-  animation:gz-float 3.6s ease-in-out infinite}
-  /* Pinned to the circle rather than sized to it. height:100% on a grid child
-     of a button resolves to auto here, so he rendered at his own 2:3 shape and
-     hung 47px out of the bottom of the ring. inset:0 has no such argument. */
-  .gz-bubble img{position:absolute;inset:0;width:100%;height:100%;
-  object-fit:cover;object-position:50% 22%;border-radius:50%;pointer-events:none}
-  .gz-bubble s{position:absolute;right:-.1rem;bottom:-.1rem;text-decoration:none;
-  width:2.3rem;height:2.3rem;border-radius:50%;background:#f97316;border:2.5px solid #fff;
-  display:grid;place-items:center}
-  .gz-bubble s:after{content:'';border-style:solid;border-width:.36rem 0 .36rem .58rem;
-  border-color:transparent transparent transparent #fff;margin-left:.12rem}
-  .gz-bubble:active{transform:scale(.94)}
-  @keyframes gz-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-  @media(prefers-reduced-motion:reduce){.gz-bubble{animation:none}}
+  /* Tighter into the corner, where a thumb already is. Everything else about
+     him is the same on both screens, and is set once further up. */
+  .gz-bubble{right:1rem;bottom:calc(1rem + env(safe-area-inset-bottom))}
+  /* He stays while the card is open: its tail is pointing straight at him. */
+  body.gz-open .gz-bubble{display:grid}
 }
 `;
 
@@ -2202,6 +2218,10 @@ function noteBlock(slug: string): string {
     // somebody's sales pitch.
     if (!v.src) v.src = v.dataset.src;
     box.classList.add('on');
+    // The CSS needs to know, because what he does while it is open differs by
+    // screen: on a phone he stays put with the tail aimed at him, on a desktop
+    // he gets out of the way of the film.
+    document.body.classList.add('gz-open');
     document.body.style.overflow = 'hidden';
     // Nothing opens it but a tap now, so every open is a real one.
     if (asked) tell('seen', { at: -1 });
@@ -2211,6 +2231,7 @@ function noteBlock(slug: string): string {
   function shut() {
     if (!box.classList.contains('on')) return;
     box.classList.remove('on');
+    document.body.classList.remove('gz-open');
     document.body.style.overflow = '';
     try { v.pause(); } catch (e) {}
   }
