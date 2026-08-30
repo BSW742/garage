@@ -87,61 +87,65 @@ const ago = (t: unknown) => {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
+      /* Light, like the ops page next door. Two admin pages that are the same
+         job in different colours make you check which one you are on. */
       :root {
-        --room: #0b0c0f; --panel: #14161b; --line: #242730; --ink: #f3f4f6;
-        --dim: #878d99; --hot: #f97316; --go: #22c55e; --cool: #3b82f6;
+        --page: #ffffff; --panel: #f8f9fb; --line: #e6e8ec; --ink: #0f1115;
+        --dim: #6b7280; --hot: #c2410c; --go: #16a34a; --cool: #2563eb;
       }
       * { box-sizing: border-box; }
-      body { margin: 0; background: var(--room); color: var(--ink);
+      body { margin: 0; background: var(--page); color: var(--ink);
         font: 400 15px/1.5 Inter, system-ui, sans-serif; }
       .wrap { max-width: 82rem; margin: 0 auto; padding: 1.5rem 1.1rem 5rem; }
       h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.02em; }
       .top { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
-      .top a { color: var(--dim); font-size: 0.83rem; text-decoration: none; border-bottom: 1px solid var(--line); }
-      .top a:hover { color: var(--ink); }
+      .top a { color: var(--cool); font-size: 0.83rem; text-decoration: none; }
+      .top a:hover { text-decoration: underline; }
       .sub { color: var(--dim); font-size: 0.85rem; margin: 0.15rem 0 0; }
 
       /* The funnel. Each one is a filter. */
       .funnel { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
       .step { background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
         padding: 0.6rem 0.85rem; cursor: pointer; text-align: left; color: var(--ink);
-        font: inherit; min-width: 7.2rem; transition: border-color 0.15s, transform 0.15s; }
-      .step:hover { border-color: #3d424f; transform: translateY(-1px); }
-      .step.on { border-color: var(--ink); }
+        font: inherit; min-width: 7.2rem;
+        transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+      .step:hover { border-color: #c9cdd6; transform: translateY(-1px);
+        box-shadow: 0 6px 16px -12px rgba(15,17,21,0.5); }
+      .step.on { border-color: var(--ink); background: #fff; }
       .step b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1;
         letter-spacing: -0.03em; }
       .step span { display: block; font-size: 0.72rem; color: var(--dim); }
       .step.keen b { color: var(--hot); }
-      .step.watched b { color: #fbbf24; }
+      .step.watched b { color: #b45309; }
       .step.claimed b { color: var(--go); }
 
       table { width: 100%; border-collapse: collapse; }
       th { text-align: left; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
         color: var(--dim); font-weight: 700; padding: 0 0.6rem 0.5rem; }
       td { padding: 0.65rem 0.6rem; border-top: 1px solid var(--line); vertical-align: top; }
-      tr:hover td { background: #101319; }
+      tr:hover td { background: #f8f9fb; }
       .who a { color: var(--ink); text-decoration: none; font-weight: 600; }
       .who a:hover { text-decoration: underline; }
       .who i { display: block; font-style: normal; font-size: 0.78rem; color: var(--dim); }
       .chip { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
         border-radius: 999px; padding: 0.16rem 0.5rem; border: 1px solid var(--line); color: var(--dim); }
-      .chip.keen { background: rgba(249,115,22,0.16); color: #fdba74; border-color: transparent; }
-      .chip.watched { background: rgba(251,191,36,0.14); color: #fcd34d; border-color: transparent; }
-      .chip.sent { background: rgba(59,130,246,0.14); color: #93c5fd; border-color: transparent; }
-      .chip.recorded { background: rgba(168,85,247,0.14); color: #d8b4fe; border-color: transparent; }
-      .chip.claimed { background: rgba(34,197,94,0.14); color: #86efac; border-color: transparent; }
+      .chip.keen { background: #ffedd5; color: #9a3412; border-color: transparent; }
+      .chip.watched { background: #fef3c7; color: #92400e; border-color: transparent; }
+      .chip.sent { background: #dbeafe; color: #1e40af; border-color: transparent; }
+      .chip.recorded { background: #f3e8ff; color: #6b21a8; border-color: transparent; }
+      .chip.claimed { background: #dcfce7; color: #166534; border-color: transparent; }
       .signals { display: flex; gap: 0.3rem; flex-wrap: wrap; }
       .sig { font-size: 0.68rem; color: var(--dim); border: 1px solid var(--line);
-        border-radius: 6px; padding: 0.1rem 0.4rem; white-space: nowrap; }
-      .sig.on { color: var(--ink); border-color: #3d424f; }
-      .wants { color: #fdba74; font-size: 0.75rem; }
-      .why { color: var(--dim); font-size: 0.75rem; max-width: 22rem; }
+        border-radius: 6px; padding: 0.1rem 0.4rem; white-space: nowrap; background: #fff; }
+      .sig.on { color: var(--ink); border-color: #c9cdd6; }
+      .wants { color: #9a3412; font-size: 0.75rem; margin-top: 0.25rem; }
+      .why { color: var(--dim); font-size: 0.75rem; max-width: 22rem; margin-top: 0.2rem; }
       .act { display: inline-block; font: inherit; font-size: 0.78rem; font-weight: 600;
-        border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+        border: 1px solid var(--line); background: #fff; color: var(--ink);
         border-radius: 8px; padding: 0.32rem 0.6rem; cursor: pointer; text-decoration: none; }
       .act:hover { border-color: var(--ink); }
-      .act.primary { background: var(--go); border-color: var(--go); color: #052e16; }
-      .act.primary:hover { background: #16a34a; }
+      .act.primary { background: var(--go); border-color: var(--go); color: #fff; }
+      .act.primary:hover { background: #15803d; }
       .right { text-align: right; white-space: nowrap; }
       .right .act + .act { margin-left: 0.3rem; }
       tr[hidden] { display: none; }
