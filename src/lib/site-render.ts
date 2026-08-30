@@ -347,13 +347,20 @@ align-items:center;padding:clamp(1.8rem,4vw,3.4rem) 0;border-bottom:1px solid va
 padding:.45rem .95rem;border-radius:999px;cursor:pointer}
 .buy-add:hover{background:var(--deep)}
 
-/* Above the chat launcher, which sits at bottom:18px and is about 50 tall. */
-.cart-open{position:fixed;right:18px;bottom:84px;z-index:8000;width:48px;height:48px;border-radius:50%;
-border:1px solid var(--line);background:var(--card,#fff);color:var(--ink);display:grid;place-items:center;
-cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.16);transition:transform .15s,color .15s}
-.cart-open:hover{transform:translateY(-2px);color:var(--primary)}
-.cart-count{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:999px;
-background:var(--primary);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px}
+/* In the top nav, on every style. It used to float above the chat launcher in
+   the bottom right, where it competed with everything else that lives in that
+   corner and read as a widget rather than as part of the site. Colours come
+   from currentColor so it works on a nav that is dark, light, or transparent
+   over a photo and changes as that nav does. */
+.cart-open{position:relative;flex:none;width:2.4rem;height:2.4rem;border-radius:50%;
+border:1px solid currentColor;background:none;color:inherit;display:inline-grid;place-items:center;
+cursor:pointer;opacity:.85;transition:opacity .15s,transform .15s}
+.cart-open[hidden]{display:none}
+.cart-end{display:flex;align-items:center;gap:.75rem}
+.cart-open:hover{opacity:1;transform:translateY(-1px)}
+.cart-count{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:999px;
+background:var(--primary);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;
+padding:0 4px;border:1.5px solid var(--card,#fff)}
 .cart-count[hidden]{display:none}
 .cart-back{position:fixed;inset:0;background:rgba(10,12,16,.45);z-index:8500}
 .cart-back[hidden]{display:none}
@@ -741,10 +748,12 @@ function socialLinks(socials?: Record<string, string>): string {
  * is collect what someone wants and how to reach them, and say plainly that a
  * person will check stock and come back about paying.
  */
-// Sits in the nav beside the call to action, where a cart belongs.
+// Sits in the top nav and nowhere else. It ships hidden and is unhidden once
+// the script has moved it into the nav — a cart that flashes in the corner
+// before jumping into the bar is worse than one that simply appears there.
 function cartButton(site: SiteConfig): string {
   if (site.shop === false) return '';
-  return `<button type="button" class="cart-open" id="cart-open" aria-label="Your cart">
+  return `<button type="button" class="cart-open" id="cart-open" aria-label="Your cart" hidden>
   <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6L5 2H2"/></svg>
   <span class="cart-count" id="cart-count" hidden>0</span>
 </button>`;
@@ -786,6 +795,43 @@ var items = [];
 try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { items = []; }
 
 var openBtn = document.getElementById('cart-open');
+
+/* Dock it in the top nav, which is the only place it is allowed to be.
+   Every style renders its own nav and no two agree on the markup, so it is
+   found rather than named: the first <nav> on the page, then down through any
+   wrapper that has a single child — youtube nests its row two deep inside
+   .yt-wrap, while the plain nav puts brand, links and button side by side.
+   A style with no nav at all gets no cart; only one site in the estate has a
+   shop, and it is not one of those. */
+if (openBtn) {
+  var host = document.querySelector('nav');
+  while (host && host.children.length === 1 && host.firstElementChild) {
+    host = host.firstElementChild;
+  }
+  if (host) {
+    /* Beside the call to action, not in a slot of its own. Most of these navs
+       spread their children apart, so simply appending a fourth one pushes the
+       button to the right edge and strands the CTA in the middle — the nav
+       goes from three evenly placed things to four, and every one of them
+       moves. Pairing the two into one group keeps the nav's own arrangement
+       exactly as its designer left it. */
+    var spread = getComputedStyle(host).justifyContent;
+    var last = host.lastElementChild;
+    if (last && (spread === 'space-between' || spread === 'space-around')) {
+      var group = document.createElement('span');
+      group.className = 'cart-end';
+      host.insertBefore(group, last);
+      group.appendChild(last);
+      group.appendChild(openBtn);
+    } else {
+      /* A nav that packs everything to the left needs telling, or the cart
+         lands against the brand in the middle of nowhere. */
+      host.appendChild(openBtn);
+      openBtn.style.marginLeft = 'auto';
+    }
+    openBtn.hidden = false;
+  }
+}
 var back = document.getElementById('cart-back');
 var panel = document.getElementById('cart');
 var bodyEl = document.getElementById('cart-body');
@@ -858,7 +904,7 @@ document.querySelectorAll('.buy-add').forEach(function(b){
   });
 });
 
-openBtn.addEventListener('click', function(){ draw(); show(true); });
+if (openBtn) openBtn.addEventListener('click', function(){ draw(); show(true); });
 document.getElementById('cart-shut').addEventListener('click', function(){ show(false); });
 back.addEventListener('click', function(){ show(false); });
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') show(false); });
@@ -1323,6 +1369,8 @@ export function renderSite(
     const farm: SiteConfig = {
       ...site,
       chat: false,
+      // No top nav on this one, and the cart is only ever allowed in a top nav.
+      shop: false,
       palette: { primary: '#e07a2f', deep: '#8a4b16', wash: '#fbf6ec', ...(site.palette || {}) },
     };
     const maker = farm.name || slug;
@@ -1358,6 +1406,8 @@ export function renderSite(
     const art: SiteConfig = {
       ...site,
       chat: false,
+      // Its header is a hero, not a nav row, so there is nowhere legal for it.
+      shop: false,
       palette: { primary: '#7c5cff', deep: '#2bb3c0', wash: '#fbfaff', ...(site.palette || {}) },
     };
     const maker = art.name || slug;
@@ -1929,10 +1979,6 @@ box-shadow:0 16px 34px -10px rgba(0,0,0,.5)}
    On a phone he has to stay: the card's tail is pointing at him. */
 body.gz-open .gz-bubble{display:none}
 
-/* Both want the bottom right corner. The cart moves up and lines up with him
-   rather than disappearing — on a wide screen there is room for the two, and
-   only the phone is tight enough to have to choose. */
-body.gz-noted .cart-open{right:3.3rem;bottom:9rem}
 .gz-seen{display:block;text-align:center;color:#9aa0ac;font-size:.85rem;
 text-decoration:underline;text-underline-offset:3px;padding:.2rem}
 .gz-seen[hidden]{display:none}
@@ -2037,10 +2083,6 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
   .gz-short i{font-style:normal;color:#c2c7d0;font-weight:600;margin-right:.1rem}
   /* He is the desktop's welcome. On a phone he is the bubble instead. */
   .gz-ben{display:none}
-
-  /* No room for both, and here the bubble is the one that is the point.
-     Scoped to gz-noted, so a site somebody actually owns keeps its shop. */
-  body.gz-noted .cart-open{display:none}
 
   /* Tighter into the corner, where a thumb already is. Everything else about
      him is the same on both screens, and is set once further up. */
