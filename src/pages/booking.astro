@@ -4,6 +4,29 @@ import Layout from '../components/Layout.astro';
 
 <Layout title="Book a Chat">
   <div id="app"></div>
+
+  <!-- Outside #app on purpose. The page rewrites #app's innerHTML on every
+       week change and every morning/afternoon toggle, so anything living in
+       there is destroyed and rebuilt — and he would restart his walk each
+       time somebody pressed an arrow. -->
+  <div class="ben-walk" aria-hidden="true">
+    <video autoplay muted loop playsinline preload="metadata" poster="/booking/ben-walk.png">
+      <!-- mp4 first: Safari must not be handed the webm. Its VP9 alpha is the
+           one thing it will not play, and it does not fall back once it has
+           accepted a source. -->
+      <source src="/booking/ben-walk.mp4" type="video/mp4" />
+      <source src="/booking/ben-walk.webm" type="video/webm" />
+    </video>
+  </div>
+
+  <script is:inline>
+    // Somebody who has asked their machine to stop animating things gets the
+    // poster frame instead. autoplay ignores that preference on its own.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var walk = document.querySelector('.ben-walk video');
+      if (walk) { walk.autoplay = false; walk.removeAttribute('autoplay'); walk.pause(); }
+    }
+  </script>
 </Layout>
 
 <style is:global>
@@ -13,6 +36,37 @@ import Layout from '../components/Layout.astro';
     align-items: center;
     justify-content: center;
     padding: 2rem 1rem;
+  }
+
+  /* He walks in the gutter beside the card, standing on the bottom of the
+     screen. The card is capped at 650px, so there is only room for him out
+     there once the window is wide enough to hold both — below that he stops
+     being scenery and starts covering the thing people came to use. */
+  .ben-walk {
+    position: fixed;
+    left: 1.5rem;
+    bottom: 0;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .ben-walk video {
+    display: block;
+    height: 280px;
+    width: auto;
+  }
+  /* Not enough gutter for him: he drops below the card instead, where he is
+     still on the page and covering nothing. */
+  @media (max-width: 1049px) {
+    .ben-walk {
+      position: static;
+      display: flex;
+      justify-content: center;
+      margin: -1rem 0 1.5rem;
+    }
+    .ben-walk video { height: 190px; }
+  }
+  @media (max-width: 520px) {
+    .ben-walk video { height: 150px; }
   }
 
   .booking {
