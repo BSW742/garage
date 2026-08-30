@@ -147,8 +147,8 @@ body.gz-noted .gsp-tab{bottom:10.2rem}
    which is the same reason the big one never looked like a pie chart. */
 background:conic-gradient(${TAB_WEDGES});
 box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
-animation:gsp-turn 3.1s linear infinite}
-.gsp-tab:hover .gsp-tdisc{animation-duration:.5s}
+}
+.gsp-tab:hover .gsp-tdisc{animation:gsp-turn .5s linear infinite}
 @keyframes gsp-turn{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.gsp-tdisc{animation:none}}
 
@@ -448,6 +448,17 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
 
   var KEY = 'garage-spun:' + slug;
   $('gsp-tab').addEventListener('click', function () { veil.classList.add('on'); });
+
+  // It turns with the page rather than on its own. Spinning forever in the
+  // corner is movement nobody asked for; tied to the scroll it only moves
+  // when they do. The hover animation still overrides this — a running
+  // animation outranks an inline style.
+  var disc = document.querySelector('.gsp-tdisc');
+  if (disc) {
+    var turn = function () { disc.style.transform = 'rotate(' + (window.pageYOffset * 0.22) + 'deg)'; };
+    window.addEventListener('scroll', turn, { passive: true });
+    turn();
+  }
   function close() { veil.classList.remove('on'); }
   $('gsp-x').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
