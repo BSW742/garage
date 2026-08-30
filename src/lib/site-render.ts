@@ -1916,15 +1916,37 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
    block above them and the modal's own actions stay display:none on a phone,
    which is exactly what happened the first time. */
 @media(max-width:700px){
-  /* White, like the bar. On a phone the film is the whole page rather than a
-     thing floating over one, and a black sheet made it read as a video player
-     that had taken the site over. */
-  /* Top, not centred. Centring left the line floating halfway down a white
-     screen with nothing above it, which is not what "at the top" means and is
-     not where an eye starts. */
-  .gz-box{padding:1rem 1.1rem 2.5rem;align-content:start;background:#fff;
-  backdrop-filter:none;color:#0b0c0f;overflow-y:auto}
-  .gz-box-in{width:100%}
+  /* It comes out of him rather than replacing the page. The site stays behind,
+     dimmed but plainly there, which is the point of the visit — they are being
+     shown their own thing, not sent to a player.
+     flex, not grid: align-content:end on a scrolling grid clips the top off
+     anything taller than the screen, with no way to scroll back up to it. */
+  .gz-box{padding:0;background:rgba(11,12,15,.62);backdrop-filter:blur(3px);
+  color:#0b0c0f;overflow-y:auto;overscroll-behavior:contain}
+  /* stretch, explicitly. The desktop rule sets place-items:center, and in a
+     column flexbox that centres the cross axis — so the card shrank to fit the
+     video's own pixel width instead of the phone's, and would have sized
+     itself to the source file once there was a real one. */
+  .gz-box.on{display:flex;flex-direction:column;justify-content:flex-end;
+  align-items:stretch}
+
+  /* The card. Its bottom edge clears the bubble, and the tail below it points
+     back down at him so the two read as one thing. overflow stays visible or
+     the tail is clipped off by the very box it belongs to. */
+  .gz-box-in{width:auto;position:relative;background:#fff;border-radius:18px;
+  border:2px solid #0b0c0f;padding:1rem 1rem 1.2rem;
+  margin:1rem 1rem calc(8.9rem + env(safe-area-inset-bottom));
+  box-shadow:0 24px 60px -22px rgba(0,0,0,.65)}
+  /* Two triangles, the dark one a hair larger, which is how you draw an arrow
+     that has a border. Lined up with the middle of the bubble: it sits 1rem
+     from the edge and is 6.6rem across, so its centre is 4.3rem in, and the
+     card's own edge is already 1rem of that. */
+  .gz-box-in:before,.gz-box-in:after{content:'';position:absolute;right:2.5rem;
+  width:0;height:0;border-style:solid}
+  .gz-box-in:before{bottom:-1.06rem;border-width:1.06rem .8rem 0 .8rem;
+  border-color:#0b0c0f transparent transparent transparent}
+  .gz-box-in:after{bottom:-.78rem;border-width:.82rem .6rem 0 .6rem;
+  border-color:#fff transparent transparent transparent}
 
   /* The line across the top does the work the little character was doing and
      failing at: at forty pixels on a phone he is a smudge, and the words
@@ -1937,7 +1959,7 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
      element made the line stop two thirds of the way across and read as
      something broken rather than as a divider. */
   padding-right:3.4rem;
-  margin:0 0 1.1rem;font:800 .95rem/1.3 Inter,system-ui,sans-serif;
+  margin:0 0 .8rem;font:800 .9rem/1.3 Inter,system-ui,sans-serif;
   letter-spacing:-.02em;color:#0b0c0f}
   .gz-brand span{white-space:nowrap;color:#5b6270;font-weight:700}
   .gz-brand i{font-style:normal;color:#c2c7d0;font-weight:600;margin-right:.15rem}
@@ -1951,14 +1973,14 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
 
   /* Two lines, stacked, with the point in bold on its own. Run together on one
      line they read as a caption nobody finishes. */
-  .gz-box p{display:block;margin:1.1rem 0 0;font-size:.95rem;line-height:1.45;
+  .gz-box p{display:block;margin:.85rem 0 0;font-size:.9rem;line-height:1.4;
   color:#5b6270}
   .gz-box p b{display:block;color:#0b0c0f;font-size:1.12rem;font-weight:800;
   letter-spacing:-.02em;margin-bottom:.15rem}
 
   /* Room. The buttons were stacked a few pixels apart and read as one lump;
      the important one is now bigger, taller and separated from the rest. */
-  .gz-box-do{display:grid;gap:.7rem;margin-top:1.5rem}
+  .gz-box-do{display:grid;gap:.6rem;margin-top:1.1rem}
   .gz-box-do .gz-like{width:100%;justify-content:center;padding:1.05rem .8rem;
   font-size:1.05rem;border-radius:14px;letter-spacing:-.01em}
   .gz-box-do .gz-like b{font-size:1.12em}
@@ -1966,10 +1988,10 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
   border-radius:14px;font-size:.95rem;border-width:1.5px}
   .gz-more:hover{border-color:#0b0c0f}
   .gz-seen{color:#5b6270;padding:.5rem}
-  .gz-hint{display:block;margin:1.1rem 0 0;text-align:center;font-size:.8rem;
+  .gz-hint{display:block;margin:.85rem 0 0;text-align:center;font-size:.78rem;
   color:#9aa0ac}
-  .gz-shut{background:#fff;border-color:#0b0c0f;color:#0b0c0f;border-width:1.5px;
-  top:.75rem;right:.85rem;width:2.3rem;height:2.3rem}
+  .gz-shut{position:absolute;background:#fff;border-color:#0b0c0f;color:#0b0c0f;
+  border-width:1.5px;top:.7rem;right:.7rem;width:2.1rem;height:2.1rem;z-index:3}
 
   /* The same line as the film's. One thing said one way, wherever they are. */
   .gz-short{display:flex;gap:.35rem;align-items:baseline;flex-wrap:wrap;
@@ -1981,22 +2003,31 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
   /* He is the desktop's welcome. On a phone he is the bubble instead. */
   .gz-ben{display:none}
 
+  /* The cart and the bubble both want the bottom right corner, and on the
+     outreach view the bubble is the only one of the two that is the point.
+     Scoped to gz-noted, so a site somebody actually owns keeps its shop. */
+  body.gz-noted .cart-open{display:none}
+
   /* ── The bubble ──────────────────────────────────────────────────
      Him, full size, where a thumb already is. The badge says it plays;
-     the ring keeps him off whatever colour the site happens to be. */
-  .gz-bubble{display:grid;position:fixed;left:1rem;
-  bottom:calc(1rem + env(safe-area-inset-bottom));z-index:8500;
-  width:4.4rem;height:4.4rem;border-radius:50%;padding:0;cursor:pointer;
-  background:#0b0c0f;border:3px solid #fff;overflow:visible;
-  box-shadow:0 10px 30px -10px rgba(0,0,0,.55);
+     the orange ring keeps him off whatever colour the site happens to be,
+     and white behind a cutout reads as a portrait rather than a hole. */
+  .gz-bubble{display:grid;position:fixed;right:1rem;
+  bottom:calc(1rem + env(safe-area-inset-bottom));z-index:9600;
+  width:6.6rem;height:6.6rem;border-radius:50%;padding:0;cursor:pointer;
+  background:#fff;border:3px solid #f97316;overflow:visible;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
   animation:gz-float 3.6s ease-in-out infinite}
-  .gz-bubble img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;
-  border-radius:50%;pointer-events:none}
-  .gz-bubble s{position:absolute;right:-.15rem;bottom:-.15rem;text-decoration:none;
-  width:1.75rem;height:1.75rem;border-radius:50%;background:#0b0c0f;border:2.5px solid #fff;
+  /* Pinned to the circle rather than sized to it. height:100% on a grid child
+     of a button resolves to auto here, so he rendered at his own 2:3 shape and
+     hung 47px out of the bottom of the ring. inset:0 has no such argument. */
+  .gz-bubble img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:50% 22%;border-radius:50%;pointer-events:none}
+  .gz-bubble s{position:absolute;right:-.1rem;bottom:-.1rem;text-decoration:none;
+  width:2.3rem;height:2.3rem;border-radius:50%;background:#f97316;border:2.5px solid #fff;
   display:grid;place-items:center}
-  .gz-bubble s:after{content:'';border-style:solid;border-width:.28rem 0 .28rem .46rem;
-  border-color:transparent transparent transparent #fff;margin-left:.1rem}
+  .gz-bubble s:after{content:'';border-style:solid;border-width:.36rem 0 .36rem .58rem;
+  border-color:transparent transparent transparent #fff;margin-left:.12rem}
   .gz-bubble:active{transform:scale(.94)}
   @keyframes gz-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   @media(prefers-reduced-motion:reduce){.gz-bubble{animation:none}}
@@ -2061,8 +2092,8 @@ function noteBlock(slug: string): string {
 </button>
 
 <div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
-  <button type="button" class="gz-shut" aria-label="Close">&times;</button>
   <div class="gz-box-in">
+    <button type="button" class="gz-shut" aria-label="Close">&times;</button>
     <p class="gz-brand"><b>Garage.co.nz</b><span><i>&rsaquo;</i> FREE websites</span><span><i>&rsaquo;</i> Built by talking</span></p>
     <div class="gz-player" id="gz-player">
       <video id="gz-note-v" playsinline preload="none"
@@ -2091,7 +2122,7 @@ function noteBlock(slug: string): string {
       </button>
       <a class="gz-seen" id="gz-seen" href="https://garage.co.nz"${liked ? '' : ' hidden'}>See what else he has built &rarr;</a>
       <button type="button" class="gz-more" id="gz-more">&#9889; Grow your business</button>
-      <p class="gz-hint">Close this to look at your site.</p>
+      <p class="gz-hint">Tap outside to go back to your site.</p>
     </div>
   </div>
 </div>
@@ -2145,11 +2176,7 @@ function noteBlock(slug: string): string {
   }
   function toggle() { if (v.paused) { v.play().catch(function () {}); } else { v.pause(); } }
 
-  function press() {
-    var wasPaused = v.paused;
-    toggle();
-    if (onPhone && wasPaused) goBig();
-  }
+  function press() { toggle(); }
   pp.addEventListener('click', press);
   big.addEventListener('click', press);
   v.addEventListener('play', mark);
@@ -2169,8 +2196,6 @@ function noteBlock(slug: string): string {
   });
   mark();
 
-  var onPhone = window.matchMedia('(max-width:700px)').matches;
-
   function open(asked) {
     // The file is not fetched until it is going to be shown, so a desktop
     // visitor who never presses anything never downloads a megabyte of
@@ -2178,51 +2203,18 @@ function noteBlock(slug: string): string {
     if (!v.src) v.src = v.dataset.src;
     box.classList.add('on');
     document.body.style.overflow = 'hidden';
-    // Only a tap counts as opening it. On a phone the film is already up when
-    // they arrive, and counting that as interest would make the number mean
-    // "somebody loaded a page", which is not worth measuring.
+    // Nothing opens it but a tap now, so every open is a real one.
     if (asked) tell('seen', { at: -1 });
     if (!asked) return;                 // no gesture yet: the disc does the rest
     v.play().catch(function () {});
-
-    // A landscape recording in a portrait phone is about 390 by 219, and the
-    // chat panel — the entire point of the film — is unreadable at that size.
-    // So on a phone it goes fullscreen, where the handset turns it landscape
-    // and gives it the whole screen. This runs inside a tap, which is the only
-    // time either API is allowed. Coming out of fullscreen lands them back
-    // here with the thumbs up waiting.
-    if (onPhone) goBig();
-  }
-
-  // Fullscreen has to happen inside a tap — both APIs refuse otherwise, which
-  // is why the film opens on load but does not go large until they press play.
-  function goBig() {
-    try {
-      if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
-      else if (player.requestFullscreen) player.requestFullscreen().catch(function () {});
-      else if (v.requestFullscreen) v.requestFullscreen().catch(function () {});
-    } catch (e) {}
   }
   function shut() {
     if (!box.classList.contains('on')) return;
     box.classList.remove('on');
     document.body.style.overflow = '';
     try { v.pause(); } catch (e) {}
-    try {
-      if (document.fullscreenElement) document.exitFullscreen();
-      else if (v.webkitExitFullscreen) v.webkitExitFullscreen();
-    } catch (e) {}
   }
 
-  // Leaving fullscreen is a decision to stop watching, not to leave the page —
-  // they come back to the film and the thumbs up rather than to nothing.
-  ['fullscreenchange', 'webkitfullscreenchange', 'webkitendfullscreen'].forEach(function (ev) {
-    document.addEventListener(ev, function () {
-      if (!document.fullscreenElement && box.classList.contains('on')) {
-        try { v.pause(); } catch (e) {}
-      }
-    });
-  });
 
   // Most templates have their own sticky nav pinned to top:0, and so does this
   // bar — so they land on top of each other and the site's nav disappears
@@ -2255,13 +2247,18 @@ function noteBlock(slug: string): string {
 
   watch.addEventListener('click', function () { open(true); });
   var bubble = document.getElementById('gz-bubble');
-  if (bubble) bubble.addEventListener('click', function () { open(true); });
+  // He sits above the dimmed backdrop so the tail has something to point at,
+  // which also means he is still tappable while it is open. Tapping him again
+  // has to shut it — otherwise it reopens and counts a second view of a film
+  // they never left.
+  if (bubble) bubble.addEventListener('click', function () {
+    if (box.classList.contains('on')) shut(); else open(true);
+  });
 
-  // Video first, literally: on a phone the film is what they arrive at, with
-  // their site directly behind it. It cannot start playing by itself — every
-  // browser blocks sound without a gesture, and the talking is the pitch — so
-  // it waits on the disc, which is the one thing on the screen.
-  if (onPhone) open(false);
+  // Nothing opens on arrival any more. They land on their own site, which is
+  // the thing being pitched, and he waits in the corner to be asked — the film
+  // taking the page before anyone had asked for it read as an ad, not a gift.
+  // Tapping the dimmed site behind the card puts them back on it.
   box.addEventListener('click', function (e) {
     if (e.target === box || (e.target.closest && e.target.closest('.gz-shut'))) shut();
   });
