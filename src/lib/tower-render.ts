@@ -138,13 +138,7 @@ rgba(184,69,46,.65),transparent 70%)}
 @keyframes gtw-judder{0%,100%{transform:none}25%{transform:translateX(3px)}
 50%{transform:translateX(-3px)}75%{transform:translateX(2px)}}
 .gtw-t{position:absolute;left:50%;bottom:1.4rem;width:8.6rem;margin-left:-4.3rem;
-transform-origin:50% 100%;
-animation:gtw-sway var(--pace,3.8s) ease-in-out infinite}
-@keyframes gtw-sway{
-0%,100%{transform:rotate(calc(var(--tilt,0deg) + var(--wob,2.1deg)))}
-50%{transform:rotate(calc(var(--tilt,0deg) - var(--wob,2.1deg)))}}
-@media(prefers-reduced-motion:reduce){.gtw-t{animation:none;transform:rotate(var(--tilt,0deg))}}
-.gtw-t.down{animation:none;transform:rotate(var(--tilt,0deg))}
+transform-origin:50% 100%}
 
 .gtw-row{display:flex;gap:2px;margin-top:2px;height:1.32rem}
 .gtw-b{position:relative;border-radius:2.5px;flex:1;
@@ -329,51 +323,52 @@ export function renderTower(site: SiteConfig, slug: string): string {
 
   function step(i) { return document.querySelector('#gtw-steps [data-step="' + i + '"]'); }
 
-  // The tower's actual angle right now, read off the running animation.
-  function angle() {
-    var m = getComputedStyle(t).transform;
-    if (!m || m === 'none') return 0;
-    var p = m.slice(7, -1).split(',');
-    return Math.atan2(parseFloat(p[1]), parseFloat(p[0])) * 180 / Math.PI;
-  }
+  // The sway is driven here, not by a CSS animation, so the game and the
+  // picture can never disagree about the angle — reading it back off the
+  // animation was fragile enough to end games by itself.
+  //
+  // And it is not a plain sine. Cubing it makes the tower spend most of its
+  // time near upright with brief lurches out to the sides, which is what a
+  // nudged Jenga tower actually does — and it is what makes this a game:
+  // most grabs are safe, and grabbing during a lurch is the obviously
+  // foolish thing.
+  var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var phase = 0, last = performance.now(), rot = 0;
+  function wob() { return 2.2 + (depth + 1) * 0.8; }
+  function tilt() { return (depth + 1) * 0.5 * (depth % 2 ? -1 : 1); }
+  function pace() { return Math.max(1.6, 3.4 - (depth + 1) * 0.35); }
+  function offNow() { return Math.abs(rot - tilt()); }
 
-  function wob() { return 2.1 + (depth + 1) * 0.85; }
-  function tilt() { return parseFloat(t.style.getPropertyValue('--tilt')) || 0; }
-
-  // How much of the sway counts as "standing tall" for this block. Centre
-  // blocks forgive the most; edge blocks less; a second block from a gapped
-  // row, much less. That hierarchy IS the block-choosing skill.
   function safeBand(el) {
     var row = el.getAttribute('data-row'), c = +el.getAttribute('data-c');
-    var f = c === 1 ? 0.62 : 0.4;
-    if (pulled[row]) f *= 0.45;
-    return Math.max(0.5, wob() * f);
+    var f = c === 1 ? 0.8 : 0.6;
+    if (pulled[row]) f *= 0.5;
+    return wob() * f;
   }
 
-  // The read, offered when they touch a block — what a player who has seen a
-  // few towers would already know.
   function readOf(el) {
     var row = el.getAttribute('data-row'), c = +el.getAttribute('data-c');
     if (pulled[row]) return 'Same row as a gap. Asking for it.';
     return c === 1 ? 'Centre block. Solid.' : 'Edge block. Dicey.';
   }
 
-  var live = null;   // the pull in progress
-  function watch() {
+  var live = null;
+  function watch(now) {
     if (over) return;
-    var off = Math.abs(angle() - tilt());
-    // The shadow is the tell, in two temperatures: amber while a pull would
-    // jam, red while a grab would bring the whole thing down.
-    stage.classList.toggle('bad', armed && off > wob() * 0.88);
-    stage.classList.toggle('hot', armed && off > wob() * 0.62 && off <= wob() * 0.88);
+    var dt2 = Math.min(64, now - last); last = now;
+    phase += dt2 / (pace() * 1000);
+    var sway = calm ? 0 : Math.pow(Math.sin(phase * Math.PI * 2), 3);
+    rot = tilt() + wob() * sway;
+    t.style.transform = 'rotate(' + rot + 'deg)';
+    var off = offNow();
+    stage.classList.toggle('bad', armed && !live && off > wob() * 0.95 && depth >= 0);
+    stage.classList.toggle('hot', armed && !live && off > wob() * 0.6 && (off <= wob() * 0.95 || depth < 0));
     if (live) {
-      var dt = Date.now() - live.at;
-      // The judged moment is the grab and the first breaking-free — after
-      // that the block is clear and committed. And drifting mid-pull jams
-      // the block rather than felling the tower: the only thing that fells
-      // it is grabbing while it visibly leans.
-      if (off > live.band && dt > 60 && dt < 340) { jam(); }
-      else if (dt > 820) {
+      var dt = now - live.at;
+      // Only the grab and the breaking-free are judged; a block that is
+      // moving jams rather than felling anything.
+      if (off > live.band && dt < 340) { jam(); }
+      else if (dt > 700) {
         var el = live.el; live = null;
         el.classList.remove('pulling');
         el.classList.remove('can');
@@ -381,23 +376,17 @@ export function renderTower(site: SiteConfig, slug: string): string {
         el.style.transform = '';
         pulled[el.getAttribute('data-row')] = 1;
         depth += 1;
-        t.style.setProperty('--tilt', ((depth + 1) * 0.55 * (depth % 2 ? -1 : 1)) + 'deg');
-        t.style.setProperty('--wob', wob() + 'deg');
-        t.style.setProperty('--pace', Math.max(1.7, 3.8 - (depth + 1) * 0.45) + 's');
         if (depth > 0) step(depth - 1).classList.remove('held');
         step(depth).classList.add('held');
         $('gtw-keep').disabled = false;
         if (depth >= ladder.length - 1) return finish(true, ladder[depth], false);
-        $('gtw-hold').textContent = 'Holding: ' + ladder[depth] + ' — it sways faster now';
+        $('gtw-hold').textContent = 'Holding: ' + ladder[depth] + ' — it sways harder now';
       }
     }
     requestAnimationFrame(watch);
   }
-  requestAnimationFrame(watch);
+  requestAnimationFrame(function (now) { last = now; watch(now); });
 
-  // The block will not come, the tower flinches, and nothing is lost:
-  // this is how the game teaches its timing without killing anybody for
-  // a lesson they had not had yet.
   function jam() {
     var el = live.el; live = null;
     el.classList.remove('pulling');
@@ -413,11 +402,14 @@ export function renderTower(site: SiteConfig, slug: string): string {
     var el = e.target.closest('.gtw-b.can');
     if (!el || el.classList.contains('out')) return;
     e.preventDefault();
-    var off = Math.abs(angle() - tilt());
-    // Grabbing while it visibly leans is the one unforgivable thing.
-    if (off > wob() * 0.88) return collapse();
+    var off = offNow();
+    // The first block can never fell the tower: the worst a beginner can do
+    // is jam it and learn. From the second block on, grabbing mid-lurch is
+    // the one thing that brings it down — and by then they have seen the
+    // lurches for themselves.
+    if (off > wob() * 0.95 && depth >= 0) return collapse();
     var band = safeBand(el);
-    live = { el: el, at: Date.now(), band: band };
+    live = { el: el, at: performance.now(), band: band };
     if (off > band) return jam();
     var c = +el.getAttribute('data-c');
     el.classList.add('pulling');
@@ -426,7 +418,6 @@ export function renderTower(site: SiteConfig, slug: string): string {
   }
   function stop() {
     if (!live || over) return;
-    // Nerve went: the block slides home. No harm, no prize.
     var el = live.el; live = null;
     el.classList.remove('pulling');
     el.style.transform = '';
