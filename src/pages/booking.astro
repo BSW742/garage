@@ -71,6 +71,18 @@ import Layout from '../components/Layout.astro';
     color: #08090b !important;
   }
 
+  /* The counter pill states a near-black for its number and hangs its border
+     on black at 7% — both were chosen against a white bar and neither shows. */
+  .site-pulse {
+    color: var(--color-text-muted);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+  .site-pulse b { color: var(--color-text); }
+  .site-pulse:hover {
+    color: var(--color-text);
+    border-color: rgba(255, 255, 255, 0.32);
+  }
+
   /* The card stays paper. Restating the variables on it rather than restyling
      its parts: every rule inside already reads them, so the card, its slots
      and its popovers go back to being light without touching one of them. */
