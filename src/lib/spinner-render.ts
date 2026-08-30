@@ -118,38 +118,46 @@ export const SPINNER_CSS = `
 .gsp-tab{position:fixed;right:1.1rem;top:50%;transform:translateY(-50%);
 z-index:9990;width:92px;height:92px;padding:0;border:0;border-radius:50%;
 background:none;cursor:pointer;display:block;
-filter:drop-shadow(0 12px 26px rgba(0,0,0,.34));
+filter:drop-shadow(0 12px 26px rgba(0,0,0,.34)) drop-shadow(0 0 13px rgba(240,160,32,.42));
 transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
 .gsp-tab:hover{transform:translateY(-50%) scale(1.07)}
 .gsp-tab:active{transform:translateY(-50%) scale(.96)}
 
 /* The disc spins; the button does not — it is holding the translate that
    centres it, and an animation on the same element would throw that away. */
-.gsp-disc{position:absolute;inset:0;border-radius:50%;
+.gsp-tdisc{position:absolute;inset:0;border-radius:50%;
 background:conic-gradient(
 #fbbf24 0deg 45deg,#ef4444 45deg 90deg,#ffffff 90deg 135deg,#3b82f6 135deg 180deg,
 #fbbf24 180deg 225deg,#ef4444 225deg 270deg,#ffffff 270deg 315deg,#3b82f6 315deg 360deg);
 box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
 animation:gsp-turn 6.5s linear infinite}
-.gsp-tab:hover .gsp-disc{animation-duration:1.6s}
+.gsp-tab:hover .gsp-tdisc{animation-duration:1.6s}
 @keyframes gsp-turn{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.gsp-disc{animation:none}}
+@media(prefers-reduced-motion:reduce){.gsp-tdisc{animation:none}}
 
-/* The hub and the peg that reads as a wheel rather than a pie chart. */
-.gsp-hub{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;
-border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(10,12,18,.16),
-0 2px 5px rgba(0,0,0,.3)}
-.gsp-hub:after{content:'';position:absolute;inset:6px;border-radius:50%;background:${RED}}
+/* Sized by inset, not by width. Something upstream was overriding the width —
+   it came out at 13.8px of the 22 asked for — and the negative margins that
+   were centring it were then pulling it eleven pixels up and left of the
+   middle, which is the wobble. inset needs neither: it is centred because all
+   four sides are equal, whatever the box turns out to be. */
+.gsp-thub{position:absolute;inset:35px;border-radius:50%;background:#fff;
+display:grid;place-items:center;
+box-shadow:0 0 0 3px rgba(10,12,18,.16),0 2px 5px rgba(0,0,0,.3)}
+/* One small gold star, and that is the whole of the argument for prizes.
+   A wheel says a game; a star says something is worth winning. Anything
+   louder than this — a word, a pound sign, a burst — turns a nice object
+   into a sticker. */
+.gsp-thub svg{width:62%;height:62%;display:block;fill:#f0a020}
 /* Dark, not white. The rim is white and so was the pointer, which left the
    one part that says which way it is pointing invisible against it. */
-.gsp-pin{position:absolute;left:50%;top:-9px;margin-left:-9px;width:0;height:0;
-border-style:solid;border-width:19px 9px 0 9px;
+.gsp-tpin{position:absolute;left:50%;top:-9px;transform:translateX(-50%);
+width:0;height:0;border-style:solid;border-width:19px 9px 0 9px;
 border-color:${CARD} transparent transparent transparent;
 filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 
 @media(max-width:520px){.gsp-tab{width:76px;height:76px;right:.85rem}
-  .gsp-hub{width:18px;height:18px;margin:-9px 0 0 -9px}
-  .gsp-pin{border-width:16px 8px 0 8px;margin-left:-8px;top:-8px}}
+  .gsp-thub{inset:29px}
+  .gsp-tpin{border-width:16px 8px 0 8px;top:-8px}}
 
 .gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(4,5,8,.82);
 backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:.75rem}
@@ -283,7 +291,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
 
   return `
 <button class="gsp-tab" id="gsp-tab" type="button" aria-haspopup="dialog"
-        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-disc"></span><span class="gsp-hub"></span><span class="gsp-pin"></span></button>
+        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
