@@ -130,18 +130,17 @@ body.gz-noted .gsp-tab{bottom:10.2rem}
 /* The disc spins; the button does not — it is holding the translate that
    centres it, and an animation on the same element would throw that away. */
 .gsp-tdisc{position:absolute;inset:0;border-radius:50%;
-/* Sixteen slots, four of them black. The black is what makes it read as a
-   fairground wheel rather than a pie chart — the bright ones need something
-   to be bright against. Only ever on this button: on the wheel people
-   actually spin, a black slot would read as the one you did not want, and
-   every slot on that one is a prize. */
+/* Eight slots, two of them black. Sixteen was too fine and read as stripes.
+   The order is deliberately irregular: no colour sits opposite itself, so it
+   does not resolve into a pattern when it slows down — the old eight were two
+   identical runs of four, which is where the symmetry came from.
+   Black only ever on this button: on the wheel people actually spin, a black
+   slot would read as the one you did not want, and every slot on that one is
+   a prize. */
 background:conic-gradient(
-#fbbf24 0deg 22.5deg,#141821 22.5deg 45deg,#ef4444 45deg 67.5deg,
-#ffffff 67.5deg 90deg,#3b82f6 90deg 112.5deg,#141821 112.5deg 135deg,
-#fbbf24 135deg 157.5deg,#ffffff 157.5deg 180deg,#ef4444 180deg 202.5deg,
-#141821 202.5deg 225deg,#3b82f6 225deg 247.5deg,#ffffff 247.5deg 270deg,
-#fbbf24 270deg 292.5deg,#141821 292.5deg 315deg,#ef4444 315deg 337.5deg,
-#ffffff 337.5deg 360deg);
+#fbbf24 0deg 45deg,#141821 45deg 90deg,#ef4444 90deg 135deg,
+#ffffff 135deg 180deg,#3b82f6 180deg 225deg,#ffffff 225deg 270deg,
+#141821 270deg 315deg,#ef4444 315deg 360deg);
 box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
 animation:gsp-turn 3.1s linear infinite}
 .gsp-tab:hover .gsp-tdisc{animation-duration:.5s}
