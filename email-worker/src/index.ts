@@ -111,6 +111,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
     undoToken: null as string | null,
     note: '',
     replyError: null as string | null,
+    body: '' as string,
   };
 
   // Only reply once we know the sender is real. Before that, a From address is
@@ -163,6 +164,7 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
 
   // 3. What did they send?
   const parsed = await PostalMime.parse(message.raw);
+  record.body = String(parsed.text || parsed.html || '').slice(0, 20000);
   const attachments = usablePhotos(parsed.attachments || []);
   const heic = (parsed.attachments || []).some((a: any) =>
     /hei[cf]/i.test(String(a?.mimeType || '') + String(a?.filename || ''))
@@ -318,13 +320,17 @@ async function handleSiteMail(message: EmailMessageIn, env: Env, slug: string): 
 async function saveMail(env: Env, r: any): Promise<void> {
   await env.DB
     .prepare(
+      // The body is kept now. Without it a message could be listed but not
+      // read, which meant the inbox was a list of subjects and you had to go
+      // to a different mail client to find out what anybody said.
       `INSERT OR IGNORE INTO site_mail
          (id, slug, from_address, subject, message_id, auth_result, intent, applied,
-          prev_config, undo_token, note, reply_error, received_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          prev_config, undo_token, note, reply_error, received_at, body)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(r.id, r.slug, r.from, r.subject, r.messageId, r.auth, r.intent, r.applied,
-          r.prevConfig, r.undoToken, r.note, r.replyError ?? null, new Date().toISOString())
+          r.prevConfig, r.undoToken, r.note, r.replyError ?? null, new Date().toISOString(),
+          String(r.body || '').slice(0, 20000) || null)
     .run();
 }
 

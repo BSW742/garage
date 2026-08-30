@@ -8,7 +8,7 @@
 // One list, hottest first, and the only thing that decides order is what the
 // business has actually done: a thumbs up beats a play, a play beats a send,
 // a send beats a site sitting there waiting to be recorded.
-import { verdictFor, stageOf, STAGES, type Stage } from '../../lib/outreach';
+import { verdictFor, stageOf, STAGES, decodeSubject, type Stage } from '../../lib/outreach';
 
 export const prerender = false;
 
@@ -51,6 +51,30 @@ if (db) {
       .all();
     booked = results || [];
   } catch { /* an empty strip beats a page that 500s */ }
+}
+
+// The two halves of the conversation, and the people asking for time. The app
+// could show inbound and had nowhere to show what was said back, which is half
+// a thread and reads as though nobody ever replied.
+let inbound: any[] = [];
+let sent: any[] = [];
+if (db) {
+  try {
+    const a = await db
+      .prepare(
+        `SELECT id, slug, from_address, subject, intent, note, body, received_at
+           FROM site_mail ORDER BY received_at DESC LIMIT 60`
+      ).all();
+    inbound = a.results || [];
+  } catch { /* an empty tab beats a page that 500s */ }
+  try {
+    const b = await db
+      .prepare(
+        `SELECT id, to_address, subject, body, kind, slug, ok, error, sent_at
+           FROM outbox ORDER BY sent_at DESC LIMIT 60`
+      ).all();
+    sent = b.results || [];
+  } catch { /* the table is new; older sends were never written down */ }
 }
 
 const HEAT: Record<Stage, number> = {
@@ -116,6 +140,41 @@ const ago = (t: unknown) => {
       .sub { color: var(--dim); font-size: 0.85rem; margin: 0.15rem 0 0; }
 
       /* The funnel. Each one is a filter. */
+      .tabs { display: flex; gap: 0.3rem; margin-bottom: 1.1rem;
+        border-bottom: 1px solid var(--line); }
+      .tab { font: inherit; font-size: 0.86rem; font-weight: 600; background: none;
+        border: 0; border-bottom: 2px solid transparent; color: var(--dim);
+        padding: 0.5rem 0.75rem; cursor: pointer; margin-bottom: -1px; }
+      .tab:hover { color: var(--ink); }
+      .tab.on { color: var(--ink); border-bottom-color: var(--ink); }
+      .tab i { font-style: normal; font-size: 0.72rem; color: var(--dim);
+        background: var(--panel); border-radius: 999px; padding: 0.05rem 0.4rem;
+        margin-left: 0.3rem; }
+      section[hidden] { display: none; }
+
+      .note { border: 1px solid var(--line); border-radius: 11px; padding: 0.8rem 0.95rem;
+        margin-bottom: 0.6rem; background: #fff; }
+      .note.bad { border-color: #fecaca; background: #fef2f2; }
+      .note header { display: flex; gap: 0.6rem; align-items: baseline; flex-wrap: wrap; }
+      .note header b { font-weight: 700; font-size: 0.92rem; }
+      .note .dim { color: var(--dim); font-size: 0.78rem; }
+      .tag { font-size: 0.68rem; font-weight: 600; color: var(--dim); background: var(--panel);
+        border-radius: 999px; padding: 0.1rem 0.45rem; }
+      .tag.bad { background: #fee2e2; color: #991b1b; }
+      .note header .act { margin-left: auto; }
+      .subj { margin: 0.35rem 0 0; font-weight: 600; }
+      .note pre { margin: 0.5rem 0 0; white-space: pre-wrap; word-break: break-word;
+        font: inherit; font-size: 0.84rem; color: #374151; max-height: 15rem; overflow: auto; }
+
+      .compose { border: 1.5px solid var(--line); border-radius: 12px; padding: 0.9rem 1rem;
+        margin-bottom: 1.1rem; background: var(--panel); display: grid; gap: 0.5rem; }
+      .compose-head { margin: 0; font-size: 0.68rem; letter-spacing: 0.14em;
+        text-transform: uppercase; font-weight: 800; color: var(--dim); }
+      .compose input, .compose textarea { font: inherit; font-size: 0.9rem; padding: 0.5rem 0.65rem;
+        border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+      .compose textarea { resize: vertical; }
+      .compose-foot { display: flex; gap: 0.7rem; align-items: center; }
+
       .booked { border: 1.5px solid #fdba74; background: #fff7ed; border-radius: 12px;
         padding: 0.8rem 0.95rem; margin-bottom: 1.1rem; }
       .booked-head { margin: 0 0 0.5rem; font-size: 0.68rem; letter-spacing: 0.16em;
@@ -188,6 +247,14 @@ const ago = (t: unknown) => {
 
       {error && <p class="none">{error}</p>}
 
+      <div class="tabs">
+        <button class="tab on" data-tab="pipe">Pipeline <i>{list.length}</i></button>
+        <button class="tab" data-tab="in">Inbound <i>{inbound.length}</i></button>
+        <button class="tab" data-tab="out">Sent <i>{sent.length}</i></button>
+        <button class="tab" data-tab="book">Bookings <i>{booked.length}</i></button>
+      </div>
+
+      <section data-panel="pipe">
       {booked.length > 0 && (
         <div class="booked">
           <p class="booked-head">Asking for your time</p>
@@ -262,9 +329,100 @@ const ago = (t: unknown) => {
         </tbody>
       </table>
       {!list.length && !error && <p class="none">Nothing yet.</p>}
+      </section>
+
+      <section data-panel="in" hidden>
+        {!inbound.length && <p class="none">Nothing has come in yet.</p>}
+        {inbound.map((m) => (
+          <article class="note">
+            <header>
+              <b>{m.from_address}</b>
+              <span class="dim">{String(m.received_at || '').slice(0, 16).replace('T', ' ')}</span>
+              {m.slug && <span class="tag">{m.slug}</span>}
+              {m.intent && m.intent !== m.slug && <span class="tag">{m.intent}</span>}
+              <a class="act" href={`mailto:${m.from_address}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}`}>Reply</a>
+            </header>
+            <p class="subj">{decodeSubject(m.subject) || '(no subject)'}</p>
+            {m.body && <pre>{String(m.body).slice(0, 1200)}</pre>}
+            {!m.body && m.note && <pre class="dim">{m.note}</pre>}
+          </article>
+        ))}
+      </section>
+
+      <section data-panel="out" hidden>
+        <form class="compose" id="compose">
+          <p class="compose-head">New message &mdash; from ben@garage.co.nz</p>
+          <input id="c-to" type="email" placeholder="to" required />
+          <input id="c-sub" type="text" placeholder="subject" required />
+          <textarea id="c-body" rows="6" placeholder="Write it here." required></textarea>
+          <div class="compose-foot">
+            <button type="submit" class="act primary">Send</button>
+            <span id="c-say" class="dim"></span>
+          </div>
+        </form>
+        {!sent.length && <p class="none">Nothing recorded yet. Everything sent from here on is kept.</p>}
+        {sent.map((m) => (
+          <article class={`note ${m.ok ? '' : 'bad'}`}>
+            <header>
+              <b>{m.to_address}</b>
+              <span class="dim">{String(m.sent_at || '').slice(0, 16).replace('T', ' ')}</span>
+              {m.kind && <span class="tag">{m.kind}</span>}
+              {m.slug && <span class="tag">{m.slug}</span>}
+              {!m.ok && <span class="tag bad">failed</span>}
+            </header>
+            <p class="subj">{decodeSubject(m.subject) || '(no subject)'}</p>
+            {m.error && <p class="why">{m.error}</p>}
+            {m.body && <pre>{String(m.body).slice(0, 1200)}</pre>}
+          </article>
+        ))}
+      </section>
+
+      <section data-panel="book" hidden>
+        {!booked.length && <p class="none">Nobody has asked for time yet.</p>}
+        {booked.map((b) => (
+          <article class="note">
+            <header>
+              <b>{b.name}</b>
+              <span class="dim">{String(b.created_at || '').slice(0, 16).replace('T', ' ')}</span>
+              <span class="tag">{b.topic}</span>
+              <a class="act" href={`mailto:${b.email}`}>Reply</a>
+            </header>
+            <p class="subj">{b.slot_key}</p>
+            <p class="why">{b.email}</p>
+          </article>
+        ))}
+      </section>
     </div>
 
     <script is:inline>
+      document.querySelectorAll('.tab').forEach((t) => {
+        t.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+          document.querySelectorAll('[data-panel]').forEach((s) => {
+            s.hidden = s.dataset.panel !== t.dataset.tab;
+          });
+        });
+      });
+
+      const compose = document.getElementById('compose');
+      compose.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const say = document.getElementById('c-say');
+        const to = document.getElementById('c-to').value.trim();
+        if (!confirm('Send to ' + to + '?')) return;
+        say.textContent = 'sending…';
+        const r = await fetch('/api/mail/send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to,
+            subject: document.getElementById('c-sub').value,
+            text: document.getElementById('c-body').value,
+          }),
+        }).then((x) => x.json()).catch(() => null);
+        if (r && r.ok) { say.textContent = 'sent'; setTimeout(() => location.reload(), 700); }
+        else say.textContent = (r && r.message) || 'did not send';
+      });
+
       const rows = [...document.querySelectorAll('#rows tr')];
       document.querySelectorAll('.step').forEach((b) => {
         b.addEventListener('click', () => {

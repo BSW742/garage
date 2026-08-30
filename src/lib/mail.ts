@@ -13,17 +13,60 @@ export interface MailOut {
   replyTo?: string;
   /** Files to send along. Small ones only — an invite, a receipt. */
   attachments?: { filename: string; type: string; content: string }[];
+  /** Which site this was about, and what kind of message it was. For the log. */
+  slug?: string;
+  kind?: string;
 }
 
 /**
  * Sends through Mailgun. Does nothing, quietly, until the keys are set, so the
  * features that use it work either way and simply go unannounced until then.
  */
+/**
+ * Keep a copy of everything that leaves.
+ *
+ * sendMail is the only door out, so the log lives in here rather than in the
+ * dozen places that call it — otherwise the CRM shows inbound mail beside an
+ * empty space where the replies should be, which is half a conversation and
+ * worse than none. Failures are kept too: a send that bounced is a thing you
+ * need to know about, and it is the first thing you look for when somebody
+ * says they never heard from you.
+ */
+async function keepCopy(env: any, mail: MailOut, ok: boolean, error?: string): Promise<void> {
+  const db = env?.DB;
+  if (!db) return;
+  try {
+    await db
+      .prepare(
+        `INSERT INTO outbox (id, to_address, subject, body, reply_to, slug, kind, ok, error)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        crypto.randomUUID(),
+        String(mail.to || '').slice(0, 200),
+        String(mail.subject || '').slice(0, 300),
+        String(mail.text || '').slice(0, 20000),
+        String(mail.replyTo || '').slice(0, 200) || null,
+        (mail as any).slug || null,
+        (mail as any).kind || null,
+        ok ? 1 : 0,
+        error ? String(error).slice(0, 300) : null
+      )
+      .run();
+  } catch {
+    // A mail that went out but was not written down still went out.
+  }
+}
+
 export async function sendMail(env: any, mail: MailOut): Promise<{ ok: boolean; error?: string }> {
   const key = env?.MAILGUN_API_KEY;
   const domain = env?.MAILGUN_DOMAIN;
-  if (!key || !domain) return { ok: false, error: 'mail not configured' };
+  if (!key || !domain) {
+    await keepCopy(env, mail, false, 'mail not configured');
+    return { ok: false, error: 'mail not configured' };
+  }
   if (!mail.to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail.to)) {
+    await keepCopy(env, mail, false, 'no usable address');
     return { ok: false, error: 'no usable address' };
   }
 
@@ -72,11 +115,16 @@ export async function sendMail(env: any, mail: MailOut): Promise<{ ok: boolean; 
       body,
     });
     if (!res.ok) {
-      return { ok: false, error: `mailgun ${res.status}: ${(await res.text()).slice(0, 160)}` };
+      const why = `mailgun ${res.status}: ${(await res.text()).slice(0, 160)}`;
+      await keepCopy(env, mail, false, why);
+      return { ok: false, error: why };
     }
+    await keepCopy(env, mail, true);
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: String((error as Error)?.message || error).slice(0, 160) };
+    const why = String((error as Error)?.message || error).slice(0, 160);
+    await keepCopy(env, mail, false, why);
+    return { ok: false, error: why };
   }
 }
 

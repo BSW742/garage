@@ -114,3 +114,72 @@ export function stageOf(row: {
   if (row.hasTake) return 'recorded';
   return 'ready';
 }
+
+/**
+ * Turn "=?Windows-1252?Q?Request_for_Pro_Bono?=" back into words.
+ *
+ * RFC 2047 encoded-words are how any subject containing a non-ASCII character
+ * crosses the wire, and a client that does not decode them shows the reader a
+ * wall of machine noise. That is not a cosmetic problem: a genuine enquiry
+ * from a community trust arrived looking exactly like spam, and was nearly
+ * deleted on that basis.
+ *
+ * Whitespace between two adjacent encoded-words is not part of the text and is
+ * dropped, which is what the spec asks for and what makes the seam invisible.
+ */
+// The only part of windows-1252 that differs from latin-1: 0x80 to 0x9F, where
+// latin-1 has control characters and Microsoft put the useful punctuation.
+const CP1252_HIGH = [
+  '\u20AC', '\u0081', '\u201A', '\u0192', '\u201E', '\u2026', '\u2020', '\u2021',
+  '\u02C6', '\u2030', '\u0160', '\u2039', '\u0152', '\u008D', '\u017D', '\u008F',
+  '\u0090', '\u2018', '\u2019', '\u201C', '\u201D', '\u2022', '\u2013', '\u2014',
+  '\u02DC', '\u2122', '\u0161', '\u203A', '\u0153', '\u009D', '\u017E', '\u0178',
+];
+
+export function decodeSubject(raw: unknown): string {
+  const text = String(raw ?? '');
+  if (!text.includes('=?')) return text;
+
+  const one = (charset: string, kind: string, data: string): string => {
+    let bytes: Uint8Array;
+    if (kind.toUpperCase() === 'B') {
+      try {
+        const bin = atob(data);
+        bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      } catch { return data; }
+    } else {
+      // Q is quoted-printable with underscore standing in for a space.
+      const out: number[] = [];
+      for (let i = 0; i < data.length; i++) {
+        const c = data[i];
+        if (c === '_') out.push(32);
+        else if (c === '=' && /^[0-9a-f]{2}$/i.test(data.slice(i + 1, i + 3))) {
+          out.push(parseInt(data.slice(i + 1, i + 3), 16));
+          i += 2;
+        } else out.push(c.charCodeAt(0));
+      }
+      bytes = Uint8Array.from(out);
+    }
+    const cs = charset.toLowerCase();
+    if (cs === 'windows-1252' || cs === 'cp1252' || cs === 'iso-8859-1' || cs === 'latin1') {
+      // Done by hand. Node's TextDecoder maps 0x96 to U+0096, a control
+      // character, rather than to the en dash windows-1252 actually puts
+      // there — so the punctuation in a real subject line silently vanished.
+      // The WHATWG spec treats iso-8859-1 as windows-1252 too, which is why
+      // both land here.
+      return Array.from(bytes, (b) =>
+        b >= 0x80 && b <= 0x9f ? CP1252_HIGH[b - 0x80] : String.fromCharCode(b)
+      ).join('');
+    }
+    try {
+      return new TextDecoder(cs).decode(bytes);
+    } catch {
+      try { return new TextDecoder('utf-8').decode(bytes); } catch { return data; }
+    }
+  };
+
+  return text
+    .replace(/(=\?[^?]+\?[BbQq]\?[^?]*\?=)\s+(?==\?)/g, '$1')
+    .replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (_m, cs, kind, data) => one(cs, kind, data))
+    .trim();
+}

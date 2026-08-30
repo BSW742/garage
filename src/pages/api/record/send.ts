@@ -85,7 +85,7 @@ Not interested in hearing from me again: ${out}`;
 
     if (dryRun) return json({ ok: true, preview: true, to, subject, text });
 
-    const sent = await sendMail(env, { to, subject, text, replyTo: 'ben@garage.co.nz' });
+    const sent = await sendMail(env, { to, subject, text, replyTo: 'ben@garage.co.nz', slug, kind: 'outreach' });
     if (!sent.ok) return json({ ok: false, message: sent.error || 'send failed' });
 
     await db

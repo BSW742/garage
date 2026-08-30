@@ -29,6 +29,8 @@ function guardAdmin(context: any): Response | null {
   const guarded =
     /^\/admin(\/|$)/.test(url.pathname) ||
     /^\/record(\/|$)/.test(url.pathname) ||
+    // A box that will mail anybody belongs behind the same door as /admin.
+    /^\/api\/mail(\/|$)/.test(url.pathname) ||
     // seen and like are called from every published subdomain by the business
     // owner, who does not have the password and never will. Everything else
     // under /api/record can send mail or attach video, so it stays shut.

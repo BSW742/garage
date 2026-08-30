@@ -122,6 +122,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       // it came from before it says who from.
       subject: `garage.co.nz: ${kind} booked by ${name} — ${time}`,
       replyTo: String(email),
+      kind: 'booking',
       text: lines.join('\n'),
       attachments: good
         ? [{
