@@ -493,6 +493,35 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_balloon',
+    description:
+      'Turn The Balloon on or off, and set the prize ladder. The same push-your-luck game as ' +
+      'The Big Dig in softer clothes: every pump makes the balloon bigger and the prize better, ' +
+      'pump once too often and it pops, dropping them to the consolation. They can tie it off ' +
+      'any time and keep what it is holding. Suits a salon, a cafe, a studio — anywhere a digger ' +
+      'would look wrong. First pump always holds; the risk after that is stated and honestly ' +
+      'random. Nobody leaves empty-handed, so the owner must be happy to honour every rung and ' +
+      'the consolation. 2 to 5 prizes smallest first, about 24 characters each. A site should ' +
+      'run this or the dig, not both. One play per person. Details go to the owner; the visitor ' +
+      'is never emailed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the game on the site.' },
+        prizes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '2 to 5 rungs, smallest first, best last. e.g. ["Free file & polish","Free manicure","30% off a facial","Free spa morning"]',
+        },
+        bust: { type: 'string', description: 'The consolation when it pops, e.g. "10% off".' },
+        title: { type: 'string', description: 'Heading, e.g. "The Balloon".' },
+        blurb: { type: 'string', description: 'One line under the heading.' },
+        terms: { type: 'string', description: 'Any conditions, e.g. "One balloon per person."' },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'add_clips',
     description:
       'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
@@ -943,6 +972,38 @@ export async function runTool(
           `Bust drops to ${dig.bust || 'a consolation prize'}. First scoop always succeeds; ` +
           `deepest rung is hardest to reach.`,
         data: { dig },
+      };
+    }
+
+    case 'set_balloon': {
+      const bl: any = (site as any).balloon || {};
+      if (input.prizes !== undefined) {
+        const rungs = (input.prizes || [])
+          .map((p: any) => String(p || '').trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        const tooLong = rungs.filter((e: string) => e.length > 24);
+        if (tooLong.length) {
+          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
+        }
+        bl.prizes = rungs;
+      }
+      if (input.on && (bl.prizes || []).length < 2) {
+        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
+      }
+      if (input.bust !== undefined) bl.bust = String(input.bust).slice(0, 40);
+      if (input.title !== undefined) bl.title = String(input.title).slice(0, 40);
+      if (input.blurb !== undefined) bl.blurb = String(input.blurb).slice(0, 140);
+      if (input.terms !== undefined) bl.terms = String(input.terms).slice(0, 200);
+      bl.on = !!input.on;
+      (site as any).balloon = bl;
+      if (!bl.on) return { ok: true, message: 'The Balloon is off.' };
+      return {
+        ok: true,
+        message:
+          `The Balloon is on: ${(bl.prizes || []).join(' → ')}. ` +
+          `A pop drops to ${bl.bust || 'a consolation prize'}. First pump always holds.`,
+        data: { balloon: bl },
       };
     }
 
