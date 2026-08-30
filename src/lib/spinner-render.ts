@@ -406,7 +406,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
         aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>${chosen
     .slice(0, 4)
     .map((prize) => `<b><span>${esc(prize.label)}</span></b>`)
-    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub">Play</span><span class="gsp-tpin"></span><span class="gsp-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span></button>
+    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub">Win</span><span class="gsp-tpin"></span><span class="gsp-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
