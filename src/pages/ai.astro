@@ -73,13 +73,13 @@ if (cameFromOffer && openedSlug) {
           <!-- Outside the 640px column rather than beside the input inside it,
                so he costs the field no width at all. -->
           <div class="ben-sip" aria-hidden="true">
-            <video autoplay muted loop playsinline preload="metadata" poster="/ai/ben-coffee.png">
+            <video autoplay muted loop playsinline preload="metadata" poster="/ai/ben-address.png">
               <!-- The codec is named, not just the container: the transparency
                    is HEVC-with-alpha, which Safari plays and Chrome on Windows
                    and Android does not. A bare video/mp4 has Chrome claim the
                    file, fetch it, and then fail to decode it. -->
-              <source src="/ai/ben-coffee.mp4" type='video/mp4; codecs="hvc1"' />
-              <source src="/ai/ben-coffee.webm" type='video/webm; codecs="vp9"' />
+              <source src="/ai/ben-address.mp4" type='video/mp4; codecs="hvc1"' />
+              <source src="/ai/ben-address.webm" type='video/webm; codecs="vp9"' />
             </video>
           </div>
         </div>
@@ -603,7 +603,7 @@ if (cameFromOffer && openedSlug) {
         margin-left: 2.5rem;
         pointer-events: none;
       }
-      .ben-sip video { display: block; height: 200px; width: auto; }
+      .ben-sip video { display: block; height: 270px; width: auto; }
       /* The column is 640px and centred, so there is only a gutter to stand in
          once the window is wide enough. Below that he would sit on the field. */
       @media (max-width: 1000px) { .ben-sip { display: none; } }
