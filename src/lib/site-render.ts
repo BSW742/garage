@@ -1773,11 +1773,18 @@ background:#0b0c0f;display:grid;place-items:center;transition:transform .18s}
 border-color:transparent transparent transparent #fff;margin-left:.12rem}
 .gz-watch:hover s{transform:scale(1.08)}
 .gz-bar .gz-sp{margin-left:auto}
-.gz-like{background:none;border:1.5px solid rgba(11,12,15,.28);color:#0b0c0f;
-padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.4rem;font-weight:600}
-.gz-like:hover{border-color:#0b0c0f;background:rgba(11,12,15,.06)}
+.gz-grow{background:none;border:1.5px solid rgba(11,12,15,.28);color:#0b0c0f;
+padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.45rem;font-weight:600}
+.gz-grow em{font-style:normal;font-size:1.05em;line-height:1}
+.gz-grow:hover{border-color:#0b0c0f;background:rgba(11,12,15,.06)}
+.gz-like{background:#0b0c0f;border:1.5px solid #0b0c0f;color:#fff;
+padding:.3rem .85rem;display:inline-flex;align-items:center;gap:.4rem;font-weight:600}
+.gz-like b{font-weight:800;letter-spacing:.02em}
+.gz-like:hover{background:#000;border-color:#000}
 .gz-like[disabled]{opacity:1;cursor:default;border-color:transparent;
 background:#dcfce7;color:#166534}
+@media(max-width:820px){.gz-grow span,.gz-grow{font-size:.78rem}}
+@media(max-width:640px){.gz-grow em{margin:0}.gz-grow{padding:.3rem .6rem}}
 @media(max-width:640px){
   .gz-bar{font-size:.78rem;gap:.5rem;padding:.45rem .6rem}
   .gz-watch u{display:none}
@@ -1793,6 +1800,40 @@ border:1px solid #24272f}
 .gz-box p{margin:.8rem 0 0;color:#9aa0ac;font:400 .85rem/1.5 Inter,system-ui,sans-serif;
 display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
 .gz-box p b{color:#f3f4f6;font-weight:600}
+/* The sheet. Light, unlike the film, because this one is a brochure rather
+   than a cinema — and because the three doors on the bar should not all feel
+   like the same door. */
+.gz-sheet{position:fixed;inset:0;z-index:9500;display:none;overflow-y:auto;
+background:rgba(248,249,251,.98);backdrop-filter:blur(8px);
+font:400 1rem/1.55 Inter,system-ui,-apple-system,sans-serif;color:#0b0c0f}
+.gz-sheet.on{display:block}
+.gz-sheet-in{max-width:58rem;margin:0 auto;padding:3.2rem 1.2rem 4rem}
+.gz-kicker{margin:0 0 .6rem;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;
+font-weight:800;color:#166534;background:#dcfce7;display:inline-block;padding:.3rem .7rem;
+border-radius:999px}
+.gz-sheet h2{margin:0;font-size:clamp(2rem,5.5vw,3.1rem);letter-spacing:-.035em;
+line-height:1.02;font-weight:800}
+.gz-sub{margin:.7rem 0 2rem;color:#5b6270;max-width:34rem}
+.gz-grid{display:grid;gap:.7rem;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr))}
+.gz-thing{display:flex;flex-direction:column;align-items:flex-start;gap:.15rem;
+background:#fff;border:1.5px solid #e3e6ec;border-radius:14px;padding:1rem 1.05rem 1.1rem;
+cursor:pointer;text-align:left;font:inherit;
+transition:transform .16s cubic-bezier(.2,.8,.2,1),border-color .16s,box-shadow .16s}
+.gz-thing em{font-style:normal;font-size:1.5rem;line-height:1;margin-bottom:.5rem}
+.gz-thing b{font-size:1.02rem;font-weight:700;letter-spacing:-.01em}
+.gz-thing span{color:#5b6270;font-size:.88rem}
+.gz-thing:hover{transform:translateY(-3px);border-color:#0b0c0f;
+box-shadow:0 12px 26px -16px rgba(11,12,15,.5)}
+.gz-thing.on{border-color:#0b0c0f;border-width:2px;background:#0b0c0f;color:#fff}
+.gz-thing.on span{color:#b6bcc8}
+.gz-detail{margin-top:1.1rem;background:#fff;border:1.5px solid #e3e6ec;border-radius:14px;
+padding:1.2rem 1.3rem 1.3rem}
+.gz-detail p{margin:0 0 1rem;max-width:44rem}
+.gz-want{background:#0b0c0f;color:#fff;border:0;border-radius:999px;padding:.6rem 1.2rem;
+font:inherit;font-weight:700;cursor:pointer}
+.gz-want:hover{background:#000}
+.gz-want[disabled]{background:#dcfce7;color:#166534;cursor:default}
+
 .gz-shut{position:fixed;top:1rem;right:1.2rem;width:2.6rem;height:2.6rem;border-radius:50%;
 background:#15171c;border:1px solid #24272f;color:#f3f4f6;font-size:1.35rem;line-height:1;
 cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
@@ -1809,10 +1850,43 @@ function noteBlock(slug: string): string {
     <s></s><span>I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
   </button>
   <span class="gz-sp"></span>
+  <button type="button" class="gz-grow" id="gz-grow">
+    <em>&#9889;</em> Grow your business
+  </button>
   <button type="button" class="gz-like" id="gz-like"${liked ? ' disabled' : ''}>
-    ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it'}
+    ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it &mdash; <b>FREE</b>'}
   </button>
 </div>
+<div class="gz-sheet" id="gz-sheet" role="dialog" aria-modal="true" aria-label="Grow your business">
+  <button type="button" class="gz-shut" aria-label="Close">&times;</button>
+  <div class="gz-sheet-in">
+    <p class="gz-kicker">Free, on this site, today</p>
+    <h2>Grow your business</h2>
+    <p class="gz-sub">You have got the site. These are the bits that bring people to it.</p>
+    <div class="gz-grid">
+      <button type="button" class="gz-thing" data-thing="spinner">
+        <em>&#127920;</em><b>Spin to win</b><span>Turn browsers into email addresses</span>
+      </button>
+      <button type="button" class="gz-thing" data-thing="waitlist">
+        <em>&#9200;</em><b>Short notice list</b><span>Fill the gaps without discounting</span>
+      </button>
+      <button type="button" class="gz-thing" data-thing="event">
+        <em>&#128226;</em><b>Put on an event</b><span>Get a room full, for nothing</span>
+      </button>
+      <button type="button" class="gz-thing" data-thing="chat">
+        <em>&#128172;</em><b>Answers at 11pm</b><span>Stop losing the ones who ask after hours</span>
+      </button>
+      <button type="button" class="gz-thing" data-thing="shop">
+        <em>&#128717;</em><b>Sell something</b><span>Take money without building a shop</span>
+      </button>
+    </div>
+    <div class="gz-detail" id="gz-detail" hidden>
+      <p id="gz-detail-text"></p>
+      <button type="button" class="gz-want" id="gz-want">Yes &mdash; I want that one</button>
+    </div>
+  </div>
+</div>
+
 <div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
   <button type="button" class="gz-shut" aria-label="Close">&times;</button>
   <div class="gz-box-in">
@@ -1892,7 +1966,74 @@ function noteBlock(slug: string): string {
   box.addEventListener('click', function (e) {
     if (e.target === box || (e.target.closest && e.target.closest('.gz-shut'))) shut();
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
+
+  // ── Grow your business ──────────────────────────────────────────────
+  // The third door. Somebody who is happy with their own site will never
+  // press "watch me build it" and will never thumbs up a site they did not
+  // ask for — but "I need more leads" is a different person having a
+  // different thought, and they were walking past.
+  var sheet = document.getElementById('gz-sheet');
+  var detail = document.getElementById('gz-detail');
+  var detailText = document.getElementById('gz-detail-text');
+  var want = document.getElementById('gz-want');
+  var picked = '';
+  var WORDS = {
+    spinner: 'A tab on the edge of your site. People spin a wheel and every spin wins ' +
+             'something you chose — a free coffee, ten percent off, a babyccino. They get ' +
+             'a reason to come in, you get their email address. Nobody ever spins and wins nothing.',
+    waitlist: 'Booked out three weeks? People leave their name, and when somebody cancels ' +
+              'they hear first. Same price, no discount — the point is filling a slot that ' +
+              'was going to sit empty, not selling it cheaper.',
+    event: 'A beginners night, a tasting, a come-and-try. It only goes ahead if enough ' +
+           'people are in, so you never open the doors to four people. A bar on every page ' +
+           'shows how many are coming, and people share it because it is free.',
+    chat: 'Your site answers questions while you are shut — hours, prices, whether you do ' +
+          'the thing they need. It only ever says what you have told it. Anything it cannot ' +
+          'answer arrives in your inbox with their name and their question on it.',
+    shop: 'Beans, vouchers, a t-shirt, a place on a course. Put a price on it and people ' +
+          'can buy it straight off the page. The order lands in your email — there is no ' +
+          'shop to build and nothing to set up.',
+  };
+
+  function openSheet() {
+    sheet.classList.add('on');
+    document.body.style.overflow = 'hidden';
+    tell('seen', { at: -2 });          // opened the growth sheet
+  }
+  function shutSheet() {
+    if (!sheet.classList.contains('on')) return;
+    sheet.classList.remove('on');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('gz-grow').addEventListener('click', openSheet);
+  sheet.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.gz-shut')) return shutSheet();
+    var thing = e.target.closest && e.target.closest('.gz-thing');
+    if (!thing) return;
+    picked = thing.dataset.thing;
+    [].forEach.call(sheet.querySelectorAll('.gz-thing'), function (t) {
+      t.classList.toggle('on', t === thing);
+    });
+    detailText.textContent = WORDS[picked] || '';
+    detail.hidden = false;
+    want.disabled = false;
+    want.innerHTML = 'Yes &mdash; I want that one';
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  want.addEventListener('click', function () {
+    if (!picked || want.disabled) return;
+    want.disabled = true;
+    want.innerHTML = '&#10003; Noted &mdash; Ben will show you';
+    tell('want', { thing: picked });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    shut();
+    shutSheet();
+  });
 
   v.addEventListener('play', function () { ping(0); }, { once: true });
   // Where they stop is the thing worth knowing, so depth is reported as it

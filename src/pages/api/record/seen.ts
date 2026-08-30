@@ -32,11 +32,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const body = (await request.json().catch(() => null)) as any;
     const slug = String(body?.slug || '').toLowerCase().trim();
     const raw = Math.round(Number(body?.at) || 0);
-    const opened = raw < 0;                      // they opened it; not yet a play
+    const opened = raw === -1;                   // opened the film; not yet a play
+    const grew = raw === -2;                     // opened the growth sheet
     const at = Math.max(0, Math.min(3600, raw));
     const mine = !!body?.mine;
     if (!/^[a-z0-9-]{2,63}$/.test(slug)) return json({ ok: false }, 400);
     if (mine) return json({ ok: true, counted: false });
+
+    if (grew) {
+      await db.prepare(
+        "UPDATE recordings SET grew = grew + 1 WHERE slug = ? AND status = 'live'"
+      ).bind(slug).run();
+      return json({ ok: true, counted: true, grew: true });
+    }
 
     if (opened) {
       await db.prepare(

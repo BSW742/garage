@@ -33,7 +33,7 @@ function guardAdmin(context: any): Response | null {
     // owner, who does not have the password and never will. Everything else
     // under /api/record can send mail or attach video, so it stays shut.
     (/^\/api\/record(\/|$)/.test(url.pathname) &&
-      !/^\/api\/record\/(seen|like)$/.test(url.pathname));
+      !/^\/api\/record\/(seen|like|want)$/.test(url.pathname));
   if (!guarded) return null;
 
   const shut = (why: string) =>
