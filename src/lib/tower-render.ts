@@ -33,6 +33,7 @@ export interface Tower {
   prizes?: string[];     // the ladder, smallest first; the last pull is best
   bust?: string;         // the consolation when it comes down
   terms?: string;        // "One game per person."
+  test?: boolean;        // no form, no one-play lock, no lead recorded
 }
 
 const INK = '#2a241c';
@@ -289,6 +290,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
   var RISK = ${JSON.stringify(RISK)};
   var PULLS = ${JSON.stringify(pulls)};
   var KEY = 'gtw:' + slug;
+  var TEST = ${JSON.stringify(!!tw.test)};
 
   var $ = function (id) { return document.getElementById(id); };
   var tab = $('gtw-tab'), veil = $('gtw-veil'), t = $('gtw-t');
@@ -301,8 +303,14 @@ export function renderTower(site: SiteConfig, slug: string): string {
   veil.addEventListener('click', function (e) { if (e.target === veil) veil.classList.remove('on'); });
 
   var past = null;
-  try { past = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
-  if (past) return finish(past.won, past.prize, true);
+  if (!TEST) {
+    try { past = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+    if (past) return finish(past.won, past.prize, true);
+  } else {
+    // Test mode: straight to the machine, every visit a fresh game.
+    $('gtw-form').style.display = 'none';
+    $('gtw-play').style.display = 'block';
+  }
 
   var name = '', email = '', phone = '', depth = -1, over = false;
 
@@ -387,7 +395,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
         '<p class="gtw-note">Everyone heard it. Still, nobody leaves empty-handed: <b>' + prize +
         '</b> is yours.' + (replay ? ' One game per person.' : ' Your details are with ' +
           ${JSON.stringify(esc(site.name || slug))} + ' and they will sort it with you.') + '</p>';
-    if (replay) return;
+    if (replay || TEST) return;
     try { localStorage.setItem(KEY, JSON.stringify({ won: won, prize: prize })); } catch (e) {}
     fetch('https://garage.co.nz/api/tower', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
