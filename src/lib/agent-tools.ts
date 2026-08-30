@@ -75,11 +75,15 @@ export const TOOLS = [
       'and bad days, a strip of the last thirty days with visible gaps, and a photo or clip for ' +
       'every day posted. No nav, no sections, no shop, no chat. ' +
       'tone is the background: light, warm or dark. primary_colour is a hex like #16a34a and ' +
-      'recolours buttons, links and accents.',
+      'recolours buttons, links and accents. ' +
+      'fitstop is a functional-fitness gym look — enormous compressed uppercase headings, ' +
+      'monospaced labels, bone and stone grounds, one orange accent. Only use it when the ' +
+      'person asks for it by name or their address is on fitstop.com; it is not offered in the ' +
+      'template picker and is not a general gym style.',
     input_schema: {
       type: 'object',
       properties: {
-        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'youtube', 'insta', 'videomap'] },
+        style: { type: 'string', enum: ['modern', 'brutal', 'classic', 'cafe', 'physio', 'trade', 'tribute', 'listing', 'diet', 'chain', 'bubbles', 'game', 'eggs', 'mogged', 'montage', 'beauty', 'yoga', 'pilates', 'workshop', 'sauna', 'rugby', 'soccer', 'basketball', 'charity', 'townhall', 'daycare', 'youtube', 'insta', 'videomap', 'fitstop'] },
         tone: { type: 'string', enum: ['light', 'warm', 'dark'] },
         primary_colour: { type: 'string', description: 'Hex colour, e.g. #16a34a' },
       },

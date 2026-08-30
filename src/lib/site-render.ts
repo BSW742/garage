@@ -23,6 +23,7 @@ import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } fro
 import { TRADE_CSS, TRADE_FONT_QUERY, renderTradeBody } from './trade-render';
 import { CLINIC_CSS, CLINIC_FONT_QUERY, renderClinicBody } from './clinic-render';
 import { CAFE_CSS, CAFE_FONT_QUERY, renderCafeBody } from './cafe-render';
+import { FITSTOP_CSS, FITSTOP_FONT_QUERY, renderFitstopBody } from './fitstop-render';
 
 // Renders a site claimed at <slug>.garage.co.nz from the config the
 // builder stored in D1. Mirrors the live preview in /ai.
@@ -136,7 +137,9 @@ export interface SiteConfig {
   // publish with the page — only the sign-ups need a table.
   campaigns?: EventCampaign[];
   style?: 'modern' | 'brutal' | 'classic' | 'cafe' | 'physio' | 'trade' | 'tribute' | 'listing' | 'diet' | 'chain' | 'bubbles' | 'game' | 'eggs' | 'mogged' | 'montage' | 'beauty' | 'yoga' | 'pilates' | 'workshop' | 'sauna'
-    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'youtube' | 'insta' | 'videomap';
+    | 'rugby' | 'soccer' | 'basketball' | 'charity' | 'townhall' | 'daycare' | 'youtube' | 'insta' | 'videomap'
+    // Off the shelf: asked for by name in the builder, never in the picker.
+    | 'fitstop';
   socials?: Record<string, string>;
   eyebrow?: string;
   headline?: string;
@@ -1382,6 +1385,24 @@ export function renderSite(
     });
   }
 
+  // A gym. Not in the starter picker — reached by asking for it by name.
+  if (site.style === 'fitstop') {
+    const gym: SiteConfig = {
+      ...site,
+      chat: false,
+      shop: false,
+      tone: 'light',
+      palette: { primary: '#f15922', deep: '#212532', wash: '#f2f2f0', ...(site.palette || {}) },
+    };
+    const room = gym.name || slug;
+    return shell(gym, slug, {
+      title: room,
+      description: (gym.lede || gym.headline || room).slice(0, 155),
+      path: '/',
+      body: renderFitstopBody(gym, slug),
+    });
+  }
+
   // Space Invaders, where the invaders are what the business does. The list
   // underneath is the real page; the game is a way through it.
   if (site.style === 'game') {
@@ -2456,6 +2477,7 @@ function shell(site: SiteConfig, slug: string, page: PageMeta): string {
     : site.style === 'listing' ? LISTING_FONT_QUERY
     : site.style === 'diet' ? DIET_FONT_QUERY
     : site.style === 'chain' ? CHAIN_FONT_QUERY
+    : site.style === 'fitstop' ? FITSTOP_FONT_QUERY
     : site.style === 'bubbles' ? BUBBLE_FONT_QUERY
     : site.style === 'game' ? GAME_FONT_QUERY
     : site.style === 'eggs' ? EGGS_FONT_QUERY
@@ -2491,13 +2513,13 @@ ${hero ? `<meta property="og:image" content="${esc(hero)}" />` : ''}
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800${extraFonts}&display=swap" rel="stylesheet" />
-<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'youtube' ? YOUTUBE_CSS : ''}${site.style === 'insta' ? INSTA_CSS : ''}${site.style === 'videomap' ? VIDEOMAP_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${pageNote ? NOTE_CSS : ''}${page.extraCss || ''}
+<style>${CSS}${site.style === 'cafe' ? CAFE_CSS : ''}${site.style === 'physio' ? CLINIC_CSS : ''}${site.style === 'trade' ? TRADE_CSS : ''}${site.style === 'tribute' || site.style === 'montage' ? TRIBUTE_CSS : ''}${site.style === 'listing' ? LISTING_CSS : ''}${site.style === 'diet' ? DIET_CSS : ''}${site.style === 'chain' ? CHAIN_CSS : ''}${site.style === 'bubbles' ? BUBBLE_CSS : ''}${site.style === 'game' ? GAME_CSS : ''}${site.style === 'eggs' ? EGGS_CSS : ''}${site.style === 'mogged' ? MOGGED_CSS : ''}${site.style === 'beauty' ? BEAUTY_CSS : ''}${site.style === 'workshop' ? WORKSHOP_CSS : ''}${site.style === 'sauna' ? SAUNA_CSS : ''}${site.style === 'rugby' || site.style === 'soccer' || site.style === 'basketball' ? CLUB_CSS : ''}${site.style === 'charity' ? CHARITY_CSS : ''}${site.style === 'townhall' ? HALL_CSS : ''}${site.style === 'daycare' ? DAYCARE_CSS : ''}${site.style === 'youtube' ? YOUTUBE_CSS : ''}${site.style === 'insta' ? INSTA_CSS : ''}${site.style === 'videomap' ? VIDEOMAP_CSS : ''}${site.style === 'fitstop' ? FITSTOP_CSS : ''}${site.spinner?.on ? SPINNER_CSS : ''}${site.waitlist?.on ? WAITLIST_CSS : ''}${((site as any).campaigns || [])[0]?.target ? EVENT_BAR_CSS : ''}${site.style === 'yoga' || site.style === 'pilates' ? STUDIO_CSS : ''}${pageNote ? NOTE_CSS : ''}${page.extraCss || ''}
 :root{--primary:${esc(primary)};--deep:${esc(palette.deep || '#1e40af')};--wash:${esc(wash)};
 --ink:${tone.ink};--soft:${tone.soft};--line:${tone.line};--card:${tone.card};
 --page:${tone.page}}
 </style>
 </head>
-<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'youtube' ? ' yt' : ''}${site.style === 'insta' ? ' ig' : ''}${site.style === 'videomap' ? ' vm' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${noteBlock(slug)}${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
+<body class="st-${esc(site.style || 'modern')}${site.style === 'cafe' ? ' cf' : ''}${site.style === 'physio' ? ' ph' : ''}${site.style === 'trade' ? ' td' : ''}${site.style === 'tribute' || site.style === 'montage' ? ' tr' : ''}${site.style === 'listing' ? ' ls' : ''}${site.style === 'diet' ? ' dt' : ''}${site.style === 'chain' ? ' ch' : ''}${site.style === 'bubbles' ? ' bb' : ''}${site.style === 'game' ? ' gm' : ''}${site.style === 'eggs' ? ' eg' : ''}${site.style === 'mogged' ? ' mg' : ''}${site.style === 'beauty' ? ' bt' : ''}${site.style === 'workshop' ? ' wk' : ''}${site.style === 'sauna' ? ' sn' : ''}${site.style === 'rugby' ? ' cb' : ''}${site.style === 'soccer' ? ' cb soc' : ''}${site.style === 'basketball' ? ' cb bkb' : ''}${site.style === 'charity' ? ' ch2' : ''}${site.style === 'townhall' ? ' hl' : ''}${site.style === 'daycare' ? ' dc' : ''}${site.style === 'youtube' ? ' yt' : ''}${site.style === 'insta' ? ' ig' : ''}${site.style === 'videomap' ? ' vm' : ''}${site.style === 'fitstop' ? ' fs' : ''}${site.style === 'yoga' ? ' st' : ''}${site.style === 'pilates' ? ' st pil' : ''}">${noteBlock(slug)}${body}${logo ? `<div class="logo-zoom" id="logo-zoom">${logoFilm
     ? `<video id="logo-film" src="${esc(logoFilm)}" poster="${esc(logo)}" muted playsinline loop preload="none"></video>`
     : `<img src="${esc(logo)}" alt="${esc(name)}" />`}</div>` : ''}${site.shop === false ? '' : cartHtml(site, slug)}${site.chat ? chatWidget(site, slug) : ''}${renderSpinner(site, slug)}${renderWaitlist(site, slug)}${renderEventBar(site, slug)}<script>(function(){var z=document.getElementById('logo-zoom'),b=document.querySelector('.brand-zoom');
 if(!z||!b)return;
