@@ -170,23 +170,53 @@ filter:drop-shadow(0 0 1.5px rgba(60,20,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0
    delay to zero — the shorthand sets all eight animation properties, and it
    outranks the per-star rules below — so all six left together in one clump
    rather than trickling off the rim. */
-.gsp-tfly i{position:absolute;left:50%;top:50%;width:10px;height:10px;
-margin:-5px 0 0 -5px;background:#fbbf24;opacity:0;
+.gsp-tfly i{position:absolute;left:50%;top:50%;width:13px;height:13px;
+margin:-6.5px 0 0 -6.5px;background:#fbbf24;opacity:0;
+filter:drop-shadow(0 0 4px rgba(251,191,36,.85));
 clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
-animation-name:none;animation-duration:1.25s;animation-timing-function:ease-out;
+animation-name:none;animation-duration:1.05s;animation-timing-function:ease-out;
 animation-iteration-count:infinite}
+/* Every third one white, so the fizz has two temperatures in it rather than
+   reading as one gold smear. */
+.gsp-tfly i:nth-child(3n){background:#fff;filter:drop-shadow(0 0 4px rgba(255,255,255,.9))}
 .gsp-tab:hover .gsp-tfly i{animation-name:gsp-fly}
-.gsp-tfly i:nth-child(1){--dx:-74px;--dy:-42px;animation-delay:0s}
-.gsp-tfly i:nth-child(2){--dx:-40px;--dy:-76px;animation-delay:.2s}
-.gsp-tfly i:nth-child(3){--dx:8px;--dy:-82px;animation-delay:.41s}
-.gsp-tfly i:nth-child(4){--dx:-84px;--dy:8px;animation-delay:.6s}
-.gsp-tfly i:nth-child(5){--dx:-62px;--dy:46px;animation-delay:.78s}
-.gsp-tfly i:nth-child(6){--dx:46px;--dy:-64px;animation-delay:.97s}
+.gsp-tfly i:nth-child(1){--dx:-88px;--dy:-50px;animation-delay:0s}
+.gsp-tfly i:nth-child(2){--dx:-48px;--dy:-92px;animation-delay:.13s}
+.gsp-tfly i:nth-child(3){--dx:10px;--dy:-98px;animation-delay:.26s}
+.gsp-tfly i:nth-child(4){--dx:-100px;--dy:10px;animation-delay:.39s}
+.gsp-tfly i:nth-child(5){--dx:-74px;--dy:56px;animation-delay:.52s}
+.gsp-tfly i:nth-child(6){--dx:56px;--dy:-78px;animation-delay:.65s}
+.gsp-tfly i:nth-child(7){--dx:-30px;--dy:64px;animation-delay:.78s}
+.gsp-tfly i:nth-child(8){--dx:-116px;--dy:-16px;animation-delay:.91s}
 @keyframes gsp-fly{
-0%{opacity:0;transform:translate(0,0) scale(.35) rotate(0deg)}
-14%{opacity:.95}
-100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(200deg)}}
-@media(prefers-reduced-motion:reduce){.gsp-tab:hover .gsp-tfly i{animation-name:none}}
+0%{opacity:0;transform:translate(0,0) scale(.3) rotate(0deg)}
+10%{opacity:1}
+100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.25) rotate(220deg)}}
+
+/* And the offers themselves come off it. The wheel says a game is on; the
+   prizes going past say what is actually being played for, which is the part
+   worth reading. Small, quick, and gone — a pill has to be legible for the
+   half second it is on screen and invisible the rest of the time. */
+.gsp-tfly b{position:absolute;left:50%;top:50%;white-space:nowrap;
+font:700 9.5px/1 var(--font-sans,system-ui,sans-serif);text-transform:uppercase;
+letter-spacing:.05em;color:#141821;background:#fff;padding:4px 8px;
+border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.34);opacity:0;
+animation-name:none;animation-duration:1.6s;animation-timing-function:cubic-bezier(.2,.7,.3,1);
+animation-iteration-count:infinite}
+/* The top prize is the gold one on the wheel, so it is the gold one here. */
+.gsp-tfly b:first-of-type{background:#fbbf24;color:#3b2a05}
+.gsp-tab:hover .gsp-tfly b{animation-name:gsp-toss}
+.gsp-tfly b:nth-of-type(1){--dx:-128px;--dy:-38px;animation-delay:.05s}
+.gsp-tfly b:nth-of-type(2){--dx:-104px;--dy:-84px;animation-delay:.45s}
+.gsp-tfly b:nth-of-type(3){--dx:-142px;--dy:14px;animation-delay:.85s}
+.gsp-tfly b:nth-of-type(4){--dx:-58px;--dy:-114px;animation-delay:1.25s}
+@keyframes gsp-toss{
+0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}
+16%{opacity:1;transform:translate(calc(-50% + var(--dx) * .34),calc(-50% + var(--dy) * .34)) scale(1)}
+70%{opacity:1}
+100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+  .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b{animation-name:none}}
 
 @media(max-width:520px){.gsp-tab{width:76px;height:76px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:29px}
@@ -324,7 +354,10 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
 
   return `
 <button class="gsp-tab${site.chat ? ' gsp-over-chat' : ''}" id="gsp-tab" type="button" aria-haspopup="dialog"
-        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
+        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>${chosen
+    .slice(0, 4)
+    .map((prize) => `<b>${esc(prize.label)}</b>`)
+    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
