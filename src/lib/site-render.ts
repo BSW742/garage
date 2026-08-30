@@ -1795,8 +1795,37 @@ background:#dcfce7;color:#166534}
 background:rgba(4,4,6,.93);backdrop-filter:blur(14px)}
 .gz-box.on{display:grid}
 .gz-box-in{width:min(62rem,100%)}
-.gz-box video{width:100%;display:block;border-radius:12px;background:#000;
-border:1px solid #24272f}
+.gz-player{position:relative;border-radius:12px;overflow:hidden;background:#000;
+border:1px solid #24272f;line-height:0}
+.gz-box video{width:100%;display:block;background:#000}
+/* Only the bottom eighth reaches for the controls. */
+.gz-zone{position:absolute;left:0;right:0;bottom:0;height:13%;min-height:44px;z-index:2}
+.gz-ctl{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:center;
+gap:.6rem;padding:.45rem .7rem;opacity:0;transition:opacity .18s;pointer-events:none;
+background:linear-gradient(transparent,rgba(0,0,0,.55))}
+.gz-player:has(.gz-zone:hover) .gz-ctl,.gz-player.paused .gz-ctl,
+.gz-ctl:hover{opacity:1;pointer-events:auto}
+.gz-pp{flex:none;width:1.7rem;height:1.7rem;border-radius:50%;border:0;cursor:pointer;
+background:rgba(255,255,255,.92);display:grid;place-items:center;padding:0}
+.gz-pp:after{content:'';border-style:solid;border-width:.32rem 0 .32rem .55rem;
+border-color:transparent transparent transparent #0b0c0f;margin-left:.14rem}
+.gz-player.playing .gz-pp:after{border:0;width:.5rem;height:.62rem;margin:0;
+background:#0b0c0f;box-shadow:inset .17rem 0 0 rgba(255,255,255,.92)}
+.gz-time{flex:none;color:#fff;font:600 .72rem/1 Inter,system-ui,sans-serif;
+font-variant-numeric:tabular-nums;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.gz-track{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);cursor:pointer;
+display:block;position:relative}
+.gz-track i{display:block;height:100%;width:0;border-radius:2px;background:#fff}
+/* The one big control, and only while it is stopped. */
+.gz-big{position:absolute;inset:0;z-index:1;border:0;background:none;cursor:pointer;
+display:none;place-items:center}
+.gz-player.paused .gz-big{display:grid}
+.gz-big:after{content:'';width:4rem;height:4rem;border-radius:50%;
+background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.6);
+box-shadow:0 0 0 .6rem rgba(0,0,0,.12)}
+.gz-big:before{content:'';position:absolute;z-index:2;border-style:solid;
+border-width:.62rem 0 .62rem 1.05rem;border-color:transparent transparent transparent #fff;
+margin-left:.22rem}
 .gz-box p{margin:.8rem 0 0;color:#9aa0ac;font:400 .85rem/1.5 Inter,system-ui,sans-serif;
 display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
 .gz-box p b{color:#f3f4f6;font-weight:600}
@@ -1890,8 +1919,22 @@ function noteBlock(slug: string): string {
 <div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
   <button type="button" class="gz-shut" aria-label="Close">&times;</button>
   <div class="gz-box-in">
-    <video id="gz-note-v" controls playsinline preload="none"
-           data-src="https://garage.co.nz/images/${key}"></video>
+    <div class="gz-player" id="gz-player">
+      <video id="gz-note-v" playsinline preload="none"
+             data-src="https://garage.co.nz/images/${key}"></video>
+      <!-- A strip along the bottom, and only in there does the bar wake up.
+           Chrome's own controls appear whenever the pointer is anywhere over
+           the picture and dim the whole thing while they are up — which, on a
+           video whose entire subject is a screen, greys out the thing being
+           shown. -->
+      <span class="gz-zone"></span>
+      <div class="gz-ctl">
+        <button type="button" class="gz-pp" id="gz-pp" aria-label="Play or pause"></button>
+        <span class="gz-time" id="gz-time">0:00</span>
+        <span class="gz-track" id="gz-track"><i id="gz-fill"></i></span>
+      </div>
+      <button type="button" class="gz-big" id="gz-big" aria-label="Play"></button>
+    </div>
     <p><b>Sixty seconds, start to finish.</b>
        <span>Nothing to pay. If you like it, thumbs up above and I will send you the keys.</span></p>
   </div>
@@ -1926,6 +1969,43 @@ function noteBlock(slug: string): string {
 
   var sent = {};
   function ping(at) { if (!sent[at]) { sent[at] = 1; tell('seen', { at: at }); } }
+
+  // ── The player ──────────────────────────────────────────────────────
+  var player = document.getElementById('gz-player');
+  var pp = document.getElementById('gz-pp');
+  var big = document.getElementById('gz-big');
+  var track = document.getElementById('gz-track');
+  var fill = document.getElementById('gz-fill');
+  var timeEl = document.getElementById('gz-time');
+
+  function clock(t) {
+    t = Math.max(0, Math.floor(t || 0));
+    return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+  }
+  function mark() {
+    player.classList.toggle('playing', !v.paused);
+    player.classList.toggle('paused', v.paused);
+  }
+  function toggle() { if (v.paused) { v.play().catch(function () {}); } else { v.pause(); } }
+
+  pp.addEventListener('click', toggle);
+  big.addEventListener('click', toggle);
+  v.addEventListener('play', mark);
+  v.addEventListener('pause', mark);
+  v.addEventListener('timeupdate', function () {
+    if (!v.duration) return;
+    fill.style.width = (v.currentTime / v.duration) * 100 + '%';
+    timeEl.textContent = clock(v.currentTime) + ' / ' + clock(v.duration);
+  });
+  v.addEventListener('loadedmetadata', function () {
+    timeEl.textContent = clock(0) + ' / ' + clock(v.duration);
+  });
+  track.addEventListener('click', function (e) {
+    if (!v.duration) return;
+    var r = track.getBoundingClientRect();
+    v.currentTime = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * v.duration;
+  });
+  mark();
 
   function open() {
     // The file is not fetched until they ask for it, so a visitor who never

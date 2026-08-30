@@ -246,8 +246,8 @@ const picked = sites.find((s) => s.slug === slug) || null;
 
       const canvas = $('canvas');
       const ctx = canvas.getContext('2d');
-      const BUBBLE = 58;          // radius of the face, in canvas pixels
-      const EDGE = 28;            // how far it sits off the bottom-left corner
+      const BUBBLE = 96;          // radius of the face, in canvas pixels
+      const EDGE = 34;            // how far it sits off the bottom-left corner
       let screenStream = null, faceStream = null, recorder = null;
       let chunks = [], blob = null, started = 0, raf = 0, ticker = 0;
 
