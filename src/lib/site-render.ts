@@ -1751,8 +1751,11 @@ function noteBlock(slug: string): string {
   if (!pageNote) return '';
   const key = esc(pageNote.key);
   return `<section class="gz-note"><div class="gz-note-in">
+  <!-- Absolute, not /images/. The note renders on the business's own subdomain,
+       where /images/ is handled by the sites worker and 404s — the player looked
+       perfectly fine and simply had no source. R2 is served by the main app. -->
   <video id="gz-note-v" controls playsinline preload="metadata"
-         src="/images/${key}"></video>
+         src="https://garage.co.nz/images/${key}"></video>
   <p><b>Your new site, and how to change it.</b>
      <span>Sixty seconds from Ben at <a href="https://garage.co.nz">garage.co.nz</a></span></p>
 </div></section>
@@ -1769,10 +1772,27 @@ function noteBlock(slug: string): string {
   function ping(at) {
     if (sent[at]) return;
     sent[at] = 1;
+    // fetch with keepalive, not sendBeacon.
+    //
+    // This ping goes cross-origin, from the business's own subdomain to the
+    // main app, and it is squeezed between two rules that leave exactly one
+    // way through. sendBeacon can only send CORS-safelisted content types, so
+    // json would need a preflight it cannot perform. But text/plain IS
+    // safelisted, which is precisely why Astro's CSRF guard rejects it —
+    // "Cross-site POST form submissions are forbidden", 403, silently, and
+    // every view reads as nobody watching.
+    //
+    // json + fetch preflights properly (the endpoint answers OPTIONS) and
+    // Astro leaves json alone. keepalive is what sendBeacon was here for: it
+    // lets the request outlive the page if they close the tab mid-video.
     try {
-      navigator.sendBeacon('https://garage.co.nz/api/record/seen',
-        new Blob([JSON.stringify({ slug: slug, at: at, mine: mine })],
-                 { type: 'application/json' }));
+      fetch('https://garage.co.nz/api/record/seen', {
+        method: 'POST',
+        mode: 'cors',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug, at: at, mine: mine }),
+      }).catch(function () {});
     } catch (e) {}
   }
   v.addEventListener('play', function () { ping(0); }, { once: true });
