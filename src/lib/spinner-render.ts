@@ -115,13 +115,17 @@ export const SPINNER_CSS = `
    nobody reads. A wheel that is already spinning needs no label at all.
    The colours are brighter than the real wheel inside: this one is competing
    with whatever the site itself is doing, and the wheel in the modal is not. */
-.gsp-tab{position:fixed;right:1.1rem;top:50%;transform:translateY(-50%);
-z-index:9990;width:92px;height:92px;padding:0;border:0;border-radius:50%;
+.gsp-tab{position:fixed;right:1.7rem;bottom:1.7rem;z-index:9990;
+width:92px;height:92px;padding:0;border:0;border-radius:50%;
 background:none;cursor:pointer;display:block;
 filter:drop-shadow(0 12px 26px rgba(0,0,0,.34)) drop-shadow(0 0 13px rgba(240,160,32,.42));
 transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
-.gsp-tab:hover{transform:translateY(-50%) scale(1.07)}
-.gsp-tab:active{transform:translateY(-50%) scale(.96)}
+.gsp-tab:hover{transform:scale(1.07)}
+.gsp-tab:active{transform:scale(.96)}
+/* The corner is busy on a site that also has the chat pill or the outreach
+   avatar in it, so the wheel steps up over whichever is there. */
+.gsp-tab.gsp-over-chat{bottom:6.4rem}
+body.gz-noted .gsp-tab{bottom:10.2rem}
 
 /* The disc spins; the button does not — it is holding the translate that
    centres it, and an animation on the same element would throw that away. */
@@ -152,10 +156,39 @@ box-shadow:0 0 0 3px rgba(10,12,18,.16),0 2px 5px rgba(0,0,0,.3)}
    one part that says which way it is pointing invisible against it. */
 .gsp-tpin{position:absolute;left:50%;top:-9px;transform:translateX(-50%);
 width:0;height:0;border-style:solid;border-width:19px 9px 0 9px;
-border-color:${CARD} transparent transparent transparent;
-filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+border-color:#f97316 transparent transparent transparent;
+filter:drop-shadow(0 0 1.5px rgba(60,20,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 
-@media(max-width:520px){.gsp-tab{width:76px;height:76px;right:.85rem}
+/* Prizes coming off the rim, and only while the cursor is on it. Six small
+   stars, each thrown a different way on its own delay, fading as they go —
+   enough to notice if you are looking at it and not enough to be a fairground.
+   They fly up and to the left because the wheel now lives in the bottom right
+   corner and anything thrown the other way leaves the screen unseen. */
+.gsp-tfly{position:absolute;inset:0;pointer-events:none}
+/* The timing lives here and only the name is switched on by the hover. Written
+   as the animation shorthand on the hover rule instead, it reset every star's
+   delay to zero — the shorthand sets all eight animation properties, and it
+   outranks the per-star rules below — so all six left together in one clump
+   rather than trickling off the rim. */
+.gsp-tfly i{position:absolute;left:50%;top:50%;width:10px;height:10px;
+margin:-5px 0 0 -5px;background:#fbbf24;opacity:0;
+clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+animation-name:none;animation-duration:1.25s;animation-timing-function:ease-out;
+animation-iteration-count:infinite}
+.gsp-tab:hover .gsp-tfly i{animation-name:gsp-fly}
+.gsp-tfly i:nth-child(1){--dx:-74px;--dy:-42px;animation-delay:0s}
+.gsp-tfly i:nth-child(2){--dx:-40px;--dy:-76px;animation-delay:.2s}
+.gsp-tfly i:nth-child(3){--dx:8px;--dy:-82px;animation-delay:.41s}
+.gsp-tfly i:nth-child(4){--dx:-84px;--dy:8px;animation-delay:.6s}
+.gsp-tfly i:nth-child(5){--dx:-62px;--dy:46px;animation-delay:.78s}
+.gsp-tfly i:nth-child(6){--dx:46px;--dy:-64px;animation-delay:.97s}
+@keyframes gsp-fly{
+0%{opacity:0;transform:translate(0,0) scale(.35) rotate(0deg)}
+14%{opacity:.95}
+100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(200deg)}}
+@media(prefers-reduced-motion:reduce){.gsp-tab:hover .gsp-tfly i{animation-name:none}}
+
+@media(max-width:520px){.gsp-tab{width:76px;height:76px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:29px}
   .gsp-tpin{border-width:16px 8px 0 8px;top:-8px}}
 
@@ -290,8 +323,8 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   const jsSlots = slots.map((p) => ({ label: p.label, note: p.note }));
 
   return `
-<button class="gsp-tab" id="gsp-tab" type="button" aria-haspopup="dialog"
-        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
+<button class="gsp-tab${site.chat ? ' gsp-over-chat' : ''}" id="gsp-tab" type="button" aria-haspopup="dialog"
+        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
