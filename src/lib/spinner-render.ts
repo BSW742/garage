@@ -109,16 +109,47 @@ const LINE = 'rgba(255,255,255,.12)';
 const DIM = '#7d8598';
 
 export const SPINNER_CSS = `
-.gsp-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:9990;
-display:flex;align-items:center;gap:.55rem;border:0;cursor:pointer;
-background:${CARD};color:#eef1f7;font:600 .76rem/1 var(--font-sans,system-ui,sans-serif);
-padding:1.05rem .72rem;border-radius:8px 0 0 8px;writing-mode:vertical-rl;
-letter-spacing:.14em;text-transform:uppercase;
-box-shadow:-1px 0 0 ${LINE},-14px 0 34px -14px rgba(0,0,0,.7);
-transition:padding .22s ease,color .22s ease}
-.gsp-tab:before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:${RED}}
-.gsp-tab:hover{padding-right:1.05rem;color:#fff}
-@media(max-width:520px){.gsp-tab{top:auto;bottom:92px;transform:none}}
+/* A wheel, turning, and nothing else. It used to be the words SPIN TO WIN set
+   sideways up the edge of the screen, which asked to be read before it could
+   be understood — and a vertical line of type is the one thing on a page
+   nobody reads. A wheel that is already spinning needs no label at all.
+   The colours are brighter than the real wheel inside: this one is competing
+   with whatever the site itself is doing, and the wheel in the modal is not. */
+.gsp-tab{position:fixed;right:1.1rem;top:50%;transform:translateY(-50%);
+z-index:9990;width:92px;height:92px;padding:0;border:0;border-radius:50%;
+background:none;cursor:pointer;display:block;
+filter:drop-shadow(0 12px 26px rgba(0,0,0,.34));
+transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
+.gsp-tab:hover{transform:translateY(-50%) scale(1.07)}
+.gsp-tab:active{transform:translateY(-50%) scale(.96)}
+
+/* The disc spins; the button does not — it is holding the translate that
+   centres it, and an animation on the same element would throw that away. */
+.gsp-disc{position:absolute;inset:0;border-radius:50%;
+background:conic-gradient(
+#fbbf24 0deg 45deg,#ef4444 45deg 90deg,#ffffff 90deg 135deg,#3b82f6 135deg 180deg,
+#fbbf24 180deg 225deg,#ef4444 225deg 270deg,#ffffff 270deg 315deg,#3b82f6 315deg 360deg);
+box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
+animation:gsp-turn 6.5s linear infinite}
+.gsp-tab:hover .gsp-disc{animation-duration:1.6s}
+@keyframes gsp-turn{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.gsp-disc{animation:none}}
+
+/* The hub and the peg that reads as a wheel rather than a pie chart. */
+.gsp-hub{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;
+border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(10,12,18,.16),
+0 2px 5px rgba(0,0,0,.3)}
+.gsp-hub:after{content:'';position:absolute;inset:6px;border-radius:50%;background:${RED}}
+/* Dark, not white. The rim is white and so was the pointer, which left the
+   one part that says which way it is pointing invisible against it. */
+.gsp-pin{position:absolute;left:50%;top:-9px;margin-left:-9px;width:0;height:0;
+border-style:solid;border-width:19px 9px 0 9px;
+border-color:${CARD} transparent transparent transparent;
+filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+
+@media(max-width:520px){.gsp-tab{width:76px;height:76px;right:.85rem}
+  .gsp-hub{width:18px;height:18px;margin:-9px 0 0 -9px}
+  .gsp-pin{border-width:16px 8px 0 8px;margin-left:-8px;top:-8px}}
 
 .gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(4,5,8,.82);
 backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:.75rem}
@@ -251,7 +282,8 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   const jsSlots = slots.map((p) => ({ label: p.label, note: p.note }));
 
   return `
-<button class="gsp-tab" id="gsp-tab" type="button" aria-haspopup="dialog">${esc(spin.title || 'Spin to win')}</button>
+<button class="gsp-tab" id="gsp-tab" type="button" aria-haspopup="dialog"
+        aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-disc"></span><span class="gsp-hub"></span><span class="gsp-pin"></span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
