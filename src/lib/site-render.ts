@@ -1809,8 +1809,15 @@ background:#dcfce7;color:#166534}
   .gz-grow em{font-size:1.15em}
   .gz-like{font-size:.88rem}
 
-  /* Nothing of theirs should end up underneath it. */
-  body.gz-noted{padding-bottom:4.6rem}
+  /* Video first. The bar introduces it and nothing else; the answer to it
+     lives under the film, where they already are once the pitch has landed.
+     Closing drops them onto their own site, which is directly underneath —
+     that is the thing they were promised and it is worth more than a video
+     of it. */
+  .gz-do{display:none}
+  body.gz-noted{padding-bottom:0}
+  .gz-long{display:none}
+  .gz-short{display:inline}
 }
 
 /* The film, when they ask for it. */
@@ -1886,10 +1893,35 @@ font:inherit;font-weight:700;cursor:pointer}
 .gz-want:hover{background:#000}
 .gz-want[disabled]{background:#dcfce7;color:#166534;cursor:default}
 
+.gz-box-do{display:none}
+.gz-short{display:none}
+.gz-seen{display:block;text-align:center;color:#9aa0ac;font-size:.85rem;
+text-decoration:underline;text-underline-offset:3px;padding:.2rem}
+.gz-seen[hidden]{display:none}
+.gz-more{background:none;border:1px solid rgba(255,255,255,.28);color:#f3f4f6;
+font:600 .86rem/1 Inter,system-ui,sans-serif;border-radius:10px;padding:.6rem;
+cursor:pointer}
+.gz-more:hover{border-color:#fff}
+
 .gz-shut{position:fixed;top:1rem;right:1.2rem;width:2.6rem;height:2.6rem;border-radius:50%;
 background:#15171c;border:1px solid #24272f;color:#f3f4f6;font-size:1.35rem;line-height:1;
 cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
 .gz-shut:hover{border-color:#fff}
+
+/* Last, deliberately. These override base rules declared further up at the
+   same specificity, and CSS gives the win to whichever comes later — put this
+   block above them and the modal's own actions stay display:none on a phone,
+   which is exactly what happened the first time. */
+@media(max-width:700px){
+  .gz-box{padding:.8rem;align-content:center}
+  .gz-box-in{width:100%}
+  .gz-box-do{display:grid;gap:.55rem;margin-top:.9rem}
+  .gz-box-do .gz-like{width:100%;justify-content:center;padding:.7rem;
+  font-size:.95rem;border-radius:11px}
+  .gz-box p{margin-top:.7rem;font-size:.82rem}
+  .gz-short{display:inline}
+  .gz-long{display:none}
+}
 `;
 
 function noteBlock(slug: string): string {
@@ -1960,7 +1992,17 @@ function noteBlock(slug: string): string {
       <button type="button" class="gz-big" id="gz-big" aria-label="Play"></button>
     </div>
     <p><b>Sixty seconds, start to finish.</b>
-       <span>Nothing to pay. If you like it, thumbs up above and I will send you the keys.</span></p>
+       <span class="gz-long">Nothing to pay. If you like it, thumbs up above and I will send you the keys.</span>
+       <span class="gz-short">Nothing to pay. It is yours.</span></p>
+    <!-- On a phone the film is the whole pitch, so the answer to it belongs
+         here rather than on a bar competing for the same thumb. -->
+    <div class="gz-box-do">
+      <button type="button" class="gz-like" id="gz-like2"${liked ? ' disabled' : ''}>
+        ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it &mdash; <b>FREE</b>'}
+      </button>
+      <a class="gz-seen" id="gz-seen" href="https://garage.co.nz"${liked ? '' : ' hidden'}>See what else he has built &rarr;</a>
+      <button type="button" class="gz-more" id="gz-more">&#9889; Grow your business</button>
+    </div>
   </div>
 </div>
 <script>
@@ -2032,6 +2074,8 @@ function noteBlock(slug: string): string {
   });
   mark();
 
+  var onPhone = window.matchMedia('(max-width:700px)').matches;
+
   function open() {
     // The file is not fetched until they ask for it, so a visitor who never
     // presses anything never downloads a megabyte of somebody's sales pitch.
@@ -2040,13 +2084,41 @@ function noteBlock(slug: string): string {
     document.body.style.overflow = 'hidden';
     tell('seen', { at: -1 });           // opened, which is not yet watched
     v.play().catch(function () {});
+
+    // A landscape recording in a portrait phone is about 390 by 219, and the
+    // chat panel — the entire point of the film — is unreadable at that size.
+    // So on a phone it goes fullscreen, where the handset turns it landscape
+    // and gives it the whole screen. This runs inside a tap, which is the only
+    // time either API is allowed. Coming out of fullscreen lands them back
+    // here with the thumbs up waiting.
+    if (onPhone) {
+      try {
+        if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+        else if (player.requestFullscreen) player.requestFullscreen().catch(function () {});
+        else if (v.requestFullscreen) v.requestFullscreen().catch(function () {});
+      } catch (e) {}
+    }
   }
   function shut() {
     if (!box.classList.contains('on')) return;
     box.classList.remove('on');
     document.body.style.overflow = '';
     try { v.pause(); } catch (e) {}
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (v.webkitExitFullscreen) v.webkitExitFullscreen();
+    } catch (e) {}
   }
+
+  // Leaving fullscreen is a decision to stop watching, not to leave the page —
+  // they come back to the film and the thumbs up rather than to nothing.
+  ['fullscreenchange', 'webkitfullscreenchange', 'webkitendfullscreen'].forEach(function (ev) {
+    document.addEventListener(ev, function () {
+      if (!document.fullscreenElement && box.classList.contains('on')) {
+        try { v.pause(); } catch (e) {}
+      }
+    });
+  });
 
   // Most templates have their own sticky nav pinned to top:0, and so does this
   // bar — so they land on top of each other and the site's nav disappears
@@ -2148,12 +2220,35 @@ function noteBlock(slug: string): string {
     if (t > 0) ping(t);
   });
 
-  like.addEventListener('click', function () {
-    if (like.disabled) return;
-    like.disabled = true;
-    like.innerHTML = '&#10003; Thanks &mdash; Ben will be in touch';
+  // One thumbs up, two buttons — the bar's on a desktop, the film's on a
+  // phone. Whichever is pressed, both end up saying the same thing, because a
+  // control that still offers something already given is a control that gets
+  // pressed twice.
+  var like2 = document.getElementById('gz-like2');
+  var seen = document.getElementById('gz-seen');
+
+  function thanks() {
+    [like, like2].forEach(function (b) {
+      if (!b) return;
+      b.disabled = true;
+      b.innerHTML = '&#10003; Thanks &mdash; Ben will be in touch';
+    });
+    if (seen) seen.hidden = false;   // the platform, once they have said yes
     tell('like', {});
+  }
+  [like, like2].forEach(function (b) {
+    if (b) b.addEventListener('click', function () { if (!b.disabled) thanks(); });
   });
+
+  // Grow, from inside the film. Put the film away first: two things open at
+  // once on a phone is how you lose track of which one the back gesture shuts.
+  var more = document.getElementById('gz-more');
+  if (more) {
+    more.addEventListener('click', function () {
+      shut();
+      openSheet();
+    });
+  }
 })();
 </script>`;
 }
