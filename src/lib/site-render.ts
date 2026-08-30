@@ -1738,10 +1738,16 @@ const NOTE_CSS = `
 /* A strip along the top, not a slab in front of the page.
    The site is theirs and is the thing they came to look at; the video is
    offered from above it and stays out of the way until it is asked for. */
+/* White, with a heavy rule under it.
+   Black read as a banner the site was wearing. White reads as a layer sitting
+   above the site — and the thick line is what does the separating, which
+   matters most on the light templates where the bar and the page are the same
+   colour. The line is black rather than the site's own accent because this
+   strip is ours, not theirs. */
 .gz-bar{position:sticky;top:0;z-index:9000;display:flex;align-items:center;gap:.6rem;
-padding:.55rem .9rem;background:#0b0c0f;color:#f3f4f6;
+padding:.55rem .9rem;background:#fff;color:#0b0c0f;
 font:500 .85rem/1.35 Inter,system-ui,-apple-system,sans-serif;
-border-bottom:1px solid rgba(255,255,255,.1)}
+border-bottom:4px solid #0b0c0f}
 .gz-bar button{font:inherit;cursor:pointer;border-radius:999px;white-space:nowrap}
 /* Him, leaning on the bar.
    This is the one moment somebody meets whoever made the thing, and a strip of
@@ -1758,20 +1764,20 @@ animation:gz-bob 3.4s ease-in-out infinite}
 @media(prefers-reduced-motion:reduce){.gz-ben{animation:none}}
 @media(max-width:640px){.gz-ben{width:2.5rem;margin-bottom:-1.05rem}}
 .gz-watch{display:inline-flex;align-items:center;gap:.5rem;background:none;border:0;
-color:#f3f4f6;padding:.2rem 0;text-align:left}
-.gz-watch:hover{color:#fff}
-.gz-watch u{text-decoration-color:rgba(255,255,255,.45);text-underline-offset:3px}
+color:#0b0c0f;padding:.2rem 0;text-align:left}
+.gz-watch:hover{color:#000}
+.gz-watch u{text-decoration-color:rgba(11,12,15,.4);text-underline-offset:3px}
 .gz-watch s{text-decoration:none;flex:none;width:1.55rem;height:1.55rem;border-radius:50%;
-background:#f3f4f6;display:grid;place-items:center}
+background:#0b0c0f;display:grid;place-items:center;transition:transform .18s}
 .gz-watch s:after{content:'';border-style:solid;border-width:.3rem 0 .3rem .5rem;
-border-color:transparent transparent transparent #0b0c0f;margin-left:.12rem}
-.gz-watch:hover s{background:#fff;transform:scale(1.06)}
+border-color:transparent transparent transparent #fff;margin-left:.12rem}
+.gz-watch:hover s{transform:scale(1.08)}
 .gz-bar .gz-sp{margin-left:auto}
-.gz-like{background:none;border:1px solid rgba(255,255,255,.28);color:#f3f4f6;
-padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.4rem}
-.gz-like:hover{border-color:#fff;background:rgba(255,255,255,.08)}
+.gz-like{background:none;border:1.5px solid rgba(11,12,15,.28);color:#0b0c0f;
+padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.4rem;font-weight:600}
+.gz-like:hover{border-color:#0b0c0f;background:rgba(11,12,15,.06)}
 .gz-like[disabled]{opacity:1;cursor:default;border-color:transparent;
-background:rgba(134,239,172,.16);color:#bbf7d0}
+background:#dcfce7;color:#166534}
 @media(max-width:640px){
   .gz-bar{font-size:.78rem;gap:.5rem;padding:.45rem .6rem}
   .gz-watch u{display:none}
