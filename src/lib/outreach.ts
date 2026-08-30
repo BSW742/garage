@@ -183,3 +183,30 @@ export function decodeSubject(raw: unknown): string {
     .replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (_m, cs, kind, data) => one(cs, kind, data))
     .trim();
 }
+
+/**
+ * Machine, or a person?
+ *
+ * The inbox is mostly bounces, delivery receipts and the platform's own
+ * notifications talking to itself, and a single real enquiry from a human
+ * being sits somewhere in the middle of it looking exactly the same. That is
+ * how a request for a free website from a community trust gets taken for spam.
+ *
+ * Erring towards "person": a machine misfiled as a human costs a second of
+ * reading, and a human misfiled as a machine costs the enquiry.
+ */
+export function isSystemMail(from: unknown, subject: unknown): boolean {
+  const who = String(from || '').toLowerCase();
+  const local = who.split('@')[0] || '';
+  const domain = who.split('@')[1] || '';
+
+  if (/^(bounce|mailer-daemon|postmaster|no-?reply|do-?not-?reply|notification|notifications|automated|auto|daemon|root)\b/.test(local)) return true;
+  if (/bounce|mailer-daemon/.test(who)) return true;
+  // Anything the platform sent that has come back to the platform.
+  if (/(^|\.)(mg\.)?garage\.co\.nz$/.test(domain)) return true;
+  if (/^(mailgun|sendgrid|amazonses|postmark)/.test(domain)) return true;
+
+  const subj = String(subject || '').toLowerCase();
+  if (/^(undelivered|delivery status|returned mail|out of office|automatic reply)/.test(subj)) return true;
+  return false;
+}

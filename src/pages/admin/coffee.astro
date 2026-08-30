@@ -8,7 +8,7 @@
 // One list, hottest first, and the only thing that decides order is what the
 // business has actually done: a thumbs up beats a play, a play beats a send,
 // a send beats a site sitting there waiting to be recorded.
-import { verdictFor, stageOf, STAGES, decodeSubject, type Stage } from '../../lib/outreach';
+import { verdictFor, stageOf, STAGES, decodeSubject, isSystemMail, type Stage } from '../../lib/outreach';
 
 export const prerender = false;
 
@@ -47,7 +47,7 @@ let booked: any[] = [];
 if (db) {
   try {
     const { results } = await db
-      .prepare("SELECT id, name, email, slot_key, topic, status, created_at FROM bookings ORDER BY id DESC LIMIT 12")
+      .prepare("SELECT id, name, email, slot_key, topic, status, created_at FROM bookings WHERE status != 'done' ORDER BY id DESC LIMIT 12")
       .all();
     booked = results || [];
   } catch { /* an empty strip beats a page that 500s */ }
@@ -63,7 +63,7 @@ if (db) {
     const a = await db
       .prepare(
         `SELECT id, slug, from_address, subject, intent, note, body, received_at
-           FROM site_mail ORDER BY received_at DESC LIMIT 60`
+           FROM site_mail WHERE archived_at IS NULL ORDER BY received_at DESC LIMIT 60`
       ).all();
     inbound = a.results || [];
   } catch { /* an empty tab beats a page that 500s */ }
@@ -71,11 +71,17 @@ if (db) {
     const b = await db
       .prepare(
         `SELECT id, to_address, subject, body, kind, slug, ok, error, sent_at
-           FROM outbox ORDER BY sent_at DESC LIMIT 60`
+           FROM outbox WHERE archived_at IS NULL ORDER BY sent_at DESC LIMIT 60`
       ).all();
     sent = b.results || [];
   } catch { /* the table is new; older sends were never written down */ }
 }
+
+const humanIn = inbound.filter((m) => !isSystemMail(m.from_address, m.subject));
+const systemIn = inbound.filter((m) => isSystemMail(m.from_address, m.subject));
+// A reply Ben wrote is his; everything else the platform sent on his behalf.
+const humanOut = sent.filter((m) => m.kind === 'reply');
+const systemOut = sent.filter((m) => m.kind !== 'reply');
 
 const HEAT: Record<Stage, number> = {
   keen: 0, watched: 1, sent: 2, recorded: 3, ready: 4, claimed: 5, parked: 6,
@@ -166,8 +172,29 @@ const ago = (t: unknown) => {
       .note pre { margin: 0.5rem 0 0; white-space: pre-wrap; word-break: break-word;
         font: inherit; font-size: 0.84rem; color: #374151; max-height: 15rem; overflow: auto; }
 
-      .compose { border: 1.5px solid var(--line); border-radius: 12px; padding: 0.9rem 1rem;
-        margin-bottom: 1.1rem; background: var(--panel); display: grid; gap: 0.5rem; }
+      /* People and machines, kept apart. The one real enquiry was buried in
+         nineteen bounces and read as more of the same. */
+      .split { display: flex; gap: 0.3rem; margin-bottom: 0.7rem; }
+      .side { font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+        color: var(--dim); padding: 0.25rem 0.7rem; }
+      .side:hover { color: var(--ink); }
+      .side.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+      .side i { font-style: normal; opacity: 0.7; margin-left: 0.25rem; }
+      [data-side-panel][hidden] { display: none; }
+
+      .newmsg { font: inherit; font-size: 0.83rem; font-weight: 700; cursor: pointer;
+        background: var(--ink); color: #fff; border: 0; border-radius: 999px;
+        padding: 0.35rem 0.85rem; }
+      .newmsg:hover { background: #000; }
+      .sheet { position: fixed; inset: 0; z-index: 60; display: grid; place-items: start center;
+        padding: 4rem 1rem; background: rgba(15,17,21,0.45); backdrop-filter: blur(3px); }
+      .sheet[hidden] { display: none; }
+      .compose { width: min(38rem, 100%); border: 1px solid var(--line); border-radius: 14px;
+        padding: 1rem 1.1rem; background: #fff; display: grid; gap: 0.5rem;
+        box-shadow: 0 24px 60px -30px rgba(15,17,21,0.6); }
+      .act.bin { padding: 0.25rem 0.5rem; font-size: 0.9rem; line-height: 1; color: var(--dim); }
+      .act.bin:hover { color: #b91c1c; border-color: #fca5a5; }
       .compose-head { margin: 0; font-size: 0.68rem; letter-spacing: 0.14em;
         text-transform: uppercase; font-weight: 800; color: var(--dim); }
       .compose input, .compose textarea { font: inherit; font-size: 0.9rem; padding: 0.5rem 0.65rem;
@@ -241,6 +268,7 @@ const ago = (t: unknown) => {
         <h1>Coffee</h1>
         <p class="sub">Who to talk to next.</p>
         <span style="margin-left:auto"></span>
+        <button class="newmsg" id="newmsg">New message</button>
         <a href="/record">Record</a>
         <a href="/admin/sites">Ops</a>
       </div>
@@ -249,8 +277,8 @@ const ago = (t: unknown) => {
 
       <div class="tabs">
         <button class="tab on" data-tab="pipe">Pipeline <i>{list.length}</i></button>
-        <button class="tab" data-tab="in">Inbound <i>{inbound.length}</i></button>
-        <button class="tab" data-tab="out">Sent <i>{sent.length}</i></button>
+        <button class="tab" data-tab="in">Inbound <i>{humanIn.length}</i></button>
+        <button class="tab" data-tab="out">Sent <i>{humanOut.length}</i></button>
         <button class="tab" data-tab="book">Bookings <i>{booked.length}</i></button>
       </div>
 
@@ -263,7 +291,7 @@ const ago = (t: unknown) => {
               <b>{b.name}</b>
               <span>{b.slot_key}</span>
               <span class="dim">{b.topic}</span>
-              <a href={`mailto:${b.email}`}>{b.email}</a>
+              <button class="act" data-reply={b.email} data-subject={`About your ${b.topic || 'booking'}`}>{b.email}</button>
             </div>
           ))}
         </div>
@@ -332,15 +360,24 @@ const ago = (t: unknown) => {
       </section>
 
       <section data-panel="in" hidden>
+        <div class="split">
+          <button class="side on" data-side="in-people">People <i>{humanIn.length}</i></button>
+          <button class="side" data-side="in-system">System <i>{systemIn.length}</i></button>
+        </div>
         {!inbound.length && <p class="none">Nothing has come in yet.</p>}
-        {inbound.map((m) => (
-          <article class="note">
+        {!humanIn.length && !!inbound.length && (
+          <p class="none" data-side-panel="in-people">Nothing from a person yet.</p>
+        )}
+        {[...humanIn.map((m) => ({ m, side: 'in-people' })),
+          ...systemIn.map((m) => ({ m, side: 'in-system' }))].map(({ m, side }) => (
+          <article class="note" data-side-panel={side}>
             <header>
               <b>{m.from_address}</b>
               <span class="dim">{String(m.received_at || '').slice(0, 16).replace('T', ' ')}</span>
               {m.slug && <span class="tag">{m.slug}</span>}
               {m.intent && m.intent !== m.slug && <span class="tag">{m.intent}</span>}
-              <a class="act" href={`mailto:${m.from_address}?subject=${encodeURIComponent('Re: ' + (m.subject || ''))}`}>Reply</a>
+              <button class="act" data-reply={m.from_address} data-subject={`Re: ${decodeSubject(m.subject) || ''}`}>Reply</button>
+              <button class="act bin" data-hide="in" data-id={m.id} title="Archive">&times;</button>
             </header>
             <p class="subj">{decodeSubject(m.subject) || '(no subject)'}</p>
             {m.body && <pre>{String(m.body).slice(0, 1200)}</pre>}
@@ -350,25 +387,22 @@ const ago = (t: unknown) => {
       </section>
 
       <section data-panel="out" hidden>
-        <form class="compose" id="compose">
-          <p class="compose-head">New message &mdash; from ben@garage.co.nz</p>
-          <input id="c-to" type="email" placeholder="to" required />
-          <input id="c-sub" type="text" placeholder="subject" required />
-          <textarea id="c-body" rows="6" placeholder="Write it here." required></textarea>
-          <div class="compose-foot">
-            <button type="submit" class="act primary">Send</button>
-            <span id="c-say" class="dim"></span>
-          </div>
-        </form>
+        <div class="split">
+          <button class="side on" data-side="out-mine">Mine <i>{humanOut.length}</i></button>
+          <button class="side" data-side="out-system">System <i>{systemOut.length}</i></button>
+        </div>
         {!sent.length && <p class="none">Nothing recorded yet. Everything sent from here on is kept.</p>}
-        {sent.map((m) => (
-          <article class={`note ${m.ok ? '' : 'bad'}`}>
+        {[...humanOut.map((m) => ({ m, side: 'out-mine' })),
+          ...systemOut.map((m) => ({ m, side: 'out-system' }))].map(({ m, side }) => (
+          <article class={`note ${m.ok ? '' : 'bad'}`} data-side-panel={side}>
             <header>
               <b>{m.to_address}</b>
               <span class="dim">{String(m.sent_at || '').slice(0, 16).replace('T', ' ')}</span>
               {m.kind && <span class="tag">{m.kind}</span>}
               {m.slug && <span class="tag">{m.slug}</span>}
               {!m.ok && <span class="tag bad">failed</span>}
+              <button class="act" data-reply={m.to_address} data-subject={decodeSubject(m.subject) || ''}>Again</button>
+              <button class="act bin" data-hide="out" data-id={m.id} title="Archive">&times;</button>
             </header>
             <p class="subj">{decodeSubject(m.subject) || '(no subject)'}</p>
             {m.error && <p class="why">{m.error}</p>}
@@ -385,7 +419,8 @@ const ago = (t: unknown) => {
               <b>{b.name}</b>
               <span class="dim">{String(b.created_at || '').slice(0, 16).replace('T', ' ')}</span>
               <span class="tag">{b.topic}</span>
-              <a class="act" href={`mailto:${b.email}`}>Reply</a>
+              <button class="act" data-reply={b.email} data-subject={`About your ${b.topic || 'booking'}`}>Reply</button>
+              <button class="act bin" data-hide="booking" data-id={b.id} title="Mark done">&times;</button>
             </header>
             <p class="subj">{b.slot_key}</p>
             <p class="why">{b.email}</p>
@@ -394,7 +429,42 @@ const ago = (t: unknown) => {
       </section>
     </div>
 
+    <!-- Sent through Mailgun as ben@garage.co.nz. Reply used to be a mailto:
+         link, which hands the job to whatever desktop client is installed and
+         sends from a different address entirely — so the reply never appeared
+         in Sent and the thread stayed half-written. -->
+    <div class="sheet" id="sheet" hidden>
+      <form class="compose" id="compose">
+        <p class="compose-head">From ben@garage.co.nz</p>
+        <input id="c-to" type="email" placeholder="to" required />
+        <input id="c-sub" type="text" placeholder="subject" required />
+        <textarea id="c-body" rows="9" placeholder="Write it here." required></textarea>
+        <div class="compose-foot">
+          <button type="submit" class="act primary">Send</button>
+          <button type="button" class="act" id="c-shut">Cancel</button>
+          <span id="c-say" class="dim"></span>
+        </div>
+      </form>
+    </div>
     <script is:inline>
+      // Show one side at a time, and remember nothing — the default is people,
+      // because that is the side worth opening the page for.
+      function showSide(which) {
+        document.querySelectorAll('[data-side-panel]').forEach((el) => {
+          const mine = el.dataset.sidePanel;
+          if (mine.split('-')[0] !== which.split('-')[0]) return;
+          el.hidden = mine !== which;
+        });
+      }
+      document.querySelectorAll('.side').forEach((b) => {
+        b.addEventListener('click', () => {
+          b.parentElement.querySelectorAll('.side').forEach((x) => x.classList.toggle('on', x === b));
+          showSide(b.dataset.side);
+        });
+      });
+      showSide('in-people');
+      showSide('out-mine');
+
       document.querySelectorAll('.tab').forEach((t) => {
         t.addEventListener('click', () => {
           document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
@@ -404,10 +474,33 @@ const ago = (t: unknown) => {
         });
       });
 
+      // ── Writing one ──────────────────────────────────────────────────
+      const sheet = document.getElementById('sheet');
       const compose = document.getElementById('compose');
+      const say = document.getElementById('c-say');
+
+      function write(to, subject) {
+        document.getElementById('c-to').value = to || '';
+        document.getElementById('c-sub').value = subject || '';
+        say.textContent = '';
+        sheet.hidden = false;
+        document.getElementById(to ? 'c-body' : 'c-to').focus();
+      }
+      function shutSheet() { sheet.hidden = true; }
+
+      document.getElementById('newmsg').addEventListener('click', () => write('', ''));
+      document.getElementById('c-shut').addEventListener('click', shutSheet);
+      sheet.addEventListener('click', (e) => { if (e.target === sheet) shutSheet(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') shutSheet(); });
+
+      // Reply, from garage — not a mailto: that hands the job to Outlook and
+      // sends from an address this page never sees again.
+      document.querySelectorAll('[data-reply]').forEach((b) => {
+        b.addEventListener('click', () => write(b.dataset.reply, b.dataset.subject));
+      });
+
       compose.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const say = document.getElementById('c-say');
         const to = document.getElementById('c-to').value.trim();
         if (!confirm('Send to ' + to + '?')) return;
         say.textContent = 'sending…';
@@ -421,6 +514,20 @@ const ago = (t: unknown) => {
         }).then((x) => x.json()).catch(() => null);
         if (r && r.ok) { say.textContent = 'sent'; setTimeout(() => location.reload(), 700); }
         else say.textContent = (r && r.message) || 'did not send';
+      });
+
+      // ── Putting one away ─────────────────────────────────────────────
+      document.querySelectorAll('[data-hide]').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const note = b.closest('.note') || b.closest('.booking');
+          b.disabled = true;
+          const r = await fetch('/api/mail/hide', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: b.dataset.hide, id: b.dataset.id }),
+          }).then((x) => x.json()).catch(() => null);
+          if (r && r.ok) { if (note) note.remove(); }
+          else { b.disabled = false; alert((r && r.message) || 'Could not archive that.'); }
+        });
       });
 
       const rows = [...document.querySelectorAll('#rows tr')];
@@ -459,5 +566,6 @@ const ago = (t: unknown) => {
         });
       });
     </script>
+
   </body>
 </html>
