@@ -246,8 +246,8 @@ const picked = sites.find((s) => s.slug === slug) || null;
 
       const canvas = $('canvas');
       const ctx = canvas.getContext('2d');
-      const BUBBLE = 96;          // radius of the face, in canvas pixels
-      const EDGE = 34;            // how far it sits off the bottom-left corner
+      const BUBBLE = 58;          // radius of the face, in canvas pixels
+      const EDGE = 28;            // how far it sits off the bottom-left corner
       let screenStream = null, faceStream = null, recorder = null;
       let chunks = [], blob = null, started = 0, raf = 0, ticker = 0;
 
@@ -314,19 +314,8 @@ const picked = sites.find((s) => s.slug === slug) || null;
           ctx.stroke();
         }
 
-        // A quiet line along the bottom, so a video that gets forwarded still
-        // says whose site it is and where it came from.
-        if (paint.mark) {
-          ctx.save();
-          ctx.font = '600 20px Inter, system-ui, sans-serif';
-          ctx.textAlign = 'right';
-          ctx.textBaseline = 'alphabetic';
-          ctx.shadowColor = 'rgba(0,0,0,.6)';
-          ctx.shadowBlur = 10;
-          ctx.fillStyle = 'rgba(255,255,255,.92)';
-          ctx.fillText(paint.mark, W - EDGE, H - EDGE);
-          ctx.restore();
-        }
+        // No watermark. It sat bottom-right, over the chat input — the one part
+        // of the frame the entire video exists to show somebody.
         raf = requestAnimationFrame(paint);
       }
 
@@ -354,7 +343,6 @@ const picked = sites.find((s) => s.slug === slug) || null;
         const fv = document.createElement('video');
         fv.srcObject = faceStream; fv.muted = true; await fv.play();
         paint.screen = sv; paint.face = fv;
-        paint.mark = $('site').value + '.garage.co.nz  ·  built by talking';
         $('idle').style.display = 'none';
         paint();
 

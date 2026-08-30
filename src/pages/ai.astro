@@ -1240,12 +1240,26 @@ if (cameFromOffer && openedSlug) {
 
       /* ── Direct manipulation on the canvas ───── */
       .canvas.pickable [data-edit], .canvas.pickable [data-photo], .canvas.pickable [data-block] { cursor: pointer; }
+      /* One thing at a time, and quietly.
+         Hovering anywhere inside a section used to outline the whole section in
+         red dashes AND the word under the cursor in blue ones, so sweeping the
+         mouse across turned somebody's finished page into a wireframe of boxes.
+         Whatever is innermost under the pointer is the thing being offered, so
+         it is the only thing that gets drawn. */
       .canvas.pickable [data-edit]:hover, .canvas.pickable [data-photo]:hover {
-        outline: 2px dashed rgba(37,99,235,0.5);
+        outline: 1.5px dashed rgba(37,99,235,0.45);
         outline-offset: 3px;
         border-radius: 3px;
       }
-      .canvas.pickable [data-block]:hover { outline: 2px dashed rgba(220,38,38,0.4); outline-offset: -2px; }
+      .canvas.pickable [data-block]:hover {
+        outline: 1.5px dashed rgba(37,99,235,0.28);
+        outline-offset: -2px;
+      }
+      /* Over a word or a photo, the section behind it stays out of it. */
+      .canvas.pickable [data-block]:has([data-edit]:hover),
+      .canvas.pickable [data-block]:has([data-photo]:hover) { outline: none; }
+      /* A section inside a section only ever offers the inner one. */
+      .canvas.pickable [data-block]:has([data-block]:hover) { outline: none; }
       .canvas [data-edit].is-sel, .canvas [data-photo].is-sel {
         outline: 2px solid var(--accent);
         outline-offset: 3px;
@@ -5519,6 +5533,14 @@ if (cameFromOffer && openedSlug) {
         if (S.sel) return;
         const badge = document.getElementById('del-badge');
         if (badge && badge.contains(e.target)) return;
+        // Only when the section itself is what the pointer is on. Over a word
+        // or a photo the cross used to flash up anyway, which made a delete
+        // control follow the mouse around somebody's page.
+        if (e.target.closest('[data-edit], [data-photo]')) {
+          const open = document.getElementById('del-badge');
+          if (open) open.hidden = true;
+          return;
+        }
         const block = e.target.closest('[data-block]');
         if (!block) return;
         placeDeleteBadge(block, {
