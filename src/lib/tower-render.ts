@@ -130,13 +130,19 @@ background:linear-gradient(90deg,transparent,rgba(42,36,28,.35),transparent)}
 width:9.5rem;height:.9rem;border-radius:50%;background:radial-gradient(ellipse,
 rgba(42,36,28,.28),transparent 70%);transition:background .2s}
 .gtw-stage.hot .gtw-shadow{background:radial-gradient(ellipse,
-rgba(184,69,46,.55),transparent 70%)}
+rgba(200,140,40,.5),transparent 70%)}
+.gtw-stage.bad .gtw-shadow{background:radial-gradient(ellipse,
+rgba(184,69,46,.65),transparent 70%)}
+/* The whole stage flinches when a block jams. */
+.gtw-stage.judder{animation:gtw-judder .4s ease-out}
+@keyframes gtw-judder{0%,100%{transform:none}25%{transform:translateX(3px)}
+50%{transform:translateX(-3px)}75%{transform:translateX(2px)}}
 .gtw-t{position:absolute;left:50%;bottom:1.4rem;width:8.6rem;margin-left:-4.3rem;
 transform-origin:50% 100%;
-animation:gtw-sway var(--pace,4.6s) ease-in-out infinite}
+animation:gtw-sway var(--pace,3.8s) ease-in-out infinite}
 @keyframes gtw-sway{
-0%,100%{transform:rotate(calc(var(--tilt,0deg) + var(--wob,.45deg)))}
-50%{transform:rotate(calc(var(--tilt,0deg) - var(--wob,.45deg)))}}
+0%,100%{transform:rotate(calc(var(--tilt,0deg) + var(--wob,2.1deg)))}
+50%{transform:rotate(calc(var(--tilt,0deg) - var(--wob,2.1deg)))}}
 @media(prefers-reduced-motion:reduce){.gtw-t{animation:none;transform:rotate(var(--tilt,0deg))}}
 .gtw-t.down{animation:none;transform:rotate(var(--tilt,0deg))}
 
@@ -162,6 +168,7 @@ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 3px rgba(42,36,28,.18
    transition whose duration is the pull itself. */
 .gtw-b.pulling{cursor:grabbing;z-index:2;filter:brightness(1.15);
 transition:transform .82s linear}
+.gtw-b.jam{transition:transform .22s ease-out}
 /* The socket a taken block leaves. */
 .gtw-b.out{background:linear-gradient(180deg,#3a2d1c,#241a0e);
 box-shadow:inset 0 3px 8px rgba(0,0,0,.55);cursor:default}
@@ -330,7 +337,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
     return Math.atan2(parseFloat(p[1]), parseFloat(p[0])) * 180 / Math.PI;
   }
 
-  function wob() { return 0.45 + (depth + 1) * 0.5; }
+  function wob() { return 2.1 + (depth + 1) * 0.85; }
   function tilt() { return parseFloat(t.style.getPropertyValue('--tilt')) || 0; }
 
   // How much of the sway counts as "standing tall" for this block. Centre
@@ -340,7 +347,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
     var row = el.getAttribute('data-row'), c = +el.getAttribute('data-c');
     var f = c === 1 ? 0.62 : 0.4;
     if (pulled[row]) f *= 0.45;
-    return Math.max(0.18, wob() * f);
+    return Math.max(0.5, wob() * f);
   }
 
   // The read, offered when they touch a block — what a player who has seen a
@@ -355,17 +362,18 @@ export function renderTower(site: SiteConfig, slug: string): string {
   function watch() {
     if (over) return;
     var off = Math.abs(angle() - tilt());
-    // The shadow warms whenever a pull started now would jam — tuned to the
-    // centre block's band so it teaches the timing, not the block choice.
-    stage.classList.toggle('hot', armed && off > wob() * 0.62);
+    // The shadow is the tell, in two temperatures: amber while a pull would
+    // jam, red while a grab would bring the whole thing down.
+    stage.classList.toggle('bad', armed && off > wob() * 0.88);
+    stage.classList.toggle('hot', armed && off > wob() * 0.62 && off <= wob() * 0.88);
     if (live) {
       var dt = Date.now() - live.at;
-      // The judged moment is the grab and the first breaking-free of the
-      // block — after that it is clear of the tower and committed. Judging
-      // the whole draw made every pull impossible: the sway always leaves
-      // centre, so an 820ms window can never stay inside the band.
-      if (off > live.band && dt > 60 && dt < 340) return collapse();
-      if (dt > 820) {
+      // The judged moment is the grab and the first breaking-free — after
+      // that the block is clear and committed. And drifting mid-pull jams
+      // the block rather than felling the tower: the only thing that fells
+      // it is grabbing while it visibly leans.
+      if (off > live.band && dt > 60 && dt < 340) { jam(); }
+      else if (dt > 820) {
         var el = live.el; live = null;
         el.classList.remove('pulling');
         el.classList.remove('can');
@@ -375,7 +383,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
         depth += 1;
         t.style.setProperty('--tilt', ((depth + 1) * 0.55 * (depth % 2 ? -1 : 1)) + 'deg');
         t.style.setProperty('--wob', wob() + 'deg');
-        t.style.setProperty('--pace', Math.max(1.5, 4.6 - (depth + 1) * 0.62) + 's');
+        t.style.setProperty('--pace', Math.max(1.7, 3.8 - (depth + 1) * 0.45) + 's');
         if (depth > 0) step(depth - 1).classList.remove('held');
         step(depth).classList.add('held');
         $('gtw-keep').disabled = false;
@@ -387,15 +395,30 @@ export function renderTower(site: SiteConfig, slug: string): string {
   }
   requestAnimationFrame(watch);
 
+  // The block will not come, the tower flinches, and nothing is lost:
+  // this is how the game teaches its timing without killing anybody for
+  // a lesson they had not had yet.
+  function jam() {
+    var el = live.el; live = null;
+    el.classList.remove('pulling');
+    el.classList.add('jam');
+    el.style.transform = '';
+    stage.classList.add('judder');
+    setTimeout(function () { el.classList.remove('jam'); stage.classList.remove('judder'); }, 450);
+    $('gtw-hold').textContent = 'It jammed — let it settle, pull when it stands tall';
+  }
+
   function start(e) {
     if (!armed || over || live) return;
     var el = e.target.closest('.gtw-b.can');
     if (!el || el.classList.contains('out')) return;
     e.preventDefault();
+    var off = Math.abs(angle() - tilt());
+    // Grabbing while it visibly leans is the one unforgivable thing.
+    if (off > wob() * 0.88) return collapse();
     var band = safeBand(el);
-    // Grabbing it while the tower leans is already the mistake.
-    if (Math.abs(angle() - tilt()) > band) return collapse();
     live = { el: el, at: Date.now(), band: band };
+    if (off > band) return jam();
     var c = +el.getAttribute('data-c');
     el.classList.add('pulling');
     el.style.transform = 'translateX(' + (c === 0 ? -135 : 135) + '%)';
@@ -423,7 +446,7 @@ export function renderTower(site: SiteConfig, slug: string): string {
   function collapse() {
     if (over) return;
     over = true; live = null;
-    stage.classList.remove('hot');
+    stage.classList.remove('hot'); stage.classList.remove('bad');
     t.classList.add('down');
     $('gtw-card').classList.add('thump');
     for (var i = 0; i <= depth; i++) step(i).classList.add('gone');
