@@ -1,28 +1,30 @@
 // THE TOWER (widget)
 //
-// Jenga, which is the most embodied tension there is: everyone on earth has
-// felt that wobble in their fingers. Pull a block and the prize climbs a rung;
-// the tower leans a little further and sways a little faster; walk away while
-// it stands and keep what you are holding. Pull once too often and down it
-// comes, to the consolation.
+// Jenga, which is the most embodied tension there is — and Jenga is a game of
+// skill, so this is one too. There is no dice roll anywhere in it. You choose
+// your block: centre blocks are solid, edge blocks are dicey, and a second
+// block from a row that already has a gap is asking for it — the same reads
+// as the real game. Then you press and hold to draw it out, and it only comes
+// free if the tower is near upright while you pull. The tower sways, and
+// every successful pull makes it sway wider and faster and lean further, so
+// the safe moment shrinks as the prizes climb. Lose your nerve mid-pull and
+// the block slides back, no harm done. Misjudge it and down it all comes.
 //
-// The whole game is the object, so the object has to be right:
+// Walk away between pulls and keep what you are holding; a collapse drops to
+// the consolation, so nobody leaves empty-handed.
 //
-//  - The tower is drawn the way a real one reads from the side — rows
-//    alternating between one long side-grain face and three end-grain faces,
-//    because that alternation is the Jenga silhouette.
-//  - Pulls come out of the end-grain rows only, one block each, at positions
-//    scattered ahead of time, so the gaps accumulate the way a real game's do.
-//  - The dread is animated, not written: the sway's amplitude grows and its
-//    period shortens with every pull, and a cumulative lean creeps in. The
-//    resting tower already breathes, barely, because a perfectly still tower
-//    reads as a picture of a tower.
-//  - The collapse is the payoff for losing: every block gets its own
-//    trajectory, assigned at render, and the card itself takes a thump.
+// The drawing carries the game:
+//  - Rows alternate one long side-grain face against three end-grain faces,
+//    which is the Jenga silhouette. Pulls come from the end rows.
+//  - The resting tower already breathes, barely — a perfectly still tower
+//    reads as a picture of one.
+//  - The pool of shadow under it warms whenever the tower is outside the safe
+//    band, which is how the game teaches its own timing without a word.
+//  - The collapse gives every block its own trajectory and thumps the card.
 //
-// Same covenant as the wheel, the balloon and the dig: honest stated odds,
-// first pull always holds, details go to the owner and nowhere else, nobody
-// is emailed, nobody leaves empty-handed, one game per person per site.
+// Same covenant as the wheel and the balloon: details go to the owner and
+// nowhere else, nobody is emailed, nobody leaves empty-handed, one game per
+// person — and no hidden odds, because there are no odds at all.
 
 import type { SiteConfig } from './site-render';
 
@@ -43,9 +45,6 @@ const SOFT = '#8a7f6e';
 const WALNUT = '#5d4327';
 const BUSTC = '#b8452e';
 
-// Pull one always holds; each after that is riskier. Same curve as the others.
-const RISK = [0, 0.22, 0.32, 0.42, 0.52];
-
 // Ten rows; the five end-grain rows are the ones a block can come out of.
 const ROWS = 10;
 
@@ -55,8 +54,8 @@ function esc(value: unknown): string {
   );
 }
 
-// Deterministic scatter, so the tower renders the same on every load but no
-// two blocks fall the same way.
+// Deterministic scatter for the collapse, so the tower renders the same on
+// every load but no two blocks fall the same way.
 function jitter(seed: number): number {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
@@ -123,25 +122,28 @@ box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 6px rgba(42,36,28,.35)}
 
 /* ── The tower ───────────────────────────────────────────────── */
 .gtw-stage{position:relative;height:15.5rem;overflow:hidden;margin:0 0 .2rem}
-/* The table line and the pool of shadow that grounds it. */
 .gtw-stage:after{content:'';position:absolute;left:8%;right:8%;bottom:1.35rem;height:1.5px;
 background:linear-gradient(90deg,transparent,rgba(42,36,28,.35),transparent)}
+/* The pool of shadow doubles as the game's tell: it warms whenever the tower
+   is outside the safe band, which is how the timing teaches itself. */
 .gtw-shadow{position:absolute;left:50%;bottom:.9rem;transform:translateX(-50%);
 width:9.5rem;height:.9rem;border-radius:50%;background:radial-gradient(ellipse,
-rgba(42,36,28,.28),transparent 70%)}
+rgba(42,36,28,.28),transparent 70%);transition:background .2s}
+.gtw-stage.hot .gtw-shadow{background:radial-gradient(ellipse,
+rgba(184,69,46,.55),transparent 70%)}
 .gtw-t{position:absolute;left:50%;bottom:1.4rem;width:8.6rem;margin-left:-4.3rem;
 transform-origin:50% 100%;
 animation:gtw-sway var(--pace,4.6s) ease-in-out infinite}
 @keyframes gtw-sway{
-0%,100%{transform:rotate(calc(var(--tilt,0deg) + var(--wob,.25deg)))}
-50%{transform:rotate(calc(var(--tilt,0deg) - var(--wob,.25deg)))}}
+0%,100%{transform:rotate(calc(var(--tilt,0deg) + var(--wob,.45deg)))}
+50%{transform:rotate(calc(var(--tilt,0deg) - var(--wob,.45deg)))}}
 @media(prefers-reduced-motion:reduce){.gtw-t{animation:none;transform:rotate(var(--tilt,0deg))}}
 .gtw-t.down{animation:none;transform:rotate(var(--tilt,0deg))}
 
 .gtw-row{display:flex;gap:2px;margin-top:2px;height:1.32rem}
 .gtw-b{position:relative;border-radius:2.5px;flex:1;
 box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -2px 3px rgba(42,36,28,.18);
-transition:transform .8s cubic-bezier(.3,.5,.6,1),opacity .8s ease}
+transition:transform .8s cubic-bezier(.3,.5,.6,1),opacity .8s ease,filter .2s}
 /* Side grain: one long piece, streaks running with it. */
 .gtw-row.long .gtw-b{background:
 repeating-linear-gradient(178deg,rgba(93,67,39,.14) 0 1px,transparent 1px 5px),
@@ -151,31 +153,32 @@ linear-gradient(180deg,#cfa268,#aa7c44)}
 radial-gradient(ellipse 60% 45% at 50% 42%,rgba(255,255,255,.28),transparent 60%),
 radial-gradient(ellipse 80% 70% at 50% 50%,rgba(93,67,39,.12),transparent 75%),
 linear-gradient(180deg,#dcb77e,#c18f55)}
-/* The socket a pulled block leaves: the dark inside of the tower. */
+/* A block you could take: it invites the hand. */
+.gtw-b.can{cursor:grab}
+.gtw-b.can:hover{filter:brightness(1.12);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 3px rgba(42,36,28,.18),
+0 0 0 2px rgba(93,67,39,.45)}
+/* Mid-pull: the block eases out under the hand, the travel driven by a
+   transition whose duration is the pull itself. */
+.gtw-b.pulling{cursor:grabbing;z-index:2;filter:brightness(1.15);
+transition:transform .82s linear}
+/* The socket a taken block leaves. */
 .gtw-b.out{background:linear-gradient(180deg,#3a2d1c,#241a0e);
-box-shadow:inset 0 3px 8px rgba(0,0,0,.55)}
-/* Mid-pull: the block slides clear before the verdict lands. */
-.gtw-b.pulling{transform:translateX(var(--slide,130%));z-index:2}
+box-shadow:inset 0 3px 8px rgba(0,0,0,.55);cursor:default}
 /* The collapse: every block on its own path, on its own beat. */
 .gtw-t.down .gtw-b{transform:translate(var(--fx),var(--fy)) rotate(var(--fr));
+transition:transform .8s cubic-bezier(.3,.5,.6,1),opacity .8s ease;
 transition-delay:var(--fd);opacity:.92}
 
 .gtw-hold{font:700 .7rem/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.12em;
-text-transform:uppercase;color:${SOFT};margin:.5rem 0 .8rem;min-height:1em}
+text-transform:uppercase;color:${SOFT};margin:.5rem 0 .8rem;min-height:2.1em;line-height:1.5}
 
 /* ── Controls ────────────────────────────────────────────────── */
-.gtw-row2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
-.gtw-pull{border:0;border-radius:10px;cursor:pointer;background:${WALNUT};color:#f6ead3;
-font:800 .85rem/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.08em;
-text-transform:uppercase;padding:1rem .8rem}
-.gtw-pull:hover{background:#4a351e}
-.gtw-pull:disabled{opacity:.45;cursor:default}
 .gtw-keep{border:1.5px solid ${INK};border-radius:10px;cursor:pointer;background:none;
 color:${INK};font:700 .74rem/1.25 var(--font-sans,system-ui,sans-serif);letter-spacing:.04em;
-text-transform:uppercase;padding:.7rem .8rem}
+text-transform:uppercase;padding:.8rem 1.4rem}
 .gtw-keep:hover{background:${INK};color:#f6ead3}
 .gtw-keep:disabled{opacity:.3;cursor:default}
-.gtw-odds{margin:.55rem 0 0;font-size:.7rem;color:${SOFT};min-height:1em}
 
 .gtw-form{display:grid;gap:.5rem;text-align:left}
 .gtw-form input{width:100%;font:inherit;font-size:.9rem;padding:.68rem .85rem;
@@ -208,11 +211,9 @@ export function renderTower(site: SiteConfig, slug: string): string {
   const bust = String(tw.bust || '').trim();
   const title = tw.title || 'The Tower';
 
-  // The rows, top down, ends and long alternating. Each block carries its own
-  // collapse path so no two towers ever fall the same way twice — but this one
-  // always falls its own way, which is what a deterministic scatter buys.
+  // Rows top down, ends and long alternating; every block carries its own
+  // collapse path, assigned here so the fall is scattered but repeatable.
   let rows = '';
-  const pulls: { row: number; idx: number; dir: number }[] = [];
   for (let r = 0; r < ROWS; r++) {
     const ends = r % 2 === 1;
     const count = ends ? 3 : 1;
@@ -223,17 +224,10 @@ export function renderTower(site: SiteConfig, slug: string): string {
       const fy = Math.round(240 + jitter(seed + 1) * 160);
       const fr = Math.round((jitter(seed + 2) - 0.5) * 260);
       const fd = ((r / ROWS) * 0.22 + jitter(seed + 3) * 0.1).toFixed(2);
-      cells += `<span class="gtw-b" data-b="${r}-${c}" style="--fx:${fx}px;--fy:${fy}px;--fr:${fr}deg;--fd:${fd}s"></span>`;
+      cells += `<span class="gtw-b${ends ? ' can' : ''}" data-b="${r}-${c}" data-row="${r}" data-c="${c}" style="--fx:${fx}px;--fy:${fy}px;--fr:${fr}deg;--fd:${fd}s"></span>`;
     }
     rows += `<div class="gtw-row ${ends ? 'ends' : 'long'}">${cells}</div>`;
-    if (ends) {
-      const idx = Math.floor(jitter(r * 13 + 5) * 3);
-      pulls.push({ row: r, idx, dir: idx === 0 ? -1 : 1 });
-    }
   }
-  // Pull from the middle of the tower first, the way people actually do,
-  // then progressively nearer the ends.
-  pulls.sort((a, b) => Math.abs(a.row - ROWS / 2) - Math.abs(b.row - ROWS / 2));
 
   const steps = ladder.map((p, i) => `<span data-step="${i}">${esc(p)}</span>`).join('');
   const mini = Array.from({ length: 5 }, () => '<i></i>').join('');
@@ -249,11 +243,11 @@ export function renderTower(site: SiteConfig, slug: string): string {
     <button class="gtw-x" id="gtw-x" type="button" aria-label="Close">&times;</button>
     <p class="gtw-kicker">${esc(site.name || slug)}</p>
     <h3 class="gtw-title">${esc(title)}</h3>
-    <p class="gtw-blurb">${esc(tw.blurb || 'Pull a block and the prize gets better. Walk away while the tower stands and keep what you are holding — pull once too often and down it comes.')}</p>
+    <p class="gtw-blurb">${esc(tw.blurb || 'Pick your block, hold to draw it out, and let go if your nerve fails — it slides back. Pull while the tower stands tall; pull while it leans and down it all comes. Every block out is a better prize.')}</p>
 
     <div class="gtw-steps" id="gtw-steps">${steps}</div>
 
-    <div class="gtw-stage">
+    <div class="gtw-stage" id="gtw-stage">
       <div class="gtw-shadow"></div>
       <div class="gtw-t" id="gtw-t">${rows}</div>
     </div>
@@ -265,17 +259,13 @@ export function renderTower(site: SiteConfig, slug: string): string {
       <input id="gtw-phone" placeholder="Phone (optional)" autocomplete="tel" />
       <p class="gtw-err" id="gtw-err"></p>
       <button class="gtw-start" type="submit">Steady your hand</button>
-      <p class="gtw-small">Nobody leaves empty-handed — worst case is ${bust ? esc(bust) : 'a consolation prize'}.
-      Your details go to ${esc(site.name || slug)} and nowhere else. We will not email you.
-      ${tw.terms ? esc(tw.terms) : ''}</p>
+      <p class="gtw-small">A game of skill, not luck — and nobody leaves empty-handed: worst case is
+      ${bust ? esc(bust) : 'a consolation prize'}. Your details go to ${esc(site.name || slug)}
+      and nowhere else. We will not email you. ${tw.terms ? esc(tw.terms) : ''}</p>
     </form>
 
     <div id="gtw-play" style="display:none">
-      <div class="gtw-row2">
-        <button class="gtw-pull" id="gtw-pull" type="button">Pull a block</button>
-        <button class="gtw-keep" id="gtw-keep" type="button" disabled>Walk away<br>&amp; keep it</button>
-      </div>
-      <p class="gtw-odds" id="gtw-odds">The first pull always holds.</p>
+      <button class="gtw-keep" id="gtw-keep" type="button" disabled>Walk away &amp; keep it</button>
     </div>
 
     <div class="gtw-done" id="gtw-done"></div>
@@ -287,13 +277,11 @@ export function renderTower(site: SiteConfig, slug: string): string {
   var slug = ${JSON.stringify(slug)};
   var ladder = ${JSON.stringify(ladder)};
   var bust = ${JSON.stringify(bust)};
-  var RISK = ${JSON.stringify(RISK)};
-  var PULLS = ${JSON.stringify(pulls)};
   var KEY = 'gtw:' + slug;
   var TEST = ${JSON.stringify(!!tw.test)};
 
   var $ = function (id) { return document.getElementById(id); };
-  var tab = $('gtw-tab'), veil = $('gtw-veil'), t = $('gtw-t');
+  var tab = $('gtw-tab'), veil = $('gtw-veil'), t = $('gtw-t'), stage = $('gtw-stage');
 
   tab.querySelector('.gtw-tx').addEventListener('click', function (e) {
     e.stopPropagation(); tab.style.display = 'none';
@@ -306,13 +294,16 @@ export function renderTower(site: SiteConfig, slug: string): string {
   if (!TEST) {
     try { past = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     if (past) return finish(past.won, past.prize, true);
-  } else {
-    // Test mode: straight to the machine, every visit a fresh game.
-    $('gtw-form').style.display = 'none';
-    $('gtw-play').style.display = 'block';
   }
 
-  var name = '', email = '', phone = '', depth = -1, over = false;
+  var name = '', email = '', phone = '', depth = -1, over = false, armed = TEST;
+  var pulled = {};   // row -> a block is already gone from it
+
+  if (TEST) {
+    $('gtw-form').style.display = 'none';
+    $('gtw-play').style.display = 'block';
+    $('gtw-hold').textContent = 'Pick your block and hold to pull';
+  }
 
   $('gtw-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -323,52 +314,121 @@ export function renderTower(site: SiteConfig, slug: string): string {
       $('gtw-err').textContent = 'We need a name and a real email.';
       return;
     }
+    armed = true;
     $('gtw-form').style.display = 'none';
     $('gtw-play').style.display = 'block';
+    $('gtw-hold').textContent = 'Pick your block and hold to pull';
   });
 
   function step(i) { return document.querySelector('#gtw-steps [data-step="' + i + '"]'); }
-  function block(p) { return document.querySelector('[data-b="' + p.row + '-' + p.idx + '"]'); }
 
-  // The dread, in numbers: more lean, more sway, less time between sways.
-  function tension(d) {
-    t.style.setProperty('--tilt', ((d + 1) * 0.55 * (d % 2 ? -1 : 1)) + 'deg');
-    t.style.setProperty('--wob', (0.25 + (d + 1) * 0.5) + 'deg');
-    t.style.setProperty('--pace', Math.max(1.4, 4.6 - (d + 1) * 0.7) + 's');
+  // The tower's actual angle right now, read off the running animation.
+  function angle() {
+    var m = getComputedStyle(t).transform;
+    if (!m || m === 'none') return 0;
+    var p = m.slice(7, -1).split(',');
+    return Math.atan2(parseFloat(p[1]), parseFloat(p[0])) * 180 / Math.PI;
   }
 
-  $('gtw-pull').addEventListener('click', function () {
+  function wob() { return 0.45 + (depth + 1) * 0.5; }
+  function tilt() { return parseFloat(t.style.getPropertyValue('--tilt')) || 0; }
+
+  // How much of the sway counts as "standing tall" for this block. Centre
+  // blocks forgive the most; edge blocks less; a second block from a gapped
+  // row, much less. That hierarchy IS the block-choosing skill.
+  function safeBand(el) {
+    var row = el.getAttribute('data-row'), c = +el.getAttribute('data-c');
+    var f = c === 1 ? 0.62 : 0.4;
+    if (pulled[row]) f *= 0.45;
+    return Math.max(0.18, wob() * f);
+  }
+
+  // The read, offered when they touch a block — what a player who has seen a
+  // few towers would already know.
+  function readOf(el) {
+    var row = el.getAttribute('data-row'), c = +el.getAttribute('data-c');
+    if (pulled[row]) return 'Same row as a gap. Asking for it.';
+    return c === 1 ? 'Centre block. Solid.' : 'Edge block. Dicey.';
+  }
+
+  var live = null;   // the pull in progress
+  function watch() {
     if (over) return;
-    var next = depth + 1;
-    var p = PULLS[next];
-    $('gtw-pull').disabled = true;
-    $('gtw-keep').disabled = true;
-    var falls = Math.random() < (RISK[next] || 0.5);
-    var b = block(p);
-    b.style.setProperty('--slide', (p.dir * 135) + '%');
-    b.classList.add('pulling');
-    $('gtw-hold').textContent = 'Easy… easy…';
-    setTimeout(function () {
-      if (falls) {
-        t.classList.add('down');
-        $('gtw-card').classList.add('thump');
-        for (var i = 0; i <= depth; i++) step(i).classList.add('gone');
-        return setTimeout(function () { finish(false, bust || 'a consolation prize', false); }, 950);
+    var off = Math.abs(angle() - tilt());
+    // The shadow warms whenever a pull started now would jam — tuned to the
+    // centre block's band so it teaches the timing, not the block choice.
+    stage.classList.toggle('hot', armed && off > wob() * 0.62);
+    if (live) {
+      var dt = Date.now() - live.at;
+      // The judged moment is the grab and the first breaking-free of the
+      // block — after that it is clear of the tower and committed. Judging
+      // the whole draw made every pull impossible: the sway always leaves
+      // centre, so an 820ms window can never stay inside the band.
+      if (off > live.band && dt > 60 && dt < 340) return collapse();
+      if (dt > 820) {
+        var el = live.el; live = null;
+        el.classList.remove('pulling');
+        el.classList.remove('can');
+        el.classList.add('out');
+        el.style.transform = '';
+        pulled[el.getAttribute('data-row')] = 1;
+        depth += 1;
+        t.style.setProperty('--tilt', ((depth + 1) * 0.55 * (depth % 2 ? -1 : 1)) + 'deg');
+        t.style.setProperty('--wob', wob() + 'deg');
+        t.style.setProperty('--pace', Math.max(1.5, 4.6 - (depth + 1) * 0.62) + 's');
+        if (depth > 0) step(depth - 1).classList.remove('held');
+        step(depth).classList.add('held');
+        $('gtw-keep').disabled = false;
+        if (depth >= ladder.length - 1) return finish(true, ladder[depth], false);
+        $('gtw-hold').textContent = 'Holding: ' + ladder[depth] + ' — it sways faster now';
       }
-      b.classList.remove('pulling');
-      b.classList.add('out');
-      depth = next;
-      tension(depth);
-      if (depth > 0) step(depth - 1).classList.remove('held');
-      step(depth).classList.add('held');
-      $('gtw-hold').textContent = 'Holding: ' + ladder[depth];
-      $('gtw-keep').disabled = false;
-      if (depth >= ladder.length - 1) return finish(true, ladder[depth], false);
-      $('gtw-pull').disabled = false;
-      var pct = Math.round((RISK[depth + 1] || 0.5) * 100);
-      $('gtw-odds').textContent = 'Next pull: ' + pct + '% chance it all comes down.';
-    }, 780);
+    }
+    requestAnimationFrame(watch);
+  }
+  requestAnimationFrame(watch);
+
+  function start(e) {
+    if (!armed || over || live) return;
+    var el = e.target.closest('.gtw-b.can');
+    if (!el || el.classList.contains('out')) return;
+    e.preventDefault();
+    var band = safeBand(el);
+    // Grabbing it while the tower leans is already the mistake.
+    if (Math.abs(angle() - tilt()) > band) return collapse();
+    live = { el: el, at: Date.now(), band: band };
+    var c = +el.getAttribute('data-c');
+    el.classList.add('pulling');
+    el.style.transform = 'translateX(' + (c === 0 ? -135 : 135) + '%)';
+    $('gtw-hold').textContent = 'Easy… hold it steady…';
+  }
+  function stop() {
+    if (!live || over) return;
+    // Nerve went: the block slides home. No harm, no prize.
+    var el = live.el; live = null;
+    el.classList.remove('pulling');
+    el.style.transform = '';
+    $('gtw-hold').textContent = depth >= 0
+      ? 'Holding: ' + ladder[depth] + ' — that one slid back'
+      : 'It slid back in. Pick your moment.';
+  }
+  t.addEventListener('pointerdown', start);
+  document.addEventListener('pointerup', stop);
+  document.addEventListener('pointercancel', stop);
+  t.addEventListener('pointerover', function (e) {
+    if (!armed || over || live) return;
+    var el = e.target.closest('.gtw-b.can');
+    if (el && !el.classList.contains('out')) $('gtw-hold').textContent = readOf(el);
   });
+
+  function collapse() {
+    if (over) return;
+    over = true; live = null;
+    stage.classList.remove('hot');
+    t.classList.add('down');
+    $('gtw-card').classList.add('thump');
+    for (var i = 0; i <= depth; i++) step(i).classList.add('gone');
+    setTimeout(function () { finish(false, bust || 'a consolation prize', false); }, 950);
+  }
 
   $('gtw-keep').addEventListener('click', function () {
     if (over || depth < 0) return;
@@ -376,12 +436,11 @@ export function renderTower(site: SiteConfig, slug: string): string {
   });
 
   function finish(won, prize, replay) {
-    over = true;
+    over = true; live = null;
     $('gtw-form').style.display = 'none';
     $('gtw-play').style.display = 'none';
     if (replay) {
-      var st = document.querySelector('.gtw-stage');
-      if (st) st.style.display = 'none';
+      stage.style.display = 'none';
       $('gtw-hold').style.display = 'none';
     }
     var done = $('gtw-done');
@@ -389,8 +448,8 @@ export function renderTower(site: SiteConfig, slug: string): string {
     done.innerHTML = won
       ? '<p class="gtw-shout">Walked away with<br><em>' + prize + '</em></p>' +
         '<p class="gtw-note">' + (replay ? 'That was your game — one per person.' :
-          'The tower never forgets a steady hand. Your details are with ' +
-          ${JSON.stringify(esc(site.name || slug))} + ' and they will sort it with you.') + '</p>'
+          'A steady hand. Your details are with ' + ${JSON.stringify(esc(site.name || slug))} +
+          ' and they will sort it with you.') + '</p>'
       : '<p class="gtw-shout lose">Down<br><em>it came</em></p>' +
         '<p class="gtw-note">Everyone heard it. Still, nobody leaves empty-handed: <b>' + prize +
         '</b> is yours.' + (replay ? ' One game per person.' : ' Your details are with ' +
