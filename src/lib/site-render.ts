@@ -1748,15 +1748,15 @@ border-bottom:1px solid rgba(255,255,255,.1)}
    text alone reads as a system message. He hangs a little below the bar so he
    is standing behind it rather than pasted inside it, and he never takes a
    click — the bar underneath him is the button. */
-.gz-ben{flex:none;width:2.6rem;height:auto;align-self:flex-end;
-margin:0 .15rem -1.05rem -.25rem;
+.gz-ben{flex:none;width:3.2rem;height:auto;align-self:flex-end;
+margin:0 .2rem -1.35rem -.3rem;
 display:block;pointer-events:none;transform-origin:50% 100%;
 animation:gz-bob 3.4s ease-in-out infinite}
 @keyframes gz-bob{0%,100%{transform:translateY(0) rotate(-1.2deg)}
 50%{transform:translateY(-3px) rotate(1.2deg)}}
 .gz-bar:hover .gz-ben{animation-duration:1.5s}
 @media(prefers-reduced-motion:reduce){.gz-ben{animation:none}}
-@media(max-width:640px){.gz-ben{width:2.1rem;margin-bottom:-.85rem}}
+@media(max-width:640px){.gz-ben{width:2.5rem;margin-bottom:-1.05rem}}
 .gz-watch{display:inline-flex;align-items:center;gap:.5rem;background:none;border:0;
 color:#f3f4f6;padding:.2rem 0;text-align:left}
 .gz-watch:hover{color:#fff}
