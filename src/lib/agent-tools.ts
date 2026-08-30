@@ -464,35 +464,6 @@ export const TOOLS = [
     },
   },
   {
-    name: 'set_dig',
-    description:
-      'Turn The Big Dig on or off, and set the prize ladder. A digger game: every scoop goes a ' +
-      'level deeper and the prize gets better, but hit a buried pipe and they drop to the ' +
-      'consolation prize. They can knock off any time and keep what they have dug up. The first ' +
-      'scoop always succeeds; after that the risk climbs each level, honestly random. Nobody ' +
-      'leaves empty-handed — the consolation goes to everyone who busts, so make sure the owner ' +
-      'is happy to honour every rung AND the consolation. Pass 2 to 5 prizes smallest first: the ' +
-      'deepest is the best and hardest to reach. Short labels, about 24 characters. Works for any ' +
-      'trade, not just tradies — a cafe ladder might be "Free coffee" up to "$50 tab". One play ' +
-      'per person. Details go to the owner; the visitor is never emailed.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        on: { type: 'boolean', description: 'Show the game on the site.' },
-        prizes: {
-          type: 'array',
-          items: { type: 'string' },
-          description: '2 to 5 rungs, smallest first, best last. e.g. ["Free coffee","Free cake","Coffee for a week","$50 tab"]',
-        },
-        bust: { type: 'string', description: 'The consolation when they hit the pipe, e.g. "10% off".' },
-        title: { type: 'string', description: 'Heading, e.g. "The Big Dig".' },
-        blurb: { type: 'string', description: 'One line under the heading.' },
-        terms: { type: 'string', description: 'Any conditions, e.g. "One dig per person."' },
-      },
-      required: ['on'],
-    },
-  },
-  {
     name: 'set_balloon',
     description:
       'Turn The Balloon on or off, and set the prize ladder. The same push-your-luck game as ' +
@@ -517,35 +488,6 @@ export const TOOLS = [
         title: { type: 'string', description: 'Heading, e.g. "The Balloon".' },
         blurb: { type: 'string', description: 'One line under the heading.' },
         terms: { type: 'string', description: 'Any conditions, e.g. "One balloon per person."' },
-      },
-      required: ['on'],
-    },
-  },
-  {
-    name: 'set_tower',
-    description:
-      'Turn The Tower on or off, and set the prize ladder. Jenga as a lead game: pull a block ' +
-      'and the prize climbs a rung while the tower leans further and sways faster; walk away ' +
-      'any time and keep what they are holding; pull once too often and it all comes down, to ' +
-      'the consolation. The most universally felt of the push-your-luck games — suits nearly ' +
-      'any trade. First pull always holds; risk after that is stated and honestly random. ' +
-      'Nobody leaves empty-handed, so the owner must honour every rung and the consolation. ' +
-      '2 to 5 prizes smallest first, about 24 characters each. A site should run only one of ' +
-      'tower, balloon or dig. One game per person. Details go to the owner; the visitor is ' +
-      'never emailed.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        on: { type: 'boolean', description: 'Show the game on the site.' },
-        prizes: {
-          type: 'array',
-          items: { type: 'string' },
-          description: '2 to 5 rungs, smallest first, best last.',
-        },
-        bust: { type: 'string', description: 'The consolation when the tower falls, e.g. "10% off".' },
-        title: { type: 'string', description: 'Heading, e.g. "The Tower".' },
-        blurb: { type: 'string', description: 'One line under the heading.' },
-        terms: { type: 'string', description: 'Any conditions, e.g. "One game per person."' },
       },
       required: ['on'],
     },
@@ -971,39 +913,6 @@ export async function runTool(
       };
     }
 
-    case 'set_dig': {
-      const dig: any = (site as any).dig || {};
-      if (input.prizes !== undefined) {
-        const rungs = (input.prizes || [])
-          .map((p: any) => String(p || '').trim())
-          .filter(Boolean)
-          .slice(0, 5);
-        const tooLong = rungs.filter((e: string) => e.length > 24);
-        if (tooLong.length) {
-          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
-        }
-        dig.prizes = rungs;
-      }
-      if (input.on && (dig.prizes || []).length < 2) {
-        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
-      }
-      if (input.bust !== undefined) dig.bust = String(input.bust).slice(0, 40);
-      if (input.title !== undefined) dig.title = String(input.title).slice(0, 40);
-      if (input.blurb !== undefined) dig.blurb = String(input.blurb).slice(0, 140);
-      if (input.terms !== undefined) dig.terms = String(input.terms).slice(0, 200);
-      dig.on = !!input.on;
-      (site as any).dig = dig;
-      if (!dig.on) return { ok: true, message: 'The Big Dig is off.' };
-      return {
-        ok: true,
-        message:
-          `The Big Dig is on: ${(dig.prizes || []).join(' → ')}. ` +
-          `Bust drops to ${dig.bust || 'a consolation prize'}. First scoop always succeeds; ` +
-          `deepest rung is hardest to reach.`,
-        data: { dig },
-      };
-    }
-
     case 'set_balloon': {
       const bl: any = (site as any).balloon || {};
       if (input.prizes !== undefined) {
@@ -1033,38 +942,6 @@ export async function runTool(
           `The Balloon is on: ${(bl.prizes || []).join(' → ')}. ` +
           `A pop drops to ${bl.bust || 'a consolation prize'}. First pump always holds.`,
         data: { balloon: bl },
-      };
-    }
-
-    case 'set_tower': {
-      const tw: any = (site as any).tower || {};
-      if (input.prizes !== undefined) {
-        const rungs = (input.prizes || [])
-          .map((p: any) => String(p || '').trim())
-          .filter(Boolean)
-          .slice(0, 5);
-        const tooLong = rungs.filter((e: string) => e.length > 24);
-        if (tooLong.length) {
-          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
-        }
-        tw.prizes = rungs;
-      }
-      if (input.on && (tw.prizes || []).length < 2) {
-        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
-      }
-      if (input.bust !== undefined) tw.bust = String(input.bust).slice(0, 40);
-      if (input.title !== undefined) tw.title = String(input.title).slice(0, 40);
-      if (input.blurb !== undefined) tw.blurb = String(input.blurb).slice(0, 140);
-      if (input.terms !== undefined) tw.terms = String(input.terms).slice(0, 200);
-      tw.on = !!input.on;
-      (site as any).tower = tw;
-      if (!tw.on) return { ok: true, message: 'The Tower is off.' };
-      return {
-        ok: true,
-        message:
-          `The Tower is on: ${(tw.prizes || []).join(' → ')}. ` +
-          `A collapse drops to ${tw.bust || 'a consolation prize'}. First pull always holds.`,
-        data: { tower: tw },
       };
     }
 

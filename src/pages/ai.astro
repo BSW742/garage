@@ -65,23 +65,9 @@ if (cameFromOffer && openedSlug) {
         <h2 class="q">First — your address.</h2>
         <p class="hint">Yours the second you're done. Point your own domain at it whenever you like.</p>
 
-        <div class="domain-wrap">
-          <div class="domain-field" id="domain-field">
-            <input id="slug-input" type="text" placeholder="westcoastplumbers" autocomplete="off" autocapitalize="off" spellcheck="false" />
-            <span class="domain-suffix">.garage.co.nz</span>
-          </div>
-          <!-- Outside the 640px column rather than beside the input inside it,
-               so he costs the field no width at all. -->
-          <div class="ben-sip" aria-hidden="true">
-            <video autoplay muted loop playsinline preload="metadata" poster="/ai/ben-address.png">
-              <!-- The codec is named, not just the container: the transparency
-                   is HEVC-with-alpha, which Safari plays and Chrome on Windows
-                   and Android does not. A bare video/mp4 has Chrome claim the
-                   file, fetch it, and then fail to decode it. -->
-              <source src="/ai/ben-address.mp4" type='video/mp4; codecs="hvc1"' />
-              <source src="/ai/ben-address.webm" type='video/webm; codecs="vp9"' />
-            </video>
-          </div>
+        <div class="domain-field" id="domain-field">
+          <input id="slug-input" type="text" placeholder="westcoastplumbers" autocomplete="off" autocapitalize="off" spellcheck="false" />
+          <span class="domain-suffix">.garage.co.nz</span>
         </div>
 
         <div class="domain-status" id="domain-status"></div>
@@ -591,23 +577,6 @@ if (cameFromOffer && openedSlug) {
         transition: border-color 0.2s, box-shadow 0.2s;
         overflow: hidden;
       }
-      /* He stands to the right of the address box, level with its middle.
-         The wrapper only exists to be the thing he is measured against: it
-         hugs the field, so top:50% is the field's centre and not the page's. */
-      .domain-wrap { position: relative; }
-      .ben-sip {
-        position: absolute;
-        left: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-        margin-left: 2.5rem;
-        pointer-events: none;
-      }
-      .ben-sip video { display: block; height: 270px; width: auto; }
-      /* The column is 640px and centred, so there is only a gutter to stand in
-         once the window is wide enough. Below that he would sit on the field. */
-      @media (max-width: 1000px) { .ben-sip { display: none; } }
-
       .domain-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
       .domain-field.is-good { border-color: var(--good); box-shadow: 0 0 0 4px rgba(22,163,74,0.12); }
       .domain-field.is-bad { border-color: var(--bad); box-shadow: 0 0 0 4px rgba(220,38,38,0.10); }
