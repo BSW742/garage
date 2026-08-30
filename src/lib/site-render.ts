@@ -1738,11 +1738,25 @@ const NOTE_CSS = `
 /* A strip along the top, not a slab in front of the page.
    The site is theirs and is the thing they came to look at; the video is
    offered from above it and stays out of the way until it is asked for. */
-.gz-bar{position:sticky;top:0;z-index:9000;display:flex;align-items:center;gap:.75rem;
-padding:.5rem .9rem;background:#0b0c0f;color:#f3f4f6;
+.gz-bar{position:sticky;top:0;z-index:9000;display:flex;align-items:center;gap:.6rem;
+padding:.55rem .9rem;background:#0b0c0f;color:#f3f4f6;
 font:500 .85rem/1.35 Inter,system-ui,-apple-system,sans-serif;
 border-bottom:1px solid rgba(255,255,255,.1)}
 .gz-bar button{font:inherit;cursor:pointer;border-radius:999px;white-space:nowrap}
+/* Him, leaning on the bar.
+   This is the one moment somebody meets whoever made the thing, and a strip of
+   text alone reads as a system message. He hangs a little below the bar so he
+   is standing behind it rather than pasted inside it, and he never takes a
+   click — the bar underneath him is the button. */
+.gz-ben{flex:none;width:2.6rem;height:auto;align-self:flex-end;
+margin:0 .15rem -1.05rem -.25rem;
+display:block;pointer-events:none;transform-origin:50% 100%;
+animation:gz-bob 3.4s ease-in-out infinite}
+@keyframes gz-bob{0%,100%{transform:translateY(0) rotate(-1.2deg)}
+50%{transform:translateY(-3px) rotate(1.2deg)}}
+.gz-bar:hover .gz-ben{animation-duration:1.5s}
+@media(prefers-reduced-motion:reduce){.gz-ben{animation:none}}
+@media(max-width:640px){.gz-ben{width:2.1rem;margin-bottom:-.85rem}}
 .gz-watch{display:inline-flex;align-items:center;gap:.5rem;background:none;border:0;
 color:#f3f4f6;padding:.2rem 0;text-align:left}
 .gz-watch:hover{color:#fff}
@@ -1784,6 +1798,7 @@ function noteBlock(slug: string): string {
   const key = esc(pageNote.key);
   const liked = !!pageNote.liked;
   return `<div class="gz-bar">
+  <img class="gz-ben" src="https://garage.co.nz/lean.png" alt="" aria-hidden="true" draggable="false" />
   <button type="button" class="gz-watch" id="gz-watch">
     <s></s><span>I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
   </button>
@@ -1847,6 +1862,25 @@ function noteBlock(slug: string): string {
     document.body.style.overflow = '';
     try { v.pause(); } catch (e) {}
   }
+
+  // Most templates have their own sticky nav pinned to top:0, and so does this
+  // bar — so they land on top of each other and the site's nav disappears
+  // underneath. Which elements those are differs per template and would be a
+  // list to maintain, so they are found by measuring instead: anything sticky
+  // at zero that is not this bar gets pushed down by the bar's height.
+  function stack() {
+    var h = document.querySelector('.gz-bar').getBoundingClientRect().height;
+    var maybe = document.querySelectorAll('header, nav, [class*="nav"], [class*="head"]');
+    [].forEach.call(maybe, function (el) {
+      if (el.closest('.gz-bar')) return;
+      var cs = getComputedStyle(el);
+      if (cs.position !== 'sticky' && cs.position !== 'fixed') return;
+      if (parseFloat(cs.top) !== 0) return;
+      el.style.top = h + 'px';
+    });
+  }
+  stack();
+  window.addEventListener('resize', stack);
 
   watch.addEventListener('click', open);
   box.addEventListener('click', function (e) {
