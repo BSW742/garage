@@ -41,6 +41,18 @@ if (db) {
   }
 }
 
+// Somebody asking for time is the hottest thing that happens, and until now it
+// existed only as an email that looked like spam on a phone.
+let booked: any[] = [];
+if (db) {
+  try {
+    const { results } = await db
+      .prepare("SELECT id, name, email, slot_key, topic, status, created_at FROM bookings ORDER BY id DESC LIMIT 12")
+      .all();
+    booked = results || [];
+  } catch { /* an empty strip beats a page that 500s */ }
+}
+
 const HEAT: Record<Stage, number> = {
   keen: 0, watched: 1, sent: 2, recorded: 3, ready: 4, claimed: 5, parked: 6,
 };
@@ -104,6 +116,18 @@ const ago = (t: unknown) => {
       .sub { color: var(--dim); font-size: 0.85rem; margin: 0.15rem 0 0; }
 
       /* The funnel. Each one is a filter. */
+      .booked { border: 1.5px solid #fdba74; background: #fff7ed; border-radius: 12px;
+        padding: 0.8rem 0.95rem; margin-bottom: 1.1rem; }
+      .booked-head { margin: 0 0 0.5rem; font-size: 0.68rem; letter-spacing: 0.16em;
+        text-transform: uppercase; font-weight: 800; color: #9a3412; }
+      .booking { display: flex; gap: 0.9rem; align-items: baseline; flex-wrap: wrap;
+        padding: 0.3rem 0; font-size: 0.88rem; }
+      .booking + .booking { border-top: 1px solid #fed7aa; }
+      .booking b { font-weight: 700; }
+      .booking .dim { color: #9a3412; opacity: 0.75; font-size: 0.8rem; }
+      .booking a { margin-left: auto; color: var(--cool); text-decoration: none; }
+      .booking a:hover { text-decoration: underline; }
+
       .funnel { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
       .step { background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
         padding: 0.6rem 0.85rem; cursor: pointer; text-align: left; color: var(--ink);
@@ -163,6 +187,20 @@ const ago = (t: unknown) => {
       </div>
 
       {error && <p class="none">{error}</p>}
+
+      {booked.length > 0 && (
+        <div class="booked">
+          <p class="booked-head">Asking for your time</p>
+          {booked.map((b) => (
+            <div class="booking">
+              <b>{b.name}</b>
+              <span>{b.slot_key}</span>
+              <span class="dim">{b.topic}</span>
+              <a href={`mailto:${b.email}`}>{b.email}</a>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div class="funnel">
         {STAGES.map((st) => (

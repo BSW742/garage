@@ -23,6 +23,7 @@ function stamp(d: Date): string {
  */
 function invite(opts: {
   uid: string; start: Date; minutes: number; title: string; who: string; note: string;
+  guest?: string; guestName?: string;
 }): string {
   const end = new Date(opts.start.getTime() + opts.minutes * 60000);
   const esc = (v: string) => String(v).replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
@@ -38,11 +39,13 @@ function invite(opts: {
     `DTEND:${stamp(end)}`,
     `SUMMARY:${esc(opts.title)}`,
     `DESCRIPTION:${esc(opts.note)}`,
-    `ORGANIZER;CN=${esc(opts.who)}:mailto:${opts.who}`,
+    `ORGANIZER;CN=garage.co.nz booking:mailto:${opts.who}`,
+    opts.guest ? `ATTENDEE;CN=${esc(opts.guestName || opts.guest)};RSVP=FALSE:mailto:${opts.guest}` : '',
     'END:VEVENT',
     'END:VCALENDAR',
   ];
   return lines
+    .filter(Boolean)
     .map((l) => (l.length <= 75 ? l : l.match(/.{1,74}/g)!.join('\r\n ')))
     .join('\r\n');
 }
@@ -60,10 +63,38 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let notified = 0;
     try { notified = await sendPushToAll(env.DB); } catch { /* the email is the real one */ }
 
+    // Write it down before anything else. This used to fire a push and an
+    // email and keep nothing, so "is somebody trying to book me?" had no
+    // answer anywhere — the only trace of a booking was an email that looked
+    // like spam on a phone.
+    try {
+      await env.DB
+        .prepare(
+          `INSERT INTO bookings (slot_key, status, email, name, topic, created_at)
+           VALUES (?, 'new', ?, ?, ?, datetime('now'))`
+        )
+        .bind(
+          String(startsAt || time || '').slice(0, 60),
+          String(email).slice(0, 160),
+          String(name).slice(0, 120),
+          `${meetingType === 'teams' ? 'Teams call' : 'Coffee'}${origin ? ' · from ' + String(origin).slice(0, 80) : ''}`
+        )
+        .run();
+    } catch (e) {
+      console.error('booking not recorded:', e);
+    }
+
     const kind = meetingType === 'teams' ? 'Teams call' : 'Coffee';
     const from = String(origin || '').trim();
 
+    // An .ics on a phone surfaces as an invite from a stranger, and a booking
+    // notice that reads like one is a booking you delete. So it says what it is
+    // in the first line, and says who generated it, before it says anything
+    // else.
     const lines = [
+      'GARAGE.CO.NZ — BOOKING',
+      'This is automatic. Somebody used the booking page on your own site.',
+      '',
       `${name} booked a ${kind.toLowerCase()}.`,
       '',
       `  When   ${time}`,
@@ -74,6 +105,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       'The invite is attached — open it to drop this straight in your calendar.',
       '',
       `Reply to them: mailto:${email}`,
+      '',
+      '--',
+      'Sent by garage.co.nz because a booking was made at garage.co.nz/booking.',
+      'Nobody can send you one of these without filling that form in.',
     ].filter((l) => l !== '');
 
     // Only attach an invite when we know the real instant. A wrong time in
@@ -83,7 +118,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     await sendMail(env, {
       to: WHO,
-      subject: `${kind} with ${name} — ${time}`,
+      // "garage.co.nz:" first, so the phone's notification preview says where
+      // it came from before it says who from.
+      subject: `garage.co.nz: ${kind} booked by ${name} — ${time}`,
+      replyTo: String(email),
       text: lines.join('\n'),
       attachments: good
         ? [{
@@ -95,6 +133,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
               minutes: meetingType === 'teams' ? 30 : 45,
               title: `${kind} with ${name}`,
               who: WHO,
+              guest: String(email),
+              guestName: String(name),
               note: `${name} (${email}) booked this on garage.co.nz.${from ? ' Came from ' + from : ''}`,
             }),
           }]
