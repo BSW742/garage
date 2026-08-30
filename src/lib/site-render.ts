@@ -1728,79 +1728,145 @@ export function llmIndex(site: SiteConfig, slug: string): Record<string, unknown
  * Set on the way in and cleared on the way out, so a render that does not
  * carry a note cannot inherit the last one's.
  */
-let pageNote: { key: string; seconds?: number } | null = null;
+let pageNote: { key: string; seconds?: number; liked?: boolean } | null = null;
 
-export function setPageNote(note: { key: string; seconds?: number } | null): void {
+export function setPageNote(note: { key: string; seconds?: number; liked?: boolean } | null): void {
   pageNote = note;
 }
 
 const NOTE_CSS = `
-.gz-note{background:#0b0c0f;color:#f3f4f6;padding:1.1rem 1rem 1.3rem;
-font-family:Inter,system-ui,-apple-system,sans-serif}
-.gz-note-in{max-width:52rem;margin:0 auto}
-.gz-note video{width:100%;display:block;border-radius:12px;background:#000;
+/* A strip along the top, not a slab in front of the page.
+   The site is theirs and is the thing they came to look at; the video is
+   offered from above it and stays out of the way until it is asked for. */
+.gz-bar{position:sticky;top:0;z-index:9000;display:flex;align-items:center;gap:.75rem;
+padding:.5rem .9rem;background:#0b0c0f;color:#f3f4f6;
+font:500 .85rem/1.35 Inter,system-ui,-apple-system,sans-serif;
+border-bottom:1px solid rgba(255,255,255,.1)}
+.gz-bar button{font:inherit;cursor:pointer;border-radius:999px;white-space:nowrap}
+.gz-watch{display:inline-flex;align-items:center;gap:.5rem;background:none;border:0;
+color:#f3f4f6;padding:.2rem 0;text-align:left}
+.gz-watch:hover{color:#fff}
+.gz-watch u{text-decoration-color:rgba(255,255,255,.45);text-underline-offset:3px}
+.gz-watch s{text-decoration:none;flex:none;width:1.55rem;height:1.55rem;border-radius:50%;
+background:#f3f4f6;display:grid;place-items:center}
+.gz-watch s:after{content:'';border-style:solid;border-width:.3rem 0 .3rem .5rem;
+border-color:transparent transparent transparent #0b0c0f;margin-left:.12rem}
+.gz-watch:hover s{background:#fff;transform:scale(1.06)}
+.gz-bar .gz-sp{margin-left:auto}
+.gz-like{background:none;border:1px solid rgba(255,255,255,.28);color:#f3f4f6;
+padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.4rem}
+.gz-like:hover{border-color:#fff;background:rgba(255,255,255,.08)}
+.gz-like[disabled]{opacity:1;cursor:default;border-color:transparent;
+background:rgba(134,239,172,.16);color:#bbf7d0}
+@media(max-width:640px){
+  .gz-bar{font-size:.78rem;gap:.5rem;padding:.45rem .6rem}
+  .gz-watch u{display:none}
+}
+
+/* The film, when they ask for it. */
+.gz-box{position:fixed;inset:0;z-index:9500;display:none;place-items:center;padding:1.2rem;
+background:rgba(4,4,6,.93);backdrop-filter:blur(14px)}
+.gz-box.on{display:grid}
+.gz-box-in{width:min(62rem,100%)}
+.gz-box video{width:100%;display:block;border-radius:12px;background:#000;
 border:1px solid #24272f}
-.gz-note p{margin:.7rem 0 0;font-size:.86rem;color:#9aa0ac;display:flex;
-gap:.6rem;align-items:baseline;flex-wrap:wrap}
-.gz-note b{color:#f3f4f6;font-weight:600}
-.gz-note a{color:#9aa0ac;text-decoration:underline;text-underline-offset:3px}
-.gz-note a:hover{color:#fff}
+.gz-box p{margin:.8rem 0 0;color:#9aa0ac;font:400 .85rem/1.5 Inter,system-ui,sans-serif;
+display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+.gz-box p b{color:#f3f4f6;font-weight:600}
+.gz-shut{position:fixed;top:1rem;right:1.2rem;width:2.6rem;height:2.6rem;border-radius:50%;
+background:#15171c;border:1px solid #24272f;color:#f3f4f6;font-size:1.35rem;line-height:1;
+cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
+.gz-shut:hover{border-color:#fff}
 `;
 
 function noteBlock(slug: string): string {
   if (!pageNote) return '';
   const key = esc(pageNote.key);
-  return `<section class="gz-note"><div class="gz-note-in">
-  <!-- Absolute, not /images/. The note renders on the business's own subdomain,
-       where /images/ is handled by the sites worker and 404s — the player looked
-       perfectly fine and simply had no source. R2 is served by the main app. -->
-  <video id="gz-note-v" controls playsinline preload="metadata"
-         src="https://garage.co.nz/images/${key}"></video>
-  <p><b>Your new site, and how to change it.</b>
-     <span>Sixty seconds from Ben at <a href="https://garage.co.nz">garage.co.nz</a></span></p>
-</div></section>
+  const liked = !!pageNote.liked;
+  return `<div class="gz-bar">
+  <button type="button" class="gz-watch" id="gz-watch">
+    <s></s><span>I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
+  </button>
+  <span class="gz-sp"></span>
+  <button type="button" class="gz-like" id="gz-like"${liked ? ' disabled' : ''}>
+    ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it'}
+  </button>
+</div>
+<div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
+  <button type="button" class="gz-shut" aria-label="Close">&times;</button>
+  <div class="gz-box-in">
+    <video id="gz-note-v" controls playsinline preload="none"
+           data-src="https://garage.co.nz/images/${key}"></video>
+    <p><b>Sixty seconds, start to finish.</b>
+       <span>Nothing to pay. If you like it, thumbs up above and I will send you the keys.</span></p>
+  </div>
+</div>
 <script>
-(function(){
-  var v = document.getElementById('gz-note-v');
-  if (!v) return;
+(function () {
   var slug = ${JSON.stringify(slug)};
-  // Ben watching his own take back is not a view. The recorder leaves this
-  // behind in his browser; nobody else's has it.
+  var box = document.getElementById('gz-box');
+  var v = document.getElementById('gz-note-v');
+  var watch = document.getElementById('gz-watch');
+  var like = document.getElementById('gz-like');
+
+  // Ben watching his own take back is not a view. The recorder leaves this in
+  // his browser; nobody else's has it.
   var mine = false;
   try { mine = localStorage.getItem('gz-recorder') === '1'; } catch (e) {}
-  var sent = {};
-  function ping(at) {
-    if (sent[at]) return;
-    sent[at] = 1;
-    // fetch with keepalive, not sendBeacon.
-    //
-    // This ping goes cross-origin, from the business's own subdomain to the
-    // main app, and it is squeezed between two rules that leave exactly one
-    // way through. sendBeacon can only send CORS-safelisted content types, so
-    // json would need a preflight it cannot perform. But text/plain IS
-    // safelisted, which is precisely why Astro's CSRF guard rejects it —
-    // "Cross-site POST form submissions are forbidden", 403, silently, and
-    // every view reads as nobody watching.
-    //
-    // json + fetch preflights properly (the endpoint answers OPTIONS) and
-    // Astro leaves json alone. keepalive is what sendBeacon was here for: it
-    // lets the request outlive the page if they close the tab mid-video.
+
+  // fetch with keepalive, not sendBeacon. This goes cross-origin from the
+  // business's subdomain to the main app, and the two rules leave one way
+  // through: sendBeacon may only send CORS-safelisted types, so json needs a
+  // preflight it cannot do — while text/plain, which IS safelisted, is exactly
+  // what Astro's CSRF guard rejects with a silent 403.
+  function tell(path, data) {
     try {
-      fetch('https://garage.co.nz/api/record/seen', {
-        method: 'POST',
-        mode: 'cors',
-        keepalive: true,
+      fetch('https://garage.co.nz/api/record/' + path, {
+        method: 'POST', mode: 'cors', keepalive: true,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: slug, at: at, mine: mine }),
+        body: JSON.stringify(Object.assign({ slug: slug, mine: mine }, data)),
       }).catch(function () {});
     } catch (e) {}
   }
+
+  var sent = {};
+  function ping(at) { if (!sent[at]) { sent[at] = 1; tell('seen', { at: at }); } }
+
+  function open() {
+    // The file is not fetched until they ask for it, so a visitor who never
+    // presses anything never downloads a megabyte of somebody's sales pitch.
+    if (!v.src) v.src = v.dataset.src;
+    box.classList.add('on');
+    document.body.style.overflow = 'hidden';
+    tell('seen', { at: -1 });           // opened, which is not yet watched
+    v.play().catch(function () {});
+  }
+  function shut() {
+    if (!box.classList.contains('on')) return;
+    box.classList.remove('on');
+    document.body.style.overflow = '';
+    try { v.pause(); } catch (e) {}
+  }
+
+  watch.addEventListener('click', open);
+  box.addEventListener('click', function (e) {
+    if (e.target === box || (e.target.closest && e.target.closest('.gz-shut'))) shut();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
+
   v.addEventListener('play', function () { ping(0); }, { once: true });
-  // Where people stop is the thing worth knowing, so the depth is reported as
-  // it happens rather than only at the end, which nobody reaches.
+  // Where they stop is the thing worth knowing, so depth is reported as it
+  // happens rather than at an end nobody reaches.
   v.addEventListener('timeupdate', function () {
     var t = Math.floor(v.currentTime / 5) * 5;
     if (t > 0) ping(t);
+  });
+
+  like.addEventListener('click', function () {
+    if (like.disabled) return;
+    like.disabled = true;
+    like.innerHTML = '&#10003; Thanks &mdash; Ben will be in touch';
+    tell('like', {});
   });
 })();
 </script>`;

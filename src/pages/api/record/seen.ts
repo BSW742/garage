@@ -31,10 +31,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     const body = (await request.json().catch(() => null)) as any;
     const slug = String(body?.slug || '').toLowerCase().trim();
-    const at = Math.max(0, Math.min(3600, Math.round(Number(body?.at) || 0)));
+    const raw = Math.round(Number(body?.at) || 0);
+    const opened = raw < 0;                      // they opened it; not yet a play
+    const at = Math.max(0, Math.min(3600, raw));
     const mine = !!body?.mine;
     if (!/^[a-z0-9-]{2,63}$/.test(slug)) return json({ ok: false }, 400);
     if (mine) return json({ ok: true, counted: false });
+
+    if (opened) {
+      await db.prepare(
+        "UPDATE recordings SET opened = opened + 1 WHERE slug = ? AND status = 'live'"
+      ).bind(slug).run();
+      return json({ ok: true, counted: true, opened: true });
+    }
 
     // First play stamps the site too, so /admin/sites can show it at a glance.
     await db.prepare(

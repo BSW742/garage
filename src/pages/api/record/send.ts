@@ -97,14 +97,16 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const out = `https://garage.co.nz/unsubscribe/${slug}?t=${unsub}`;
 
     const subject = `I made ${name} a new website`;
+    // Two ways to say yes, because a thumbs up on the page costs them one click
+    // and a reply costs them a paragraph. Either one is the answer.
     const text =
 `Kia ora — I build websites for New Zealand businesses, and I made you one to look at. Nothing to pay, no catch.
 
 ${home}
 
-There is a 60-second video on it of me putting it together, so you can see how easy it is to change.
+There is a button at the top of it to watch me build the thing, if you want to see how it works. 60 seconds.
 
-Like it? Reply and I will send you the link to edit it — it is yours.
+If you like it, give it a thumbs up on the page, or just reply to this — either way I will send you the link to edit it. It is yours.
 Rather I took it down? Say so and it is gone today.
 
 Ben

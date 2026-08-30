@@ -238,10 +238,10 @@ export default {
       setPageNote(null);
       try {
         const take = await env.DB
-          .prepare("SELECT key, seconds FROM recordings WHERE slug = ? AND status = 'live' ORDER BY created_at DESC LIMIT 1")
+          .prepare("SELECT key, seconds, liked_at FROM recordings WHERE slug = ? AND status = 'live' ORDER BY created_at DESC LIMIT 1")
           .bind(slug)
-          .first<{ key: string; seconds: number }>();
-        if (take?.key) setPageNote({ key: take.key, seconds: take.seconds });
+          .first<{ key: string; seconds: number; liked_at: string | null }>();
+        if (take?.key) setPageNote({ key: take.key, seconds: take.seconds, liked: !!take.liked_at });
       } catch {
         // A page without the video still beats a page that 500s.
       }
