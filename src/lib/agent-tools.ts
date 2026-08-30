@@ -522,6 +522,35 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_tower',
+    description:
+      'Turn The Tower on or off, and set the prize ladder. Jenga as a lead game: pull a block ' +
+      'and the prize climbs a rung while the tower leans further and sways faster; walk away ' +
+      'any time and keep what they are holding; pull once too often and it all comes down, to ' +
+      'the consolation. The most universally felt of the push-your-luck games — suits nearly ' +
+      'any trade. First pull always holds; risk after that is stated and honestly random. ' +
+      'Nobody leaves empty-handed, so the owner must honour every rung and the consolation. ' +
+      '2 to 5 prizes smallest first, about 24 characters each. A site should run only one of ' +
+      'tower, balloon or dig. One game per person. Details go to the owner; the visitor is ' +
+      'never emailed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the game on the site.' },
+        prizes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '2 to 5 rungs, smallest first, best last.',
+        },
+        bust: { type: 'string', description: 'The consolation when the tower falls, e.g. "10% off".' },
+        title: { type: 'string', description: 'Heading, e.g. "The Tower".' },
+        blurb: { type: 'string', description: 'One line under the heading.' },
+        terms: { type: 'string', description: 'Any conditions, e.g. "One game per person."' },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'add_clips',
     description:
       'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
@@ -1004,6 +1033,38 @@ export async function runTool(
           `The Balloon is on: ${(bl.prizes || []).join(' → ')}. ` +
           `A pop drops to ${bl.bust || 'a consolation prize'}. First pump always holds.`,
         data: { balloon: bl },
+      };
+    }
+
+    case 'set_tower': {
+      const tw: any = (site as any).tower || {};
+      if (input.prizes !== undefined) {
+        const rungs = (input.prizes || [])
+          .map((p: any) => String(p || '').trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        const tooLong = rungs.filter((e: string) => e.length > 24);
+        if (tooLong.length) {
+          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
+        }
+        tw.prizes = rungs;
+      }
+      if (input.on && (tw.prizes || []).length < 2) {
+        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
+      }
+      if (input.bust !== undefined) tw.bust = String(input.bust).slice(0, 40);
+      if (input.title !== undefined) tw.title = String(input.title).slice(0, 40);
+      if (input.blurb !== undefined) tw.blurb = String(input.blurb).slice(0, 140);
+      if (input.terms !== undefined) tw.terms = String(input.terms).slice(0, 200);
+      tw.on = !!input.on;
+      (site as any).tower = tw;
+      if (!tw.on) return { ok: true, message: 'The Tower is off.' };
+      return {
+        ok: true,
+        message:
+          `The Tower is on: ${(tw.prizes || []).join(' → ')}. ` +
+          `A collapse drops to ${tw.bust || 'a consolation prize'}. First pull always holds.`,
+        data: { tower: tw },
       };
     }
 
