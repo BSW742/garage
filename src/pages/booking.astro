@@ -42,29 +42,49 @@ import Layout from '../components/Layout.astro';
     padding: 2rem 1rem;
   }
 
-  /* Dark, and only here. These are declared on body rather than :root so they
-     simply win by being nearer the elements that read them — no fighting the
-     layout's own :root over source order. Everything inside inherits. */
-  body {
-    --color-bg: #0b0c0f;
-    --color-surface: #15171c;
+  /* The page goes black. These live on html, not body: html is the element
+     the layout paints the backdrop with, and body is transparent — so putting
+     them on body recoloured every descendant while leaving the page itself
+     light. html:root rather than :root so it outranks the layout's own
+     whichever order the two sheets land in. */
+  html:root {
+    --color-bg: #08090b;
+    --color-surface: #14161a;
     --color-text: #f4f4f5;
     --color-text-soft: #c8ccd4;
     --color-text-muted: #8b909b;
     --color-border: #262a33;
   }
 
-  /* The header's pill and cart are painted with --color-text and hold white
-     text, which was a dark chip on a light page and becomes white on white
-     the moment the theme flips. They have to be stated the other way round. */
+  /* The header names its white outright a few lines after reaching for the
+     variable, so the variable alone never touches it. */
+  .site-header {
+    background: rgba(10, 11, 14, 0.9);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* The pill and the cart are painted with --color-text and carry white text:
+     a dark chip on a light page, and white on white the moment it flips. */
   .nav-cta,
   .nav-cart {
     background: #f4f4f5;
-    color: #0b0c0f !important;
+    color: #08090b !important;
   }
 
-  /* Mid green on near-black is too quiet to read a time in. */
-  .slot.available { color: #4ade80; }
+  /* The card stays paper. Restating the variables on it rather than restyling
+     its parts: every rule inside already reads them, so the card, its slots
+     and its popovers go back to being light without touching one of them. */
+  .booking,
+  .confirm-panel,
+  .help-modal {
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+    --color-text: #0a0a0a;
+    --color-text-soft: #404040;
+    --color-text-muted: #737373;
+    --color-border: #e5e5e5;
+    color: var(--color-text);
+  }
 
   /* The chat launcher is a black pill, which disappears into a black page.
      Higher specificity than the layout's own #gg-launch so it wins wherever
