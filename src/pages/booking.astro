@@ -11,11 +11,15 @@ import Layout from '../components/Layout.astro';
        time somebody pressed an arrow. -->
   <div class="ben-walk" aria-hidden="true">
     <video autoplay muted loop playsinline preload="metadata" poster="/booking/ben-walk.png">
-      <!-- mp4 first: Safari must not be handed the webm. Its VP9 alpha is the
-           one thing it will not play, and it does not fall back once it has
-           accepted a source. -->
-      <source src="/booking/ben-walk.mp4" type="video/mp4" />
-      <source src="/booking/ben-walk.webm" type="video/webm" />
+      <!-- The codec is named, not just the container. Transparency here is
+           HEVC-with-alpha, which Safari plays and Chrome on Windows and
+           Android does not — and a bare type="video/mp4" tells a browser
+           nothing about that, so Chrome claims the file, fetches 639K and
+           then cannot decode it. Spelling out hvc1 lets each one choose
+           correctly before downloading anything.
+           mp4 first, because Safari is the one that cannot play the webm. -->
+      <source src="/booking/ben-walk.mp4" type='video/mp4; codecs="hvc1"' />
+      <source src="/booking/ben-walk.webm" type='video/webm; codecs="vp9"' />
     </video>
   </div>
 
