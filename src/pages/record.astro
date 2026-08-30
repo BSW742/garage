@@ -222,8 +222,9 @@ const picked = sites.find((s) => s.slug === slug) || null;
       <video class="review" id="review" controls playsinline hidden></video>
 
       <p class="tip">
-        <b>Chrome only.</b> Pick the window with their site in it, not the whole screen —
-        the tab bar and your other windows are not the point. It stops itself at sixty seconds.
+        <b>Chrome only.</b> Put this window and their site side by side and keep both on
+        screen — if this one gets hidden the picture freezes. Pick the window with their site
+        in it, not the whole screen. It stops itself at sixty seconds.
       </p>
     </div>
 
@@ -325,6 +326,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
         recorder.start(250);
 
         started = Date.now();
+        wentDark = false;
         $('go').disabled = true; $('stop').disabled = false;
         $('clock').classList.add('on');
         $('after').classList.remove('on');
@@ -341,6 +343,19 @@ const picked = sites.find((s) => s.slug === slug) || null;
         }, 200);
       }
 
+      // Chrome stops running requestAnimationFrame when a page is hidden, and
+      // the canvas is what the recording is made of — so a recorder window that
+      // gets minimised or buried records a frozen picture while the audio keeps
+      // going. It cannot be prevented from in here, but it can be noticed, and
+      // a take he knows is ruined beats one he finds out about after sending.
+      let wentDark = false;
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && recorder && recorder.state === 'recording') {
+          wentDark = true;
+          say('This window was hidden — the picture will have frozen. Record it again.', 'bad');
+        }
+      });
+
       function finish() {
         if (recorder && recorder.state !== 'inactive') recorder.stop();
       }
@@ -356,7 +371,12 @@ const picked = sites.find((s) => s.slug === slug) || null;
         $('review').src = URL.createObjectURL(blob);
         $('review').hidden = false;
         $('after').classList.add('on');
-        say(secs + ' seconds, ' + (blob.size / 1e6).toFixed(1) + 'MB. Watch it back before you save.', 'good');
+        say(
+          wentDark
+            ? secs + ' seconds — but this window was hidden partway through, so the picture froze. Record it again.'
+            : secs + ' seconds, ' + (blob.size / 1e6).toFixed(1) + 'MB. Watch it back before you save.',
+          wentDark ? 'bad' : 'good'
+        );
         done.secs = secs;
       }
 
@@ -364,7 +384,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
       $('stop').addEventListener('click', finish);
       $('again').addEventListener('click', () => {
         blob = null; $('after').classList.remove('on'); $('review').hidden = true;
-        $('bar').style.width = '0'; say('');
+        $('bar').style.width = '0'; wentDark = false; say('');
       });
 
       async function mail(preview) {
