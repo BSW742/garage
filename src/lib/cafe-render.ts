@@ -301,7 +301,7 @@ function groupsOf(section: SiteSection): { heading: string; note: string; items:
   const items = (section.items || []).filter((r) => r && r[0]);
   if (items.length) {
     return [{
-      heading: section.title || 'Menu',
+      heading: '',
       note: '',
       items: items.map((r) => ({ name: String(r[0]), price: '', text: String(r[1] || '') })),
     }];

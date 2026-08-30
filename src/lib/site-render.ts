@@ -1897,6 +1897,7 @@ font:inherit;font-weight:700;cursor:pointer}
 .gz-short{display:none}
 .gz-brand{display:none}
 .gz-hint{display:none}
+.gz-bubble{display:none}
 .gz-seen{display:block;text-align:center;color:#9aa0ac;font-size:.85rem;
 text-decoration:underline;text-underline-offset:3px;padding:.2rem}
 .gz-seen[hidden]{display:none}
@@ -1921,7 +1922,7 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
   /* Top, not centred. Centring left the line floating halfway down a white
      screen with nothing above it, which is not what "at the top" means and is
      not where an eye starts. */
-  .gz-box{padding:1rem .85rem 2rem;align-content:start;background:#fff;
+  .gz-box{padding:1rem 1.1rem 2.5rem;align-content:start;background:#fff;
   backdrop-filter:none;color:#0b0c0f;overflow-y:auto}
   .gz-box-in{width:100%}
 
@@ -1930,33 +1931,75 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
      beside him were too small to read. This says who it is and what is on
      offer in three words, at a size that does not need looking at twice. */
   .gz-brand{display:flex;gap:.4rem;align-items:baseline;flex-wrap:wrap;
-  /* Hard limit rather than a margin: the last words ran under the close
-     button in the corner instead of wrapping before it. */
-  max-width:calc(100% - 3.4rem);
-  margin:0 0 .8rem;font:800 .95rem/1.3 Inter,system-ui,sans-serif;
+  padding-bottom:.75rem;border-bottom:2px solid #0b0c0f;
+  /* Padding, not a max-width. The words still stop short of the close button,
+     but the rule underneath runs the full width of the sheet — capping the
+     element made the line stop two thirds of the way across and read as
+     something broken rather than as a divider. */
+  padding-right:3.4rem;
+  margin:0 0 1.1rem;font:800 .95rem/1.3 Inter,system-ui,sans-serif;
   letter-spacing:-.02em;color:#0b0c0f}
   .gz-brand span{white-space:nowrap;color:#5b6270;font-weight:700}
   .gz-brand i{font-style:normal;color:#c2c7d0;font-weight:600;margin-right:.15rem}
   .gz-brand b{font-weight:800}
 
-  .gz-box p{margin-top:.7rem;font-size:.84rem;color:#5b6270}
-  .gz-box p b{color:#0b0c0f}
-  .gz-box-do{display:grid;gap:.55rem;margin-top:.9rem}
-  .gz-box-do .gz-like{width:100%;justify-content:center;padding:.75rem;
-  font-size:.98rem;border-radius:11px}
-  .gz-more{border-color:rgba(11,12,15,.25);color:#0b0c0f}
+  /* The film, edge to edge. It is the thing they came for, so it gets the
+     full width of the phone rather than sitting inside a margin. */
+  .gz-player{border-radius:14px;border-width:0}
+  .gz-box .gz-big:after{width:5rem;height:5rem;box-shadow:0 0 0 .9rem rgba(0,0,0,.16)}
+  .gz-box .gz-big:before{border-width:.8rem 0 .8rem 1.35rem}
+
+  /* Two lines, stacked, with the point in bold on its own. Run together on one
+     line they read as a caption nobody finishes. */
+  .gz-box p{display:block;margin:1.1rem 0 0;font-size:.95rem;line-height:1.45;
+  color:#5b6270}
+  .gz-box p b{display:block;color:#0b0c0f;font-size:1.12rem;font-weight:800;
+  letter-spacing:-.02em;margin-bottom:.15rem}
+
+  /* Room. The buttons were stacked a few pixels apart and read as one lump;
+     the important one is now bigger, taller and separated from the rest. */
+  .gz-box-do{display:grid;gap:.7rem;margin-top:1.5rem}
+  .gz-box-do .gz-like{width:100%;justify-content:center;padding:1.05rem .8rem;
+  font-size:1.05rem;border-radius:14px;letter-spacing:-.01em}
+  .gz-box-do .gz-like b{font-size:1.12em}
+  .gz-more{border-color:rgba(11,12,15,.2);color:#0b0c0f;padding:.85rem;
+  border-radius:14px;font-size:.95rem;border-width:1.5px}
   .gz-more:hover{border-color:#0b0c0f}
-  .gz-seen{color:#5b6270}
-  .gz-hint{display:block;margin:.2rem 0 0;text-align:center;font-size:.78rem;color:#9aa0ac}
+  .gz-seen{color:#5b6270;padding:.5rem}
+  .gz-hint{display:block;margin:1.1rem 0 0;text-align:center;font-size:.8rem;
+  color:#9aa0ac}
   .gz-shut{background:#fff;border-color:#0b0c0f;color:#0b0c0f;border-width:1.5px;
   top:.75rem;right:.85rem;width:2.3rem;height:2.3rem}
 
-  .gz-short{display:inline}
+  /* The same line as the film's. One thing said one way, wherever they are. */
+  .gz-short{display:flex;gap:.35rem;align-items:baseline;flex-wrap:wrap;
+  font:800 .84rem/1.3 Inter,system-ui,sans-serif;letter-spacing:-.02em}
   .gz-long{display:none}
   .gz-short b{font-weight:800}
-  .gz-short i{font-style:normal;color:#9aa0ac}
-  /* He is the desktop's welcome, not the phone's. */
+  .gz-short span{white-space:nowrap;color:#5b6270;font-weight:700}
+  .gz-short i{font-style:normal;color:#c2c7d0;font-weight:600;margin-right:.1rem}
+  /* He is the desktop's welcome. On a phone he is the bubble instead. */
   .gz-ben{display:none}
+
+  /* ── The bubble ──────────────────────────────────────────────────
+     Him, full size, where a thumb already is. The badge says it plays;
+     the ring keeps him off whatever colour the site happens to be. */
+  .gz-bubble{display:grid;position:fixed;left:1rem;
+  bottom:calc(1rem + env(safe-area-inset-bottom));z-index:8500;
+  width:4.4rem;height:4.4rem;border-radius:50%;padding:0;cursor:pointer;
+  background:#0b0c0f;border:3px solid #fff;overflow:visible;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.55);
+  animation:gz-float 3.6s ease-in-out infinite}
+  .gz-bubble img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;
+  border-radius:50%;pointer-events:none}
+  .gz-bubble s{position:absolute;right:-.15rem;bottom:-.15rem;text-decoration:none;
+  width:1.75rem;height:1.75rem;border-radius:50%;background:#0b0c0f;border:2.5px solid #fff;
+  display:grid;place-items:center}
+  .gz-bubble s:after{content:'';border-style:solid;border-width:.28rem 0 .28rem .46rem;
+  border-color:transparent transparent transparent #fff;margin-left:.1rem}
+  .gz-bubble:active{transform:scale(.94)}
+  @keyframes gz-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @media(prefers-reduced-motion:reduce){.gz-bubble{animation:none}}
 }
 `;
 
@@ -1969,7 +2012,7 @@ function noteBlock(slug: string): string {
   <button type="button" class="gz-watch" id="gz-watch">
     <s></s>
     <span class="gz-long">I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
-    <span class="gz-short"><b>Garage.co.nz</b> <i>&rsaquo;</i> FREE websites</span>
+    <span class="gz-short"><b>Garage.co.nz</b><span><i>&rsaquo;</i> FREE websites</span><span><i>&rsaquo;</i> Built by talking</span></span>
   </button>
   <span class="gz-do">
     <button type="button" class="gz-grow" id="gz-grow">
@@ -2009,6 +2052,13 @@ function noteBlock(slug: string): string {
     </div>
   </div>
 </div>
+
+<!-- The bar is at the top of the screen and a thumb is at the bottom. This is
+     the same action, put where the hand already is. -->
+<button type="button" class="gz-bubble" id="gz-bubble" aria-label="Watch me build this site">
+  <img src="https://garage.co.nz/lean.png" alt="" aria-hidden="true" draggable="false" />
+  <s></s>
+</button>
 
 <div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
   <button type="button" class="gz-shut" aria-label="Close">&times;</button>
@@ -2188,12 +2238,24 @@ function noteBlock(slug: string): string {
       if (cs.position !== 'sticky' && cs.position !== 'fixed') return;
       if (parseFloat(cs.top) !== 0) return;
       el.style.top = h + 'px';
+      el.style.setProperty('top', h + 'px', 'important');
     });
   }
-  stack();
+  // After the document is parsed, not during it. This script sits at the top of
+  // the body, so when it first runs the site below has not been read yet and
+  // there is no nav to find — which is why the cafe's stayed at top:0 with the
+  // bar sitting over its top half.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', stack);
+  } else {
+    stack();
+  }
+  window.addEventListener('load', stack);
   window.addEventListener('resize', stack);
 
   watch.addEventListener('click', function () { open(true); });
+  var bubble = document.getElementById('gz-bubble');
+  if (bubble) bubble.addEventListener('click', function () { open(true); });
 
   // Video first, literally: on a phone the film is what they arrive at, with
   // their site directly behind it. It cannot start playing by itself — every
