@@ -130,12 +130,21 @@ body.gz-noted .gsp-tab{bottom:10.2rem}
 /* The disc spins; the button does not — it is holding the translate that
    centres it, and an animation on the same element would throw that away. */
 .gsp-tdisc{position:absolute;inset:0;border-radius:50%;
+/* Sixteen slots, four of them black. The black is what makes it read as a
+   fairground wheel rather than a pie chart — the bright ones need something
+   to be bright against. Only ever on this button: on the wheel people
+   actually spin, a black slot would read as the one you did not want, and
+   every slot on that one is a prize. */
 background:conic-gradient(
-#fbbf24 0deg 45deg,#ef4444 45deg 90deg,#ffffff 90deg 135deg,#3b82f6 135deg 180deg,
-#fbbf24 180deg 225deg,#ef4444 225deg 270deg,#ffffff 270deg 315deg,#3b82f6 315deg 360deg);
+#fbbf24 0deg 22.5deg,#141821 22.5deg 45deg,#ef4444 45deg 67.5deg,
+#ffffff 67.5deg 90deg,#3b82f6 90deg 112.5deg,#141821 112.5deg 135deg,
+#fbbf24 135deg 157.5deg,#ffffff 157.5deg 180deg,#ef4444 180deg 202.5deg,
+#141821 202.5deg 225deg,#3b82f6 225deg 247.5deg,#ffffff 247.5deg 270deg,
+#fbbf24 270deg 292.5deg,#141821 292.5deg 315deg,#ef4444 315deg 337.5deg,
+#ffffff 337.5deg 360deg);
 box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
-animation:gsp-turn 6.5s linear infinite}
-.gsp-tab:hover .gsp-tdisc{animation-duration:1.6s}
+animation:gsp-turn 3.1s linear infinite}
+.gsp-tab:hover .gsp-tdisc{animation-duration:.5s}
 @keyframes gsp-turn{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.gsp-tdisc{animation:none}}
 
@@ -197,24 +206,36 @@ animation-iteration-count:infinite}
    prizes going past say what is actually being played for, which is the part
    worth reading. Small, quick, and gone — a pill has to be legible for the
    half second it is on screen and invisible the rest of the time. */
+/* Words alone. Without a pill behind them they land on whatever the site is
+   doing, so the legibility has to come from the letters: white with a dark
+   outline drawn in four directions, which holds on a photograph, on paper and
+   on a dark band alike. */
 .gsp-tfly b{position:absolute;left:50%;top:50%;white-space:nowrap;
-font:700 9.5px/1 var(--font-sans,system-ui,sans-serif);text-transform:uppercase;
-letter-spacing:.05em;color:#141821;background:#fff;padding:4px 8px;
-border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.34);opacity:0;
+font:800 12px/1 var(--font-sans,system-ui,sans-serif);text-transform:uppercase;
+letter-spacing:.04em;color:#fff;opacity:0;
+text-shadow:0 0 4px rgba(0,0,0,.85),1px 1px 0 rgba(0,0,0,.6),-1px 1px 0 rgba(0,0,0,.6),
+1px -1px 0 rgba(0,0,0,.6),-1px -1px 0 rgba(0,0,0,.6);
 animation-name:none;animation-duration:1.6s;animation-timing-function:cubic-bezier(.2,.7,.3,1);
 animation-iteration-count:infinite}
 /* The top prize is the gold one on the wheel, so it is the gold one here. */
-.gsp-tfly b:first-of-type{background:#fbbf24;color:#3b2a05}
+.gsp-tfly b:first-of-type{color:#fbbf24;font-size:13px}
 .gsp-tab:hover .gsp-tfly b{animation-name:gsp-toss}
-.gsp-tfly b:nth-of-type(1){--dx:-128px;--dy:-38px;animation-delay:.05s}
-.gsp-tfly b:nth-of-type(2){--dx:-104px;--dy:-84px;animation-delay:.45s}
-.gsp-tfly b:nth-of-type(3){--dx:-142px;--dy:14px;animation-delay:.85s}
-.gsp-tfly b:nth-of-type(4){--dx:-58px;--dy:-114px;animation-delay:1.25s}
+/* Every one on a different heading, at a different tilt, at a different size.
+   They all left on the same level line before, which read as a ticker rather
+   than as something being thrown off a spinning wheel. */
+.gsp-tfly b:nth-of-type(1){--dx:-150px;--dy:-62px;--r1:-7deg;--r2:-19deg;--sc:1.05;animation-delay:.05s}
+.gsp-tfly b:nth-of-type(2){--dx:-58px;--dy:-132px;--r1:9deg;--r2:26deg;--sc:.9;animation-delay:.42s}
+.gsp-tfly b:nth-of-type(3){--dx:-146px;--dy:54px;--r1:-12deg;--r2:-31deg;--sc:.96;animation-delay:.83s}
+.gsp-tfly b:nth-of-type(4){--dx:-96px;--dy:-104px;--r1:14deg;--r2:8deg;--sc:.86;animation-delay:1.2s}
+/* The mid frame sits off the straight line between start and finish, which is
+   what bends the path — a two-point tween can only ever travel in a line. */
 @keyframes gsp-toss{
-0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}
-16%{opacity:1;transform:translate(calc(-50% + var(--dx) * .34),calc(-50% + var(--dy) * .34)) scale(1)}
-70%{opacity:1}
-100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1)}}
+0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(0deg)}
+18%{opacity:1;transform:translate(calc(-50% + var(--dx) * .3),calc(-50% + var(--dy) * .46))
+scale(var(--sc)) rotate(var(--r1))}
+64%{opacity:.95}
+100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy)))
+scale(var(--sc)) rotate(var(--r2))}}
 @media(prefers-reduced-motion:reduce){
   .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b{animation-name:none}}
 
