@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sendMail, offerEmail } from '../../../lib/mail';
+import { verdictFor } from '../../../lib/outreach';
 
 export const prerender = false;
 
@@ -10,6 +11,16 @@ const json = (b: Record<string, unknown>, s = 200) =>
  * Send a business owner the site we built for them. Guarded by the site's own
  * edit token so this cannot be turned into a machine for mailing strangers,
  * and it refuses to send twice or to anyone who has unsubscribed.
+ *
+ * It also refuses to send to an address that cannot be traced back to a real
+ * business. Forty of these sites were invented by the cron, complete with a
+ * plausible address at a domain that does not exist, and every one of those is
+ * a hard bounce. Enough of them and the sending domain is filtered before it
+ * has reached a single real person — so the triage that /admin/coffee shows on
+ * screen has to hold here too, or the page and the door disagree.
+ *
+ * force overrides it, because Ben looking at one and knowing better is the
+ * whole reason the override exists.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
@@ -17,15 +28,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const db = env.DB;
     if (!db) return json({ error: 'no database' }, 500);
 
-    const { slug, key, to, again } = (await request.json()) as {
-      slug?: string; key?: string; to?: string; again?: boolean;
+    const { slug, key, to, again, force } = (await request.json()) as {
+      slug?: string; key?: string; to?: string; again?: boolean; force?: boolean;
     };
     if (!slug || !key) return json({ error: 'slug and key required' }, 400);
 
     const row = await db
       .prepare(
         `SELECT email, edit_token, config, owner_sent_at, unsubscribed_at, unsub_token
-              , view_token
+              , view_token, source_url
            FROM site_claims WHERE slug = ? AND status != 'disabled'`
       )
       .bind(slug)
@@ -46,6 +57,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const address = String(to || config?.contact?.email || row.email || '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
       return json({ error: 'no usable address on this site' }, 422);
+    }
+
+    // An address passed in by hand is judged on its own merits rather than on
+    // whatever the config says, so that correcting a scrape is not blocked by
+    // the thing being corrected.
+    const verdict = verdictFor(
+      to
+        ? { config: null, email: to, source_url: row.source_url, unsubscribed_at: row.unsubscribed_at }
+        : row
+    );
+    if (!verdict.ok && !force) {
+      return json({ error: verdict.why, kind: verdict.kind, needsEye: verdict.kind !== 'unsubscribed' }, 422);
     }
 
     const unsubToken = String(row.unsub_token || crypto.randomUUID().replace(/-/g, ''));
