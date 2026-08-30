@@ -261,10 +261,11 @@ scale(var(--sc))}}
 
 /* Somewhere to put it away. Not stored anywhere — a reload brings it back,
    which is the right trade for a thing nobody should have to hunt for twice. */
-.gsp-tx{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:50%;
-background:#fff;color:#141821;font:600 15px/24px var(--font-sans,system-ui,sans-serif);
-text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer;z-index:3}
-.gsp-tx:hover{background:#141821;color:#fff}
+.gsp-tx{position:absolute;top:1px;right:3px;width:22px;height:22px;
+background:none;color:#c2c7d0;font:300 18px/22px var(--font-sans,system-ui,sans-serif);
+text-align:center;cursor:pointer;z-index:3;
+text-shadow:0 1px 3px rgba(0,0,0,.45);transition:color .15s ease}
+.gsp-tx:hover{color:#fff}
 
 @media(max-width:520px){.gsp-tab{width:114px;height:114px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:43px}
