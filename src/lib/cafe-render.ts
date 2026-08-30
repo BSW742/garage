@@ -84,7 +84,16 @@ transform:scale(1.04);animation:cf-drift 18s ease-out forwards}
 @keyframes cf-drift{to{transform:scale(1)}}
 .cf-hero::after{content:'';position:absolute;inset:0;
 background:linear-gradient(180deg,rgba(20,13,8,.55) 0%,rgba(20,13,8,.15) 35%,rgba(20,13,8,.82) 100%)}
-.cf-hero.plain{background:var(--espresso)}
+/* 92vh is right when a photograph is behind the words: the text sits on the
+   bottom of the picture and the picture fills the screen. With no photo it is
+   a screenful of empty brown with the headline pushed off the bottom of the
+   phone — which is what a cafe that has not put pictures in yet actually gets.
+   So a plain hero is sized by its words. */
+.cf-hero.plain{background:var(--espresso);min-height:0;align-items:start}
+.cf-hero.plain .cf-hero-inner{padding-top:3.2rem;padding-bottom:3.2rem}
+@media(min-width:700px){
+  .cf-hero.plain .cf-hero-inner{padding-top:5rem;padding-bottom:5rem}
+}
 .cf-hero.plain::after{background:radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.09),transparent 70%)}
 .cf-hero-inner{position:relative;z-index:2;padding:0 1.4rem 4.5rem;width:100%;max-width:68rem;margin:0 auto}
 @media(min-width:700px){.cf-hero-inner{padding:0 1.8rem 4.5rem}}

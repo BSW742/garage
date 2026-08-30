@@ -39,11 +39,15 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
     if (!body.byteLength) return json({ ok: false, message: 'empty' }, 400);
     if (body.byteLength > MAX_BYTES) return json({ ok: false, message: 'too big' }, 413);
 
+    // The extension follows the actual file. It was hardcoded to .webm, which
+    // was harmless right up until the format had to change — and it had to,
+    // because Safari does not play VP9 in WebM and every browser on an iPhone
+    // is Safari underneath.
+    const type = (request.headers.get('content-type') || 'video/mp4').split(';')[0].trim();
+    const ext = type === 'video/webm' ? 'webm' : type === 'video/quicktime' ? 'mov' : 'mp4';
     const id = crypto.randomUUID();
-    const key = `rec-${slug}-${id.slice(0, 8)}.webm`;
-    await bucket.put(key, body, {
-      httpMetadata: { contentType: request.headers.get('content-type') || 'video/webm' },
-    });
+    const key = `rec-${slug}-${id.slice(0, 8)}.${ext}`;
+    await bucket.put(key, body, { httpMetadata: { contentType: type } });
 
     // One live take per site. A second recording replaces the first rather
     // than stacking, because the page shows one and the rest would be litter.

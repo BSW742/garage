@@ -353,8 +353,24 @@ const picked = sites.find((s) => s.slug === slug) || null;
           ...canvas.captureStream(30).getVideoTracks(),
           ...faceStream.getAudioTracks(),
         ]);
-        const type = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
-          .find((t) => MediaRecorder.isTypeSupported(t)) || '';
+        // MP4 first, and it matters more than it looks.
+        //
+        // Safari does not play VP9 in WebM, and every browser on an iPhone is
+        // Safari underneath — so a WebM take is a take that works on the
+        // desktop it was made on and on nothing a customer is likely to be
+        // holding. H.264 in MP4 plays everywhere.
+        const type = [
+          'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+          'video/mp4;codecs=avc1,mp4a',
+          'video/mp4',
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm',
+        ].find((t) => MediaRecorder.isTypeSupported(t)) || '';
+        if (type && type.indexOf('mp4') === -1) {
+          say('Heads up: this browser can only record WebM, which iPhones will not play. ' +
+              'Chrome 126 or newer records MP4.', 'bad');
+        }
         chunks = [];
         recorder = new MediaRecorder(mixed, type ? { mimeType: type, videoBitsPerSecond: 2_500_000 } : undefined);
         recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
@@ -402,7 +418,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
         screenStream = faceStream = null;
         $('clock').classList.remove('on');
         $('go').disabled = false; $('stop').disabled = true;
-        blob = new Blob(chunks, { type: chunks[0]?.type || 'video/webm' });
+        blob = new Blob(chunks, { type: chunks[0]?.type || type || 'video/mp4' });
         const secs = Math.round((Date.now() - started) / 1000);
         $('review').src = URL.createObjectURL(blob);
         $('review').hidden = false;
@@ -465,7 +481,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
           const res = await fetch('/api/record/save?s=' + encodeURIComponent(slug) +
                                   '&secs=' + (done.secs || 0), {
             method: 'POST',
-            headers: { 'Content-Type': blob.type || 'video/webm' },
+            headers: { 'Content-Type': (blob.type || 'video/mp4').split(';')[0] },
             body: blob,
           });
           const d = await res.json();

@@ -2055,8 +2055,13 @@ function noteBlock(slug: string): string {
   }
   function toggle() { if (v.paused) { v.play().catch(function () {}); } else { v.pause(); } }
 
-  pp.addEventListener('click', toggle);
-  big.addEventListener('click', toggle);
+  function press() {
+    var wasPaused = v.paused;
+    toggle();
+    if (onPhone && wasPaused) goBig();
+  }
+  pp.addEventListener('click', press);
+  big.addEventListener('click', press);
   v.addEventListener('play', mark);
   v.addEventListener('pause', mark);
   v.addEventListener('timeupdate', function () {
@@ -2076,13 +2081,18 @@ function noteBlock(slug: string): string {
 
   var onPhone = window.matchMedia('(max-width:700px)').matches;
 
-  function open() {
-    // The file is not fetched until they ask for it, so a visitor who never
-    // presses anything never downloads a megabyte of somebody's sales pitch.
+  function open(asked) {
+    // The file is not fetched until it is going to be shown, so a desktop
+    // visitor who never presses anything never downloads a megabyte of
+    // somebody's sales pitch.
     if (!v.src) v.src = v.dataset.src;
     box.classList.add('on');
     document.body.style.overflow = 'hidden';
-    tell('seen', { at: -1 });           // opened, which is not yet watched
+    // Only a tap counts as opening it. On a phone the film is already up when
+    // they arrive, and counting that as interest would make the number mean
+    // "somebody loaded a page", which is not worth measuring.
+    if (asked) tell('seen', { at: -1 });
+    if (!asked) return;                 // no gesture yet: the disc does the rest
     v.play().catch(function () {});
 
     // A landscape recording in a portrait phone is about 390 by 219, and the
@@ -2091,13 +2101,17 @@ function noteBlock(slug: string): string {
     // and gives it the whole screen. This runs inside a tap, which is the only
     // time either API is allowed. Coming out of fullscreen lands them back
     // here with the thumbs up waiting.
-    if (onPhone) {
-      try {
-        if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
-        else if (player.requestFullscreen) player.requestFullscreen().catch(function () {});
-        else if (v.requestFullscreen) v.requestFullscreen().catch(function () {});
-      } catch (e) {}
-    }
+    if (onPhone) goBig();
+  }
+
+  // Fullscreen has to happen inside a tap — both APIs refuse otherwise, which
+  // is why the film opens on load but does not go large until they press play.
+  function goBig() {
+    try {
+      if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+      else if (player.requestFullscreen) player.requestFullscreen().catch(function () {});
+      else if (v.requestFullscreen) v.requestFullscreen().catch(function () {});
+    } catch (e) {}
   }
   function shut() {
     if (!box.classList.contains('on')) return;
@@ -2139,7 +2153,13 @@ function noteBlock(slug: string): string {
   stack();
   window.addEventListener('resize', stack);
 
-  watch.addEventListener('click', open);
+  watch.addEventListener('click', function () { open(true); });
+
+  // Video first, literally: on a phone the film is what they arrive at, with
+  // their site directly behind it. It cannot start playing by itself — every
+  // browser blocks sound without a gesture, and the talking is the pitch — so
+  // it waits on the disc, which is the one thing on the screen.
+  if (onPhone) open(false);
   box.addEventListener('click', function (e) {
     if (e.target === box || (e.target.closest && e.target.closest('.gz-shut'))) shut();
   });
