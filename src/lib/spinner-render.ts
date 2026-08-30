@@ -259,6 +259,13 @@ scale(var(--sc))}}
   .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b,
   .gsp-tab:hover .gsp-tfly b span{animation-name:none}}
 
+/* Somewhere to put it away. Not stored anywhere — a reload brings it back,
+   which is the right trade for a thing nobody should have to hunt for twice. */
+.gsp-tx{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:50%;
+background:#fff;color:#141821;font:600 15px/24px var(--font-sans,system-ui,sans-serif);
+text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer;z-index:3}
+.gsp-tx:hover{background:#141821;color:#fff}
+
 @media(max-width:520px){.gsp-tab{width:114px;height:114px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:43px}
   .gsp-tpin{border-width:24px 12px 0 12px;top:-11px}}
@@ -398,7 +405,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
         aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>${chosen
     .slice(0, 4)
     .map((prize) => `<b><span>${esc(prize.label)}</span></b>`)
-    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
+    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub">Play</span><span class="gsp-tpin"></span><span class="gsp-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
@@ -458,6 +465,15 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
     var kept = JSON.parse(localStorage.getItem('gsp-at') || 'null');
     if (kept) { tab.style.left = kept.x + 'px'; tab.style.top = kept.y + 'px'; tab.style.right = 'auto'; tab.style.bottom = 'auto'; }
   } catch (e) {}
+
+  var shut = tab.querySelector('.gsp-tx');
+  if (shut) {
+    shut.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    shut.addEventListener('click', function (e) {
+      e.stopPropagation();
+      tab.style.display = 'none';
+    });
+  }
 
   var grab = null, moved = false;
   tab.addEventListener('pointerdown', function (e) {
