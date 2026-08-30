@@ -164,13 +164,14 @@ box-shadow:0 0 0 3px rgba(10,12,18,.16),0 2px 5px rgba(0,0,0,.3)}
    A wheel says a game; a star says something is worth winning. Anything
    louder than this — a word, a pound sign, a burst — turns a nice object
    into a sticker. */
-.gsp-thub svg{width:62%;height:62%;display:block;fill:#f0a020}
+.gsp-thub{font:800 10px/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.1em;
+color:#141821;text-transform:uppercase}
 /* Dark, not white. The rim is white and so was the pointer, which left the
    one part that says which way it is pointing invisible against it. */
 .gsp-tpin{position:absolute;left:50%;top:-13px;transform:translateX(-50%);
-width:0;height:0;border-style:solid;border-width:28px 13px 0 13px;
-border-color:#f97316 transparent transparent transparent;
-filter:drop-shadow(0 0 1.5px rgba(60,20,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+width:0;height:0;border-style:solid;border-width:36px 11px 0 11px;
+border-color:${CARD} transparent transparent transparent;
+filter:drop-shadow(0 0 1.5px rgba(255,255,255,.9)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 
 /* Prizes coming off the rim, and only while the cursor is on it. Six small
    stars, each thrown a different way on its own delay, fading as they go —
@@ -269,7 +270,7 @@ text-shadow:0 1px 3px rgba(0,0,0,.45);transition:color .15s ease}
 
 @media(max-width:520px){.gsp-tab{width:114px;height:114px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:43px}
-  .gsp-tpin{border-width:24px 12px 0 12px;top:-11px}}
+  .gsp-tpin{border-width:30px 9px 0 9px;top:-10px}}
 
 .gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(4,5,8,.82);
 backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:.75rem}
@@ -406,7 +407,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
         aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>${chosen
     .slice(0, 4)
     .map((prize) => `<b><span>${esc(prize.label)}</span></b>`)
-    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub">Win</span><span class="gsp-tpin"></span><span class="gsp-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span></button>
+    .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub">WIN</span><span class="gsp-tpin"></span><span class="gsp-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
   <div class="gsp-card">
