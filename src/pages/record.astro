@@ -26,7 +26,7 @@ if (db) {
                 json_extract(s.config, '$.name')  AS name,
                 json_extract(s.config, '$.style') AS style,
                 json_extract(s.config, '$.contact.email') AS site_email,
-                s.email, s.owner_sent_at, s.unsubscribed_at,
+                s.email, s.owner_sent_at, s.unsubscribed_at, s.edit_token,
                 (SELECT COUNT(*) FROM recordings r
                   WHERE r.slug = s.slug AND r.status = 'live') AS takes
            FROM site_claims s
@@ -90,6 +90,8 @@ const picked = sites.find((s) => s.slug === slug) || null;
       }
       select { flex: 1; min-width: 18rem; }
       .btn.go { background: var(--go); border-color: var(--go); color: #fff; font-weight: 600; }
+      .btn.go2 { border-color: #3b82f6; color: #bfdbfe; font-weight: 600; }
+      .btn.go2:hover { background: rgba(59, 130, 246, 0.14); }
       .btn.stop { background: var(--stop); border-color: var(--stop); color: #fff; font-weight: 600; }
       .btn[disabled] { opacity: 0.45; cursor: default; }
 
@@ -178,7 +180,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
   <body>
     <div class="wrap">
       <h1>Record</h1>
-      <p class="sub">Sixty seconds. Your face down the left, their site filling the rest.</p>
+      <p class="sub">Sixty seconds. Record the builder and change something while they watch.</p>
 
       {error && <p class="say bad">{error}</p>}
 
@@ -186,7 +188,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
         <select id="site">
           <option value="">Pick a site…</option>
           {sites.map((s) => (
-            <option value={s.slug} selected={picked && picked.slug === s.slug}>
+            <option value={s.slug} data-token={s.edit_token || ''} selected={picked && picked.slug === s.slug}>
               {s.name || s.slug} — {s.slug}.garage.co.nz
               {s.takes ? ` · ${s.takes} take${s.takes === 1 ? '' : 's'}` : ''}
               {s.owner_sent_at ? ' · sent' : ''}
@@ -195,6 +197,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
         </select>
         <button class="btn go" id="go">Record</button>
         <button class="btn stop" id="stop" disabled>Stop</button>
+        <a class="btn go2" id="builder" target="_blank" rel="noopener">Open the builder</a>
         <a class="btn" id="open" target="_blank" rel="noopener">Open site</a>
       </div>
 
@@ -222,9 +225,13 @@ const picked = sites.find((s) => s.slug === slug) || null;
       <video class="review" id="review" controls playsinline hidden></video>
 
       <p class="tip">
-        <b>Chrome only.</b> Put this window and their site side by side and keep both on
-        screen — if this one gets hidden the picture freezes. Pick the window with their site
-        in it, not the whole screen. It stops itself at sixty seconds.
+        <b>Record the builder, not the finished site.</b> Press <b>Open the builder</b>, put it
+        beside this window, then press Record and choose <b>Chrome Tab</b> &mdash; the builder tab.
+        Tab, not Window: window capture puts the address bar and its edit token on camera.
+        <br /><br />
+        Type one change and let them watch the page do it. That is the whole pitch and it is the
+        only part nobody else can copy. Keep this window on screen or the picture freezes, and it
+        stops itself at sixty seconds. Chrome only.
       </p>
     </div>
 
@@ -232,7 +239,6 @@ const picked = sites.find((s) => s.slug === slug) || null;
       const $ = (id) => document.getElementById(id);
       const CAP = 60;             // seconds. The brief was "60 seconds > NO MORE".
       const W = 1280, H = 720;
-      const STRIP = 232;          // the face column, in canvas pixels
 
       // So his own views of his own take are not counted as theirs. The site
       // player reads this back before it pings.
@@ -240,14 +246,25 @@ const picked = sites.find((s) => s.slug === slug) || null;
 
       const canvas = $('canvas');
       const ctx = canvas.getContext('2d');
+      const BUBBLE = 96;          // radius of the face, in canvas pixels
+      const EDGE = 34;            // how far it sits off the bottom-left corner
       let screenStream = null, faceStream = null, recorder = null;
       let chunks = [], blob = null, started = 0, raf = 0, ticker = 0;
 
       const say = (text, kind) => { const s = $('say'); s.textContent = text || ''; s.className = 'say ' + (kind || ''); };
 
       $('site').addEventListener('change', () => {
-        const s = $('site').value;
+        const sel = $('site');
+        const s = sel.value;
+        const tok = sel.selectedOptions[0] ? sel.selectedOptions[0].dataset.token : '';
         $('open').href = s ? 'https://' + s + '.garage.co.nz/' : '#';
+        // Straight into the builder for that site, token and all. This is the
+        // thing to record: typing in the chat genuinely changes the page on the
+        // left, which is the only part of any of this that is hard to copy.
+        $('builder').href = s && tok
+          ? 'https://garage.co.nz/ai?edit=' + encodeURIComponent(s) + '&t=' + encodeURIComponent(tok)
+          : '#';
+        $('builder').style.opacity = s && tok ? '1' : '.45';
       });
       $('site').dispatchEvent(new Event('change'));
 
@@ -264,21 +281,51 @@ const picked = sites.find((s) => s.slug === slug) || null;
           ctx.drawImage(screenVid, (W - w) / 2, (H - h) / 2, w, h);
         }
 
-        // The face, cropped to a vertical strip down the left edge.
+        // The face, in a circle in the bottom-left corner.
+        //
+        // It was a column down the left edge, which made sense while the left
+        // of frame was dead space. It is not any more: the builder puts their
+        // site there, and the site changing is the whole point of the take. So
+        // he gets out of its way and sits in the corner instead.
         if (faceVid && faceVid.videoWidth) {
-          const k = Math.max(STRIP / faceVid.videoWidth, H / faceVid.videoHeight);
+          const cx = EDGE + BUBBLE, cy = H - EDGE - BUBBLE;
+          const k = Math.max((BUBBLE * 2) / faceVid.videoWidth, (BUBBLE * 2) / faceVid.videoHeight);
           const w = faceVid.videoWidth * k, h = faceVid.videoHeight * k;
           ctx.save();
           ctx.beginPath();
-          ctx.rect(0, 0, STRIP, H);
+          ctx.arc(cx, cy, BUBBLE, 0, Math.PI * 2);
+          ctx.closePath();
+          ctx.shadowColor = 'rgba(0,0,0,.45)';
+          ctx.shadowBlur = 26;
+          ctx.shadowOffsetY = 6;
+          ctx.fillStyle = '#0b0c0f';
+          ctx.fill();
+          ctx.shadowColor = 'transparent';
           ctx.clip();
           // Mirrored, because a face that moves the wrong way is unsettling.
-          ctx.translate(STRIP, 0);
+          ctx.translate(cx * 2, 0);
           ctx.scale(-1, 1);
-          ctx.drawImage(faceVid, (STRIP - w) / 2, (H - h) / 2, w, h);
+          ctx.drawImage(faceVid, cx - w / 2, cy - h / 2, w, h);
           ctx.restore();
-          ctx.fillStyle = 'rgba(255,255,255,.14)';
-          ctx.fillRect(STRIP - 1, 0, 1, H);
+          ctx.beginPath();
+          ctx.arc(cx, cy, BUBBLE, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255,255,255,.9)';
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+
+        // A quiet line along the bottom, so a video that gets forwarded still
+        // says whose site it is and where it came from.
+        if (paint.mark) {
+          ctx.save();
+          ctx.font = '600 20px Inter, system-ui, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'alphabetic';
+          ctx.shadowColor = 'rgba(0,0,0,.6)';
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = 'rgba(255,255,255,.92)';
+          ctx.fillText(paint.mark, W - EDGE, H - EDGE);
+          ctx.restore();
         }
         raf = requestAnimationFrame(paint);
       }
@@ -307,6 +354,7 @@ const picked = sites.find((s) => s.slug === slug) || null;
         const fv = document.createElement('video');
         fv.srcObject = faceStream; fv.muted = true; await fv.play();
         paint.screen = sv; paint.face = fv;
+        paint.mark = $('site').value + '.garage.co.nz  ·  built by talking';
         $('idle').style.display = 'none';
         paint();
 
