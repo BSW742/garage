@@ -25,6 +25,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     if (kind === 'in') {
       await db.prepare("UPDATE site_mail SET archived_at = datetime('now') WHERE id = ?").bind(id).run();
+    } else if (kind === 'inbox') {
+      await db.prepare("UPDATE emails SET archived_at = datetime('now') WHERE id = ?").bind(id).run();
     } else if (kind === 'out') {
       await db.prepare("UPDATE outbox SET archived_at = datetime('now') WHERE id = ?").bind(id).run();
     } else if (kind === 'booking') {

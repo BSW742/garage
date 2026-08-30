@@ -59,14 +59,32 @@ if (db) {
 let inbound: any[] = [];
 let sent: any[] = [];
 if (db) {
+  // Two inboxes, not one.
+  //
+  // The mail worker splits on the address: <slug>@garage.co.nz is site mail and
+  // lands in site_mail, but ben@ and hello@ are reserved names, so they fall
+  // through to a different table entirely. Reading only site_mail meant the
+  // first genuine enquiry the platform ever received — a charity asking for a
+  // free website, addressed to ben@garage.co.nz — arrived, was stored, and was
+  // invisible on the page built to show exactly that.
   try {
     const a = await db
       .prepare(
-        `SELECT id, slug, from_address, subject, intent, note, body, received_at
+        `SELECT id, slug, from_address, subject, intent, note, body, received_at, 'in' AS kind
            FROM site_mail WHERE archived_at IS NULL ORDER BY received_at DESC LIMIT 60`
       ).all();
     inbound = a.results || [];
   } catch { /* an empty tab beats a page that 500s */ }
+  try {
+    const c = await db
+      .prepare(
+        `SELECT id, NULL AS slug, from_address, subject, to_address AS intent,
+                NULL AS note, body_text AS body, received_at, 'inbox' AS kind
+           FROM emails WHERE archived_at IS NULL ORDER BY received_at DESC LIMIT 60`
+      ).all();
+    inbound = [...inbound, ...(c.results || [])]
+      .sort((x: any, y: any) => String(y.received_at).localeCompare(String(x.received_at)));
+  } catch { /* the personal mailbox is a separate table and may be empty */ }
   try {
     const b = await db
       .prepare(
@@ -377,7 +395,7 @@ const ago = (t: unknown) => {
               {m.slug && <span class="tag">{m.slug}</span>}
               {m.intent && m.intent !== m.slug && <span class="tag">{m.intent}</span>}
               <button class="act" data-reply={m.from_address} data-subject={`Re: ${decodeSubject(m.subject) || ''}`}>Reply</button>
-              <button class="act bin" data-hide="in" data-id={m.id} title="Archive">&times;</button>
+              <button class="act bin" data-hide={m.kind} data-id={m.id} title="Archive">&times;</button>
             </header>
             <p class="subj">{decodeSubject(m.subject) || '(no subject)'}</p>
             {m.body && <pre>{String(m.body).slice(0, 1200)}</pre>}
