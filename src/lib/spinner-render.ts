@@ -128,7 +128,7 @@ export const SPINNER_CSS = `
    The colours are brighter than the real wheel inside: this one is competing
    with whatever the site itself is doing, and the wheel in the modal is not. */
 .gsp-tab{position:fixed;right:1.7rem;bottom:1.7rem;z-index:9990;
-width:92px;height:92px;padding:0;border:0;border-radius:50%;
+width:138px;height:138px;touch-action:none;padding:0;border:0;border-radius:50%;
 background:none;cursor:pointer;display:block;
 filter:drop-shadow(0 12px 26px rgba(0,0,0,.34)) drop-shadow(0 0 13px rgba(240,160,32,.42));
 transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
@@ -157,7 +157,7 @@ box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
    were centring it were then pulling it eleven pixels up and left of the
    middle, which is the wobble. inset needs neither: it is centred because all
    four sides are equal, whatever the box turns out to be. */
-.gsp-thub{position:absolute;inset:35px;border-radius:50%;background:#fff;
+.gsp-thub{position:absolute;inset:52px;border-radius:50%;background:#fff;
 display:grid;place-items:center;
 box-shadow:0 0 0 3px rgba(10,12,18,.16),0 2px 5px rgba(0,0,0,.3)}
 /* One small gold star, and that is the whole of the argument for prizes.
@@ -167,8 +167,8 @@ box-shadow:0 0 0 3px rgba(10,12,18,.16),0 2px 5px rgba(0,0,0,.3)}
 .gsp-thub svg{width:62%;height:62%;display:block;fill:#f0a020}
 /* Dark, not white. The rim is white and so was the pointer, which left the
    one part that says which way it is pointing invisible against it. */
-.gsp-tpin{position:absolute;left:50%;top:-9px;transform:translateX(-50%);
-width:0;height:0;border-style:solid;border-width:19px 9px 0 9px;
+.gsp-tpin{position:absolute;left:50%;top:-13px;transform:translateX(-50%);
+width:0;height:0;border-style:solid;border-width:28px 13px 0 13px;
 border-color:#f97316 transparent transparent transparent;
 filter:drop-shadow(0 0 1.5px rgba(60,20,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 
@@ -259,9 +259,9 @@ scale(var(--sc))}}
   .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b,
   .gsp-tab:hover .gsp-tfly b span{animation-name:none}}
 
-@media(max-width:520px){.gsp-tab{width:76px;height:76px;right:1.1rem;bottom:1.1rem}
-  .gsp-thub{inset:29px}
-  .gsp-tpin{border-width:16px 8px 0 8px;top:-8px}}
+@media(max-width:520px){.gsp-tab{width:114px;height:114px;right:1.1rem;bottom:1.1rem}
+  .gsp-thub{inset:43px}
+  .gsp-tpin{border-width:24px 12px 0 12px;top:-11px}}
 
 .gsp-veil{position:fixed;inset:0;z-index:9991;background:rgba(4,5,8,.82);
 backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:.75rem}
@@ -449,16 +449,43 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
   var KEY = 'garage-spun:' + slug;
   $('gsp-tab').addEventListener('click', function () { veil.classList.add('on'); });
 
-  // It turns with the page rather than on its own. Spinning forever in the
-  // corner is movement nobody asked for; tied to the scroll it only moves
-  // when they do. The hover animation still overrides this — a running
-  // animation outranks an inline style.
-  var disc = document.querySelector('.gsp-tdisc');
-  if (disc) {
-    var turn = function () { disc.style.transform = 'rotate(' + (window.pageYOffset * 0.22) + 'deg)'; };
-    window.addEventListener('scroll', turn, { passive: true });
-    turn();
-  }
+  // Pick it up and put it somewhere else. Dragging switches it from the
+  // right/bottom corner it starts in to plain left/top, and where it lands is
+  // remembered. A press that never moved is still a press, so the modal opens
+  // as before — only a real drag swallows the click that follows it.
+  var tab = $('gsp-tab');
+  try {
+    var kept = JSON.parse(localStorage.getItem('gsp-at') || 'null');
+    if (kept) { tab.style.left = kept.x + 'px'; tab.style.top = kept.y + 'px'; tab.style.right = 'auto'; tab.style.bottom = 'auto'; }
+  } catch (e) {}
+
+  var grab = null, moved = false;
+  tab.addEventListener('pointerdown', function (e) {
+    var r = tab.getBoundingClientRect();
+    grab = { x: e.clientX - r.left, y: e.clientY - r.top, sx: e.clientX, sy: e.clientY };
+    moved = false;
+    tab.setPointerCapture(e.pointerId);
+  });
+  tab.addEventListener('pointermove', function (e) {
+    if (!grab) return;
+    if (!moved && Math.abs(e.clientX - grab.sx) < 4 && Math.abs(e.clientY - grab.sy) < 4) return;
+    moved = true;
+    // Kept inside the window, or it can be dropped somewhere unreachable.
+    var x = Math.max(4, Math.min(e.clientX - grab.x, window.innerWidth - tab.offsetWidth - 4));
+    var y = Math.max(4, Math.min(e.clientY - grab.y, window.innerHeight - tab.offsetHeight - 4));
+    tab.style.left = x + 'px'; tab.style.top = y + 'px';
+    tab.style.right = 'auto'; tab.style.bottom = 'auto';
+  });
+  tab.addEventListener('pointerup', function () {
+    grab = null;
+    if (!moved) return;
+    try { localStorage.setItem('gsp-at', JSON.stringify({ x: tab.offsetLeft, y: tab.offsetTop })); } catch (err) {}
+    // Swallow the click this drag is about to fire.
+    tab.addEventListener('click', function stop(ev) {
+      ev.stopImmediatePropagation();
+      tab.removeEventListener('click', stop, true);
+    }, true);
+  });
   function close() { veil.classList.remove('on'); }
   $('gsp-x').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
