@@ -108,6 +108,18 @@ const GOLD = '#c8a23c';
 const LINE = 'rgba(255,255,255,.12)';
 const DIM = '#7d8598';
 
+// The little wheel on the button wears the same colours as the big one, built
+// from the same rule rather than typed out beside it: slot nought gold, the
+// rest cycling red, blue, white. It had a brighter palette of its own and the
+// two read as different objects — you press one wheel and a different wheel
+// opens. Deriving it here means they cannot drift apart again.
+const TAB_CYCLE = [RED, BLUE, WHITE];
+const TAB_WEDGES = Array.from({ length: SLOTS }, (_, i) => {
+  const seg = 360 / SLOTS;
+  const trim = (n: number) => String(+n.toFixed(2));
+  return `${i === 0 ? GOLD : TAB_CYCLE[(i - 1) % 3]} ${trim(i * seg)}deg ${trim((i + 1) * seg)}deg`;
+}).join(',');
+
 export const SPINNER_CSS = `
 /* A wheel, turning, and nothing else. It used to be the words SPIN TO WIN set
    sideways up the edge of the screen, which asked to be read before it could
@@ -130,17 +142,10 @@ body.gz-noted .gsp-tab{bottom:10.2rem}
 /* The disc spins; the button does not — it is holding the translate that
    centres it, and an animation on the same element would throw that away. */
 .gsp-tdisc{position:absolute;inset:0;border-radius:50%;
-/* Eight slots, two of them black. Sixteen was too fine and read as stripes.
-   The order is deliberately irregular: no colour sits opposite itself, so it
-   does not resolve into a pattern when it slows down — the old eight were two
-   identical runs of four, which is where the symmetry came from.
-   Black only ever on this button: on the wheel people actually spin, a black
-   slot would read as the one you did not want, and every slot on that one is
-   a prize. */
-background:conic-gradient(
-#fbbf24 0deg 45deg,#141821 45deg 90deg,#ef4444 90deg 135deg,
-#ffffff 135deg 180deg,#3b82f6 180deg 225deg,#ffffff 225deg 270deg,
-#141821 270deg 315deg,#ef4444 315deg 360deg);
+/* Same wedges as the wheel that opens: gold at nought, then red, blue, white
+   round the rest. Not symmetrical, because seven does not divide by three —
+   which is the same reason the big one never looked like a pie chart. */
+background:conic-gradient(${TAB_WEDGES});
 box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(10,12,18,.18);
 animation:gsp-turn 3.1s linear infinite}
 .gsp-tab:hover .gsp-tdisc{animation-duration:.5s}
@@ -179,8 +184,8 @@ filter:drop-shadow(0 0 1.5px rgba(60,20,0,.55)) drop-shadow(0 2px 3px rgba(0,0,0
    outranks the per-star rules below — so all six left together in one clump
    rather than trickling off the rim. */
 .gsp-tfly i{position:absolute;left:50%;top:50%;width:13px;height:13px;
-margin:-6.5px 0 0 -6.5px;background:#fbbf24;opacity:0;
-filter:drop-shadow(0 0 4px rgba(251,191,36,.85));
+margin:-6.5px 0 0 -6.5px;background:${GOLD};opacity:0;
+filter:drop-shadow(0 0 5px rgba(200,162,60,.9));
 clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
 animation-name:none;animation-duration:1.05s;animation-timing-function:ease-out;
 animation-iteration-count:infinite}
@@ -209,34 +214,50 @@ animation-iteration-count:infinite}
    doing, so the legibility has to come from the letters: white with a dark
    outline drawn in four directions, which holds on a photograph, on paper and
    on a dark band alike. */
-.gsp-tfly b{position:absolute;left:50%;top:50%;white-space:nowrap;
+/* Two elements, because one cannot do this. Travelling out and turning over
+   want different timing — the drift should ease off as it goes, the turn
+   should be steady the whole way — and a single element gets one timing
+   function for every property it animates. Hence the outer carrying the
+   drift and the inner carrying the roll. Running both off one curve is what
+   made it snatch. */
+.gsp-tfly b{position:absolute;left:50%;top:50%;opacity:0;
+animation-name:none;animation-duration:2.7s;
+animation-timing-function:cubic-bezier(.1,.62,.25,1);
+animation-iteration-count:infinite}
+.gsp-tfly b,.gsp-tfly b span{animation-delay:var(--d)}
+.gsp-tfly b span{display:block;white-space:nowrap;
 font:800 12px/1 var(--font-sans,system-ui,sans-serif);text-transform:uppercase;
-letter-spacing:.04em;color:#fff;opacity:0;
+letter-spacing:.04em;color:#fff;
 text-shadow:0 0 4px rgba(0,0,0,.85),1px 1px 0 rgba(0,0,0,.6),-1px 1px 0 rgba(0,0,0,.6),
 1px -1px 0 rgba(0,0,0,.6),-1px -1px 0 rgba(0,0,0,.6);
-animation-name:none;animation-duration:1.6s;animation-timing-function:cubic-bezier(.2,.7,.3,1);
+animation-name:none;animation-duration:2.7s;animation-timing-function:linear;
 animation-iteration-count:infinite}
 /* The top prize is the gold one on the wheel, so it is the gold one here. */
-.gsp-tfly b:first-of-type{color:#fbbf24;font-size:13px}
+.gsp-tfly b:first-of-type span{color:${GOLD};font-size:13px}
 .gsp-tab:hover .gsp-tfly b{animation-name:gsp-toss}
-/* Every one on a different heading, at a different tilt, at a different size.
-   They all left on the same level line before, which read as a ticker rather
-   than as something being thrown off a spinning wheel. */
-.gsp-tfly b:nth-of-type(1){--dx:-150px;--dy:-62px;--r1:-7deg;--r2:-19deg;--sc:1.05;animation-delay:.05s}
-.gsp-tfly b:nth-of-type(2){--dx:-58px;--dy:-132px;--r1:9deg;--r2:26deg;--sc:.9;animation-delay:.42s}
-.gsp-tfly b:nth-of-type(3){--dx:-146px;--dy:54px;--r1:-12deg;--r2:-31deg;--sc:.96;animation-delay:.83s}
-.gsp-tfly b:nth-of-type(4){--dx:-96px;--dy:-104px;--r1:14deg;--r2:8deg;--sc:.86;animation-delay:1.2s}
-/* The mid frame sits off the straight line between start and finish, which is
-   what bends the path — a two-point tween can only ever travel in a line. */
+.gsp-tab:hover .gsp-tfly b span{animation-name:gsp-roll}
+/* Each one thrown further than the last had any right to be, on its own
+   heading, turning its own way at its own rate. Loose on purpose. */
+.gsp-tfly b:nth-of-type(1){--dx:-196px;--dy:-84px;--r0:-14deg;--r1:26deg;--sc:1.06;--d:0s}
+.gsp-tfly b:nth-of-type(2){--dx:-74px;--dy:-178px;--r0:16deg;--r1:-34deg;--sc:.92;--d:.62s}
+.gsp-tfly b:nth-of-type(3){--dx:-188px;--dy:76px;--r0:-9deg;--r1:-52deg;--sc:.98;--d:1.28s}
+.gsp-tfly b:nth-of-type(4){--dx:-124px;--dy:-146px;--r0:24deg;--r1:11deg;--sc:.88;--d:1.9s}
+/* The middle frame sits off the straight line between the ends, which is what
+   bends the path — a two-point tween can only ever travel in a line. */
 @keyframes gsp-toss{
-0%{opacity:0;transform:translate(-50%,-50%) scale(.5) rotate(0deg)}
-18%{opacity:1;transform:translate(calc(-50% + var(--dx) * .3),calc(-50% + var(--dy) * .46))
-scale(var(--sc)) rotate(var(--r1))}
-64%{opacity:.95}
+0%{opacity:0;transform:translate(-50%,-50%) scale(.66)}
+14%{opacity:1}
+40%{transform:translate(calc(-50% + var(--dx) * .34),calc(-50% + var(--dy) * .58))
+scale(var(--sc))}
+74%{opacity:1}
 100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy)))
-scale(var(--sc)) rotate(var(--r2))}}
+scale(var(--sc))}}
+@keyframes gsp-roll{
+0%{transform:rotate(var(--r0))}
+100%{transform:rotate(var(--r1))}}
 @media(prefers-reduced-motion:reduce){
-  .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b{animation-name:none}}
+  .gsp-tab:hover .gsp-tfly i,.gsp-tab:hover .gsp-tfly b,
+  .gsp-tab:hover .gsp-tfly b span{animation-name:none}}
 
 @media(max-width:520px){.gsp-tab{width:76px;height:76px;right:1.1rem;bottom:1.1rem}
   .gsp-thub{inset:29px}
@@ -376,7 +397,7 @@ export function renderSpinner(site: SiteConfig, slug: string): string {
 <button class="gsp-tab${site.chat ? ' gsp-over-chat' : ''}" id="gsp-tab" type="button" aria-haspopup="dialog"
         aria-label="${esc(spin.title || 'Spin to win')}"><span class="gsp-tfly" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>${chosen
     .slice(0, 4)
-    .map((prize) => `<b>${esc(prize.label)}</b>`)
+    .map((prize) => `<b><span>${esc(prize.label)}</span></b>`)
     .join('')}</span><span class="gsp-tdisc"></span><span class="gsp-thub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6l3.1 6.9 7.3.8-5.4 5 1.5 7.2L12 17.9 5.5 21.5 7 14.3 1.6 9.3l7.3-.8z"/></svg></span><span class="gsp-tpin"></span></button>
 
 <div class="gsp-veil" id="gsp-veil" role="dialog" aria-modal="true" aria-label="${esc(spin.title || 'Spin to win')}">
