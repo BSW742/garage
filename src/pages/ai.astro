@@ -3374,6 +3374,25 @@ if (cameFromOffer && openedSlug) {
 
       // Every editable string carries a path so a click can address it
       function blockHtml(section, i) {
+        // One malformed section used to take the whole builder down with it:
+        // an hours block carrying `items` where the renderer wanted `rows`
+        // threw on .map, the catch upstream turned that into "Couldn't load
+        // that one", and a site that was fine everywhere else could not be
+        // opened at all. A section missing its list renders empty instead.
+        section = section || {};
+        ['items', 'rows', 'clips', 'videos', 'partners', 'images', 'products'].forEach(function (k) {
+          if (section[k] != null && !Array.isArray(section[k])) section[k] = [];
+        });
+        if (!Array.isArray(section.items)) section.items = section.items || [];
+        if (!Array.isArray(section.rows)) {
+          // hours came in as items on at least one real site; take them rather
+          // than showing an empty panel.
+          section.rows = Array.isArray(section.items) && section.type === 'hours'
+            ? section.items : [];
+        }
+        if (!Array.isArray(section.clips)) section.clips = [];
+        if (!Array.isArray(section.partners)) section.partners = [];
+        if (!Array.isArray(section.images)) section.images = [];
         const s = S.site;
         const p = 'sec.' + i;
         const ed = (path, cls, tag, value, extra) =>
