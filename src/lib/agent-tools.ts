@@ -464,6 +464,35 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_dig',
+    description:
+      'Turn The Big Dig on or off, and set the prize ladder. A digger game: every scoop goes a ' +
+      'level deeper and the prize gets better, but hit a buried pipe and they drop to the ' +
+      'consolation prize. They can knock off any time and keep what they have dug up. The first ' +
+      'scoop always succeeds; after that the risk climbs each level, honestly random. Nobody ' +
+      'leaves empty-handed — the consolation goes to everyone who busts, so make sure the owner ' +
+      'is happy to honour every rung AND the consolation. Pass 2 to 5 prizes smallest first: the ' +
+      'deepest is the best and hardest to reach. Short labels, about 24 characters. Works for any ' +
+      'trade, not just tradies — a cafe ladder might be "Free coffee" up to "$50 tab". One play ' +
+      'per person. Details go to the owner; the visitor is never emailed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the game on the site.' },
+        prizes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '2 to 5 rungs, smallest first, best last. e.g. ["Free coffee","Free cake","Coffee for a week","$50 tab"]',
+        },
+        bust: { type: 'string', description: 'The consolation when they hit the pipe, e.g. "10% off".' },
+        title: { type: 'string', description: 'Heading, e.g. "The Big Dig".' },
+        blurb: { type: 'string', description: 'One line under the heading.' },
+        terms: { type: 'string', description: 'Any conditions, e.g. "One dig per person."' },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'add_clips',
     description:
       'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
@@ -881,6 +910,39 @@ export async function runTool(
           `Wheel is on with ${on.length} prizes. ${on[0]} has the gold slot, one in eight. ` +
           `${on.slice(1).join(', ')} share the other seven. Every slot is a prize.`,
         data: { spinner: spin },
+      };
+    }
+
+    case 'set_dig': {
+      const dig: any = (site as any).dig || {};
+      if (input.prizes !== undefined) {
+        const rungs = (input.prizes || [])
+          .map((p: any) => String(p || '').trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        const tooLong = rungs.filter((e: string) => e.length > 24);
+        if (tooLong.length) {
+          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
+        }
+        dig.prizes = rungs;
+      }
+      if (input.on && (dig.prizes || []).length < 2) {
+        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
+      }
+      if (input.bust !== undefined) dig.bust = String(input.bust).slice(0, 40);
+      if (input.title !== undefined) dig.title = String(input.title).slice(0, 40);
+      if (input.blurb !== undefined) dig.blurb = String(input.blurb).slice(0, 140);
+      if (input.terms !== undefined) dig.terms = String(input.terms).slice(0, 200);
+      dig.on = !!input.on;
+      (site as any).dig = dig;
+      if (!dig.on) return { ok: true, message: 'The Big Dig is off.' };
+      return {
+        ok: true,
+        message:
+          `The Big Dig is on: ${(dig.prizes || []).join(' → ')}. ` +
+          `Bust drops to ${dig.bust || 'a consolation prize'}. First scoop always succeeds; ` +
+          `deepest rung is hardest to reach.`,
+        data: { dig },
       };
     }
 
