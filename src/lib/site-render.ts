@@ -1895,6 +1895,8 @@ font:inherit;font-weight:700;cursor:pointer}
 
 .gz-box-do{display:none}
 .gz-short{display:none}
+.gz-brand{display:none}
+.gz-hint{display:none}
 .gz-seen{display:block;text-align:center;color:#9aa0ac;font-size:.85rem;
 text-decoration:underline;text-underline-offset:3px;padding:.2rem}
 .gz-seen[hidden]{display:none}
@@ -1913,14 +1915,48 @@ cursor:pointer;display:grid;place-items:center;padding:0;z-index:9600}
    block above them and the modal's own actions stay display:none on a phone,
    which is exactly what happened the first time. */
 @media(max-width:700px){
-  .gz-box{padding:.8rem;align-content:center}
+  /* White, like the bar. On a phone the film is the whole page rather than a
+     thing floating over one, and a black sheet made it read as a video player
+     that had taken the site over. */
+  /* Top, not centred. Centring left the line floating halfway down a white
+     screen with nothing above it, which is not what "at the top" means and is
+     not where an eye starts. */
+  .gz-box{padding:1rem .85rem 2rem;align-content:start;background:#fff;
+  backdrop-filter:none;color:#0b0c0f;overflow-y:auto}
   .gz-box-in{width:100%}
+
+  /* The line across the top does the work the little character was doing and
+     failing at: at forty pixels on a phone he is a smudge, and the words
+     beside him were too small to read. This says who it is and what is on
+     offer in three words, at a size that does not need looking at twice. */
+  .gz-brand{display:flex;gap:.4rem;align-items:baseline;flex-wrap:wrap;
+  /* Hard limit rather than a margin: the last words ran under the close
+     button in the corner instead of wrapping before it. */
+  max-width:calc(100% - 3.4rem);
+  margin:0 0 .8rem;font:800 .95rem/1.3 Inter,system-ui,sans-serif;
+  letter-spacing:-.02em;color:#0b0c0f}
+  .gz-brand span{white-space:nowrap;color:#5b6270;font-weight:700}
+  .gz-brand i{font-style:normal;color:#c2c7d0;font-weight:600;margin-right:.15rem}
+  .gz-brand b{font-weight:800}
+
+  .gz-box p{margin-top:.7rem;font-size:.84rem;color:#5b6270}
+  .gz-box p b{color:#0b0c0f}
   .gz-box-do{display:grid;gap:.55rem;margin-top:.9rem}
-  .gz-box-do .gz-like{width:100%;justify-content:center;padding:.7rem;
-  font-size:.95rem;border-radius:11px}
-  .gz-box p{margin-top:.7rem;font-size:.82rem}
+  .gz-box-do .gz-like{width:100%;justify-content:center;padding:.75rem;
+  font-size:.98rem;border-radius:11px}
+  .gz-more{border-color:rgba(11,12,15,.25);color:#0b0c0f}
+  .gz-more:hover{border-color:#0b0c0f}
+  .gz-seen{color:#5b6270}
+  .gz-hint{display:block;margin:.2rem 0 0;text-align:center;font-size:.78rem;color:#9aa0ac}
+  .gz-shut{background:#fff;border-color:#0b0c0f;color:#0b0c0f;border-width:1.5px;
+  top:.75rem;right:.85rem;width:2.3rem;height:2.3rem}
+
   .gz-short{display:inline}
   .gz-long{display:none}
+  .gz-short b{font-weight:800}
+  .gz-short i{font-style:normal;color:#9aa0ac}
+  /* He is the desktop's welcome, not the phone's. */
+  .gz-ben{display:none}
 }
 `;
 
@@ -1931,7 +1967,9 @@ function noteBlock(slug: string): string {
   return `<div class="gz-bar">
   <img class="gz-ben" src="https://garage.co.nz/lean.png" alt="" aria-hidden="true" draggable="false" />
   <button type="button" class="gz-watch" id="gz-watch">
-    <s></s><span>I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
+    <s></s>
+    <span class="gz-long">I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
+    <span class="gz-short"><b>Garage.co.nz</b> <i>&rsaquo;</i> FREE websites</span>
   </button>
   <span class="gz-do">
     <button type="button" class="gz-grow" id="gz-grow">
@@ -1975,6 +2013,7 @@ function noteBlock(slug: string): string {
 <div class="gz-box" id="gz-box" role="dialog" aria-modal="true" aria-label="How this site was made">
   <button type="button" class="gz-shut" aria-label="Close">&times;</button>
   <div class="gz-box-in">
+    <p class="gz-brand"><b>Garage.co.nz</b><span><i>&rsaquo;</i> FREE websites</span><span><i>&rsaquo;</i> Built by talking</span></p>
     <div class="gz-player" id="gz-player">
       <video id="gz-note-v" playsinline preload="none"
              data-src="https://garage.co.nz/images/${key}"></video>
@@ -2002,6 +2041,7 @@ function noteBlock(slug: string): string {
       </button>
       <a class="gz-seen" id="gz-seen" href="https://garage.co.nz"${liked ? '' : ' hidden'}>See what else he has built &rarr;</a>
       <button type="button" class="gz-more" id="gz-more">&#9889; Grow your business</button>
+      <p class="gz-hint">Close this to look at your site.</p>
     </div>
   </div>
 </div>
