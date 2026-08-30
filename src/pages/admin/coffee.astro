@@ -1,0 +1,263 @@
+---
+// COFFEE — the sales page.
+//
+// /admin/sites answers "is the machine working". This answers "who do I talk
+// to next", which is a different question with a different shape, and cramming
+// both into one table was making neither readable.
+//
+// One list, hottest first, and the only thing that decides order is what the
+// business has actually done: a thumbs up beats a play, a play beats a send,
+// a send beats a site sitting there waiting to be recorded.
+import { verdictFor, stageOf, STAGES, type Stage } from '../../lib/outreach';
+
+export const prerender = false;
+
+const db = (Astro.locals.runtime?.env as any)?.DB;
+let rows: any[] = [];
+let error = '';
+
+if (db) {
+  try {
+    const { results } = await db
+      .prepare(
+        `SELECT s.slug, s.email, s.config, s.source_url, s.edit_token,
+                s.owner_sent_at, s.owner_sent_to, s.unsubscribed_at, s.claimed_at,
+                s.created_at, s.updated_at,
+                json_extract(s.config, '$.name')  AS biz,
+                json_extract(s.config, '$.style') AS style,
+                json_extract(s.config, '$.contact.address') AS town,
+                r.key AS take, r.seconds, r.opened, r.grew, r.plays, r.furthest,
+                r.liked_at, r.created_at AS take_at,
+                (SELECT COUNT(*) FROM interest i WHERE i.slug = s.slug) AS wants,
+                (SELECT group_concat(i.thing, ', ') FROM interest i WHERE i.slug = s.slug) AS want_list
+           FROM site_claims s
+           LEFT JOIN recordings r ON r.slug = s.slug AND r.status = 'live'
+          WHERE s.status != 'disabled'`
+      )
+      .all();
+    rows = results || [];
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+
+const HEAT: Record<Stage, number> = {
+  keen: 0, watched: 1, sent: 2, recorded: 3, ready: 4, claimed: 5, parked: 6,
+};
+
+const list = rows
+  .map((r) => {
+    const verdict = verdictFor(r);
+    const stage = stageOf({
+      claimed_at: r.claimed_at,
+      owner_sent_at: r.owner_sent_at,
+      liked_at: r.liked_at,
+      wants: Number(r.wants || 0),
+      opened: Number(r.opened || 0),
+      plays: Number(r.plays || 0),
+      hasTake: !!r.take,
+      verdict,
+    });
+    return { ...r, verdict, stage };
+  })
+  .sort((a, b) =>
+    HEAT[a.stage as Stage] - HEAT[b.stage as Stage] ||
+    String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
+  );
+
+const count = (id: Stage) => list.filter((x) => x.stage === id).length;
+const ago = (t: unknown) => {
+  if (!t) return '';
+  const d = Date.parse(String(t).replace(' ', 'T') + (String(t).endsWith('Z') ? '' : 'Z'));
+  if (!isFinite(d)) return '';
+  const mins = Math.round((Date.now() - d) / 60000);
+  if (mins < 60) return mins + 'm';
+  if (mins < 1440) return Math.round(mins / 60) + 'h';
+  return Math.round(mins / 1440) + 'd';
+};
+---
+
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Coffee</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --room: #0b0c0f; --panel: #14161b; --line: #242730; --ink: #f3f4f6;
+        --dim: #878d99; --hot: #f97316; --go: #22c55e; --cool: #3b82f6;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--room); color: var(--ink);
+        font: 400 15px/1.5 Inter, system-ui, sans-serif; }
+      .wrap { max-width: 82rem; margin: 0 auto; padding: 1.5rem 1.1rem 5rem; }
+      h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.02em; }
+      .top { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+      .top a { color: var(--dim); font-size: 0.83rem; text-decoration: none; border-bottom: 1px solid var(--line); }
+      .top a:hover { color: var(--ink); }
+      .sub { color: var(--dim); font-size: 0.85rem; margin: 0.15rem 0 0; }
+
+      /* The funnel. Each one is a filter. */
+      .funnel { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+      .step { background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+        padding: 0.6rem 0.85rem; cursor: pointer; text-align: left; color: var(--ink);
+        font: inherit; min-width: 7.2rem; transition: border-color 0.15s, transform 0.15s; }
+      .step:hover { border-color: #3d424f; transform: translateY(-1px); }
+      .step.on { border-color: var(--ink); }
+      .step b { display: block; font-size: 1.5rem; font-weight: 800; line-height: 1.1;
+        letter-spacing: -0.03em; }
+      .step span { display: block; font-size: 0.72rem; color: var(--dim); }
+      .step.keen b { color: var(--hot); }
+      .step.watched b { color: #fbbf24; }
+      .step.claimed b { color: var(--go); }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase;
+        color: var(--dim); font-weight: 700; padding: 0 0.6rem 0.5rem; }
+      td { padding: 0.65rem 0.6rem; border-top: 1px solid var(--line); vertical-align: top; }
+      tr:hover td { background: #101319; }
+      .who a { color: var(--ink); text-decoration: none; font-weight: 600; }
+      .who a:hover { text-decoration: underline; }
+      .who i { display: block; font-style: normal; font-size: 0.78rem; color: var(--dim); }
+      .chip { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+        border-radius: 999px; padding: 0.16rem 0.5rem; border: 1px solid var(--line); color: var(--dim); }
+      .chip.keen { background: rgba(249,115,22,0.16); color: #fdba74; border-color: transparent; }
+      .chip.watched { background: rgba(251,191,36,0.14); color: #fcd34d; border-color: transparent; }
+      .chip.sent { background: rgba(59,130,246,0.14); color: #93c5fd; border-color: transparent; }
+      .chip.recorded { background: rgba(168,85,247,0.14); color: #d8b4fe; border-color: transparent; }
+      .chip.claimed { background: rgba(34,197,94,0.14); color: #86efac; border-color: transparent; }
+      .signals { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+      .sig { font-size: 0.68rem; color: var(--dim); border: 1px solid var(--line);
+        border-radius: 6px; padding: 0.1rem 0.4rem; white-space: nowrap; }
+      .sig.on { color: var(--ink); border-color: #3d424f; }
+      .wants { color: #fdba74; font-size: 0.75rem; }
+      .why { color: var(--dim); font-size: 0.75rem; max-width: 22rem; }
+      .act { display: inline-block; font: inherit; font-size: 0.78rem; font-weight: 600;
+        border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+        border-radius: 8px; padding: 0.32rem 0.6rem; cursor: pointer; text-decoration: none; }
+      .act:hover { border-color: var(--ink); }
+      .act.primary { background: var(--go); border-color: var(--go); color: #052e16; }
+      .act.primary:hover { background: #16a34a; }
+      .right { text-align: right; white-space: nowrap; }
+      .right .act + .act { margin-left: 0.3rem; }
+      tr[hidden] { display: none; }
+      .none { color: var(--dim); padding: 2rem 0.6rem; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <h1>Coffee</h1>
+        <p class="sub">Who to talk to next.</p>
+        <span style="margin-left:auto"></span>
+        <a href="/record">Record</a>
+        <a href="/admin/sites">Ops</a>
+      </div>
+
+      {error && <p class="none">{error}</p>}
+
+      <div class="funnel">
+        {STAGES.map((st) => (
+          <button class={`step ${st.id}`} data-stage={st.id} title={st.hint}>
+            <b>{count(st.id)}</b><span>{st.label}</span>
+          </button>
+        ))}
+        <button class="step on" data-stage="" title="Everything"><b>{list.length}</b><span>All</span></button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Business</th><th>Stage</th><th>What they did</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          {list.map((r) => (
+            <tr data-stage={r.stage}>
+              <td class="who">
+                <a href={`https://${r.slug}.garage.co.nz`} target="_blank" rel="noopener">
+                  {r.biz || r.slug}
+                </a>
+                <i>{r.slug}.garage.co.nz{r.town ? ` · ${String(r.town).split(',').pop()?.trim()}` : ''}</i>
+                <i>{r.verdict.to || 'no address'}</i>
+              </td>
+              <td>
+                <span class={`chip ${r.stage}`}>{r.stage}</span>
+                {!r.verdict.ok && r.verdict.kind !== 'unsubscribed' && (
+                  <div class="why">{r.verdict.why}</div>
+                )}
+                {r.verdict.kind === 'unsubscribed' && <div class="why">Asked not to be emailed.</div>}
+              </td>
+              <td>
+                <div class="signals">
+                  <span class={`sig ${r.take ? 'on' : ''}`}>{r.take ? `take ${r.seconds || 0}s` : 'no take'}</span>
+                  {r.owner_sent_at && <span class="sig on">sent {ago(r.owner_sent_at)} ago</span>}
+                  {Number(r.opened || 0) > 0 && <span class="sig on">opened ×{r.opened}</span>}
+                  {Number(r.plays || 0) > 0 && <span class="sig on">played ×{r.plays}</span>}
+                  {Number(r.furthest || 0) > 0 && <span class="sig on">watched {r.furthest}s</span>}
+                  {Number(r.grew || 0) > 0 && <span class="sig on">opened Grow</span>}
+                  {r.liked_at && <span class="sig on">thumbs up</span>}
+                </div>
+                {r.want_list && <div class="wants">wants: {r.want_list}</div>}
+              </td>
+              <td class="right">
+                <a class="act" href={`/record?s=${r.slug}`}>{r.take ? 'Re-record' : 'Record'}</a>
+                {r.verdict.to && (
+                  <button
+                    class={`act ${r.stage === 'recorded' ? 'primary' : ''}`}
+                    data-send={r.slug}
+                    data-force={r.verdict.ok ? '' : '1'}
+                    title={r.verdict.ok ? `Send to ${r.verdict.to}` : r.verdict.why}
+                  >{r.owner_sent_at ? 'Send again' : 'Send'}</button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {!list.length && !error && <p class="none">Nothing yet.</p>}
+    </div>
+
+    <script is:inline>
+      const rows = [...document.querySelectorAll('#rows tr')];
+      document.querySelectorAll('.step').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.step').forEach((x) => x.classList.toggle('on', x === b));
+          const want = b.dataset.stage;
+          rows.forEach((r) => { r.hidden = !!want && r.dataset.stage !== want; });
+        });
+      });
+
+      // Send from here, with the same confirmation the recorder gives — a click
+      // that mails a stranger should never be one click away from a mis-click.
+      document.querySelectorAll('[data-send]').forEach((b) => {
+        b.addEventListener('click', async () => {
+          const slug = b.dataset.send;
+          const force = b.dataset.force === '1';
+          const first = await fetch('/api/record/send', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, preview: true }),
+          }).then((r) => r.json()).catch(() => null);
+          if (!first) return alert('Could not reach the server.');
+          if (!first.ok && !force) return alert(first.message);
+          const draft = first.ok
+            ? `To: ${first.to}\n\n${first.text}`
+            : `${first.message}\n\nSend anyway?`;
+          if (!confirm(draft + '\n\n— send this?')) return;
+          b.disabled = true; b.textContent = 'sending…';
+          const done = await fetch('/api/record/send', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, force }),
+          }).then((r) => r.json()).catch(() => null);
+          b.disabled = false;
+          b.textContent = done && done.ok ? 'sent' : 'failed';
+          if (!done || !done.ok) alert((done && done.message) || 'Did not send.');
+        });
+      });
+    </script>
+  </body>
+</html>

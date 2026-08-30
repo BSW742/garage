@@ -212,6 +212,7 @@ function summarise(site: any) {
           spellcheck="false"
         />
         <span class="count" id="site-count">{sites.length} sites</span>
+        <a class="cross" href="/admin/coffee">Coffee &rarr;</a>
       </div>
     )}
 
@@ -224,8 +225,7 @@ function summarise(site: any) {
         <thead>
           <tr>
             <th>Site</th>
-            <th>Owner</th>
-            <th>Progress</th>
+            <th>Built</th>
             <th class="right"></th>
           </tr>
         </thead>
@@ -260,47 +260,20 @@ function summarise(site: any) {
                   {site.biz_name && <span class="biz" title={summarise(site) || ''}>{site.biz_name}</span>}
                 </span>
               </td>
-              <td class="muted">
-                <input
-                  class="owner-email"
-                  type="email"
-                  value={site.email || ''}
-                  placeholder="none"
-                  data-slug={site.slug}
-                  data-key={site.edit_token}
-                  data-was={site.email || ''}
-                />
-              </td>
-              <td class="nowrap send-cell">
-                {!site.edit_token ? (
-                  <span class="pill nokey" title="No edit key, so this site cannot be sent or republished">no key</span>
-                ) : site.unsubscribed_at ? (
-                  <span class="pill off-list" title="They asked not to be contacted">unsubscribed</span>
-                ) : site.editor_opened_at ? (
-                  <span class="pill opened" title={`Opened the builder ${site.editor_opened_at}`}>
-                    opened the editor
-                  </span>
-                ) : site.owner_seen_at ? (
-                  <span
-                    class="pill looked"
-                    title={`First look ${site.owner_seen_at}, last ${site.owner_seen_last || site.owner_seen_at}`}
-                  >
-                    looked{site.owner_seen_count > 1 ? ` ×${site.owner_seen_count}` : ''}
-                  </span>
-                ) : site.owner_sent_at ? (
-                  <span class="pill sent" title={`Sent to ${site.owner_sent_to} — no visit yet`}>
-                    sent {String(site.owner_sent_at).slice(5, 10)}
-                  </span>
-                ) : (site.site_email || site.email) ? (
-                  <button
-                    class="act send"
-                    data-slug={site.slug}
-                    data-key={site.edit_token}
-                    data-to={site.site_email || site.email}
-                    title={`Send the site to ${site.site_email || site.email}`}
-                  >Send it</button>
-                ) : (
-                  <span class="muted small no-addr">no address</span>
+              <!-- Who to email, whether it has been sent, and what they did
+                   about it all live at /admin/coffee now. This page answers a
+                   different question — is the machine working — and the two
+                   were making each other unreadable. -->
+              <td class="muted small nowrap">
+                <span class="built">{String(site.created_at || '').slice(0, 10)}</span>
+                {site.updated_at && String(site.updated_at).slice(0, 10) !== String(site.created_at).slice(0, 10) && (
+                  <span class="built dim">edited {String(site.updated_at).slice(5, 10)}</span>
+                )}
+                <span class="built dim">{Math.round((site.config_size || 0) / 100) / 10}k</span>
+                {!site.edit_token && <span class="pill nokey" title="No edit key — cannot be republished">no key</span>}
+                {site.status === 'disabled' && <span class="pill off-list">disabled</span>}
+                {isHeld(site) && (
+                  <span class="pill held-pill" title="A real business, scraped but never published. Star it to put it live.">held</span>
                 )}
               </td>
               <td class="right nowrap">
@@ -557,60 +530,7 @@ function summarise(site: any) {
     });
   });
 
-  document.querySelectorAll('button.act.send').forEach((el) => {
-    const btn = el as HTMLButtonElement;
-    btn.addEventListener('click', async () => {
-      const to = btn.dataset.to || '';
-      if (!confirm(`Send ${btn.dataset.slug}.garage.co.nz to ${to}?\n\nThis emails a real business.`)) return;
-      btn.disabled = true;
-      const was = btn.textContent;
-      btn.textContent = 'sending…';
-      try {
-        const res = await fetch('/api/site/offer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slug: btn.dataset.slug, key: btn.dataset.key, to }),
-        });
-        const data = await res.json();
-        if (res.ok && data.ok) {
-          const done = document.createElement('span');
-          done.className = 'pill sent';
-          done.textContent = 'sent just now';
-          btn.replaceWith(done);
-        } else {
-          btn.textContent = was || 'Send it';
-          btn.disabled = false;
-          alert(data.error || 'Could not send that.');
-        }
-      } catch {
-        btn.textContent = was || 'Send it';
-        btn.disabled = false;
-        alert('Could not send that.');
-      }
-    });
-  });
 
-  document.querySelectorAll('input.owner-email').forEach((el) => {
-    const input = el as HTMLInputElement;
-    const save = async () => {
-      const email = input.value.trim();
-      if (email === input.dataset.was) return;
-      input.classList.remove('saved', 'failed');
-      const res = await fetch('/api/site/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: input.dataset.slug, key: input.dataset.key, email }),
-      });
-      if (res.ok) {
-        input.dataset.was = email;
-        input.classList.add('saved');
-      } else {
-        input.classList.add('failed');
-      }
-    };
-    input.addEventListener('blur', save);
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
-  });
 
   document.querySelectorAll('button.chat').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -690,6 +610,11 @@ function summarise(site: any) {
   }
   .spend b { font-weight: 700; }
 
+  .built { display: inline-block; margin-right: 0.45rem; }
+  .built.dim { opacity: 0.55; }
+  .cross { margin-left: 0.7rem; font-size: 0.8rem; color: #2563eb; text-decoration: none; }
+  .cross:hover { text-decoration: underline; }
+
   .pill.nokey {
     background: #fdf0ef;
     color: #b42318;
@@ -698,22 +623,6 @@ function summarise(site: any) {
   }
   table { font-size: 0.9rem; }
   td, th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-  .owner-email {
-    font: inherit;
-    font-size: 0.82rem;
-    width: 100%;
-    min-width: 9rem;
-    padding: 0.3rem 0.45rem;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: transparent;
-    color: inherit;
-  }
-  .owner-email:hover { border-color: var(--color-border, #e5e5e5); }
-  .owner-email:focus { border-color: #2563eb; background: #fff; outline: none; }
-  .owner-email::placeholder { color: #b42318; opacity: 0.75; font-size: 0.8rem; }
-  .owner-email.saved { border-color: #16a34a; }
-  .owner-email.failed { border-color: #dc2626; }
   .act.icon { display: inline-flex; align-items: center; padding: 0.3rem 0.5rem; }
   .act.icon svg { display: block; }
   button.act.chat { cursor: pointer; font: inherit; }
@@ -791,17 +700,8 @@ function summarise(site: any) {
   .funnel.none { color: #697184; font-size: 0.88rem; }
   .pill.looked { background: #fef3c7; color: #92400e; }
   .pill.opened { background: #dcfce7; color: #15803d; }
-  .send-cell { min-width: 7.5rem; }
-  button.act.send {
-    font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
-    background: #1f6feb; color: #fff; border: 1px solid #1f6feb;
-    padding: 0.3rem 0.7rem; border-radius: 7px;
-  }
-  button.act.send:hover { filter: brightness(1.08); }
-  button.act.send:disabled { opacity: 0.6; cursor: default; }
   .pill.sent { background: #e8f0fe; color: #1f6feb; }
   .pill.off-list { background: #f1f2f4; color: #697184; }
-  .no-addr { white-space: nowrap; }
   .pill { font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px; background: #dcfce7; color: #15803d; }
   .pill.disabled { background: #fee2e2; color: #b91c1c; }
 

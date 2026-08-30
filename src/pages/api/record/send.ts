@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { sendMail } from '../../../lib/mail';
+import { verdictFor } from '../../../lib/outreach';
 
 /**
  * The email. One button, one site, no typing.
@@ -42,48 +43,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
     let cfg: any = {};
     try { cfg = JSON.parse(site.config || '{}'); } catch { /* a bad config is still a real site */ }
-    const to = String(cfg?.contact?.email || site.email || '').trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-      return json({ ok: false, message: 'No email address on this one.' });
-    }
 
-    // Who is actually on the other end of this address?
-    //
-    // Half the estate is invented — the cron writes a plausible business with a
-    // plausible address to match, and info@alpineheatandplunge.co.nz is a
-    // domain nobody owns. Sending there bounces, and bouncing is how a sending
-    // domain gets itself filtered. Worse, some scraped addresses belong to
-    // somebody else entirely: Kokako's listed contact is their web agency, and
-    // Credaro's is a stranger. So the address has to be traceable to the site
-    // we actually read, and anything else needs a human to look at it first.
-    const emailHost = to.split('@')[1].toLowerCase();
-    const sourceHost = String(site.source_url || '')
-      .replace(/^https?:\/\//, '').split('/')[0].toLowerCase().replace(/^www\./, '');
-    const root = (h: string) => {
-      const p = h.split('.');
-      return p.length > 2 && ['co', 'com', 'org', 'net', 'govt', 'ac'].includes(p[p.length - 2])
-        ? p.slice(-3).join('.')
-        : p.slice(-2).join('.');
-    };
-    const matched = !!sourceHost && root(emailHost) === root(sourceHost);
-    const invented = !site.source_url;
-
-    if (!body?.force) {
-      if (invented) {
-        return json({
-          ok: false, needsEye: true,
-          message: `${slug} is one of the invented ones — there is no real business behind it, ` +
-                   `and ${to} is an address the model made up. Sending would bounce at best.`,
-        });
-      }
-      if (!matched) {
-        return json({
-          ok: false, needsEye: true,
-          message: `${to} does not belong to ${sourceHost}, which is the site we read. ` +
-                   `It is often their web agency rather than them. Check it, then send with force.`,
-        });
-      }
+    // The same call the CRM makes, so what /admin/coffee shows and what this
+    // endpoint will actually do can never drift apart.
+    const verdict = verdictFor(site);
+    const to = verdict.to;
+    if (!verdict.ok && !body?.force) {
+      return json({ ok: false, needsEye: verdict.kind !== 'unsubscribed', message: verdict.why });
     }
+    if (!to) return json({ ok: false, message: 'No usable address on this one.' });
 
     const name = String(cfg?.name || slug);
     const home = `https://${slug}.garage.co.nz`;
