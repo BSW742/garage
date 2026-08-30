@@ -1772,7 +1772,7 @@ background:#0b0c0f;display:grid;place-items:center;transition:transform .18s}
 .gz-watch s:after{content:'';border-style:solid;border-width:.3rem 0 .3rem .5rem;
 border-color:transparent transparent transparent #fff;margin-left:.12rem}
 .gz-watch:hover s{transform:scale(1.08)}
-.gz-bar .gz-sp{margin-left:auto}
+.gz-do{margin-left:auto;display:flex;align-items:center;gap:.5rem}
 .gz-grow{background:none;border:1.5px solid rgba(11,12,15,.28);color:#0b0c0f;
 padding:.3rem .8rem;display:inline-flex;align-items:center;gap:.45rem;font-weight:600}
 .gz-grow em{font-style:normal;font-size:1.05em;line-height:1}
@@ -1785,9 +1785,32 @@ padding:.3rem .85rem;display:inline-flex;align-items:center;gap:.4rem;font-weigh
 background:#dcfce7;color:#166534}
 @media(max-width:820px){.gz-grow span,.gz-grow{font-size:.78rem}}
 @media(max-width:640px){.gz-grow em{margin:0}.gz-grow{padding:.3rem .6rem}}
-@media(max-width:640px){
-  .gz-bar{font-size:.78rem;gap:.5rem;padding:.45rem .6rem}
+/* ── On a phone ──────────────────────────────────────────────────────
+   Three actions, a character and a sentence do not fit across 390px: the
+   thumbs up — the one thing the whole bar is for — ended up off the right
+   edge entirely, invisible rather than merely cramped.
+
+   So the bar keeps the introduction and nothing else, and the two things to
+   press move to the bottom of the screen, which is where a thumb already is.
+   The site sits between them, which is the right way round: it is theirs. */
+@media(max-width:700px){
+  .gz-bar{font-size:.82rem;gap:.5rem;padding:.4rem .7rem;border-bottom-width:3px}
   .gz-watch u{display:none}
+  .gz-watch span{font-weight:600}
+
+  .gz-do{position:fixed;left:0;right:0;bottom:0;margin:0;z-index:9000;
+  display:grid;grid-template-columns:auto 1fr;gap:.5rem;align-items:stretch;
+  padding:.5rem .7rem calc(.5rem + env(safe-area-inset-bottom));
+  background:#fff;border-top:3px solid #0b0c0f;
+  box-shadow:0 -8px 24px -18px rgba(0,0,0,.6)}
+  .gz-do button{border-radius:10px;padding:.6rem .7rem;justify-content:center;
+  font-size:.86rem}
+  .gz-grow .gz-long{display:none}
+  .gz-grow em{font-size:1.15em}
+  .gz-like{font-size:.88rem}
+
+  /* Nothing of theirs should end up underneath it. */
+  body.gz-noted{padding-bottom:4.6rem}
 }
 
 /* The film, when they ask for it. */
@@ -1878,13 +1901,14 @@ function noteBlock(slug: string): string {
   <button type="button" class="gz-watch" id="gz-watch">
     <s></s><span>I built you this site. <u>Watch me do it &mdash; 60 seconds.</u></span>
   </button>
-  <span class="gz-sp"></span>
-  <button type="button" class="gz-grow" id="gz-grow">
-    <em>&#9889;</em> Grow your business
-  </button>
-  <button type="button" class="gz-like" id="gz-like"${liked ? ' disabled' : ''}>
-    ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it &mdash; <b>FREE</b>'}
-  </button>
+  <span class="gz-do">
+    <button type="button" class="gz-grow" id="gz-grow">
+      <em>&#9889;</em> Grow<span class="gz-long"> your business</span>
+    </button>
+    <button type="button" class="gz-like" id="gz-like"${liked ? ' disabled' : ''}>
+      ${liked ? '&#10003; Thanks &mdash; Ben will be in touch' : '&#128077; I like it &mdash; <b>FREE</b>'}
+    </button>
+  </span>
 </div>
 <div class="gz-sheet" id="gz-sheet" role="dialog" aria-modal="true" aria-label="Grow your business">
   <button type="button" class="gz-shut" aria-label="Close">&times;</button>
@@ -1942,6 +1966,7 @@ function noteBlock(slug: string): string {
 <script>
 (function () {
   var slug = ${JSON.stringify(slug)};
+  document.body.classList.add('gz-noted');
   var box = document.getElementById('gz-box');
   var v = document.getElementById('gz-note-v');
   var watch = document.getElementById('gz-watch');
