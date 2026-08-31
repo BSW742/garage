@@ -102,6 +102,17 @@ export function themeCss(theme: Theme | undefined): string {
         (theme.transform ? `;text-transform:${theme.transform}` : '') + `}`
     );
   }
+  // A near-white primary is legitimate — plenty of brands button in cream —
+  // but every template writes white text on --primary, so the light ones
+  // need their text flipped dark or the label vanishes into the button.
+  if (okHex(p.primary)) {
+    const hex = p.primary.length === 4
+      ? p.primary.replace(/#(.)(.)(.)/, '#$1$1$2$2$3$3') : p.primary;
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    if (0.2126 * r + 0.7152 * g + 0.0722 * b > 0.72) {
+      parts.push(`.btn,.cta,.buy,.cf-book,.ph-book,.td-quote,.bt-book,.sn-book,.st-book{color:#16181d}`);
+    }
+  }
   if (theme.radius && /^\d{1,4}px$/.test(theme.radius)) {
     // The shared button vocabulary across the templates. Best effort by
     // design: the mainstream templates are covered, the exotic ones keep
@@ -171,13 +182,53 @@ export async function collectThemeEvidence(html: string, baseUrl: string): Promi
 }
 
 /**
+ * The page as pixels, for the judgement call. A font name like "Creolia"
+ * carries no personality a model can judge, and a platform stylesheet is full
+ * of rules that never reach the screen — the screenshot is the only evidence
+ * that cannot lie about what the site looks like.
+ */
+export async function screenshotForTheme(
+  accountId: string | undefined,
+  token: string | undefined,
+  url: string
+): Promise<string | null> {
+  if (!accountId || !token) return null;
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/browser-rendering/screenshot`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url,
+          viewport: { width: 1280, height: 1600 },
+          gotoOptions: { waitUntil: 'networkidle2', timeout: 15000 },
+        }),
+        signal: AbortSignal.timeout(30_000),
+      }
+    );
+    if (!res.ok) return null;
+    const buf = new Uint8Array(await res.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < buf.length; i += 0x8000) {
+      bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The judgement half: one call, once per site, to a model that is allowed to
- * say no. Returns a validated Theme or null.
+ * say no. The screenshot outranks the CSS evidence wherever they disagree.
+ * Returns a validated Theme or null.
  */
 export async function askForTheme(
   apiKey: string,
   evidence: string,
-  sourceUrl: string
+  sourceUrl: string,
+  screenshotB64?: string | null
 ): Promise<Theme | null> {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -192,7 +243,12 @@ export async function askForTheme(
         max_tokens: 600,
         messages: [{
           role: 'user',
-          content:
+          content: [
+            ...(screenshotB64
+              ? [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: screenshotB64 } },
+                 { type: 'text', text: 'Above is a screenshot of the site itself — where it and the CSS evidence disagree, the screenshot is the truth. Judge font personality (chunky serif? geometric sans? elegant? playful?), the real page background, the real button shape and case from the pixels.' }]
+              : []),
+            { type: 'text', text:
             `Below is design evidence scraped from ${sourceUrl} — the fonts, colours and shapes ` +
             `the business's real site uses. Distil it into a theme so our rebuild of their site ` +
             `wears their design language.\n\n${evidence}\n\n` +
@@ -206,7 +262,8 @@ export async function askForTheme(
             `Rules: choose stand-ins by personality (chunky warm serif -> Fraunces; geometric sans -> Figtree or Poppins; ` +
             `elegant serif -> Playfair Display; brutal caps -> Archivo Black). Omit any palette field you are not sure of — ` +
             `ignore greys, near-whites and framework defaults when picking the accent. If the evidence is too thin to be ` +
-            `sure of even the fonts, reply exactly null.`,
+            `sure of even the fonts, reply exactly null.` },
+          ],
         }],
       }),
       signal: AbortSignal.timeout(30_000),

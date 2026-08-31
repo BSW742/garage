@@ -1,4 +1,4 @@
-import { collectThemeEvidence, askForTheme } from '../../lib/theme';
+import { collectThemeEvidence, askForTheme, screenshotForTheme } from '../../lib/theme';
 import type { APIRoute } from 'astro';
 import { lookAtImages, type ImageVerdict } from '../../lib/vision';
 
@@ -214,8 +214,17 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // with no theme still gets everything above.
     if (apiKey && scraped.themeEvidence) {
       try {
-        scraped.theme = await askForTheme(apiKey, scraped.themeEvidence, url);
-      } catch { scraped.theme = null; }
+        const shot = await screenshotForTheme(env.CF_ACCOUNT_ID, env.CF_BROWSER_TOKEN, url);
+        scraped.theme = await askForTheme(apiKey, scraped.themeEvidence, url, shot);
+        (scraped as any).themeNote = scraped.theme
+          ? 'ok'
+          : `judged no-theme from ${scraped.themeEvidence.length} chars of evidence: ${scraped.themeEvidence.slice(0, 160)}`;
+      } catch (e) {
+        scraped.theme = null;
+        (scraped as any).themeNote = 'threw: ' + (e instanceof Error ? e.message : String(e)).slice(0, 200);
+      }
+    } else {
+      (scraped as any).themeNote = apiKey ? 'no evidence collected' : 'no api key';
     }
     delete scraped.themeEvidence;
 
