@@ -121,9 +121,12 @@ try {
         <a href="/noticeboard" class="nav-link nav-icon" title="Community noticeboard">
           <img src="/nav/megaphone-v2.png" alt="Noticeboard" />
         </a>
-        <a href="/booking" class="nav-link nav-icon" title="Book a chat">
-          <img src="/nav/booking.png" alt="Book" />
-        </a>
+        {/* Bookings, parked for now — the page itself still works at /booking. */}
+        {false && (
+          <a href="/booking" class="nav-link nav-icon" title="Book a chat">
+            <img src="/nav/booking.png" alt="Book" />
+          </a>
+        )}
         <a href="/coffee" class="nav-link nav-icon nav-coffee hide-mobile" title="My favourite coffee">
           <img src="/nav/coffee-v2.png" alt="Coffee" />
         </a>
