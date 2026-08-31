@@ -1,3 +1,4 @@
+import { collectThemeEvidence, askForTheme } from '../../lib/theme';
 import type { APIRoute } from 'astro';
 import { lookAtImages, type ImageVerdict } from '../../lib/vision';
 
@@ -32,6 +33,8 @@ export interface ScrapedData {
   blockedReason: string;
   /** Their logo vanishes unless what sits behind it is dark */
   logoNeedsDark: boolean;
+  themeEvidence?: string;  // raw font/colour/shape evidence, judged in the handler
+  theme?: import('../../lib/theme').Theme | null;
   salvageNote?: string;
   /** How the HTML was obtained — plain fetch, or a real browser. Null when unremarkable. */
   renderNote?: string;
@@ -206,6 +209,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
         scraped.logoNeedsDark = seen.logoNeedsDark;
       }
     }
+
+    // Their design language, judged once. Allowed to fail or say no: a site
+    // with no theme still gets everything above.
+    if (apiKey && scraped.themeEvidence) {
+      try {
+        scraped.theme = await askForTheme(apiKey, scraped.themeEvidence, url);
+      } catch { scraped.theme = null; }
+    }
+    delete scraped.themeEvidence;
 
     return new Response(JSON.stringify(scraped), {
       status: 200,
@@ -444,6 +456,10 @@ export async function scrapeWebsite(url: string, env?: ScrapeEnv): Promise<Scrap
 
   const baseUrl = new URL(url).origin;
 
+  // How the site dresses, not just what it owns. Mechanical and free here;
+  // the one model call that reads it happens in the handler.
+  const themeEvidence = await collectThemeEvidence(html, baseUrl);
+
   // Extract all data
   const title = extractTitle(html);
   const description = extractDescription(html);
@@ -494,6 +510,7 @@ export async function scrapeWebsite(url: string, env?: ScrapeEnv): Promise<Scrap
     blocked: false,
     blockedReason: '',
     logoNeedsDark: false,
+    themeEvidence,
     renderNote: page.note,
   };
 }

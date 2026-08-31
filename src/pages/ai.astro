@@ -4227,6 +4227,17 @@ if (cameFromOffer && openedSlug) {
 
         if (d.brandColour) { did('Your brand colour, lifted off the old site'); await wait(420); }
 
+        // Their design language, not just their assets: fonts, grounds and
+        // button shape, read off the old site and worn by whatever template
+        // this becomes.
+        if (d.theme) {
+          s.theme = d.theme;
+          if (d.theme.palette && d.theme.palette.primary) s.palette = paletteFrom(d.theme.palette.primary);
+          render();
+          did('Their fonts and look, read off the old site');
+          await wait(450);
+        }
+
         if (d.logoUrl) { s.logo = d.logoUrl; render(); did('Logo brought across'); await wait(450); }
         if (d.heroImage) { s.heroImage = d.heroImage; render(); did('Hero photo brought across'); await wait(450); }
 
