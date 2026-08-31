@@ -249,18 +249,14 @@ const when = (iso: string) => {
            into the builder's address step already filled in. -->
       <div class="work-check" id="work-check">
         <div class="work-field" id="work-field">
-          <input id="work-slug" type="text" placeholder="yourname" autocomplete="off"
+          <span class="work-ghost" id="work-ghost" aria-hidden="true"><i id="work-ghost-t"></i><b></b></span>
+          <input id="work-slug" type="text" autocomplete="off"
                  autocapitalize="off" spellcheck="false" aria-label="Check your address" />
           <span class="work-suffix">.garage.co.nz</span>
         </div>
         <a class="work-btn work-take" id="work-take" href="/ai?start=1">Is it free?</a>
       </div>
       <p class="work-verdict" id="work-verdict">Free websites. See if your name is available.</p>
-      <div class="work-doing">
-        <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
-        <span class="work-btn tag"><i></i>1 Million free tokens</span>
-      </div>
-
       <p class="work-meta">Free for any NZ business.</p>
 
       <div class="how" id="how" hidden>
@@ -452,7 +448,20 @@ const when = (iso: string) => {
     font-size: 1.05rem; font-weight: 600; padding: 0.55rem 0; color: var(--color-text);
   }
   #work-slug:focus { outline: none; }
-  #work-slug::placeholder { color: var(--color-text-muted); font-weight: 500; }
+  .work-ghost {
+    position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; pointer-events: none;
+    font-size: 1.05rem; font-weight: 600; color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+  .work-ghost i { font-style: normal; }
+  .work-ghost b {
+    width: 2px; height: 1.25em; margin-left: 1px; background: var(--color-text);
+    animation: work-caret 1.06s step-end infinite;
+  }
+  @keyframes work-caret { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .work-ghost { display: none; } }
+  .work-field { position: relative; }
   .work-suffix { font-size: 1rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
   .work-take { align-self: center; }
   .work-take.ready { background: #16a34a; }
@@ -814,6 +823,43 @@ const when = (iso: string) => {
     if (!input) return;
     const IDLE = verdict.textContent;
     let timer = null, seq = 0;
+
+    // The ghost typist. Runs only while the field is untouched: focus ends it,
+    // and blurring an empty field brings it back.
+    const ghost = document.getElementById('work-ghost');
+    const ghostText = document.getElementById('work-ghost-t');
+    const NAMES = ['johnsmith', 'rotorualawns', 'bayhairstudio', 'thecornercafe',
+                   'hamiltonsparky', 'petesplumbing', 'wanakayoga'];
+    let g = { name: 0, pos: 0, dir: 1, alive: true, t: null };
+    function ghostTick() {
+      if (!g.alive) return;
+      const word = NAMES[g.name % NAMES.length];
+      g.pos += g.dir;
+      if (g.pos > word.length) {         // finished typing: sit with it
+        g.pos = word.length; g.dir = -1;
+        g.t = setTimeout(ghostTick, 1500);
+        return;
+      }
+      if (g.pos < 0) {                   // erased home: next name
+        g.pos = 0; g.dir = 1; g.name++;
+        g.t = setTimeout(ghostTick, 500);
+        return;
+      }
+      ghostText.textContent = word.slice(0, g.pos);
+      g.t = setTimeout(ghostTick, g.dir > 0 ? 95 + Math.random() * 70 : 40);
+    }
+    function ghostStop() { g.alive = false; clearTimeout(g.t); ghost.style.display = 'none'; }
+    function ghostStart() {
+      if (input.value) return;
+      g = { name: g.name, pos: 0, dir: 1, alive: true, t: null };
+      ghost.style.display = '';
+      ghostText.textContent = '';
+      g.t = setTimeout(ghostTick, 400);
+    }
+    input.addEventListener('focus', ghostStop);
+    input.addEventListener('blur', () => { if (!input.value) ghostStart(); });
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) ghostStart();
+    else ghost.style.display = 'none';
     const clean = (v) => v.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '').slice(0, 40);
 
     input.addEventListener('input', () => {
