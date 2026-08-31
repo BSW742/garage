@@ -259,7 +259,7 @@ const when = (iso: string) => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
       </div>
-      <p class="work-verdict" id="work-verdict">Free websites. See if your name is available (you can stick it on your own domain later)</p>
+      <p class="work-verdict" id="work-verdict">Free websites. See if your name is available <em>(you can stick it on your own domain later)</em></p>
       <div class="how" id="how" hidden>
         <ol>
           <li><b>Say what you do.</b> No forms, no templates to pick through — you describe the business in plain words and it builds the page while you watch.</li>
@@ -825,7 +825,7 @@ const when = (iso: string) => {
     const take = document.getElementById('work-take');
     const verdict = document.getElementById('work-verdict');
     if (!input) return;
-    const IDLE = verdict.textContent;
+    const IDLE = verdict.innerHTML;
     let timer = null, seq = 0;
 
     // The ghost typist. Runs only while the field is untouched: focus ends it,
@@ -873,7 +873,7 @@ const when = (iso: string) => {
       take.classList.remove('ready');
       take.href = '/ai?start=1';
       clearTimeout(timer);
-      if (!v) { verdict.textContent = IDLE; return; }
+      if (!v) { verdict.innerHTML = IDLE; return; }
       verdict.textContent = 'Checking…';
       timer = setTimeout(async () => {
         const mine = ++seq;
@@ -891,7 +891,7 @@ const when = (iso: string) => {
             verdict.innerHTML = '<s>' + v + ' is taken.</s> Try another — a suburb or a trade usually does it.';
           }
         } catch (e) {
-          if (mine === seq) verdict.textContent = IDLE;
+          if (mine === seq) verdict.innerHTML = IDLE;
         }
       }, 350);
     });
