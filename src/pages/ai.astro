@@ -6044,6 +6044,18 @@ if (cameFromOffer && openedSlug) {
           off: 'turn the spin to win wheel off',
         },
         {
+          id: 'balloon', icon: '\u{1F388}', name: 'The Balloon',
+          blurb: 'Pump it up and the prize gets better — pop and they drop to the consolation. They tie it off any time and keep what it holds.',
+          on: () => !!(S.site.balloon && S.site.balloon.on),
+          sum: () => {
+            const p = (S.site.balloon && S.site.balloon.prizes) || [];
+            return p.length ? p.join(' \u2192 ') : '';
+          },
+          set: 'put the balloon game on my site — ask me for two to five prizes, smallest first, '
+             + 'and a consolation prize for when it pops',
+          off: 'turn the balloon game off',
+        },
+        {
           id: 'waitlist', icon: '\u23F2', name: 'Short notice list',
           blurb: 'Booked out? People leave their name and hear first when a time opens up. Same price, no discount.',
           on: () => !!(S.site.waitlist && S.site.waitlist.on),
