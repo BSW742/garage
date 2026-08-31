@@ -242,21 +242,12 @@ const when = (iso: string) => {
     <header class="work-head">
       <p class="work-eyebrow">The work</p>
       <h1>Real sites, built by talking.</h1>
-      <!-- The front door is a question, not a button. "Is yours available?"
-           hits different from "build yours": one is ownership going spare,
-           the other is homework. The check runs as they type, and the moment
-           their name comes up free, the take-it button carries it straight
-           into the builder's address step already filled in. -->
-      <div class="work-check" id="work-check">
-        <div class="work-field" id="work-field">
-          <input id="work-slug" type="text" placeholder="yourname" autocomplete="off"
-                 autocapitalize="off" spellcheck="false" aria-label="Check your address" />
-          <span class="work-suffix">.garage.co.nz</span>
-        </div>
-        <a class="work-btn work-take" id="work-take" href="/ai?start=1">Is it free?</a>
-      </div>
-      <p class="work-verdict" id="work-verdict">Free websites. See if your name is available.</p>
       <div class="work-doing">
+        <!-- ?start=1 skips the builder's hero and drops straight on the
+             address step, the same as Claim in the nav. Somebody who has just
+             scrolled a wall of finished sites and pressed this has already
+             been talked into it; the pitch page is a step backwards. -->
+        <a class="work-btn" href="/ai?start=1">Build yours</a>
         <button class="work-btn ghost" id="how-open" aria-expanded="false">How it works</button>
         <span class="work-btn tag"><i></i>1 Million free tokens</span>
       </div>
@@ -436,29 +427,6 @@ const when = (iso: string) => {
     border: 1px solid var(--color-border, #e5e5e5);
   }
   .work-btn.ghost:hover { border-color: var(--color-text-muted); }
-
-  .work-check { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 2rem; }
-  .work-field {
-    display: flex; align-items: center; flex: 1 1 16rem; max-width: 26rem;
-    background: var(--color-surface); border: 2px solid var(--color-border);
-    border-radius: 999px; padding: 0.2rem 1.1rem 0.2rem 1.25rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .work-field:focus-within { border-color: var(--color-accent, #2563eb); }
-  .work-field.good { border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,0.12); }
-  .work-field.bad { border-color: #dc2626; box-shadow: 0 0 0 4px rgba(220,38,38,0.10); }
-  #work-slug {
-    flex: 1; min-width: 0; border: 0; background: none; font: inherit;
-    font-size: 1.05rem; font-weight: 600; padding: 0.55rem 0; color: var(--color-text);
-  }
-  #work-slug:focus { outline: none; }
-  #work-slug::placeholder { color: var(--color-text-muted); font-weight: 500; }
-  .work-suffix { font-size: 1rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
-  .work-take { align-self: center; }
-  .work-take.ready { background: #16a34a; }
-  .work-verdict { margin-top: 0.7rem; font-size: 0.9rem; color: var(--color-text-soft); min-height: 1.3em; }
-  .work-verdict b { color: #16a34a; }
-  .work-verdict s { text-decoration: none; color: #dc2626; font-weight: 600; }
   /* A third bubble, sitting with the buttons but not pretending to be one —
      no pointer, no hover. It reads as a fact on the shelf beside the actions,
      which is quieter than a banner and easier to believe. */
@@ -803,57 +771,6 @@ const when = (iso: string) => {
   @media (prefers-reduced-motion: reduce) { .card:hover .card-frame { transform: none; } }
 </style>
 
-<script>
-  // The availability check. Same endpoint the builder uses, so the answer here
-  // and the answer one step later can never disagree.
-  (function () {
-    const input = document.getElementById('work-slug');
-    const field = document.getElementById('work-field');
-    const take = document.getElementById('work-take');
-    const verdict = document.getElementById('work-verdict');
-    if (!input) return;
-    const IDLE = verdict.textContent;
-    let timer = null, seq = 0;
-    const clean = (v) => v.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '').slice(0, 40);
-
-    input.addEventListener('input', () => {
-      const v = clean(input.value);
-      if (input.value !== v) input.value = v;
-      field.classList.remove('good', 'bad');
-      take.classList.remove('ready');
-      take.textContent = 'Is it free?';
-      take.href = '/ai?start=1';
-      clearTimeout(timer);
-      if (!v) { verdict.textContent = IDLE; return; }
-      verdict.textContent = 'Checking…';
-      timer = setTimeout(async () => {
-        const mine = ++seq;
-        try {
-          const res = await fetch('/api/subdomain-check?slug=' + encodeURIComponent(v));
-          const d = await res.json();
-          if (mine !== seq) return;   // they kept typing
-          if (d.available) {
-            field.classList.add('good');
-            take.classList.add('ready');
-            take.textContent = 'Take it →';
-            take.href = '/ai?slug=' + encodeURIComponent(v);
-            verdict.innerHTML = '<b>' + v + '.garage.co.nz is available.</b> Free, and built by talking.';
-          } else {
-            field.classList.add('bad');
-            verdict.innerHTML = '<s>' + v + ' is taken.</s> Try another — a suburb or a trade usually does it.';
-          }
-        } catch (e) {
-          if (mine === seq) verdict.textContent = IDLE;
-        }
-      }, 350);
-    });
-
-    // Enter takes whatever state we are in.
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') take.click();
-    });
-  })();
-</script>
 <script>
   const how = document.getElementById('how');
   const btn = document.getElementById('how-open');
