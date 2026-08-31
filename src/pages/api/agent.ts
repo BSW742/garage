@@ -649,6 +649,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
         role: 'user',
         content:
           `Here is the page as it stands:\n\n${pageSummary(site, selection, { photos: Number(theirPhotos) || 0, confidence: mediaConfidence })}\n\n` +
+          // The one fact the model cannot infer and must never invent. Without
+          // it, "what's the URL?" got a confidently made-up subdomain.
+          (slug
+            ? `This site's address is https://${slug}.garage.co.nz — when you give any link, use that exact address, always with https://, never a guessed or remembered one.\n\n`
+            : `This site has no address yet — it gets one when it is published, so do not state a URL for it.\n\n`) +
           (sourceUrl ? `Their existing site is ${sourceUrl} — read it if you need more material.\n\n` : '') +
           `They said: ${message}`,
       },
