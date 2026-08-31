@@ -254,7 +254,10 @@ const when = (iso: string) => {
                  autocapitalize="off" spellcheck="false" aria-label="Check your address" />
           <span class="work-suffix">.garage.co.nz</span>
         </div>
-        <a class="work-btn work-take" id="work-take" href="/ai?start=1">Is it free?</a>
+        <a class="work-btn work-take" id="work-take" href="/ai?start=1">
+          <span>Continue</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
       </div>
       <p class="work-verdict" id="work-verdict">Free websites. See if your name is available.</p>
       <div class="how" id="how" hidden>
@@ -461,8 +464,11 @@ const when = (iso: string) => {
   @media (prefers-reduced-motion: reduce) { .work-ghost { display: none; } }
   .work-field { position: relative; }
   .work-suffix { font-size: 1rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
-  .work-take { align-self: center; }
-  .work-take.ready { background: #16a34a; }
+  .work-take {
+    align-self: center; display: inline-flex; align-items: center; gap: 0.5rem;
+    opacity: 0.45; pointer-events: none; transition: opacity 0.2s;
+  }
+  .work-take.ready { opacity: 1; pointer-events: auto; }
   .work-verdict { margin-top: 0.7rem; font-size: 0.9rem; color: var(--color-text-soft); min-height: 1.3em; }
   .work-verdict b { color: #16a34a; }
   .work-verdict s { text-decoration: none; color: #dc2626; font-weight: 600; }
@@ -865,7 +871,6 @@ const when = (iso: string) => {
       if (input.value !== v) input.value = v;
       field.classList.remove('good', 'bad');
       take.classList.remove('ready');
-      take.textContent = 'Is it free?';
       take.href = '/ai?start=1';
       clearTimeout(timer);
       if (!v) { verdict.textContent = IDLE; return; }
@@ -879,9 +884,8 @@ const when = (iso: string) => {
           if (d.available) {
             field.classList.add('good');
             take.classList.add('ready');
-            take.textContent = 'Take it →';
             take.href = '/ai?slug=' + encodeURIComponent(v);
-            verdict.innerHTML = '<b>' + v + '.garage.co.nz is available.</b> Free, and built by talking.';
+            verdict.innerHTML = '<b>\u2713 ' + v + '.garage.co.nz is free \u2014 grab it.</b>';
           } else {
             field.classList.add('bad');
             verdict.innerHTML = '<s>' + v + ' is taken.</s> Try another — a suburb or a trade usually does it.';
