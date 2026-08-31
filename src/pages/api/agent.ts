@@ -6,7 +6,10 @@ import type { SiteConfig } from '../../lib/site-render';
 
 export const prerender = false;
 
-const MODEL = 'claude-opus-5';
+// Haiku, because the builder is a tool-caller with a long system prompt
+// doing well-bounded jobs, and Opus here was five times the money for the
+// same tool calls. The system prompt and tools carry the judgement.
+const MODEL = 'claude-haiku-4-5';
 
 // What a site gets for free before we ask for anything. Counted across every
 // call the agent makes, not just the ones a person can see — one message is
@@ -684,7 +687,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
           model: MODEL,
           max_tokens: 8000,
           system: CACHED_SYSTEM as any,
-          output_config: { effort: 'medium' },
           tools: (withSearch ? [...CACHED_TOOLS, WEB_SEARCH] : CACHED_TOOLS) as any,
           ...(containerId ? { container: containerId } : {}),
           messages,
