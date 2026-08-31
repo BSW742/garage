@@ -2743,7 +2743,12 @@ if (cameFromOffer && openedSlug) {
         }, 80);
       }
 
-      // Arriving from an unclaimed address: skip the hero, pre-fill the name
+      // Arriving with a name already checked — the homepage's availability box
+      // hands one over. Landing them on the address step would ask the one
+      // question they have just answered, so the moment the builder's own
+      // check agrees, it advances by itself. If the name was taken in the
+      // seconds between, they are left here looking at the taken message,
+      // which is the only honest place to be.
       const preset = new URLSearchParams(location.search).get('slug');
       if (preset && !editSlug && !S.fromVisibility) {
         show('name');
@@ -2751,6 +2756,12 @@ if (cameFromOffer && openedSlug) {
           slugInput.value = clean(preset);
           slugInput.dispatchEvent(new Event('input'));
           slugInput.focus();
+          let waited = 0;
+          const onward = setInterval(() => {
+            waited += 120;
+            if (!slugNext.disabled) { clearInterval(onward); slugNext.click(); }
+            else if (waited > 4000) clearInterval(onward);
+          }, 120);
         }, 80);
       }
 
