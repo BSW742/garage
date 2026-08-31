@@ -304,6 +304,10 @@ const when = (iso: string) => {
                   </span>
                   {s.stops > 0 && <span class="rl-badge">{s.stops} stop{s.stops === 1 ? '' : 's'}</span>}
                 </span>
+              ) : s.style === 'game' ? (
+                <span class="card-shot card-inv">
+                  <canvas class="inv-canvas" width="230" height="150" aria-hidden="true"></canvas>
+                </span>
               ) : s.style === 'insta' ? (
                 <span class="card-shot card-insta">
                   {[0, 1, 2].map((i) => (
@@ -582,6 +586,12 @@ const when = (iso: string) => {
     background: #0b0b0d;
     position: relative;
   }
+
+  /* A game card plays itself. The attract mode every arcade cabinet ran:
+     the fleet marches, the cannon tracks and fires, an invader takes the
+     hit — because a screenshot of Space Invaders is a contradiction. */
+  .card-inv { background: #090b13; display: block; }
+  .inv-canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
   /* An insta card is three vertical bars, the shape of the posts behind it.
      Each filled one mounts Instagram's own embed when the card reaches the
@@ -899,6 +909,94 @@ const when = (iso: string) => {
     // Enter takes whatever state we are in.
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') take.click();
+    });
+  })();
+</script>
+<script>
+  // The attract mode on the game cards. Stepped like the original: the fleet
+  // moves on a beat, not a glide, and the bullet is the only smooth thing on
+  // screen — which is exactly how the cabinet felt.
+  (function () {
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('.inv-canvas').forEach((canvas) => {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, PX = 2;
+      const A = ['00100000100','00010001000','00111111100','01101110110','11111111111','10111111101','10100000101','00011011000'];
+      const B = ['00100000100','10010001001','10111111101','11101110111','11111111111','01111111110','00100000100','01000000010'];
+      const COLS = 4, ROWS = 2, SW = 11 * PX, SH = 8 * PX, GAP = 14;
+      const fleet = [];
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) fleet.push({ c, r, alive: true, flash: 0 });
+      let fx = 20, dir = 1, frame = 0, lastStep = 0;
+      let gun = W / 2, bullet = null, nextShot = 900, dead = 0;
+
+      function sprite(bits, x, y, colour) {
+        ctx.fillStyle = colour;
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 11; c++) {
+          if (bits[r][c] === '1') ctx.fillRect(x + c * PX, y + r * PX, PX, PX);
+        }
+      }
+      function invaderX(v) { return fx + v.c * (SW + GAP); }
+      function invaderY(v) { return 16 + v.r * (SH + 12); }
+
+      function draw(now) {
+        ctx.fillStyle = '#090b13'; ctx.fillRect(0, 0, W, H);
+        // ground line and the cannon
+        ctx.fillStyle = '#1d2436'; ctx.fillRect(0, H - 10, W, 2);
+        ctx.fillStyle = '#7cff6b';
+        ctx.fillRect(gun - 7, H - 18, 14, 5);
+        ctx.fillRect(gun - 2, H - 23, 4, 5);
+        const bits = frame ? B : A;
+        for (const v of fleet) {
+          if (v.flash > 0) {
+            // the hit: a starburst for a few frames, then gone
+            ctx.fillStyle = '#fff';
+            const x = invaderX(v) + SW / 2, y = invaderY(v) + SH / 2;
+            for (const [dx, dy] of [[-6,-6],[6,-6],[-6,6],[6,6],[0,-8],[0,8],[-8,0],[8,0]])
+              ctx.fillRect(x + dx, y + dy, PX, PX);
+            v.flash--; if (v.flash === 0) v.alive = false;
+            continue;
+          }
+          if (v.alive) sprite(bits, invaderX(v), invaderY(v), '#7cff6b');
+        }
+        if (bullet) { ctx.fillStyle = '#f4f4f5'; ctx.fillRect(bullet.x - 1, bullet.y, 2, 7); }
+      }
+
+      let prev = 0;
+      function tick(now) {
+        if (!prev) prev = now;
+        const dt = Math.min(50, now - prev); prev = now;
+
+        if (now - lastStep > 420) {            // the march, on the beat
+          lastStep = now; frame = frame ? 0 : 1; fx += dir * 8;
+          const span = (COLS - 1) * (SW + GAP) + SW;
+          if (fx < 12 || fx + span > W - 12) dir = -dir;
+        }
+        const targets = fleet.filter((v) => v.alive && !v.flash);
+        if (!targets.length) {                 // fresh wave
+          fleet.forEach((v) => { v.alive = true; v.flash = 0; });
+        } else {
+          const aim = targets[dead % targets.length];
+          const want = invaderX(aim) + SW / 2;
+          gun += Math.sign(want - gun) * Math.min(Math.abs(want - gun), dt * 0.09);
+          nextShot -= dt;
+          if (!bullet && nextShot <= 0 && Math.abs(want - gun) < 5) {
+            bullet = { x: gun, y: H - 24, aim };
+            nextShot = 1400 + Math.random() * 800;
+          }
+        }
+        if (bullet) {
+          bullet.y -= dt * 0.22;
+          const v = bullet.aim;
+          if ((v.alive && !v.flash && bullet.y < invaderY(v) + SH && Math.abs(bullet.x - (invaderX(v) + SW / 2)) < SW) ) {
+            v.flash = 6; dead++; bullet = null;
+          } else if (bullet && bullet.y < 6) bullet = null;
+        }
+        draw(now);
+        requestAnimationFrame(tick);
+      }
+
+      if (still) { draw(0); return; }         // one honest frame, no motion
+      requestAnimationFrame(tick);
     });
   })();
 </script>
