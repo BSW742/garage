@@ -1,0 +1,197 @@
+---
+// A disposable mock of hero option B, for looking at — not wired to anything.
+// Left: the address box exactly as the homepage has it. Right: the second
+// lesson — a small site that obeys a chat, the four commands typing themselves
+// and the page doing them. Delete this page once the call is made.
+---
+
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Mock B — the site that obeys</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #fafafa; color: #0a0a0a;
+    min-height: 100vh; display: grid; place-items: center; padding: 2rem 1.25rem; }
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: center;
+    max-width: 1100px; width: 100%; }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; gap: 2.5rem; } }
+
+  /* ── Left: the homepage hero as it stands ── */
+  .eyebrow { font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 700; color: #2563eb; margin-bottom: 1rem; }
+  h1 { font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1.02; margin-bottom: 2rem; }
+  .check { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .field { display: flex; align-items: center; flex: 1 1 15rem; max-width: 24rem; position: relative;
+    background: #fff; border: 2px solid #e5e5e5; border-radius: 999px; padding: 0.2rem 1.1rem 0.2rem 1.25rem; }
+  .ghost { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; pointer-events: none;
+    font-size: 1.05rem; font-weight: 600; color: #737373; }
+  .ghost b { width: 2px; height: 1.25em; margin-left: 1px; background: #0a0a0a;
+    animation: caret 1.06s step-end infinite; }
+  @keyframes caret { 50% { opacity: 0; } }
+  .field input { flex: 1; min-width: 0; border: 0; background: none; font: inherit;
+    font-size: 1.05rem; font-weight: 600; padding: 0.55rem 0; }
+  .field input:focus { outline: none; }
+  .suffix { font-size: 1rem; font-weight: 600; color: #737373; white-space: nowrap; }
+  .go { display: inline-flex; align-items: center; gap: 0.5rem; border: 0; border-radius: 999px;
+    background: #2563eb; color: #fff; font: inherit; font-size: 0.95rem; font-weight: 600;
+    padding: 0.7rem 1.5rem; opacity: 0.45; }
+  .verdict { margin-top: 0.7rem; font-size: 0.9rem; color: #404040; }
+  .verdict em { color: #737373; }
+
+  /* ── Right: the site that obeys ── */
+  .demo { display: grid; gap: 0; filter: drop-shadow(0 24px 50px rgba(0,0,0,0.12)); }
+  .mini { --accent: #2563eb; background: #fff; border-radius: 12px 12px 0 0; overflow: hidden;
+    border: 1px solid #e8e8e8; border-bottom: 0; }
+  .chrome { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: #f1f1f1; }
+  .chrome i { width: 9px; height: 9px; border-radius: 50%; background: #d6d6d6; }
+  .chrome span { margin-left: 8px; font-size: 0.66rem; color: #8a8a8a; }
+  .m-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; }
+  .m-brand { font-weight: 800; font-size: 0.82rem; letter-spacing: -0.02em; }
+  .m-cta { background: var(--accent); color: #fff; font-size: 0.62rem; font-weight: 700;
+    padding: 5px 12px; border-radius: 999px; transition: background 0.6s; }
+  .m-hero { position: relative; height: 118px; overflow: hidden; }
+  .m-hero span { position: absolute; inset: 0; background-size: cover; background-position: center;
+    transition: opacity 0.9s; }
+  .m-hero .b { opacity: 0; }
+  .m-hero.swapped .b { opacity: 1; }
+  .m-body { padding: 14px 16px 16px; }
+  .m-h { font-weight: 800; font-size: 1rem; letter-spacing: -0.02em; color: var(--accent);
+    transition: color 0.6s; }
+  .m-p { font-size: 0.72rem; color: #555; line-height: 1.55; margin-top: 4px; min-height: 2.3em; }
+  .m-p ins { text-decoration: none; background: #fdf6c9; border-radius: 3px; }
+  .m-hours { margin-top: 8px; font-size: 0.66rem; font-weight: 700; color: #333;
+    display: inline-block; border: 1px solid #e5e5e5; border-radius: 999px; padding: 4px 10px; }
+  .m-hours.hot { background: #ecfdf3; border-color: #b7e4c7; }
+
+  .chat { display: flex; align-items: center; gap: 10px; background: #101318; color: #e8e8ea;
+    border-radius: 0 0 12px 12px; padding: 12px 14px; }
+  .chat .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex: none; }
+  .chat .line { display: flex; align-items: center; font-size: 0.8rem; min-height: 1.3em; flex: 1; }
+  .chat .line b { width: 2px; height: 1.15em; margin-left: 1px; background: #e8e8ea;
+    animation: caret 1.06s step-end infinite; }
+  .chat .ok { font-size: 0.68rem; color: #22c55e; font-weight: 700; opacity: 0;
+    transition: opacity 0.3s; flex: none; }
+  .chat .ok.on { opacity: 1; }
+  .why { margin-top: 1rem; font-size: 0.78rem; color: #999; text-align: center; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div>
+    <p class="eyebrow">The work</p>
+    <h1>Real sites, built by talking.</h1>
+    <div class="check">
+      <div class="field">
+        <span class="ghost"><i id="g1"></i><b></b></span>
+        <input type="text" aria-label="Check your address" />
+        <span class="suffix">.garage.co.nz</span>
+      </div>
+      <span class="go">Continue
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
+    <p class="verdict">Free websites. See if your name is available <em>(you can stick it on your own domain later)</em></p>
+  </div>
+
+  <div>
+    <div class="demo">
+      <div class="mini" id="mini">
+        <div class="chrome"><i></i><i></i><i></i><span>sunnysidecafe.garage.co.nz</span></div>
+        <div class="m-nav">
+          <span class="m-brand">Sunny Side Cafe</span>
+          <span class="m-cta">Book a table</span>
+        </div>
+        <div class="m-hero" id="m-hero">
+          <span class="a" style="background-image:url(https://picsum.photos/seed/cafe1/560/240)"></span>
+          <span class="b" style="background-image:url(https://picsum.photos/seed/cafe7/560/240)"></span>
+        </div>
+        <div class="m-body">
+          <div class="m-h">Coffee worth crossing town for</div>
+          <p class="m-p" id="m-p">Small batch beans, big breakfasts.<ins id="m-ins"></ins></p>
+          <span class="m-hours" id="m-hours">Open 7am – 2pm</span>
+        </div>
+      </div>
+      <div class="chat">
+        <span class="dot"></span>
+        <span class="line"><i id="g2"></i><b></b></span>
+        <span class="ok" id="ok">&#10003; done</span>
+      </div>
+    </div>
+    <p class="why">The demo loops. Nothing here is an input — it is the builder, showing off.</p>
+  </div>
+</div>
+
+<script>
+  // Left box: the name typist, same act as the live homepage.
+  (function () {
+    const t = document.getElementById('g1');
+    const NAMES = ['johnsmith', 'rotorualawns', 'bayhairstudio', 'thecornercafe'];
+    let n = 0, pos = 0, dir = 1;
+    (function tick() {
+      const w = NAMES[n % NAMES.length];
+      pos += dir;
+      if (pos > w.length) { pos = w.length; dir = -1; return setTimeout(tick, 1500); }
+      if (pos < 0) { pos = 0; dir = 1; n++; return setTimeout(tick, 500); }
+      t.textContent = w.slice(0, pos);
+      setTimeout(tick, dir > 0 ? 95 + Math.random() * 70 : 40);
+    })();
+  })();
+
+  // Right box: the commands type, the little site obeys, then it all resets.
+  (function () {
+    const line = document.getElementById('g2');
+    const ok = document.getElementById('ok');
+    const mini = document.getElementById('mini');
+    const hero = document.getElementById('m-hero');
+    const ins = document.getElementById('m-ins');
+    const hours = document.getElementById('m-hours');
+
+    const ACTS = [
+      { say: 'Change the colour to green',
+        does: () => mini.style.setProperty('--accent', '#16a34a') },
+      { say: 'Add a new picture for the hero',
+        does: () => hero.classList.add('swapped') },
+      { say: 'Add these words to the intro',
+        does: () => { ins.textContent = ' Dogs and kids welcome.'; } },
+      { say: 'Update our hours',
+        does: () => { hours.textContent = 'Open 7am – 4pm, weekends too'; hours.classList.add('hot'); } },
+      { say: null,   // the reset, quietly
+        does: () => {
+          mini.style.setProperty('--accent', '#2563eb');
+          hero.classList.remove('swapped');
+          ins.textContent = '';
+          hours.textContent = 'Open 7am – 2pm'; hours.classList.remove('hot');
+        } },
+    ];
+
+    let a = 0;
+    function run() {
+      const act = ACTS[a % ACTS.length]; a++;
+      if (!act.say) { act.does(); return setTimeout(run, 900); }
+      let i = 0;
+      (function type() {
+        i++;
+        line.textContent = act.say.slice(0, i);
+        if (i < act.say.length) return setTimeout(type, 55 + Math.random() * 45);
+        // sent: a beat, the tick, the page obeys
+        setTimeout(() => {
+          ok.classList.add('on');
+          act.does();
+          setTimeout(() => {
+            ok.classList.remove('on');
+            line.textContent = '';
+            setTimeout(run, 700);
+          }, 1600);
+        }, 450);
+      })();
+    }
+    setTimeout(run, 1200);
+  })();
+</script>
+</body>
+</html>
