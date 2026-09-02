@@ -68,6 +68,15 @@ transition:transform .25s ease}
 .gwr-tab:active{transform:scale(.95)}
 .gwr-tab i{position:absolute;left:50%;bottom:16px;width:5px;height:30px;margin-left:-2.5px;
 background:#fff;border-radius:3px}
+/* He peers over the top of the tank, head breaking the border — the curious
+   face that makes a thumbnail get clicked. */
+.gwr-peek{position:absolute;top:-34px;left:50%;transform:translateX(-50%) rotate(-7deg);
+width:52px;height:52px;object-fit:cover;object-position:50% 3%;border-radius:50%;
+border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.35);pointer-events:none;
+animation:gwr-peek 3.6s ease-in-out infinite}
+@keyframes gwr-peek{0%,100%{transform:translateX(-50%) rotate(-7deg)}
+50%{transform:translateX(-46%) rotate(5deg)}}
+@media(prefers-reduced-motion:reduce){.gwr-peek{animation:none}}
 .gwr-tab u{position:absolute;left:50%;top:22px;width:34px;height:14px;margin-left:-17px;
 border:5px solid #ffd23f;border-radius:50%;text-decoration:none;
 animation:gwr-bob 2.8s ease-in-out infinite}
@@ -127,6 +136,15 @@ box-shadow:0 6px 0 ${SHELL_D},0 10px 18px rgba(0,0,0,.3);
 transition:transform .06s,box-shadow .06s;touch-action:manipulation}
 .gwr-btn:active,.gwr-btn.down{transform:translateY(5px);box-shadow:0 1px 0 ${SHELL_D},0 4px 10px rgba(0,0,0,.3)}
 .gwr-hint{margin:.7rem 0 0;font-size:.72rem;color:${SOFT};min-height:1.1em}
+/* The moment a ring lands: the tank announces it. */
+.gwr-toast{position:absolute;top:54px;left:0;right:0;text-align:center;pointer-events:none;
+font:800 .95rem/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.04em;color:#0b3550;
+text-transform:uppercase;opacity:0;transform:translateY(8px) scale(.9);
+transition:opacity .25s,transform .35s cubic-bezier(.2,1.4,.4,1)}
+.gwr-toast.on{opacity:1;transform:none}
+.gwr-toast b{color:${SHELL_D}}
+@keyframes gwr-pulse{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+.gwr-steps span.pop{animation:gwr-pulse .5s ease-out}
 
 .gwr-form{display:grid;gap:.5rem;text-align:left;margin-top:1rem}
 .gwr-form input{width:100%;font:inherit;font-size:.9rem;padding:.68rem .85rem;
@@ -139,6 +157,18 @@ color:#fff;font:800 .85rem/1 var(--font-sans,system-ui,sans-serif);letter-spacin
 text-transform:uppercase;padding:1rem}
 .gwr-start:hover{background:${SHELL_D}}
 .gwr-small{margin:.7rem 0 0;font-size:.66rem;color:${SOFT};line-height:1.6;text-align:center}
+
+/* A challenge arriving: somebody's score, worn as a gauntlet. */
+.gwr-dare{display:none;margin:0 0 .9rem;padding:.55rem .9rem;border-radius:10px;
+background:#fdeeee;border:1px solid rgba(181,44,44,.25);font-size:.82rem;color:${SHELL_D};
+font-weight:700}
+.gwr-dare.on{display:block}
+.gwr-share{display:inline-flex;align-items:center;gap:.5rem;margin-top:1rem;
+border:0;border-radius:999px;cursor:pointer;background:${SHELL};color:#fff;
+font:800 .8rem/1 var(--font-sans,system-ui,sans-serif);letter-spacing:.06em;
+text-transform:uppercase;padding:.85rem 1.4rem}
+.gwr-share:hover{background:${SHELL_D}}
+.gwr-share-note{margin:.55rem 0 0;font-size:.7rem;color:${SOFT}}
 
 .gwr-done{display:none;padding:.3rem 0 .1rem}
 .gwr-done.on{display:block;animation:gwrIn .45s cubic-bezier(.16,1,.3,1) both}
@@ -164,6 +194,7 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
 
   return `
 <button class="gwr-tab" id="gwr-tab" type="button" aria-haspopup="dialog" aria-label="${esc(title)}">
+  <img class="gwr-peek" src="https://garage.co.nz/lean.png" alt="" draggable="false" />
   <i></i><u></u><em>Play</em>
   <span class="gwr-tx" role="button" tabindex="0" aria-label="Hide this">&times;</span>
 </button>
@@ -173,13 +204,13 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
     <button class="gwr-x" id="gwr-x" type="button" aria-label="Close">&times;</button>
     <p class="gwr-kicker">${esc(site.name || slug)}</p>
     <h3 class="gwr-title">${esc(title)}</h3>
-    <p class="gwr-blurb">${esc(rt.blurb || 'Two buttons, five rings, sixty seconds. The buttons push the water; the water carries the rings; the pegs do the rest. The clock starts on your first press.')}</p>
-
+    <p class="gwr-dare" id="gwr-dare"></p>
     <div class="gwr-steps" id="gwr-steps">${steps}</div>
 
     <div class="gwr-toy" id="gwr-toy" style="display:none">
       <canvas class="gwr-tank" id="gwr-tank" width="360" height="430"></canvas>
       <div class="gwr-hud"><span class="gwr-clock" id="gwr-clock">${SECONDS}.0</span></div>
+      <div class="gwr-toast" id="gwr-toast"></div>
       <div class="gwr-btns">
         <button class="gwr-btn" id="gwr-l" type="button" aria-label="Left burst"></button>
         <button class="gwr-btn" id="gwr-r" type="button" aria-label="Right burst"></button>
@@ -222,9 +253,30 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
   $('gwr-x').addEventListener('click', function () { veil.classList.remove('on'); });
   veil.addEventListener('click', function (e) { if (e.target === veil) veil.classList.remove('on'); });
 
+  // A challenge in the letterbox: ?toss=N&by=Name opens the game already
+  // knowing the score to beat, and says so.
+  var qs = new URLSearchParams(location.search);
+  var dare = null;
+  if (qs.get('toss') !== null) {
+    var dn = Math.max(0, Math.min(${RINGS}, parseInt(qs.get('toss'), 10) || 0));
+    var db = String(qs.get('by') || '').slice(0, 24).replace(/[<>&"]/g, '');
+    dare = { n: dn, by: db || 'Somebody' };
+    var dareEl = $('gwr-dare');
+    dareEl.textContent = dare.by + ' landed ' + dare.n + ' ring' + (dare.n === 1 ? '' : 's') + ' here. Beat that.';
+    dareEl.classList.add('on');
+    veil.classList.add('on');
+  }
+
   var past = null;
   if (!TEST) {
     try { past = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+    // A share buys one more game — once. The flag is spent by being used.
+    var extra = false;
+    try { extra = localStorage.getItem(KEY + ':extra') === '1'; } catch (e) {}
+    if (past && extra) {
+      try { localStorage.removeItem(KEY + ':extra'); localStorage.removeItem(KEY); } catch (e) {}
+      past = null;
+    }
     if (past) return finish(past.landed, past.prize, true);
   }
 
@@ -390,11 +442,30 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
             Math.abs(r.z - 0.5) < 0.22 &&
             r.y > peg.top - 6 && r.y < peg.top + 14) {
           r.landed = p;
+          r.litAt = Date.now();
           r.x = peg.x; r.vx = 0; r.vy = 0; r.vz = 0; r.va = (Math.random() - 0.5) * 2;
+          r.restTilt = (Math.random() - 0.5) * 0.16;
           r.slide = 1;
-          r.slideTo = peg.base - 8 - peg.stack * (RING_T * 2 + 2);
+          r.slideTo = peg.base - 8 - peg.stack * (RING_T + 4);
           peg.stack++;
+          // The tank celebrates: a crown of bubbles off the peg tip.
+          for (var cb = 0; cb < 14; cb++) {
+            var ang = (cb / 14) * Math.PI * 2;
+            bubbles.push({ x: peg.x + Math.cos(ang) * 16, y: peg.top + Math.sin(ang) * 10,
+              z: 0.5 + (Math.random() - 0.5) * 0.3, r: 1.5 + Math.random() * 3,
+              vy: -(120 + Math.random() * 160), w: Math.random() * 6.3 });
+          }
+          var n = landedCount();
+          var toast = $('gwr-toast');
+          var rung2 = rungFor(n);
+          toast.innerHTML = n + ' ring' + (n === 1 ? '' : 's') +
+            (rung2 >= 0 ? ' &middot; <b>' + ladder[rung2] + '</b>' : '');
+          toast.classList.add('on');
+          clearTimeout(toast._t);
+          toast._t = setTimeout(function () { toast.classList.remove('on'); }, 1500);
           paintSteps();
+          var lit = document.querySelector('#gwr-steps span.held');
+          if (lit) { lit.classList.remove('pop'); void lit.offsetWidth; lit.classList.add('pop'); }
           if (landedCount() >= rings.length) endRound(true);
           break;
         }
@@ -423,10 +494,17 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
     var depth = 0.75 + 0.5 * r.z;              // size with nearness
     var light = 0.55 + 0.45 * r.z;             // brightness with nearness
     var R = RING_R * depth, T = RING_T * depth;
-    var squash = 0.32 + 0.68 * Math.abs(Math.cos(r.a));
+    var squash = r.landed >= 0 ? 0.3 : 0.32 + 0.68 * Math.abs(Math.cos(r.a));
     ctx.save();
     ctx.translate(r.x, r.y);
-    ctx.rotate(Math.sin(r.a) * 0.5);
+    ctx.rotate(r.landed >= 0 ? (r.restTilt || 0) : Math.sin(r.a) * 0.5);
+    if (r.landed >= 0 && r.litAt && Date.now() - r.litAt < 700) {
+      // The catch, celebrated: a golden halo that burns off.
+      var age = (Date.now() - r.litAt) / 700;
+      ctx.lineWidth = T + 8 * (1 - age);
+      ctx.strokeStyle = 'rgba(255,210,63,' + (0.7 * (1 - age)) + ')';
+      ctx.beginPath(); ctx.ellipse(0, 0, R + 4 * (1 - age), (R + 4 * (1 - age)) * squash, 0, 0, Math.PI * 2); ctx.stroke();
+    }
     // The body of the torus, darker at the bottom of the tube.
     ctx.lineWidth = T;
     ctx.strokeStyle = shade(r.c, light * 0.82);
@@ -580,13 +658,48 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
         '<p class="gwr-note">That was your game — one per person.</p>';
       return;
     }
-    done.innerHTML = (won === false && landed === 0)
+    var verdict = '';
+    if (dare) {
+      verdict = landed > dare.n
+        ? '<p class="gwr-note"><b>You beat ' + dare.by + '.</b> Send it back.</p>'
+        : landed === dare.n
+          ? '<p class="gwr-note"><b>Dead level with ' + dare.by + '.</b> Somebody has to settle this.</p>'
+          : '<p class="gwr-note"><b>' + dare.by + ' still holds it</b> at ' + dare.n + '.</p>';
+    }
+    done.innerHTML = ((won === false && landed === 0)
       ? '<p class="gwr-shout">The water<br><em>won that one</em></p>' +
         '<p class="gwr-note">Nobody leaves empty-handed: <b>' + prize + '</b> is yours. ' +
         'Your details are with ' + ${JSON.stringify(esc(site.name || slug))} + ' and they will sort it with you.</p>'
       : '<p class="gwr-shout">' + (swept ? 'All five!' : count + ' landed') + '<br><em>' + prize + '</em></p>' +
         '<p class="gwr-note">' + (swept ? 'A clean sweep with ' + clockLeft.toFixed(1) + 's on the clock. ' : '') +
-        'Your details are with ' + ${JSON.stringify(esc(site.name || slug))} + ' and they will sort it with you.</p>';
+        'Your details are with ' + ${JSON.stringify(esc(site.name || slug))} + ' and they will sort it with you.</p>')
+      + verdict
+      + '<button class="gwr-share" id="gwr-share" type="button">Dare a mate &mdash; earn another game</button>'
+      + '<p class="gwr-share-note" id="gwr-share-note">Your score travels with the link. When it leaves, you get one more go.</p>';
+
+    var shareBtn = document.getElementById('gwr-share');
+    if (shareBtn) shareBtn.addEventListener('click', function () {
+      var who = (name || '').split(' ')[0] || 'A mate';
+      var url = location.origin + location.pathname + '?toss=' + landed + '&by=' + encodeURIComponent(who);
+      var text = who + ' landed ' + landed + ' ring' + (landed === 1 ? '' : 's') + ' on the ' +
+        ${JSON.stringify(esc(site.name || slug))} + ' ring toss. Beat that.';
+      var pay = function () {
+        try { localStorage.setItem(KEY + ':extra', '1'); } catch (e) {}
+        document.getElementById('gwr-share-note').textContent =
+          'Sent. Reload whenever you want your extra game.';
+        shareBtn.style.display = 'none';
+      };
+      if (navigator.share) {
+        navigator.share({ title: 'Ring Toss', text: text, url: url }).then(pay).catch(function () {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text + ' ' + url).then(function () {
+          document.getElementById('gwr-share-note').textContent = 'Copied — paste it to a mate. Your extra game is banked.';
+          try { localStorage.setItem(KEY + ':extra', '1'); } catch (e) {}
+          shareBtn.style.display = 'none';
+        }).catch(function () {});
+      }
+    });
+
     if (TEST) return;
     try { localStorage.setItem(KEY, JSON.stringify({ landed: landed, prize: prize })); } catch (e) {}
     fetch('https://garage.co.nz/api/toss', {
