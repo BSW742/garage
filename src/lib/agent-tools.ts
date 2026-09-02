@@ -493,6 +493,34 @@ export const TOOLS = [
     },
   },
   {
+    name: 'set_ringtoss',
+    description:
+      'Turn the water Ring Toss on or off, and set the prize ladder. The handheld toy as a lead ' +
+      'game: two buttons fire bursts of bubbles, five rings tumble through the water, and the ' +
+      'player has sixty seconds to land them on the pegs. Pure skill — no dice anywhere, the ' +
+      'physics plays out on screen. More rings landed, better prize; the top rung always needs ' +
+      'all five. A scoreless round still gets the consolation, so the owner must be happy to ' +
+      'honour every rung and the consolation. 2 to 5 prizes smallest first, about 24 characters ' +
+      'each. A site should run only one game widget. One game per person. Details go to the ' +
+      'owner; the visitor is never emailed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        on: { type: 'boolean', description: 'Show the game on the site.' },
+        prizes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '2 to 5 rungs, smallest first, best last.',
+        },
+        bust: { type: 'string', description: 'The consolation for a scoreless round, e.g. "10% off".' },
+        title: { type: 'string', description: 'Heading, e.g. "Ring Toss".' },
+        blurb: { type: 'string', description: 'One line under the heading.' },
+        terms: { type: 'string', description: 'Any conditions, e.g. "One game per person."' },
+      },
+      required: ['on'],
+    },
+  },
+  {
     name: 'add_clips',
     description:
       'Put YouTube videos on a reel page. Give it whatever the person pasted — full watch links, ' +
@@ -942,6 +970,38 @@ export async function runTool(
           `The Balloon is on: ${(bl.prizes || []).join(' → ')}. ` +
           `A pop drops to ${bl.bust || 'a consolation prize'}. First pump always holds.`,
         data: { balloon: bl },
+      };
+    }
+
+    case 'set_ringtoss': {
+      const rt: any = (site as any).ringtoss || {};
+      if (input.prizes !== undefined) {
+        const rungs = (input.prizes || [])
+          .map((p: any) => String(p || '').trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        const tooLong = rungs.filter((e: string) => e.length > 24);
+        if (tooLong.length) {
+          return { ok: false, message: `Too long for a rung (24 characters): ${tooLong.join(', ')}.` };
+        }
+        rt.prizes = rungs;
+      }
+      if (input.on && (rt.prizes || []).length < 2) {
+        return { ok: false, message: 'The ladder needs at least two rungs, smallest first. Ask what goes on it.' };
+      }
+      if (input.bust !== undefined) rt.bust = String(input.bust).slice(0, 40);
+      if (input.title !== undefined) rt.title = String(input.title).slice(0, 40);
+      if (input.blurb !== undefined) rt.blurb = String(input.blurb).slice(0, 140);
+      if (input.terms !== undefined) rt.terms = String(input.terms).slice(0, 200);
+      rt.on = !!input.on;
+      (site as any).ringtoss = rt;
+      if (!rt.on) return { ok: true, message: 'The Ring Toss is off.' };
+      return {
+        ok: true,
+        message:
+          `The Ring Toss is on: ${(rt.prizes || []).join(' → ')}. Sixty seconds, five rings, ` +
+          `pure skill; the top rung needs all five. Scoreless gets ${rt.bust || 'a consolation prize'}.`,
+        data: { ringtoss: rt },
       };
     }
 
