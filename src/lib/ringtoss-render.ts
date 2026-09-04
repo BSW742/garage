@@ -31,6 +31,7 @@ export interface RingToss {
   bust?: string;         // the consolation for a scoreless round
   terms?: string;        // "One game per person."
   test?: boolean;        // no form, no one-play lock, no lead recorded
+  arcade?: boolean;      // pure toy: no form, no lock, no leads — confetti and reset
 }
 
 const INK = '#14202b';
@@ -241,6 +242,7 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
   var bust = ${JSON.stringify(bust)};
   var KEY = 'gwr:' + slug;
   var TEST = ${JSON.stringify(!!rt.test)};
+  var ARCADE = ${JSON.stringify(!!rt.arcade)};
   var SECONDS = ${SECONDS};
 
   var $ = function (id) { return document.getElementById(id); };
@@ -268,7 +270,7 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
   }
 
   var past = null;
-  if (!TEST) {
+  if (!TEST && !ARCADE) {
     try { past = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     // A share buys one more game — once. The flag is spent by being used.
     var extra = false;
@@ -280,8 +282,8 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
     if (past) return finish(past.landed, past.prize, true);
   }
 
-  var name = '', email = '', phone = '', armed = TEST, over = false;
-  if (TEST) { $('gwr-form').style.display = 'none'; $('gwr-toy').style.display = ''; }
+  var name = '', email = '', phone = '', armed = TEST || ARCADE, over = false;
+  if (TEST || ARCADE) { $('gwr-form').style.display = 'none'; $('gwr-toy').style.display = ''; }
 
   $('gwr-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -628,7 +630,7 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
 
   // Test mode opens the hood, so a scripted player can prove the game is
   // winnable — the tower shipped unwinnable once, and never again.
-  if (TEST) { try { window.__gwr = { rings: rings, pegs: PEGS, W: W, H: H }; } catch (e) {} }
+  if (TEST || ARCADE) { try { window.__gwr = { rings: rings, pegs: PEGS, W: W, H: H }; } catch (e) {} }
 
   var prev = 0;
   function loop(now) {
@@ -646,6 +648,48 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
   }
   requestAnimationFrame(loop);
 
+  function confetti() {
+    var c = document.createElement('canvas');
+    c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:99999';
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+    document.body.appendChild(c);
+    var x = c.getContext('2d'); x.scale(dpr, dpr);
+    var bits = [];
+    var CC = ['#ff5a5a', '#ffd23f', '#3ecf6e', '#4aa8ff', '#c07bff', '#ff8fd0'];
+    for (var i = 0; i < 160; i++) {
+      bits.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.5,
+        w: 5 + Math.random() * 6, h: 8 + Math.random() * 8,
+        vy: 130 + Math.random() * 220, vx: (Math.random() - 0.5) * 60,
+        a: Math.random() * 6.3, va: (Math.random() - 0.5) * 8,
+        c: CC[i % CC.length] });
+    }
+    var t0 = performance.now(), prev2 = t0;
+    (function rain(now) {
+      var dt = Math.min(0.05, (now - prev2) / 1000); prev2 = now;
+      x.clearRect(0, 0, innerWidth, innerHeight);
+      var alive = false;
+      for (var i2 = 0; i2 < bits.length; i2++) {
+        var bt = bits[i2];
+        bt.y += bt.vy * dt; bt.x += bt.vx * dt + Math.sin(bt.a * 2) * 30 * dt; bt.a += bt.va * dt;
+        if (bt.y < innerHeight + 30) alive = true;
+        x.save(); x.translate(bt.x, bt.y); x.rotate(bt.a);
+        x.fillStyle = bt.c; x.fillRect(-bt.w / 2, -bt.h / 2, bt.w, bt.h);
+        x.restore();
+      }
+      // Pour for a couple of seconds, then let what has fallen finish falling.
+      if (now - t0 < 2400) {
+        for (var i3 = 0; i3 < bits.length; i3++) {
+          if (bits[i3].y > innerHeight + 30 && now - t0 < 2000) {
+            bits[i3].y = -20; bits[i3].x = Math.random() * innerWidth;
+          }
+        }
+      }
+      if (alive) requestAnimationFrame(rain);
+      else { c.remove(); location.reload(); }   // the reset: a fresh machine
+    })(t0);
+  }
+
   function finish(landed, prize, replay, won, swept) {
     over = true;
     $('gwr-form').style.display = 'none';
@@ -653,6 +697,16 @@ export function renderRingToss(site: SiteConfig, slug: string): string {
     var done = $('gwr-done');
     done.className = 'gwr-done on';
     var count = landed + ' ring' + (landed === 1 ? '' : 's');
+    if (ARCADE) {
+      done.innerHTML = (landed === 0)
+        ? '<p class="gwr-shout">The water<br><em>won that one</em></p><p class="gwr-note">' +
+          (prize ? prize + ' all the same. ' : '') + 'It resets in a moment — go again.</p>'
+        : '<p class="gwr-shout">' + (swept ? 'All five!' : count + ' landed') + '<br><em>' + prize + '</em></p>' +
+          '<p class="gwr-note">' + (swept ? 'A clean sweep with ' + clockLeft.toFixed(1) + 's on the clock. ' : '') +
+          'It resets in a moment — go again.</p>';
+      confetti();
+      return;
+    }
     if (replay) {
       done.innerHTML = '<p class="gwr-shout">' + count + ' &mdash; <em>' + prize + '</em></p>' +
         '<p class="gwr-note">That was your game — one per person.</p>';

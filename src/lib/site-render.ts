@@ -1146,6 +1146,31 @@ poll();
 })();</script>`;
 }
 
+/** A site that is nothing but the ring toss: no nav, no sections, no leads —
+ *  the machine, centred on a room-coloured wall, resetting itself. */
+function renderArcadePage(site: SiteConfig, slug: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${esc(site.name || 'Ring Toss')}</title>
+<meta name="description" content="The water ring toss. Two buttons, five rings, sixty seconds." />
+<style>
+* { box-sizing: border-box; margin: 0; }
+body { min-height: 100vh; font-family: -apple-system, system-ui, sans-serif;
+background: radial-gradient(circle at 50% 18%, #1c3a52, #0c1c2a 70%); }
+${RINGTOSS_CSS}
+/* The modal furniture becomes the room: always open, nothing to close. */
+.gwr-veil { position: static; display: flex; background: none; backdrop-filter: none;
+min-height: 100vh; padding: 2rem 1rem; }
+.gwr-tab, .gwr-x { display: none !important; }
+</style>
+</head>
+<body>${renderRingToss(site, slug)}</body>
+</html>`;
+}
+
 export function renderSite(
   site: SiteConfig,
   slug: string,
@@ -1155,6 +1180,7 @@ export function renderSite(
   // The YouTube wall was called 'reel' until the Instagram template arrived and
   // made that name mean two things. Sites saved under the old name keep working.
   if ((site as any).style === 'reel') site = { ...site, style: 'youtube' };
+  if ((site as any).arcade === 'ringtoss') return renderArcadePage(site, slug);
   // Yoga and pilates: one renderer, two temperatures. The timetable, the
   // passes and the teachers are the same job either way.
   if (site.style === 'yoga' || site.style === 'pilates') {
