@@ -20,6 +20,7 @@ import { renderVideoMapBody, VIDEOMAP_CSS, VIDEOMAP_FONT_QUERY } from './videoma
 import { SPINNER_CSS, renderSpinner } from './spinner-render';
 import { BALLOON_CSS, renderBalloon, type Balloon } from './balloon-render';
 import { RINGTOSS_CSS, renderRingToss, type RingToss } from './ringtoss-render';
+import { renderRingTossArcade3D } from './ringtoss3d-render';
 import { themeCss, themeFontQuery, type Theme } from './theme';
 import { WAITLIST_CSS, renderWaitlist } from './waitlist-render';
 import { STUDIO_CSS, YOGA_FONT_QUERY, PILATES_FONT_QUERY, renderStudioBody } from './studio-render';
@@ -1149,6 +1150,10 @@ poll();
 /** A site that is nothing but the ring toss: no nav, no sections, no leads —
  *  the machine, centred on a room-coloured wall, resetting itself. */
 function renderArcadePage(site: SiteConfig, slug: string): string {
+  return renderRingTossArcade3D(site, slug);
+}
+
+function renderArcadePage2D(site: SiteConfig, slug: string): string {
   return `<!doctype html>
 <html lang="en">
 <head>
