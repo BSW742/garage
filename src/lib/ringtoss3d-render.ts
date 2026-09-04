@@ -74,8 +74,8 @@ border-radius: 999px; padding: .34rem .6rem; transition: all .25s; }
 #tank { display: block; width: 100%; border-radius: 22px;
 box-shadow: inset 0 0 0 8px #e33d3d, inset 0 4px 0 9px rgba(255,255,255,.25),
 0 18px 40px -18px rgba(0,0,0,.5); touch-action: none; }
-.hud { position: absolute; top: 16px; left: 0; right: 0; display: flex;
-justify-content: center; pointer-events: none; }
+.hud { position: absolute; top: 14px; right: 14px; display: flex;
+justify-content: flex-end; pointer-events: none; }
 .clock { font: 800 .95rem/1 ui-monospace, Menlo, monospace; color: #0b3550;
 background: rgba(255,255,255,.6); border-radius: 999px; padding: .32rem .8rem;
 font-variant-numeric: tabular-nums; }
@@ -174,12 +174,14 @@ margin: .2rem 0 .6rem; }
   if (HEAD) {
     new THREE.TextureLoader().load(HEAD, function (tex) {
       var aspect = tex.image.width / tex.image.height;
-      var h = 2.5, w = h * aspect;
+      var h = 2.2, w = h * aspect;
       var head = new THREE.Mesh(
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: true })
       );
-      head.position.set(0.1, 3.55, -1.5);
+      // Clear above the fingertips: fingers reaching into his beard read as
+      // antlers, which was the whole of the what-TF screenshot.
+      head.position.set(0.1, 4.45, -1.8);
       headGroup.add(head);
     });
   }
@@ -189,8 +191,8 @@ margin: .2rem 0 .6rem; }
   var skin = new THREE.MeshStandardMaterial({ color: 0xeaa06a, roughness: 0.65 });
   var hand = new THREE.Group();
   var mound = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 18), skin);
-  mound.scale.set(1.25, 0.62, 0.8);
-  mound.position.set(0, 0.42, 0);
+  mound.scale.set(1.1, 0.48, 0.72);
+  mound.position.set(0, 0.34, 0);
   mound.castShadow = true;
   hand.add(mound);
   var arm = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 1.4, 18), skin);
@@ -202,7 +204,11 @@ margin: .2rem 0 .6rem; }
   function finger(x, tipY, lean) {
     var len = tipY - 0.6;
     var g = new THREE.Group();
-    var f = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, len, 6, 14), skin);
+    var f = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, len, 6, 14), skin);
+    // a knuckle where the finger leaves the hand
+    var kn = new THREE.Mesh(new THREE.SphereGeometry(0.27, 14, 12), skin);
+    kn.position.y = 0.62;
+    g.add(kn);
     f.castShadow = true;
     f.position.y = 0.6 + len / 2;
     g.add(f);
@@ -238,7 +244,7 @@ margin: .2rem 0 .6rem; }
     scene.add(mesh);
     rings.push({
       m: mesh,
-      x: -1.7 + i * 0.85, y: 0.45, z: (Math.random() - 0.5) * 1.2,
+      x: [-1.75, -1.15, 0, 1.15, 1.75][i], y: 0.17, z: 0.55 + (i % 2) * 0.2,
       vx: 0, vy: 0, vz: 0,
       ax: (Math.random() - 0.5) * 0.8, az: (Math.random() - 0.5) * 0.8,
       vax: 0, vaz: 0, spin: Math.random() * 6.3,
@@ -348,7 +354,21 @@ margin: .2rem 0 .6rem; }
         if (r.z < -1.15) { r.z = -1.15; r.vz = Math.abs(r.vz) * 0.4; }
         if (r.z > 1.15) { r.z = 1.15; r.vz = -Math.abs(r.vz) * 0.4; }
         if (r.y > 4.9) { r.y = 4.9; r.vy = -Math.abs(r.vy) * 0.3; }
-        if (r.y < 0.45) { r.y = 0.45; r.vy = Math.abs(r.vy) * 0.2; r.vax *= 0.5; r.vaz *= 0.5; }
+        if (r.y < 0.17) { r.y = 0.17; r.vy = Math.abs(r.vy) * 0.2; r.vax *= 0.5; r.vaz *= 0.5; }
+
+        // The hand is solid: a ring pushed into the mound is pushed back out
+        // along the surface, which is what stopped them reading as croissants
+        // baked into a loaf.
+        var mx = r.x / 1.35, my = (r.y - 0.34) / 0.75, mz = r.z / 0.98;
+        var md = mx * mx + my * my + mz * mz;
+        if (md < 1) {
+          var mn = Math.sqrt(md) || 0.001;
+          r.x = (mx / mn) * 1.35;
+          r.y = 0.34 + (my / mn) * 0.75;
+          r.z = (mz / mn) * 0.98;
+          if (r.y < 0.17) r.y = 0.17;
+          r.vx += (mx / mn) * 0.6; r.vy += Math.max(0, my / mn) * 0.6; r.vz += (mz / mn) * 0.6;
+        }
 
         // The fingers. Close in x and z, coming down, lying flat, at tip
         // height — and water near a finger funnels the ring toward it.
