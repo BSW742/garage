@@ -25,5 +25,8 @@ database_id = "e6d7164f-47c7-4d1a-b7a9-53fc8b733133"
 # pay-as-you-go credit — not against a Claude subscription, and not on anybody's
 # laptop. This worker runs in Cloudflare whether a machine is on or not.
 [triggers]
-# Parked 4 Sep 2026 on Ben's call — re-enable by uncommenting.
-# crons = ["0 * * * *"]
+# Parked 4 Sep 2026 on Ben's call. The empty list is load-bearing: wrangler
+# only manages the triggers it sees, so a commented-out line leaves the old
+# hourly schedule running on Cloudflare's side — which is exactly what built
+# whanganuiyogacentre six hours after the cron was "cancelled".
+crons = []
